@@ -58,6 +58,24 @@ void main() {
       await insertBatch(db, itemId, quantityBase: 50, expiryDays: -1);
       expect(await stock.availableQuantity(db, itemId), 5);
     });
+
+    test('non-expiring batches are eligible and sort last (FEFO→FIFO)',
+        () async {
+      final itemId = await insertItem(db);
+      // Expiring batch expiring late + non-expiring (NULL expiry) batch.
+      final expiring = await insertBatch(db, itemId,
+          quantityBase: 20, expiryDays: 365, unitCostMicros: 8000);
+      final noExpiry = await insertBatch(db, itemId,
+          quantityBase: 30, unitCostMicros: 7000);
+
+      final allocated = await stock.allocateFefo(db, itemId, 25);
+      expect(allocated, hasLength(2));
+      expect(allocated.first.batch.id, expiring,
+          reason: 'expiring batches precede non-expiring ones');
+      expect(allocated.last.batch.id, noExpiry);
+      // Non-expiring stock also counts as available.
+      expect(await stock.availableQuantity(db, itemId), 50);
+    });
   });
 
   group('stock ledger', () {
@@ -76,6 +94,7 @@ void main() {
         unitCostMicros: 8000,
         refType: 'sale_line',
         refId: 'line1',
+        userId: 'user_admin',
       );
 
       final batch = await (db.select(db.batches)
@@ -110,7 +129,8 @@ final movs = await (db.select(db.stockMovements)
             batchId: batchId,
             movementType: MovementType.sale,
             quantityBaseSigned: -1,
-            unitCostMicros: 100);
+            unitCostMicros: 100,
+            userId: 'user_admin');
       });
 
       expect(
@@ -120,7 +140,8 @@ final movs = await (db.select(db.stockMovements)
             batchId: batchId,
             movementType: MovementType.sale,
             quantityBaseSigned: -2,
-            unitCostMicros: 100)),
+            unitCostMicros: 100,
+            userId: 'user_admin')),
         throwsA(isA<NotEnoughStockException>()),
       );
     });
@@ -136,7 +157,8 @@ final movs = await (db.select(db.stockMovements)
           batchId: batchId,
           movementType: MovementType.purchase,
           quantityBaseSigned: 4,
-          unitCostMicros: 100);
+          unitCostMicros: 100,
+          userId: 'user_admin');
 
       await (db.update(db.items)..where((i) => i.id.equals(itemId)))
           .write(ItemsCompanion(currentStockBase: const Value(999)));

@@ -15,64 +15,88 @@ const _defaultAdminPassword = 'Admin@123';
 Future<void> seedDefaults(AppDatabase db) async {
   final now = DateTime.now().millisecondsSinceEpoch;
 
-  // Default units.
+  // Default units (name = unique Arabic name, plan `name_ar`; nameEn = English).
   await db.batch((batch) {
     batch.insertAll(db.units, [
       UnitsCompanion.insert(
         id: 'unit_strip',
         name: 'شريط',
+        nameEn: const Value('Strip'),
         createdAt: now,
         updatedAt: now,
       ),
       UnitsCompanion.insert(
         id: 'unit_box',
         name: 'علبة',
+        nameEn: const Value('Box'),
         createdAt: now,
         updatedAt: now,
       ),
       UnitsCompanion.insert(
         id: 'unit_tablet',
         name: 'قرص',
+        nameEn: const Value('Tablet'),
         createdAt: now,
         updatedAt: now,
       ),
     ]);
   });
 
-  // Default roles.
+  // Default main category so master-data inserts always have a valid
+  // `items.categoryId` (NN per §4.7).
+  await db.into(db.categories).insert(
+        CategoriesCompanion.insert(
+          id: 'cat_default',
+          name: 'أدوية',
+          nameEn: const Value('Medicines'),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+  // Default roles — `name` is the canonical stable code, `nameAr` the Arabic
+  // display name (§4.26).
   await db.batch((batch) {
     batch.insertAll(db.roles, [
       RoleRow(
         id: 'role_admin',
-        name: 'مدير النظام',
+        name: 'admin',
+        nameAr: 'مدير النظام',
         isSystem: true,
+        isActive: true,
         createdAt: now,
         updatedAt: now,
       ),
       RoleRow(
         id: 'role_pharmacist',
-        name: 'صيدلي',
+        name: 'pharmacist',
+        nameAr: 'صيدلي',
         isSystem: true,
+        isActive: true,
         createdAt: now,
         updatedAt: now,
       ),
       RoleRow(
         id: 'role_cashier',
-        name: 'كاشير',
+        name: 'cashier',
+        nameAr: 'كاشير',
         isSystem: true,
+        isActive: true,
         createdAt: now,
         updatedAt: now,
       ),
     ]);
   });
 
-  // All permissions.
+  // All permissions — `name` stores the canonical code, `nameAr` the Arabic
+  // label (§4.26).
   final permRows = <PermissionsCompanion>[];
   for (final p in kSeedPermissions) {
     permRows.add(PermissionsCompanion.insert(
       id: 'perm_${p.code.replaceAll('.', '_')}',
       code: p.code,
-      name: p.name,
+      name: p.code,
+      nameAr: p.name,
       createdAt: now,
     ));
   }
@@ -82,14 +106,19 @@ Future<void> seedDefaults(AppDatabase db) async {
 
   // Admin role → all permissions.
   await db.batch((batch) {
-    batch.insertAll(db.rolePermissions, [
-      for (final p in permRows)
-        RolePermissionsCompanion.insert(
-          roleId: 'role_admin',
-          permissionId: p.id.value,
-          createdAt: now,
-        ),
-    ]);
+    batch.insertAll(
+      db.rolePermissions,
+      [
+        for (var i = 0; i < permRows.length; i++)
+          RolePermissionsCompanion.insert(
+            id: 'rp_admin_$i',
+            roleId: 'role_admin',
+            permissionId: permRows[i].id.value,
+            granted: const Value(true),
+            createdAt: now,
+          ),
+      ],
+    );
   });
 
   // Pharmacist role → inventory, stock, purchases, sales, customers,
@@ -135,15 +164,20 @@ Future<void> seedDefaults(AppDatabase db) async {
     Perm.expensesCreate,
   };
   await db.batch((batch) {
-    batch.insertAll(db.rolePermissions, [
-      for (final p in permRows)
-        if (pharmacistCodes.contains(p.code.value))
-          RolePermissionsCompanion.insert(
-            roleId: 'role_pharmacist',
-            permissionId: p.id.value,
-            createdAt: now,
-          ),
-    ]);
+    batch.insertAll(
+      db.rolePermissions,
+      [
+        for (final p in permRows)
+          if (pharmacistCodes.contains(p.code.value))
+            RolePermissionsCompanion.insert(
+              id: 'rp_pharmacist_${p.id.value}',
+              roleId: 'role_pharmacist',
+              permissionId: p.id.value,
+              granted: const Value(true),
+              createdAt: now,
+            ),
+      ],
+    );
   });
 
   // Cashier role → sales + customers + prescriptions + lost sales + cashbox.
@@ -160,15 +194,20 @@ Future<void> seedDefaults(AppDatabase db) async {
     Perm.cashboxView,
   };
   await db.batch((batch) {
-    batch.insertAll(db.rolePermissions, [
-      for (final p in permRows)
-        if (cashierCodes.contains(p.code.value))
-          RolePermissionsCompanion.insert(
-            roleId: 'role_cashier',
-            permissionId: p.id.value,
-            createdAt: now,
-          ),
-    ]);
+    batch.insertAll(
+      db.rolePermissions,
+      [
+        for (final p in permRows)
+          if (cashierCodes.contains(p.code.value))
+            RolePermissionsCompanion.insert(
+              id: 'rp_cashier_${p.id.value}',
+              roleId: 'role_cashier',
+              permissionId: p.id.value,
+              granted: const Value(true),
+              createdAt: now,
+            ),
+      ],
+    );
   });
 
   // Admin user (bcrypt hash generated at runtime).
@@ -178,7 +217,7 @@ Future<void> seedDefaults(AppDatabase db) async {
         username: 'admin',
         passwordHash: adminHash,
         fullName: 'مدير النظام',
-        roleId: const Value('role_admin'),
+        roleId: 'role_admin',
         createdAt: now,
         updatedAt: now,
       ));

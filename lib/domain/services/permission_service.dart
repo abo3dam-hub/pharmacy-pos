@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 import '../../core/errors/exceptions.dart';
 import '../../shared/database/app_database.dart';
 
@@ -18,7 +20,8 @@ class PermissionService {
   Future<Set<String>> codesForRole(AppDatabase db, String? roleId) async {
     if (roleId == null) return const {};
     final rows = await (db.select(db.rolePermissions)
-          ..where((rp) => rp.roleId.equals(roleId)))
+          ..where((rp) =>
+              rp.roleId.equals(roleId) & rp.granted.equals(true)))
         .get();
     final ids = rows.map((rp) => rp.permissionId).toSet();
     if (ids.isEmpty) return const {};

@@ -34,13 +34,14 @@ void main() {
             itemId: itemId,
             quantityBase: 100,
             unitCostMicros: 10000, // 1.00
+            unitTypeId: 'unit_strip',
             batchNumber: 'B100',
             expiryDate: now + 365 * 24 * 60 * 60 * 1000,
             bonuses: const [
               PurchaseBonusRequest(quantityBase: 10),
               PurchaseBonusRequest(quantityBase: 5),
               PurchaseBonusRequest(
-                  quantityBase: 2, bonusType: PurchaseBonusType.priceDiscount),
+                  quantityBase: 2, bonusType: PurchaseBonusType.bonus_2),
             ],
           ),
         ],
@@ -97,6 +98,7 @@ void main() {
             itemId: itemId,
             quantityBase: 5,
             unitCostMicros: 8000,
+            unitTypeId: 'unit_strip',
             batchNumber: 'BNEW',
             expiryDate: expiry,
           ),

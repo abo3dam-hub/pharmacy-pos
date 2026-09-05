@@ -10,14 +10,14 @@ import 'package:uuid/uuid.dart';
 final _uuid = const Uuid();
 
 /// The CI/host image only ships `libsqlite3.so.0`; wire it up for VM tests.
-void _useSystemSqlite() {
+void ensureSqlite() {
   sqlite3_open.open.overrideFor(sqlite3_open.OperatingSystem.linux, () {
     return DynamicLibrary.open('libsqlite3.so.0');
   });
 }
 
 AppDatabase newDatabase() {
-  _useSystemSqlite();
+  ensureSqlite();
   return AppDatabase.forTesting();
 }
 
@@ -25,20 +25,38 @@ Future<String> insertItem(
   AppDatabase db, {
   String barcode = '6291041500213',
   String? id,
-}) {
+}) async {
   final now = DateTime.now().millisecondsSinceEpoch;
   final itemId = id ?? 'item_${_uuid.v4()}';
-  return db.into(db.items).insert(
+  await awaitCategory(db);
+  await db.into(db.items).insert(
         ItemsCompanion.insert(
           id: itemId,
-          primaryBarcode: barcode,
+          primaryBarcode: Value(barcode),
           tradeName: 'بانادول',
           tradeNameEn: Value('Panadol'),
           scientificName: Value('Paracetamol'),
+          categoryId: 'cat_test_default',
           createdAt: now,
           updatedAt: now,
         ),
-      ).then((_) => itemId);
+      );
+  return itemId;
+}
+
+/// Ensures the shared test category exists (idempotent: `insertOrIgnore`).
+Future<void> awaitCategory(AppDatabase db) async {
+  final now = DateTime.now().millisecondsSinceEpoch;
+  await db.into(db.categories).insert(
+        CategoriesCompanion.insert(
+          id: 'cat_test_default',
+          name: 'أدوية اختبار',
+          nameEn: const Value('Test Medicines'),
+          createdAt: now,
+          updatedAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
 }
 
 Future<String> insertSupplier(AppDatabase db, {String name = 'المورد الأساسي'}) {
@@ -54,14 +72,14 @@ Future<String> insertSupplier(AppDatabase db, {String name = 'المورد ال�
       ).then((_) => id);
 }
 
-/// Creates a batch for [itemId] with a quantity and expiry [expiryDays] from
-/// today (negative = already expired) and a unit cost in micro-units. The
+/// Creates a batch for [itemId]. [expiryDays] is relative to today (negative =
+/// already expired); pass `null` for a non-expiring product (FEFO → FIFO). The
 /// quantity is seeded through the stock ledger so caches stay consistent.
 Future<String> insertBatch(
   AppDatabase db,
   String itemId, {
   int quantityBase = 10,
-  required int expiryDays,
+  int? expiryDays,
   int unitCostMicros = 10000,
   String? batchNumber,
 }) async {
@@ -73,7 +91,9 @@ Future<String> insertBatch(
           id: id,
           itemId: itemId,
           batchNumber: no,
-          expiryDate: now + expiryDays * 24 * 60 * 60 * 1000,
+          expiryDate: expiryDays != null
+              ? Value(now + expiryDays * 24 * 60 * 60 * 1000)
+              : const Value(null),
           originalQuantityBase: quantityBase,
           unitCostMicros: Value(unitCostMicros),
           createdAt: now,
@@ -89,6 +109,7 @@ Future<String> insertBatch(
     unitCostMicros: unitCostMicros,
     refType: 'test_seed',
     refId: id,
+    userId: 'user_admin',
     note: 'seeded test batch',
     atMillis: now,
   );

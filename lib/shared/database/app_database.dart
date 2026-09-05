@@ -1,12 +1,17 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:path/path.dart' as p;
 
 import '../models/enums.dart';
+import '../models/enum_value_converter.dart';
 
 import 'seed_data.dart';
 import 'tables/accounts.dart';
 import 'tables/audit_logs.dart';
+import 'tables/backups.dart';
 import 'tables/batches.dart';
 import 'tables/cashbox_transactions.dart';
 import 'tables/categories.dart';
@@ -57,7 +62,7 @@ part 'app_database.g.dart';
   PurchaseInvoices,
   PurchaseInvoiceItems,
   PurchaseBonuses,
-  ReturnOrders,
+  Returns,
   ReturnItems,
   Expenses,
   CashboxTransactions,
@@ -70,6 +75,7 @@ part 'app_database.g.dart';
   RolePermissions,
   AuditLogs,
   LostSales,
+  Backups,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
@@ -77,6 +83,11 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.runtime() : super(driftDatabase(name: 'pharmacy_pos'));
 
   factory AppDatabase.forTesting() => AppDatabase(NativeDatabase.memory());
+
+  /// Opens a database backed by an explicit [File] at [path] — used by the
+  /// backup/restore round-trip (§37) and by migration upgrade tests.
+  factory AppDatabase.fromFilePath(String path) =>
+      AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
   int get schemaVersion => 1;
@@ -87,9 +98,20 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
           await seedDefaults(this);
         },
+        onUpgrade: _migrate,
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
           await customStatement('PRAGMA journal_mode=WAL');
         },
       );
+
+  /// Forward-only schema upgrades. New tables/columns are appended without
+  /// destructive rebuilds so existing customer databases migrate in place.
+  /// `schemaVersion` stays `1` today; when the schema evolves, this helper
+  /// receives the concrete old→new steps.
+  Future<void> _migrate(Migrator m, int from, int to) async {
+    if (from < 2) {
+      await m.createTable(backups);
+    }
+  }
 }

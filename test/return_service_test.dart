@@ -36,6 +36,7 @@ void main() {
                 itemId: itemId,
                 quantityBase: 10,
                 unitCostMicros: 10000,
+                unitTypeId: 'unit_strip',
                 batchNumber: 'B-R1',
                 expiryDate: now + 200 * 24 * 60 * 60 * 1000,
               ),
@@ -49,7 +50,7 @@ void main() {
         paymentMethod: PaymentMethod.cash,
         paidMicros: 3 * 20000,
         lines: [
-          SaleLineRequest(itemId: itemId, quantityBase: 3, unitPriceMicros: 20000),
+          SaleLineRequest(itemId: itemId, quantityBase: 3, unitPriceMicros: 20000, unitTypeId: 'unit_strip'),
         ],
       ));
       final lineId = sale.lines.single.id;
@@ -93,7 +94,7 @@ void main() {
       final movs = await (db.select(db.stockMovements)
                 ..where((m) => m.itemId.equals(itemId)))
               .get();
-      final ret = movs.firstWhere((m) => m.movementType == MovementType.saleReturn);
+      final ret = movs.firstWhere((m) => m.movementType == MovementType.sale_return);
       expect(ret.quantityBaseSigned, 2);
       expect(ret.batchId, originalBatchId);
     });
@@ -112,6 +113,7 @@ void main() {
             itemId: itemId,
             quantityBase: 5,
             unitCostMicros: 10000,
+            unitTypeId: 'unit_strip',
             batchNumber: 'B-R2',
             expiryDate: now + 200 * 24 * 60 * 60 * 1000,
           ),
@@ -123,7 +125,7 @@ void main() {
         paymentMethod: PaymentMethod.cash,
         paidMicros: 20000,
         lines: [
-          SaleLineRequest(itemId: itemId, quantityBase: 1, unitPriceMicros: 20000),
+          SaleLineRequest(itemId: itemId, quantityBase: 1, unitPriceMicros: 20000, unitTypeId: 'unit_strip'),
         ],
       ));
 

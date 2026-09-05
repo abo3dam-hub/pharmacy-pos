@@ -16,6 +16,7 @@ class SaleLineRequest {
     required this.itemId,
     required this.quantityBase,
     required this.unitPriceMicros,
+    required this.unitTypeId,
     this.vatRateBasisPoints = 0,
     this.discountBasisPoints = 0,
   });
@@ -23,6 +24,9 @@ class SaleLineRequest {
   final String itemId;
   final int quantityBase;
   final int unitPriceMicros;
+
+  /// Unit type at sell time (box/strip/…) — NOT NULL per §4.15.
+  final String unitTypeId;
   final int vatRateBasisPoints;
   final int discountBasisPoints;
 }
@@ -32,8 +36,8 @@ class SaleRequest {
     required this.invoiceNumber,
     required this.lines,
     required this.paymentMethod,
+    required this.userId,
     this.customerId,
-    this.userId,
     this.paidMicros = 0,
     this.notes,
     this.saleStatus = SaleStatus.completed,
@@ -43,7 +47,7 @@ class SaleRequest {
   final List<SaleLineRequest> lines;
   final PaymentMethod paymentMethod;
   final String? customerId;
-  final String? userId;
+  final String userId;
   final int paidMicros;
   final String? notes;
   final SaleStatus saleStatus;
@@ -78,7 +82,10 @@ class SaleService {
     if (request.lines.isEmpty) {
       throw ValidationException('فاتورة البيع بدون أصناف');
     }
-    if (request.userId != null && request.saleStatus == SaleStatus.completed) {
+    if (request.userId.isEmpty) {
+      throw ValidationException('معرف المستخدم مطلوب لفاتورة البيع');
+    }
+    if (request.saleStatus == SaleStatus.completed) {
       await _permissions.requireUserPermission(
           db, request.userId, Perm.salesCreate);
     }
@@ -104,7 +111,7 @@ class SaleService {
               paymentMethod: request.paymentMethod,
               customerId:
                   request.customerId != null ? Value(request.customerId!) : const Value(null),
-              userId: request.userId != null ? Value(request.userId!) : const Value(null),
+              userId: request.userId,
               paidMicros: Value(request.paidMicros),
               notes: request.notes != null ? Value(request.notes!) : const Value(null),
               createdAt: now,
@@ -136,6 +143,8 @@ class SaleService {
                   id: lineId,
                   invoiceId: invoiceId,
                   itemId: line.itemId,
+                  batchId: slot.batch.id,
+                  unitTypeId: line.unitTypeId,
                   quantityBaseSigned: slot.quantityBase,
                   unitPriceMicros: line.unitPriceMicros,
                   vatRateBasisPoints: Value(line.vatRateBasisPoints),

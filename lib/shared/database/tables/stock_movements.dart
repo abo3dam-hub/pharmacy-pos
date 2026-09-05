@@ -4,13 +4,14 @@ import 'batches.dart';
 import 'items.dart';
 import 'users.dart';
 
-/// Append-only stock movement ledger (سجل حركة المخزون).
-/// Every stock mutation of an item/batch must be written here first.
+/// Append-only stock movement ledger (سجل حركة المخزون) (§4.9, §10).
+/// Every stock mutation of an item/batch must be written here first. Rows are
+/// never updated or deleted; `quantity_base_signed` is the authoritative delta.
 @DataClassName('StockMovementRow')
-@TableIndex(name: 'idx_stock_movements_item', columns: {#itemId})
-@TableIndex(name: 'idx_stock_movements_batch', columns: {#batchId})
+@TableIndex(name: 'idx_stock_movements_item_created', columns: {#itemId, #createdAt})
+@TableIndex(name: 'idx_stock_movements_batch_created', columns: {#batchId, #createdAt})
 @TableIndex(name: 'idx_stock_movements_ref', columns: {#refType, #refId})
-@TableIndex(name: 'idx_stock_movements_created', columns: {#createdAt})
+@TableIndex(name: 'idx_stock_movements_type', columns: {#movementType})
 class StockMovements extends Table {
   TextColumn get id => text()();
   TextColumn get itemId => text().references(Items, #id)();
@@ -18,7 +19,7 @@ class StockMovements extends Table {
 
   TextColumn get movementType => textEnum<MovementType>()();
 
-  /// Signed delta applied to the batch; always sum matches current stock.
+  /// Signed delta applied to the batch; the running sum matches current stock.
   IntColumn get quantityBaseSigned => integer()();
 
   /// Running batch balance immediately after this movement.
@@ -31,7 +32,7 @@ class StockMovements extends Table {
   TextColumn get refType => text().nullable()();
   TextColumn get refId => text().nullable()();
 
-  TextColumn get userId => text().nullable().references(Users, #id)();
+  TextColumn get userId => text().references(Users, #id)();
   TextColumn get note => text().nullable()();
   IntColumn get createdAt => integer()();
 

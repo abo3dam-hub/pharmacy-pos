@@ -119,16 +119,17 @@ class ReturnService {
           .getSingleOrNull();
 
       final returnId = newId('ret');
-      await db.into(db.returnOrders).insert(
-            ReturnOrdersCompanion.insert(
+      await db.into(db.returns).insert(
+            ReturnsCompanion.insert(
               id: returnId,
               returnNumber: request.returnNumber,
-              type: ReturnType.saleReturn,
-              originalInvoiceId: Value(originalLine.invoiceId),
+              type: ReturnType.sale_return,
+              originalInvoiceId: originalLine.invoiceId,
+              originalInvoiceType: 'sale',
               customerId: originalInvoice?.customerId != null
                   ? Value(originalInvoice!.customerId!)
                   : const Value(null),
-              userId: Value(request.userId),
+              userId: request.userId,
               totalMicros: Value(reversalMicros),
               reason: request.reason != null ? Value(request.reason!) : const Value(null),
               notes: request.notes != null ? Value(request.notes!) : const Value(null),
@@ -142,9 +143,9 @@ class ReturnService {
             ReturnItemsCompanion.insert(
               id: newId('rit'),
               returnId: returnId,
-              originalInvoiceItemId: Value(request.originalInvoiceItemId),
+              originalInvoiceItemId: request.originalInvoiceItemId,
               itemId: itemId,
-              batchId: Value(batchId),
+              batchId: batchId,
               quantityBaseSigned: request.quantityBase,
               unitCostMicros: unitCost,
               amountMicros: reversalMicros,
@@ -160,7 +161,7 @@ class ReturnService {
         db,
         itemId: itemId,
         batchId: batchId,
-        movementType: MovementType.saleReturn,
+        movementType: MovementType.sale_return,
         quantityBaseSigned: request.quantityBase,
         unitCostMicros: unitCost,
         refType: 'return',
@@ -183,7 +184,7 @@ class ReturnService {
         },
       );
 
-      final saved = await (db.select(db.returnOrders)
+      final saved = await (db.select(db.returns)
             ..where((r) => r.id.equals(returnId)))
           .getSingle();
       final line = await (db.select(db.returnItems)

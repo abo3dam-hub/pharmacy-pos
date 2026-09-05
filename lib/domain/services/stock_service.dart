@@ -25,7 +25,9 @@ class StockService {
   /// Selects batches covering [quantityBase] base units of [itemId] using
   /// FEFO: soonest expiry first, oldest received first on ties.
   ///
-  /// Voided and zero/negative balance batches are skipped. Thrown
+  /// Non-expiring batches (`expiryDate` NULL) are valid candidates and sort
+  /// last (FIFO by creation), per §4.8: FEFO degrades to FIFO. Voided and
+  /// zero/negative balance batches are skipped. Thrown
   /// [NotEnoughStockException] if available (expiry-valid) stock is
   /// insufficient.
   Future<List<FefoAllocation>> allocateFefo(
@@ -43,12 +45,21 @@ class StockService {
               b.itemId.equals(itemId) &
               b.isVoided.equals(false) &
               b.quantityBase.isBiggerThanValue(0) &
-              b.expiryDate.isBiggerOrEqualValue(now)))
+              (b.expiryDate.isNull() |
+                  b.expiryDate.isBiggerOrEqualValue(now))))
         .get();
 
     candidates.sort((a, b) {
-      final byExpiry = a.expiryDate.compareTo(b.expiryDate);
-      if (byExpiry != 0) return byExpiry;
+      final aHasExpiry = a.expiryDate != null;
+      final bHasExpiry = b.expiryDate != null;
+      if (aHasExpiry != bHasExpiry) {
+        // Expiring batches always precede non-expiring ones.
+        return aHasExpiry ? -1 : 1;
+      }
+      if (aHasExpiry && bHasExpiry) {
+        final byExpiry = a.expiryDate!.compareTo(b.expiryDate!);
+        if (byExpiry != 0) return byExpiry;
+      }
       return a.createdAt.compareTo(b.createdAt);
     });
 
@@ -81,7 +92,8 @@ class StockService {
               b.itemId.equals(itemId) &
               b.isVoided.equals(false) &
               b.quantityBase.isBiggerThanValue(0) &
-              b.expiryDate.isBiggerOrEqualValue(now)))
+              (b.expiryDate.isNull() |
+                  b.expiryDate.isBiggerOrEqualValue(now))))
         .get();
     var total = 0;
     for (final b in rows) {
@@ -94,6 +106,7 @@ class StockService {
   /// and [tab.Items.currentStockBase] atomically.
   ///
   /// [quantityBaseSigned] is the signed delta applied to the batch/item.
+  /// [userId] is the acting user (NOT NULL per §4.9).
   /// Must run inside a transaction.
   Future<void> applyMovement(
     AppDatabase db, {
@@ -104,12 +117,15 @@ class StockService {
     required int unitCostMicros,
     String? refType,
     String? refId,
-    String? userId,
+    required String userId,
     String? note,
     int? atMillis,
   }) async {
     if (quantityBaseSigned == 0) {
       throw ValidationException('حركة مخزون صفرية غير مسموحة');
+    }
+    if (userId.isEmpty) {
+      throw ValidationException('معرف المستخدم مطلوب لتسجيل حركة المخزون');
     }
     final now = atMillis ?? DateTime.now().millisecondsSinceEpoch;
     final movementId = newId('mov');
@@ -165,7 +181,7 @@ class StockService {
             totalMicros: Value(quantityBaseSigned * unitCostMicros),
             refType: refType != null ? Value(refType) : const Value(null),
             refId: refId != null ? Value(refId) : const Value(null),
-            userId: userId != null ? Value(userId) : const Value(null),
+            userId: userId,
             note: note != null ? Value(note) : const Value(null),
             createdAt: now,
           ),

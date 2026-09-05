@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'accounts.dart';
 import 'journal_entries.dart';
 
+/// Lines composing a balanced journal entry (§4.23).
 @DataClassName('JournalEntryLineRow')
 @TableIndex(name: 'idx_journal_lines_entry', columns: {#journalEntryId})
 @TableIndex(name: 'idx_journal_lines_account', columns: {#accountId})

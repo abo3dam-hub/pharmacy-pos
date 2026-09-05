@@ -3,16 +3,25 @@ import 'categories.dart';
 import 'manufacturers.dart';
 import 'sub_categories.dart';
 import 'therapeutic_groups.dart';
-import 'units.dart';
 
+/// Items / medicines master data (§4.7, §5).
+///
+/// Every field from the specification is an explicit column. Manufacturer,
+/// main category, sub-category and therapeutic group are FKs to standalone
+/// tables — never free text. Pricing here is the *master/default* profile;
+/// batch/purchase-specific historical cost lives on `batches` (§8).
 @DataClassName('ItemRow')
 @TableIndex(name: 'idx_items_trade_name', columns: {#tradeName})
+@TableIndex(name: 'idx_items_trade_name_en', columns: {#tradeNameEn})
+@TableIndex(name: 'idx_items_scientific_name', columns: {#scientificName})
+@TableIndex(name: 'idx_items_active_ingredient', columns: {#activeIngredient})
 @TableIndex(name: 'idx_items_category', columns: {#categoryId})
 @TableIndex(name: 'idx_items_sub_category', columns: {#subCategoryId})
+@TableIndex(name: 'idx_items_therapeutic_group', columns: {#therapeuticGroupId})
 @TableIndex(name: 'idx_items_manufacturer', columns: {#manufacturerId})
 class Items extends Table {
   TextColumn get id => text()();
-  TextColumn get primaryBarcode => text().unique()();
+  TextColumn get primaryBarcode => text().nullable().unique()();
   TextColumn get secondaryBarcode => text().nullable().unique()();
   TextColumn get tradeName => text()();
   TextColumn get tradeNameEn => text().nullable()();
@@ -21,8 +30,9 @@ class Items extends Table {
   TextColumn get equivalentDrug => text().nullable()();
   TextColumn get manufacturerId =>
       text().nullable().references(Manufacturers, #id)();
-  TextColumn get categoryId =>
-      text().nullable().references(Categories, #id)();
+
+  /// Main category (التصنيف الرئيسي) — NN per §4.7.
+  TextColumn get categoryId => text().references(Categories, #id)();
   TextColumn get subCategoryId =>
       text().nullable().references(SubCategories, #id)();
   TextColumn get therapeuticGroupId =>
@@ -32,10 +42,7 @@ class Items extends Table {
   TextColumn get sizeVolume => text().nullable()();
   TextColumn get shelfLocation => text().nullable()();
 
-  /// Default base unit of measure for this item.
-  TextColumn get baseUnitId => text().nullable().references(Units, #id)();
-
-  BoolColumn get hasExpiry => boolean().withDefault(const Constant(true))();
+  BoolColumn get hasExpiry => boolean().withDefault(const Constant(false))();
   BoolColumn get printBarcodeLabel =>
       boolean().withDefault(const Constant(false))();
   BoolColumn get isOtc => boolean().withDefault(const Constant(false))();
@@ -48,25 +55,30 @@ class Items extends Table {
   BoolColumn get requiresPrescription =>
       boolean().withDefault(const Constant(false))();
 
-  /// Financial values — stored as integer micro-units (scale 4), never REAL.
+  /// Master/default pricing — integer micro-units (scale 4), never REAL (§8,
+  /// §23). Percentages are integer basis points (100 bp = 1%).
   IntColumn get costMicros => integer().withDefault(const Constant(0))();
+  IntColumn get purchaseDiscountBasisPoints =>
+      integer().withDefault(const Constant(0))();
   IntColumn get sellingPriceMicros => integer().withDefault(const Constant(0))();
-  IntColumn get wholesalePriceMicros => integer().withDefault(const Constant(0))();
-  IntColumn get minimumSalePriceMicros => integer().withDefault(const Constant(0))();
-  IntColumn get vatRateBasisPoints => integer().withDefault(const Constant(0))();
-
-  /// Percentages stored as integer basis points (100 bp = 1%).
-  IntColumn get discountBasisPoints => integer().withDefault(const Constant(0))();
-  IntColumn get maxDiscountBasisPoints =>
+  IntColumn get subUnitPriceMicros =>
       integer().withDefault(const Constant(0))();
-  IntColumn get profitTargetBasisPoints =>
+  IntColumn get wholesalePriceMicros =>
       integer().withDefault(const Constant(0))();
-  IntColumn get purchaseMarginBasisPoints =>
+  IntColumn get halfWholesalePriceMicros =>
       integer().withDefault(const Constant(0))();
-  IntColumn get saleMarginBasisPoints =>
+  IntColumn get customPrice1Micros =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get customPrice2Micros =>
+      integer().withDefault(const Constant(0))();
+  IntColumn get vatRateBasisPoints =>
       integer().withDefault(const Constant(0))();
 
-  /// Stock policy bounds expressed in base units.
+  /// Derived profit margin (computed by the price-change workflow, audited).
+  IntColumn get profitMarginBasisPoints =>
+      integer().withDefault(const Constant(0))();
+
+  /// Stock policy bounds expressed in base units (§7).
   IntColumn get minimumStockBase => integer().withDefault(const Constant(0))();
   IntColumn get maximumStockBase => integer().withDefault(const Constant(0))();
 

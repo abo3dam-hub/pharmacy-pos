@@ -9,6 +9,15 @@ class Customers extends Table {
   TextColumn get secondaryPhone => text().nullable()();
   TextColumn get email => text().nullable()();
   TextColumn get address => text().nullable()();
+
+  /// 1 = credit/account allowed (§4.11).
+  BoolColumn get hasAccount =>
+      boolean().withDefault(const Constant(false))();
+
+  IntColumn get dateOfBirth => integer().nullable()();
+  TextColumn get gender => text().nullable()();
+  TextColumn get medicalHistory => text().nullable()();
+
   TextColumn get taxVatNumber => text().nullable()();
   IntColumn get openingBalanceMicros => integer().withDefault(const Constant(0))();
   IntColumn get balanceMicros => integer().withDefault(const Constant(0))();

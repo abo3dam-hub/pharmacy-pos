@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
 
+/// Suppliers / الموردون (§4.10, §12). Balances are cached; the ledger is the
+/// authoritative source.
 @DataClassName('SupplierRow')
 @TableIndex(name: 'idx_suppliers_name', columns: {#name})
 class Suppliers extends Table {
@@ -10,6 +12,9 @@ class Suppliers extends Table {
   TextColumn get secondaryPhone => text().nullable()();
   TextColumn get email => text().nullable()();
   TextColumn get address => text().nullable()();
+
+  /// Contact Person (§4.10).
+  TextColumn get contactPerson => text().nullable()();
   TextColumn get taxVatNumber => text().nullable()();
   TextColumn get licenseRegistration => text().nullable()();
   IntColumn get openingBalanceMicros => integer().withDefault(const Constant(0))();

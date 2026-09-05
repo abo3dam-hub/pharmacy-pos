@@ -21,12 +21,14 @@ void main() {
 
   Future<void> seedSecondItem() async {
     final now = DateTime.now().millisecondsSinceEpoch;
+    await awaitCategory(db);
     await db.into(db.items).insert(ItemsCompanion.insert(
       id: 'item_panadol_extra',
-      primaryBarcode: '6281099999999',
+      primaryBarcode: Value('6281099999999'),
       tradeName: 'بانادول إكسترا',
       tradeNameEn: Value('Panadol Extra'),
       scientificName: Value('Paracetamol + Caffeine'),
+      categoryId: 'cat_test_default',
       createdAt: now,
       updatedAt: now,
     ));

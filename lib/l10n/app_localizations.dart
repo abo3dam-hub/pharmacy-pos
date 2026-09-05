@@ -110,6 +110,12 @@ abstract class AppLocalizations {
   /// **'نظام احترافي لإدارة الصيدلية و نقطة البيع'**
   String get appSlogan;
 
+  /// No description provided for @navDashboard.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرئيسية'**
+  String get navDashboard;
+
   /// No description provided for @navSale.
   ///
   /// In ar, this message translates to:
@@ -224,6 +230,66 @@ abstract class AppLocalizations {
   /// **'تأكيد'**
   String get commonConfirm;
 
+  /// No description provided for @commonClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get commonClose;
+
+  /// No description provided for @commonBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get commonBack;
+
+  /// No description provided for @commonNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'التالي'**
+  String get commonNext;
+
+  /// No description provided for @commonPrevious.
+  ///
+  /// In ar, this message translates to:
+  /// **'السابق'**
+  String get commonPrevious;
+
+  /// No description provided for @commonLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ التحميل...'**
+  String get commonLoading;
+
+  /// No description provided for @commonError.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث خطأ'**
+  String get commonError;
+
+  /// No description provided for @commonRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get commonRetry;
+
+  /// No description provided for @commonNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد'**
+  String get commonNone;
+
+  /// No description provided for @commonYes.
+  ///
+  /// In ar, this message translates to:
+  /// **'نعم'**
+  String get commonYes;
+
+  /// No description provided for @commonNo.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا'**
+  String get commonNo;
+
   /// No description provided for @commonTotal.
   ///
   /// In ar, this message translates to:
@@ -296,6 +362,36 @@ abstract class AppLocalizations {
   /// **'اسم المستخدم أو كلمة المرور غير صحيحة'**
   String get loginFailed;
 
+  /// No description provided for @userLogout.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الخروج'**
+  String get userLogout;
+
+  /// No description provided for @userRole.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدور'**
+  String get userRole;
+
+  /// No description provided for @roleAdmin.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدير'**
+  String get roleAdmin;
+
+  /// No description provided for @rolePharmacist.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيدلي'**
+  String get rolePharmacist;
+
+  /// No description provided for @roleCashier.
+  ///
+  /// In ar, this message translates to:
+  /// **'أمين الصندوق'**
+  String get roleCashier;
+
   /// No description provided for @checkout.
   ///
   /// In ar, this message translates to:
@@ -355,6 +451,174 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'شرائط'**
   String get unitStrips;
+
+  /// No description provided for @dashboardTodayOrders.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبات اليوم'**
+  String get dashboardTodayOrders;
+
+  /// No description provided for @dashboardDailySales.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبيعات اليوم'**
+  String get dashboardDailySales;
+
+  /// No description provided for @dashboardLowStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'أصناف منخفضة المخزون'**
+  String get dashboardLowStock;
+
+  /// No description provided for @dashboardProfitToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'ربح اليوم'**
+  String get dashboardProfitToday;
+
+  /// No description provided for @inventoryLowStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'منخفض المخزون'**
+  String get inventoryLowStock;
+
+  /// No description provided for @inventoryOutOfStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفد المخزون'**
+  String get inventoryOutOfStock;
+
+  /// No description provided for @saleNewSale.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيع جديد'**
+  String get saleNewSale;
+
+  /// No description provided for @saleRecentInvoices.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفواتير الأخيرة'**
+  String get saleRecentInvoices;
+
+  /// No description provided for @purchaseNewPurchase.
+  ///
+  /// In ar, this message translates to:
+  /// **'شراء جديد'**
+  String get purchaseNewPurchase;
+
+  /// No description provided for @purchaseRecent.
+  ///
+  /// In ar, this message translates to:
+  /// **'فواتير الشراء الأخيرة'**
+  String get purchaseRecent;
+
+  /// No description provided for @customersList.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة العملاء'**
+  String get customersList;
+
+  /// No description provided for @suppliersList.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة الموردين'**
+  String get suppliersList;
+
+  /// No description provided for @accountsCashbox.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصندوق'**
+  String get accountsCashbox;
+
+  /// No description provided for @accountsJournal.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفتر اليومية'**
+  String get accountsJournal;
+
+  /// No description provided for @accountsLedger.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفتر الأستاذ'**
+  String get accountsLedger;
+
+  /// No description provided for @settingsLanguage.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللغة'**
+  String get settingsLanguage;
+
+  /// No description provided for @settingsDatabase.
+  ///
+  /// In ar, this message translates to:
+  /// **'قاعدة البيانات'**
+  String get settingsDatabase;
+
+  /// No description provided for @settingsBackup.
+  ///
+  /// In ar, this message translates to:
+  /// **'النسخ الاحتياطي'**
+  String get settingsBackup;
+
+  /// No description provided for @settingsAppInfo.
+  ///
+  /// In ar, this message translates to:
+  /// **'معلومات التطبيق'**
+  String get settingsAppInfo;
+
+  /// No description provided for @settingsSchemaVersion.
+  ///
+  /// In ar, this message translates to:
+  /// **'إصدار المخطط'**
+  String get settingsSchemaVersion;
+
+  /// No description provided for @settingsVersion.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإصدار'**
+  String get settingsVersion;
+
+  /// No description provided for @itemTradeName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم التجاري'**
+  String get itemTradeName;
+
+  /// No description provided for @itemBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود'**
+  String get itemBarcode;
+
+  /// No description provided for @itemCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف'**
+  String get itemCategory;
+
+  /// No description provided for @itemUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدة'**
+  String get itemUnit;
+
+  /// No description provided for @itemCost.
+  ///
+  /// In ar, this message translates to:
+  /// **'التكلفة'**
+  String get itemCost;
+
+  /// No description provided for @itemPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر البيع'**
+  String get itemPrice;
+
+  /// No description provided for @itemStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد'**
+  String get itemStock;
 }
 
 class _AppLocalizationsDelegate

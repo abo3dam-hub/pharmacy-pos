@@ -2,31 +2,29 @@ import 'package:drift/drift.dart';
 import 'items.dart';
 import 'units.dart';
 
+/// Declares each item's canonical Base Unit + Large Unit relationship (§4.6,
+/// §7). `1` base unit is one strip/tablet/fraction; `unitsPerLarge` is the
+/// number of base units in one large (box) unit.
 @DataClassName('ItemUnitRow')
-@TableIndex(name: 'idx_item_units_unit', columns: {#unitId})
+@TableIndex(name: 'idx_item_units_item', columns: {#itemId})
+@TableIndex(name: 'idx_item_units_per_large', columns: {#unitsPerLarge})
 class ItemUnits extends Table {
   TextColumn get id => text()();
   TextColumn get itemId => text().references(Items, #id)();
-  TextColumn get unitId => text().references(Units, #id)();
-
-  /// How many base units make up one of this unit
-  /// (e.g. 1 box = 25 strips → conversion_to_base = 25).
-  IntColumn get conversionToBase => integer().withDefault(const Constant(1))();
-  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
-  BoolColumn get isSaleUsage => boolean().withDefault(const Constant(false))();
-  BoolColumn get isPurchaseUsage =>
-      boolean().withDefault(const Constant(false))();
-  BoolColumn get printBarcodeLabel =>
-      boolean().withDefault(const Constant(false))();
-  TextColumn get barcode => text().nullable().unique()();
-  TextColumn get notes => text().nullable()();
-  IntColumn get createdAt => integer()();
+  TextColumn get baseUnitId => text().references(Units, #id)();
+  TextColumn get largeUnitId => text().references(Units, #id)();
+  IntColumn get unitsPerLarge => integer().withDefault(const Constant(1))();
 
   @override
   Set<Column> get primaryKey => {id};
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {itemId, unitId},
+        {itemId, baseUnitId, largeUnitId},
+      ];
+
+  @override
+  List<String> get customConstraints => [
+        'CHECK (units_per_large >= 1)',
       ];
 }

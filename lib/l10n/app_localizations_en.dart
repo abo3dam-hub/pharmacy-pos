@@ -16,6 +16,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appSlogan => 'Professional Pharmacy Management & POS system';
 
   @override
+  String get navDashboard => 'Dashboard';
+
+  @override
   String get navSale => 'Sales';
 
   @override
@@ -73,6 +76,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonConfirm => 'Confirm';
 
   @override
+  String get commonClose => 'Close';
+
+  @override
+  String get commonBack => 'Back';
+
+  @override
+  String get commonNext => 'Next';
+
+  @override
+  String get commonPrevious => 'Previous';
+
+  @override
+  String get commonLoading => 'Loading...';
+
+  @override
+  String get commonError => 'An error occurred';
+
+  @override
+  String get commonRetry => 'Retry';
+
+  @override
+  String get commonNone => 'None';
+
+  @override
+  String get commonYes => 'Yes';
+
+  @override
+  String get commonNo => 'No';
+
+  @override
   String get commonTotal => 'Total';
 
   @override
@@ -109,6 +142,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginFailed => 'Incorrect username or password';
 
   @override
+  String get userLogout => 'Sign out';
+
+  @override
+  String get userRole => 'Role';
+
+  @override
+  String get roleAdmin => 'Admin';
+
+  @override
+  String get rolePharmacist => 'Pharmacist';
+
+  @override
+  String get roleCashier => 'Cashier';
+
+  @override
   String get checkout => 'Checkout';
 
   @override
@@ -137,4 +185,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get unitStrips => 'Strips';
+
+  @override
+  String get dashboardTodayOrders => 'Today\'s orders';
+
+  @override
+  String get dashboardDailySales => 'Today\'s sales';
+
+  @override
+  String get dashboardLowStock => 'Low-stock items';
+
+  @override
+  String get dashboardProfitToday => 'Today\'s profit';
+
+  @override
+  String get inventoryLowStock => 'Low stock';
+
+  @override
+  String get inventoryOutOfStock => 'Out of stock';
+
+  @override
+  String get saleNewSale => 'New sale';
+
+  @override
+  String get saleRecentInvoices => 'Recent invoices';
+
+  @override
+  String get purchaseNewPurchase => 'New purchase';
+
+  @override
+  String get purchaseRecent => 'Recent purchase invoices';
+
+  @override
+  String get customersList => 'Customers';
+
+  @override
+  String get suppliersList => 'Suppliers';
+
+  @override
+  String get accountsCashbox => 'Cashbox';
+
+  @override
+  String get accountsJournal => 'Journal';
+
+  @override
+  String get accountsLedger => 'Ledger';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsDatabase => 'Database';
+
+  @override
+  String get settingsBackup => 'Backup';
+
+  @override
+  String get settingsAppInfo => 'App info';
+
+  @override
+  String get settingsSchemaVersion => 'Schema version';
+
+  @override
+  String get settingsVersion => 'Version';
+
+  @override
+  String get itemTradeName => 'Trade name';
+
+  @override
+  String get itemBarcode => 'Barcode';
+
+  @override
+  String get itemCategory => 'Category';
+
+  @override
+  String get itemUnit => 'Unit';
+
+  @override
+  String get itemCost => 'Cost';
+
+  @override
+  String get itemPrice => 'Selling price';
+
+  @override
+  String get itemStock => 'Stock';
 }

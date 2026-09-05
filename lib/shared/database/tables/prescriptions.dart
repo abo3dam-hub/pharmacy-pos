@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../../models/enums.dart';
+import 'customers.dart';
 import 'users.dart';
 
 @DataClassName('PrescriptionRow')
@@ -7,6 +8,11 @@ import 'users.dart';
 class Prescriptions extends Table {
   TextColumn get id => text()();
   TextColumn get prescriptionNumber => text().unique()();
+
+  /// Patient must be linked to a customer record (§4.12).
+  TextColumn get customerId =>
+      text().references(Customers, #id)();
+
   TextColumn get patientName => text()();
   IntColumn get patientAge => integer().nullable()();
   TextColumn get patientGender => text().nullable()();
@@ -17,8 +23,12 @@ class Prescriptions extends Table {
   IntColumn get expiryAt => integer().nullable()();
   IntColumn get totalMicros => integer().withDefault(const Constant(0))();
   TextColumn get status => textEnum<PrescriptionStatus>()();
+
+  /// Scanned image path (§4.12).
+  TextColumn get imagePath => text().nullable()();
+
   TextColumn get notes => text().nullable()();
-  TextColumn get createdById => text().nullable().references(Users, #id)();
+  TextColumn get createdBy => text().references(Users, #id)();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
 

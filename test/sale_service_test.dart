@@ -31,6 +31,7 @@ void main() {
           itemId: itemId,
           quantityBase: qty,
           unitCostMicros: costMicros,
+          unitTypeId: 'unit_strip',
           batchNumber: 'B${DateTime.now().microsecondsSinceEpoch}',
           expiryDate: now + 365 * 24 * 60 * 60 * 1000,
         ),
@@ -54,6 +55,7 @@ void main() {
             itemId: itemId,
             quantityBase: 3,
             unitPriceMicros: 20000,
+            unitTypeId: 'unit_strip',
           ),
         ],
       ));
@@ -90,7 +92,7 @@ void main() {
           paymentMethod: PaymentMethod.cash,
           paidMicros: 3 * 20000,
           lines: [
-            SaleLineRequest(itemId: itemId, quantityBase: 3, unitPriceMicros: 20000),
+            SaleLineRequest(itemId: itemId, quantityBase: 3, unitPriceMicros: 20000, unitTypeId: 'unit_strip'),
           ],
         )),
         throwsA(isA<NotEnoughStockException>()),
@@ -117,7 +119,7 @@ void main() {
           paidMicros: 0,
           lines: [
             SaleLineRequest(
-                itemId: itemId, quantityBase: 1, unitPriceMicros: 20000),
+                itemId: itemId, quantityBase: 1, unitPriceMicros: 20000, unitTypeId: 'unit_strip'),
           ],
         )),
         throwsA(isA<InvalidOperationException>()),

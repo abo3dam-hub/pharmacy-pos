@@ -12,6 +12,7 @@ class PrescriptionItems extends Table {
   TextColumn get itemId => text().references(Items, #id)();
   IntColumn get quantityBase => integer()();
   TextColumn get dosage => text().nullable()();
+  TextColumn get frequency => text().nullable()();
   IntColumn get durationDays => integer().nullable()();
   TextColumn get notes => text().nullable()();
   BoolColumn get isDispensed => boolean().withDefault(const Constant(false))();

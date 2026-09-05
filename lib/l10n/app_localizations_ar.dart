@@ -16,6 +16,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appSlogan => 'نظام احترافي لإدارة الصيدلية و نقطة البيع';
 
   @override
+  String get navDashboard => 'الرئيسية';
+
+  @override
   String get navSale => 'مبيعات';
 
   @override
@@ -73,6 +76,36 @@ class AppLocalizationsAr extends AppLocalizations {
   String get commonConfirm => 'تأكيد';
 
   @override
+  String get commonClose => 'إغلاق';
+
+  @override
+  String get commonBack => 'رجوع';
+
+  @override
+  String get commonNext => 'التالي';
+
+  @override
+  String get commonPrevious => 'السابق';
+
+  @override
+  String get commonLoading => 'جارٍ التحميل...';
+
+  @override
+  String get commonError => 'حدث خطأ';
+
+  @override
+  String get commonRetry => 'إعادة المحاولة';
+
+  @override
+  String get commonNone => 'لا يوجد';
+
+  @override
+  String get commonYes => 'نعم';
+
+  @override
+  String get commonNo => 'لا';
+
+  @override
   String get commonTotal => 'الإجمالي';
 
   @override
@@ -109,6 +142,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get loginFailed => 'اسم المستخدم أو كلمة المرور غير صحيحة';
 
   @override
+  String get userLogout => 'تسجيل الخروج';
+
+  @override
+  String get userRole => 'الدور';
+
+  @override
+  String get roleAdmin => 'مدير';
+
+  @override
+  String get rolePharmacist => 'صيدلي';
+
+  @override
+  String get roleCashier => 'أمين الصندوق';
+
+  @override
   String get checkout => 'إنهاء البيع';
 
   @override
@@ -137,4 +185,88 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get unitStrips => 'شرائط';
+
+  @override
+  String get dashboardTodayOrders => 'طلبات اليوم';
+
+  @override
+  String get dashboardDailySales => 'مبيعات اليوم';
+
+  @override
+  String get dashboardLowStock => 'أصناف منخفضة المخزون';
+
+  @override
+  String get dashboardProfitToday => 'ربح اليوم';
+
+  @override
+  String get inventoryLowStock => 'منخفض المخزون';
+
+  @override
+  String get inventoryOutOfStock => 'نفد المخزون';
+
+  @override
+  String get saleNewSale => 'بيع جديد';
+
+  @override
+  String get saleRecentInvoices => 'الفواتير الأخيرة';
+
+  @override
+  String get purchaseNewPurchase => 'شراء جديد';
+
+  @override
+  String get purchaseRecent => 'فواتير الشراء الأخيرة';
+
+  @override
+  String get customersList => 'قائمة العملاء';
+
+  @override
+  String get suppliersList => 'قائمة الموردين';
+
+  @override
+  String get accountsCashbox => 'الصندوق';
+
+  @override
+  String get accountsJournal => 'دفتر اليومية';
+
+  @override
+  String get accountsLedger => 'دفتر الأستاذ';
+
+  @override
+  String get settingsLanguage => 'اللغة';
+
+  @override
+  String get settingsDatabase => 'قاعدة البيانات';
+
+  @override
+  String get settingsBackup => 'النسخ الاحتياطي';
+
+  @override
+  String get settingsAppInfo => 'معلومات التطبيق';
+
+  @override
+  String get settingsSchemaVersion => 'إصدار المخطط';
+
+  @override
+  String get settingsVersion => 'الإصدار';
+
+  @override
+  String get itemTradeName => 'الاسم التجاري';
+
+  @override
+  String get itemBarcode => 'الباركود';
+
+  @override
+  String get itemCategory => 'التصنيف';
+
+  @override
+  String get itemUnit => 'الوحدة';
+
+  @override
+  String get itemCost => 'التكلفة';
+
+  @override
+  String get itemPrice => 'سعر البيع';
+
+  @override
+  String get itemStock => 'الرصيد';
 }

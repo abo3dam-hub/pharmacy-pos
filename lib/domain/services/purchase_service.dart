@@ -15,7 +15,7 @@ import 'stock_service.dart';
 class PurchaseBonusRequest {
   const PurchaseBonusRequest({
     required this.quantityBase,
-    this.bonusType = PurchaseBonusType.freeGoods,
+    this.bonusType = PurchaseBonusType.bonus_1,
     this.note,
   });
 
@@ -29,6 +29,7 @@ class PurchaseLineRequest {
     required this.itemId,
     required this.quantityBase,
     required this.unitCostMicros,
+    required this.unitTypeId,
     required this.batchNumber,
     this.expiryDate,
     this.productionDate,
@@ -39,6 +40,9 @@ class PurchaseLineRequest {
   final String itemId;
   final int quantityBase;
   final int unitCostMicros;
+
+  /// Unit type at purchase time (box/strip/…) — NOT NULL per §4.17.
+  final String unitTypeId;
   final String batchNumber;
   final int? expiryDate;
   final int? productionDate;
@@ -52,8 +56,8 @@ class PurchaseRequest {
     required this.supplierId,
     required this.invoiceDate,
     required this.lines,
-    this.userId,
-    this.dueDate,
+    required this.userId,
+    this.expectedDate,
     this.paidMicros = 0,
     this.notes,
   });
@@ -62,8 +66,8 @@ class PurchaseRequest {
   final String supplierId;
   final int invoiceDate;
   final List<PurchaseLineRequest> lines;
-  final String? userId;
-  final int? dueDate;
+  final String userId;
+  final int? expectedDate;
   final int paidMicros;
   final String? notes;
 }
@@ -98,10 +102,11 @@ class PurchaseService {
     if (request.lines.isEmpty) {
       throw ValidationException('فاتورة الشراء بدون أصناف');
     }
-    if (request.userId != null) {
-      await _permissions.requireUserPermission(
-          db, request.userId, Perm.purchasesCreate);
+    if (request.userId.isEmpty) {
+      throw ValidationException('معرف المستخدم مطلوب لفاتورة الشراء');
     }
+    await _permissions.requireUserPermission(
+        db, request.userId, Perm.purchasesCreate);
 
     return db.transaction(() async {
       final now = DateTime.now().millisecondsSinceEpoch;
@@ -117,8 +122,10 @@ class PurchaseService {
               purchaseStatus: PurchaseStatus.received,
               supplierId: request.supplierId,
               invoiceDate: request.invoiceDate,
-              userId: request.userId != null ? Value(request.userId!) : const Value(null),
-              dueDate: request.dueDate != null ? Value(request.dueDate!) : const Value(null),
+              userId: request.userId,
+              expectedDate:
+                  request.expectedDate != null ? Value(request.expectedDate!) : const Value(null),
+              receivedDate: Value(now),
               paidMicros: Value(request.paidMicros),
               notes: request.notes != null ? Value(request.notes!) : const Value(null),
               createdAt: now,
@@ -145,7 +152,16 @@ class PurchaseService {
         );
 
         final batchId = newId('bat');
-        final expiry = line.expiryDate ?? now + (365 * 24 * 60 * 60 * 1000);
+        final item = await (db.select(db.items)
+              ..where((i) => i.id.equals(line.itemId)))
+            .getSingleOrNull();
+        final hasExpiry = item?.hasExpiry ?? false;
+        final int? expiry;
+        if (hasExpiry) {
+          expiry = line.expiryDate ?? now + (365 * 24 * 60 * 60 * 1000);
+        } else {
+          expiry = null;
+        }
         await db.into(db.batches).insert(
               BatchesCompanion.insert(
                 id: batchId,
@@ -154,7 +170,7 @@ class PurchaseService {
                 productionDate: line.productionDate != null
                     ? Value(line.productionDate!)
                     : const Value(null),
-                expiryDate: expiry,
+                expiryDate: expiry != null ? Value(expiry) : const Value(null),
                 originalQuantityBase: calc.effectiveQuantityBase,
                 unitCostMicros: Value(calc.effectiveUnitCostMicros),
                 supplierId:
@@ -174,6 +190,8 @@ class PurchaseService {
                 id: lineId,
                 invoiceId: invoiceId,
                 itemId: line.itemId,
+                batchId: Value(batchId),
+                unitTypeId: line.unitTypeId,
                 quantityBase: line.quantityBase,
                 unitCostMicros: line.unitCostMicros,
                 discountBasisPoints: Value(line.discountBasisPoints),
@@ -192,7 +210,7 @@ class PurchaseService {
                   id: newId('bon'),
                   purchaseInvoiceId: invoiceId,
                   purchaseInvoiceItemId: lineId,
-                  itemId: line.itemId,
+                  itemId: Value(line.itemId),
                   batchId: Value(batchId),
                   bonusQuantityBase: bonus.quantityBase,
                   unitCostMicros: calc.effectiveUnitCostMicros,

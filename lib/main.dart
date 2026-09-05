@@ -1,121 +1,150 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'core/config/app_config.dart';
+import 'l10n/app_localizations.dart';
+
+/// App shell (§3, §33): Arabic-first RTL POS workspace.
+///
+/// Phase 1 wires the structural workspace (localization, RTL, fonts,
+/// navigation). Module pages land in later phases; the shell renders a
+/// labeled placeholder per section so navigation is testable today.
 void main() {
-  runApp(const MyApp());
+  runApp(const PharmacyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class PharmacyApp extends StatelessWidget {
+  const PharmacyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: AppConfig.appName,
+      debugShowCheckedModeBanner: false,
+      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF00696D)),
+        fontFamily: AppConfig.fontFamilyArabic,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      locale: const Locale(AppConfig.defaultLocale),
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: const HomeShell(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+/// Persian/Arabic section list kept mirrored with §3 (roles/routes).
+enum AppSection {
+  dashboard(Icons.dashboard_outlined),
+  sale(Icons.point_of_sale),
+  inventory(Icons.inventory_2_outlined),
+  purchases(Icons.shopping_cart_outlined),
+  customers(Icons.people_outline),
+  suppliers(Icons.local_shipping_outlined),
+  accounts(Icons.account_balance_wallet_outlined),
+  reports(Icons.bar_chart),
+  settings(Icons.settings_outlined);
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+  const AppSection(this.icon);
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  final IconData icon;
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class HomeShell extends StatefulWidget {
+  const HomeShell({super.key});
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  State<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends State<HomeShell> {
+  int _index = 0;
+
+  String _label(AppLocalizations l10n, AppSection section) {
+    return switch (section) {
+      AppSection.dashboard => l10n.navDashboard,
+      AppSection.sale => l10n.navSale,
+      AppSection.inventory => l10n.navInventory,
+      AppSection.purchases => l10n.navPurchases,
+      AppSection.customers => l10n.navCustomers,
+      AppSection.suppliers => l10n.navSuppliers,
+      AppSection.accounts => l10n.navAccounts,
+      AppSection.reports => l10n.navReports,
+      AppSection.settings => l10n.navSettings,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final l10n = AppLocalizations.of(context);
+    final sections = AppSection.values;
+    final selected = sections[_index];
+
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+      body: SafeArea(
+        child: Row(
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            NavigationRail(
+              selectedIndex: _index,
+              labelType: NavigationRailLabelType.all,
+              onDestinationSelected: (i) => setState(() => _index = i),
+              destinations: [
+                for (final section in sections)
+                  NavigationRailDestination(
+                    icon: Icon(section.icon),
+                    label: Text(_label(l10n, section)),
+                  ),
+              ],
+            ),
+            Expanded(
+              child: _SectionPage(
+                icon: selected.icon,
+                title: _label(l10n, selected),
+                subtitle: l10n.appSlogan,
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    );
+  }
+}
+
+class _SectionPage extends StatelessWidget {
+  const _SectionPage({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 88, color: theme.colorScheme.primary),
+          const SizedBox(height: 16),
+          Text(title, style: theme.textTheme.headlineMedium),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ],
       ),
     );
   }

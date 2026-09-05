@@ -1,30 +1,27 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:pharmacy_pos/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('app shell renders Arabic RTL workspace', (tester) async {
+    await tester.pumpWidget(const PharmacyApp());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Arabic default locale.
+    expect(find.text('الرئيسية'), findsWidgets);
+    expect(find.text('مبيعات'), findsWidgets);
+    expect(find.text('المخزون'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    // App title is the Arabic product name.
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).title,
+      'نظام الصيدلية',
+    );
+
+    // Strategic sections are reachable via the rail.
+    await tester.tap(find.text('الإعدادات'));
     await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('الإعدادات'), findsWidgets);
   });
 }

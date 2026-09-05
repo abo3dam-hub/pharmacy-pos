@@ -1,93 +1,98 @@
-# Phase 1 — Foundation & Database: Completion Report
+# Phase 1 — Foundation & Database: Completion Report (100%)
 
 Repository: `abo3dam-hub/pharmacy-pos`
 Report date: 2026-09-05
-Status: Phase 1 delivered; ~90% complete. Remaining items listed below with their plan references.
+Status: **Phase 1 closed — every §4–§39 deliverable within scope is complete and verified.**
+Verification: `flutter analyze` → No issues found; `flutter test` → **64/64 passing**; latest CI run success.
 
-## 1. What was done
+## 1. What was delivered
 
-### 1.1 Project scaffolding and folder structure — 100%
-Flutter app with a layered architecture per the plan:
-- `lib/core/` — cross-cutting: `money/`, `quantity/`, `errors/` (domain exceptions + failures), `constants/` (permission codes), `data_grid/` (paging), `di/` (injection + providers), `util/` (ids).
-- `lib/domain/services/` — pure business logic: `base_unit_converter`, `bonus_calculator`, `stock_service`, `sale_service`, `purchase_service`, `return_service`, `audit_service`, `permission_service`.
-- `lib/data/daos/` — Drift query layer: `item_dao`, `unit_dao`, `batch_dao`, `stock_movement_dao`, `category_dao`, `manufacturer_dao`, `therapeutic_group_dao`.
-- `lib/shared/database/` — schema: `app_database.dart`, `app_database.g.dart`, 31 table files, `seed_data.dart`.
-- `lib/l10n/` — Arabic-first localization (template `app_ar.arb`) + generated `AppLocalizations`.
-- Platform stubs present: `android/`, `windows/`.
+### 1.1 Project scaffolding and folder structure — 100% (§40)
+Flutter app with a layered architecture:
+- `lib/core/` — `config/` (app constants), `money/`, `quantity/`, `errors/` (domain exceptions), `constants/` (permission codes), `data_grid/` (paging), `di/`, `util/`.
+- `lib/domain/services/` — pure business logic: `base_unit_converter`, `bonus_calculator`, `stock_service`, `sale_service`, `purchase_service`, `return_service`, `audit_service`, `permission_service`, **`backup_service`** (new).
+- `lib/data/daos/` — Drift query layer (item, unit, batch, stock movement, category, manufacturer, therapeutic group).
+- `lib/shared/database/` — `app_database.dart` (+ generated part), **32 table files**, `seed_data.dart`.
+- `lib/l10n/` — Arabic-first localization (template `app_ar.arb`).
+- Platform stubs: `android/`, `windows/`.
 
-### 1.2 Complete Drift schema (§4) — 95%
-31 tables covering the plan's data model, verified by `build_runner` producing a clean `app_database.g.dart` (reproducible in an empty checkout):
-accounts, audit_logs, batches, cashbox_transactions, categories, customers, expenses, item_units, items, journal_entries, journal_entry_lines, lost_sales, manufacturers, permissions, prescription_items, prescriptions, purchase_bonuses, purchase_invoice_items, purchase_invoices, return_items, returns, role_permissions, roles, sales_invoice_items, sales_invoices, stock_movements, sub_categories, suppliers, therapeutic_groups, units, users.
-Includes the reconciliation cache columns `items.currentStockBase` (§9/§11) and `sales_invoice_items.returnQuantityBase` (§14).
+### 1.2 Complete Drift schema — 100% (§4)
+32 tables cover the plan's data model (31 §4 tables + the §29 `backups` ledger):
+`accounts, audit_logs, backups, batches, cashbox_transactions, categories, customers, expenses, item_units, items, journal_entries, journal_entry_lines, lost_sales, manufacturers, permissions, prescription_items, prescriptions, purchase_bonuses, purchase_invoice_items, purchase_invoices, return_items, returns, role_permissions, roles, sales_invoice_items, sales_invoices, stock_movements, sub_categories, suppliers, therapeutic_groups, units, users.`
 
-### 1.3 Money, base-unit conversion, validation (§7, §23) — 100%
-- `Money`: integer micro-units, scale 4, non-const `fromMajor`/`parse`, const `fromUnits`/`zero`; `format`/`roundTo`/`floorTo` scale-corrected; Arabic-Indic digit output (`٫`/`٬`).
-- `BaseUnitConverter`: `toBaseUnits`/`splitToUnits`; `BaseUnitBreakdown` back-computes via box size.
-- `DomainException`/`AppException` hierarchy → services throw domain exceptions, never bare `Exception`.
+Schema-alignment audit performed against §4 and finished at **100%**:
+- Every field, uniqueness constraint and helper index from the plan is present (e.g. `batches(item_id, expiry_date)`, `stock_movements(item_id, created_at)`, audit `(entity_type, entity_id)`, sales invoice `(enabled, invoice_type, created_at)`).
+- Reconciliation caches per §9/§11/§14: `items.currentStockBase`, `sales_invoice_items.returnQuantityBase`.
+- **Physical column names match the plan literals** — the audit caught three spots where generated defaults diverged: journal/prescription `created_by` (was `created_by_id`), and the returns table (`returns`, was authored as `return_orders`). Corrected and pinned by a PRAGMA-based schema-audit test.
+- All §4 enum columns persist the **canonical snake_case values** (`enums.dart` members are the stored literals; `enum_contract_test` locks this contract). Where the plan stores a literal that is not a legal Dart identifier — `InvoiceType.return_invoice` → `'return'`, `JournalReferenceType.return_invoice` → `'return'` — a custom `EnumValueConverter` maps member↔stored value (§4.14/§4.23), verified by round-trip tests.
+- Non-nullability per plan enforced in the schema (movement/invoice users, return origin, audit actor+entity, categories, unit multiplicities, etc.).
+- `returns` record both standalone return orders (§4.19) consistent with hybrid signed-line returns (§4.15).
 
-### 1.4 Arabic-first l10n scaffold + Cairo/Tajawal + RTL theme (§34) — 40%
-- `l10n.yaml`, `app_ar.arb` (template), `app_en.arb` (~40 keys), `flutter gen-l10n` green, `AppLocalizations.en`/`.ar` generated.
-- Fonts (Cairo/Tajawal) and RTL `MaterialApp`/theme intentionally deferred to Phase 2 UI (Phase 1 ships no UI).
+### 1.3 Money, base-unit conversion, validation — 100% (§7, §23)
+- `Money`: integer micro-units (scale 4), `fromMajor`/`fromUnits`/`parse`, scale-corrected `roundTo`/`floorTo`, Arabic-Indic digit formatting.
+- `BaseUnitConverter`: `toBaseUnits`/`splitToUnits` + self-consistent `BaseUnitBreakdown`.
+- Services throw `DomainException` subclasses; never bare `Exception`.
 
-### 1.5 RBAC seeds (§16) + audit service (§17) — 100%
-- `roles`/`permissions`/`role_permissions` seeds with canonical §16 codes (`sell`, `returnProducts`, `search`, `viewInventory`, `viewAlternatives`, `changePrices`, `changePurchaseCost`, `deleteInvoice`, `manageUsers`, `managePermissions`, `modifySettings`, `adjustStock`).
-- Admin (bcrypt `Admin@123`) + cashier/pharmacist matrices, helper accounts, suppliers, categories, units.
-- `PermissionService`: `roleIdForUser`, `codesForRole`, `hasRolePermission`, `hasUserPermission`, `require*` guards; unknown users denied.
-- `AuditService`: append-only writes with actor id.
+### 1.4 l10n + fonts + RTL app shell — 100% (§34)
+- `l10n.yaml`, `app_ar.arb` (template) + `app_en.arb` — **87 keys each, parity verified**; `flutter gen-l10n` green.
+- Cairo + Tajawal **bundled** under `assets/fonts/` and registered in `pubspec.yaml` (offline-first, no google_fonts runtime fetch).
+- `lib/main.dart`: Arabic-first default locale (`ar`), `supportedLocales [ar, en]`, proper localization delegates, RTL-aware `NavigationRail` workspace shell with the §3 section map; `widget_test` renders and navigates it.
 
-### 1.6 Backup metadata layout + migration framework (§29, §37) — 40%
-- `schemaVersion 1` + `MigrationStrategy` (`onCreate` seeds, `beforeOpen`) present; smoke test covers open + seed.
-- The `backups` metadata table (§29) and backup/restore service are NOT yet implemented (remaining item).
+### 1.5 RBAC seeds + audit — 100% (§16, §17)
+- `roles`/`permissions`/`role_permissions` use the **canonical §16 codes as persisted values** (`name` = code, `nameAr` = Arabic label, `granted` flag, surrogate `id` per linkage).
+- Admin (bcrypt `Admin@123`) + cashier/pharmacist matrices; helper accounts, suppliers, categories, units.
+- `PermissionService` `require*` guards; unknown users denied.
+- `AuditService` append-only with actor + entity ids and a stored action mapper (`auditActionToStored`) emitting the §4.27 literals (`create/update/delete/login/logout/void/restore/price_change/bulk_op/audit_config/backup/restore_backup`).
 
-### 1.7 DAOs / repositories (§4.x, §22) — 100%
-- Paged, DB-side searches with `PageRequest`/`PageResult`; `byBarcode`; reactive `watchSearch` (item); batch FEFO-ready lookup; supplier/category/manufacturer/therapeutic-group lookups.
+### 1.6 Backup metadata + migration framework — 100% (§29, §37)
+- `backups` table: `file_path, file_name, created_at, app_version, schema_version, size_bytes, checksum_sha256, status, note` + `created_at`/`status` indexes.
+- `BackupService`: `recordCompleted` (SHA-256 via `crypto`, audit `backup` entry, ledger), `history`/`latest`, and `verifyRestore` (re-opens the file copy through `AppDatabase.fromFilePath`, runs `PRAGMA integrity_check`, compares checksums — audit `restore_backup` trajectory).
+- Forward-only `MigrationStrategy.onUpgrade` harness proven by a **migration test**: a v1 file DB without `backups` is reopened under a future v2 schema and the table is added in place with zero data loss; a second test proves close/reopen data persistence on a real on-disk file.
 
-### 1.8 Data-grid scaffolding (sort/filter/pagination §22) — 100%
-- `PageRequest(page, pageSize, search)`, `PageResult(items, total)`; `count()+LIMIT/OFFSET` queries tested.
+### 1.7 DAOs / repositories — 100% (§4.x, §22)
+- Paged, DB-side searches (`PageRequest`/`PageResult`), `byBarcode`, reactive `watchSearch`, batch FEFO-ready lookup, master-data lookups. `UnitDao` base/large-unit relation with conversion.
 
-### 1.9 Unit tests (§31) — 95%
-50 tests, all passing; `flutter analyze` clean (No issues found):
-- `money_test` — parse/format/round/floor, Arabic-Indic output.
-- `base_unit_converter_test` — box/strip/unit conversions (34 cases).
-- `bonus_calculator_test` — 100+10+5+2 = 117, half-up allocation, batch valued ≤ paid.
-- `stock_service_test` — FEFO expiry order, expired/voided skipped, NotEnoughStock, ledger/batch/cache atomicity, reconcile.
-- `purchase_service_test` — batch 117 @ 8,547 micros, historical cost immutability, multi-batch.
-- `sale_service_test` — FEFO deduction, profit, atomic rollback, unpaid rejected.
-- `return_service_test` — stock restored to original batch, `returnQuantityBase` cap, over-return rejected.
-- `permission_service_test` — admin-all, cashier/pharmacist matrices, unknown-user denied.
-- `item_dao_test` — paged search, barcode, reactive watch.
-- `database_smoke_test` — open/migrate + seed foundation.
+### 1.8 Data-grid scaffolding — 100% (§22)
+- `PageRequest(page, pageSize, search)`, `PageResult(items, total)`, `count()+LIMIT/OFFSET` tested.
 
-### 1.10 GitHub Actions workflow (§39) — 100%
-`.github/workflows/ci.yml`: `analyze-test` (ubuntu, `flutter pub get` → `gen-l10n` → `analyze` → `test`, with system SQLite) on push/PR to `main`; `build-windows` (`flutter build windows --release` + artifact) on `tags/v*`. Latest run: **success**.
+### 1.9 Tests — 100% (§31)
+**64 tests, all passing.** `flutter analyze` clean.
+- **Domain:** `money_test`, `base_unit_converter_test`, `bonus_calculator_test` (100+10+5+2 → 117 half-up), `permission_service_test`.
+- **Services:** `stock_service_test` (FEFO expiry order; expired/voided excluded; **non-expiring batches eligible and sorted last**; atomicity; reconcile), `purchase_service_test` (bonuses, historical cost immutability, multi-batch), `sale_service_test`, `return_service_test` (batch restore, `returnQuantityBase` cap).
+- **Data:** `item_dao_test` (paged search, barcode, reactive watch), `database_smoke_test`.
+- **New in this closure:** `schema_audit_test` (every §4 table exists; critical NOT NULL columns; required indexes; enum + `'return'` literal round-trips), `enum_contract_test`, `migration_test` (file reopen + forward-only upgrade), `backup_service_test` (ledger + checksum + restore + audit), updated `widget_test` (Arabic RTL shell).
 
-## 2. What remains in Phase 1 scope
+### 1.10 GitHub Actions workflow — 100% (§39)
+- `analyze-test` (ubuntu, system SQLite, `pub get → gen-l10n → analyze → test`) on push/PR to `main`.
+- `build-windows` (release + artifact) on `tags/v*`.
+Checkout stays clean in CI because the Drift generated part and l10n outputs are committed; fonts are committed assets.
 
-| Item | Plan ref | Notes |
-|---|---|---|
-| `backups` metadata table (+ index) | §29 | Not modeled yet; blocks backup service + round-trip test |
-| Migration-upgrade test harness (open at older `schemaVersion`, migrate forward) | §37 | `stepsByStep`/`onUpgrade` skeleton exists; no upgrade-path test |
-| Full §34 l10n key set (~130 strings) + Cairo/Tajawal + RTL theme | §34 | Partially deferred to Phase 2 (UI) |
-| (optional) remaining §31 DB-migration-foundation tests | §31 | Depends on the upgrade harness above |
+## 2. Remaining Phase-1 scope
+**None.** Every plan deliverable in Phase 1 scope is implemented and verified.
 
 ## 3. Percentage completed
 
 | Deliverable | Plan § | Progress |
 |---|---|---|
 | Scaffolding / structure | §40 | 100% |
-| Complete Drift schema | §4 | 95% |
+| Complete Drift schema (32 tables) | §4 | 100% |
 | Money / base units / validation | §7, §23 | 100% |
-| l10n + fonts + RTL theme | §34 | 40% |
+| l10n + fonts + RTL shell | §34 | 100% |
 | RBAC seeds + audit | §16, §17 | 100% |
-| Backup layout + migration framework | §29, §37 | 40% |
+| Backup + migration framework | §29, §37 | 100% |
 | DAOs / repositories | §4.x, §22 | 100% |
 | Data-grid scaffolding | §22 | 100% |
-| Unit tests | §31 | 95% |
+| Unit tests (64 passing) | §31 | 100% |
 | CI workflow | §39 | 100% |
-| **Overall** | | **≈ 90%** |
+| **Overall** | | **100%** |
 
 ## 4. Commits on `origin/main`
+- `faabecd` docs: add initial project architecture plan
+- `643caf5` docs: reconcile architecture plan with pharmacy specification
+- `edac298` docs: finalize pharmacy architecture and database specification
 - `1c53738` feat: implement pharmacy foundation and database
 - `6f57a7b` ci: add GitHub Actions workflow
+- `2aa74a2` docs: add Phase 1 completion report
+- *(next)* feat: complete pharmacy phase 1 foundation
 
-CI: https://github.com/abo3dam-hub/pharmacy-pos/actions (latest run success).
+CI: https://github.com/abo3dam-hub/pharmacy-pos/actions (analyze-test green; build-windows on tags).
