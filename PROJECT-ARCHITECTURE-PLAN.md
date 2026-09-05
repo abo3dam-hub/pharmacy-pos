@@ -1,8 +1,10 @@
-# Pharmacy Management & POS System — Authoritative Architecture & Implementation Blueprint
+# Pharmacy Management & POS System — Authoritative Architecture & Database Specification
 
-> **Document status:** Authoritative implementation blueprint.
-> This document is the single source of truth that reconciles the original Pharmacy Management & POS — Architecture & Database Foundation Specification with the technical implementation plan.
-> All functional requirements from the original specification are preserved in full. Nothing is omitted, simplified, renamed, or weakened.
+> **Document status:** Final technical specification.
+> This document is the single source of truth that a developer or an AI agent can rely on to implement the system **without guessing or inventing missing fields or incomplete rules**.
+> The **original Pharmacy Management & POS — Architecture & Database Foundation Specification** is the **supreme and most binding reference**. Every requirement in it is preserved in full — nothing is omitted, simplified, renamed, or weakened.
+>
+> **Scope of this document:** architecture and database specification **only**. No application code, Dart files, Drift table code, or UI is produced here.
 
 ---
 
@@ -15,7 +17,7 @@
 5. [Items / Product Model](#5-items--product-model)
 6. [Batch Model](#6-batch-model)
 7. [Units & Base Unit Quantity Model](#7-units--base-unit-quantity-model)
-8. [Pricing Model](#8-pricing-model)
+8. [Pricing & Historical Cost](#8-pricing--historical-cost)
 9. [Inventory Model](#9-inventory-model)
 10. [Stock Movement Ledger](#10-stock-movement-ledger)
 11. [Sales Model](#11-sales-model)
@@ -57,15 +59,14 @@
 
 Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that is:
 
-- **Arabic-first** professional application, with English as a secondary locale.
-- **Windows Desktop** as the primary production platform; **Android** supported for development and testing.
-- **Offline-first** with all data stored locally in a single SQLite database.
-- **Feature-based, Clean Architecture** so business logic is platform-independent and the same codebase runs on Windows and Android.
-- **Inventory, Purchases, Suppliers, Customers/Patients, Prescriptions, Invoices, Expenses, Cash Box, and a full double-entry Accounting system** with Trial Balance, Income Statement, Balance Sheet, and Account Statements.
-- **Financially precise**, storing all monetary values as integer minor currency units to avoid floating-point errors.
-- **Batch/expiry aware** (FEFO) with a dedicated batch model.
-- **Fully auditable** via an immutable audit log and a complete stock movement ledger.
-- **Extensible** for backup/restore, PDF/Excel export, advanced reports, and future synchronization.
+- **Arabic-first** professional application, with English as a secondary locale and full localization structure.
+- **Windows Desktop** as the primary production platform; **Android** supported for development/testing.
+- **Offline-first**: a **local SQLite database is the single Source of Truth**; everything works fully offline.
+- **Feature-based, Clean Architecture**, so business logic is platform-independent and the same codebase runs on Windows and Android.
+- Complete modules: **Items/Products, Inventory, Batches (FEFO), Purchases with Bonus Engine, Suppliers, Customers/Patients, Prescriptions, Sales & Sales Invoices, Hybrid Returns, Lost Sales, Expenses, Cash Box**, and a **future-ready double-entry Accounting foundation** (Trial Balance, Income Statement, Balance Sheet, Account Statements).
+- **Financially precise**: all monetary values stored as **integer smallest-currency units** — never floating-point.
+- **Fully auditable**: an immutable **Audit Log** and a complete **Stock Movement Ledger**.
+- **Extensible**: backup/restore, PDF/Excel export, advanced reports, and optional future synchronization without database redesign.
 
 ---
 
@@ -78,12 +79,12 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 | Secondary platform | Android (development/testing) |
 | State management | Riverpod (v2+, with code generation) |
 | Database | Drift (formerly Moor) over SQLite |
-| SQLite implementation | `drift` + `sqlite3_flutter_libs` (Windows) / `drift_sqflite` (Android) |
+| SQLite impl | `drift` + `sqlite3_flutter_libs` (Windows) / `drift_sqflite` (Android) |
 | Code generation | `build_runner` + `drift_dev` |
 | Navigation | GoRouter (v14+) |
-| Dependency injection | get_it + injectable |
+| DI | get_it + injectable |
 | Localization | `flutter_localizations` + `intl` + ARB files, `flutter gen-l10n` |
-| Financial types | Custom integer minor-units Money type (see §23) |
+| Financial types | Custom integer smallest-unit `Money` type (§23) |
 | Hashing | `bcrypt` |
 | UUID | `uuid` |
 | PDF | `pdf` + `printing` |
@@ -97,241 +98,938 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 
 ## 3. Architecture
 
-**Pattern:** Clean Architecture (layered) with Feature-Based Modular Structure, keeping a strict dependency rule.
+**Pattern:** Clean Architecture (layered) with Feature-Based Modular Structure and a strict dependency rule.
 
 ```
 ┌─────────────────────────────────────────────────────┐
 │                   Presentation                       │
-│  (Pages, Widgets, Controllers/Notifiers, Theme,      │
-│   Localization-aware UI, DataGrids, POS Workspace)   │
+│  (Pages, Widgets, Controllers/Notifiers, Theme, UI,  │
+│   DataGrids, POS Workspace, RTL-aware widgets)       │
 ├─────────────────────────────────────────────────────┤
 │                   Domain                             │
-│  (Entities, Use Cases, Repository Interfaces —       │
-│   pure Dart, zero framework dependencies)            │
+│  (Entities, Use Cases, Repository Interfaces,        │
+│   Domain Services: FEFO, Bonus, Alternatives, Money) │
+│   — pure Dart, zero framework dependencies           │
 ├─────────────────────────────────────────────────────┤
 │                   Data                               │
-│  (Repository Implementations, DataSources,           │
-│   Models/DTOs, Drift DAOs, File System, PDF/Excel)   │
+│  (Repository Implementations, DataSources, DTOs,     │
+│   Drift DAOs, File System, PDF/Excel)                │
 ├─────────────────────────────────────────────────────┤
 │                   Database                           │
-│  (Drift table definitions, migrations, DAOs)         │
+│  (Drift table definitions, schema versioning,        │
+│   migrations, integrity constraints)                 │
 ├─────────────────────────────────────────────────────┤
 │                Core / Shared                         │
-│  (Utils, Constants, DI, Localization, Theme, Money,  │
-│   Error Handling, Validators, Shortcuts, Scanner)    │
+│  (Money, validators, error handling, DI, l10n,       │
+│   ShortcutManager, ScannerService, AuditService)     │
 └─────────────────────────────────────────────────────┘
 ```
 
 ### Dependency Rule (authoritative)
 
-- **Domain** depends on **nothing** framework-specific. All entities and use cases are pure Dart.
+- **Domain** depends on nothing framework-specific; entities and use cases are pure Dart.
 - **Data** depends on packages (Drift, file system) but never on Flutter widgets.
-- **Database** is an implementation detail of the Data layer, reached exclusively through repositories / DAOs.
+- **Database** is an implementation detail of the Data layer, accessed only through repositories / DAOs.
 - **Presentation** depends on Flutter + Domain only.
-- **Core/Shared** hosts cross-cutting concerns (Money, validation, error handling, localization, DI, keyboard shortcuts, barcode scanning protocol).
-- Business rules live in Domain use cases and are **independent** of the UI.
-- The data layer is replaceable/evolvable without rewriting the domain or presentation layers (e.g., future network sync can be added as an additional data source).
+- **Core/Shared** hosts cross-cutting concerns (Money, validation, error handling, localization, DI, shortcuts, scanner, audit).
+- Business rules live in **Domain use cases and domain services**, independent of the UI.
+- The data layer is replaceable/evolvable without rewriting domain or presentation.
 
 ### Offline-First Strategy
 
-- All data lives in local SQLite (Drift). No server is required for core functionality.
-- No REST/GraphQL API in Phase 1; it may be added later as an *optional* synchronization layer *without* changing domain rules.
-- All CRUD, POS, reports, and accounting operate fully offline.
-- Backup/restore operates on local files (§37).
-
-### Platform Independence
-
-- The same domain + core code runs identically on Windows and Android.
-- Platform-specific differences are confined to the Database connection bootstrap and file paths (via `path_provider`).
+- **Local SQLite is the Source of Truth.** No server is required for core functionality.
+- All CRUD, POS, reports, and accounting operations work fully offline.
+- *Future* Backup / Restore / Synchronization must not require a database redesign (see §37, §30).
 
 ---
 
 ## 4. Complete Database Schema
 
-> Every table is documented with: name, purpose, every field, data type, nullable/required, default, primary key, foreign keys, unique constraints, indexes, relationships, and business rules.
+> **Conventions used in every table below**
 >
-> **Monetary columns** are stored as `INTEGER` minor currency units (see §23). Amounts such as prices, costs, discounts, taxes, balances, totals are `INTEGER` (micro/pico units as designed in §23) unless the minor-unit integer is specified. To avoid any ambiguity, all financial columns below are marked `INTEGER` (money, minor units). Quantities are `INTEGER` (base units, per §7). Timestamps are INTEGER Unix epoch (milliseconds), stored UTC; display is localized.
+> - **Money columns** → `INTEGER` (smallest currency unit; see §23). Never `REAL`.
+> - **Percentages** → `INTEGER` counting **basis points** where `100 basis points = 1%` (e.g., `15% → 1500`). Documented on each percentage column.
+> - **Quantities** → `INTEGER` in **Base Units** (§7), named with `_base` suffix.
+> - **Timestamps** → INTEGER Unix epoch **milliseconds** (UTC), display localized.
+> - `PK` = Primary Key; `FK` = Foreign Key; `NN` = NOT NULL; `nullable` = NULL allowed.
+> - **Audit:** every mutation of sensitive fields requires audit logging (§17).
 
-### ER Overview
+---
+
+### ER Overview (entities & primary relationships)
 
 ```
-[roles]──<[role_permissions]>──[permissions]
+[manufacturers] 1──<[items]
+[therapeutic_groups] 1──<[items]
+[categories] 1──<[sub_categories] 1──<[items]
+[units] 1──<[item_units] >──1 [items]
 
-[users] 1──<[sales] 1──<[sale_items] >──[items] 1──<[item_units] >──[units]
-   │    1──<[purchases] 1──<[purchase_items] >──[items] <──[batches] 1
-   │    1──<[returns] >
-   │    1──<[cashbox_transactions]
-   │    1──<[audit_log]
-   │    1──<[stock_movements]
-
-[suppliers] 1──<[purchases]
-[customers]  1──<[sales]
 [items] 1──<[batches]
 [batches] 1──<[stock_movements]
+[items] 1──<[stock_movements]
 
-[items]──<[smart_alternatives] (dynamically derived, no stored table)
+[suppliers] 1──<[purchase_invoices] 1──<[purchase_invoice_items] 1──<[purchase_bonuses]
+[purchase_invoice_items] >──[batches] (creates)
+[batch] >──[suppliers]
 
-[lost_sales]
-[prescriptions] 1──<[prescription_items]
+[customers] 1──<[sales_invoices] 1──<[sales_invoice_items] >──[batches] (FEFO sale)
+[sales_invoice_items] --(original)→ [sales_invoice_items] (hybrid returns)
+
+[returns] 1──<[return_items] (reference original invoice/item/batch)
+
+[users] 1──<[sales_invoices]
+[users] 1──<[purchase_invoices]
+[users] 1──<[stock_movements]
+[users] 1──<[cashbox_transactions]
+[users] 1──<[audit_logs]
+[users] 1──<[lost_sales]
+
+[roles] 1──<[users]
+[roles] 1──<[role_permissions] >──[permissions]
+
+[prescriptions] 1──<[prescription_items] >──[items]
+[expenses]
+[cashbox_transactions]
+[accounts] (self-referencing parent) 1──<[journal_entry_lines]
 [journal_entries] 1──<[journal_entry_lines]
-[accounts] (self-referencing parent)
+
+[smart_alternatives]: computed at query time — no stored table
 ```
 
 ---
 
-### `units`
-**Purpose:** Master list of sellable/buyable unit labels (Box, Strip, Tablet, Blister, Bottle, Ampoule, etc.) used to express item quantities and display quantities.
+### 4.1 `manufacturers`
+**Purpose:** independent master list of manufacturers (Item.Manufacturer is a **FK**, not free text).
 
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | (UUID) | Primary Key |
-| name_ar | TEXT | No | — | Arabic unit name (e.g., علبة) |
-| name_en | TEXT | Yes | NULL | English unit name |
-| is_sub_unit | INTEGER | No | 0 | 1 = sub-unit/Strip/Fraction; 0 = large unit/Box fractionable concept |
-| created_at | INTEGER | No | now | epoch ms |
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| name | TEXT | NN | — | Unique manufacturer name |
+| name_en | TEXT | nullable | NULL | |
+| phone | TEXT | nullable | NULL | |
+| notes | TEXT | nullable | NULL | |
+| is_active | INTEGER | NN | 1 | soft-delete flag |
+| created_at | INTEGER | NN | now | |
+| updated_at | INTEGER | NN | now | |
 
-**Constraints / Rules:** `name_ar` UNIQUE. Used only as a dictionary; item-unit relationships are declared in `item_units`.
-
----
-
-### `item_units`
-**Purpose:** Declares the Base Unit and Large Unit relationship for an item (see §7).
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| item_id | TEXT | No | — | FK → `items.id` |
-| base_unit_id | TEXT | No | — | FK → `units.id` (sub-unit / strip / fraction / tablet) |
-| large_unit_id | TEXT | No | — | FK → `units.id` (box) |
-| units_per_large | INTEGER | No | 1 | Number of base units per large unit (e.g., 10 strips per box) |
-
-**Unique:** `(item_id, base_unit_id, large_unit_id)`. An item has exactly one canonical Base Unit plus one Large Unit pairing (see §7 for the `TotalBaseUnits` rule).
+**Unique:** `name`. **Index:** `name`.
 
 ---
 
-### `items` (Products / Medicine Master Data)
-**Purpose:** The complete master-data record for an item / product. This is the authoritative Items model from the original specification (see §5 for the field-by-field rationale).
+### 4.2 `therapeutic_groups`
+**Purpose:** independent master list of therapeutic groups (Item.Therapeutic Group is a **FK**).
 
-| Field | Data Type | Nullable | Default | Notes |
-|-------|-----------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| **Identification** |
-| primary_barcode | TEXT | Yes | NULL | Primary Barcode; indexed; lookup-optimized |
-| secondary_barcode | TEXT | Yes | NULL | Secondary Barcode (alternative/other package barcode) |
-| trade_name_1 | TEXT | No | — | Trade Name 1 (الاسم التجاري) |
-| trade_name_2 | TEXT | Yes | NULL | Trade Name 2 (name_en / secondary trade name) |
-| scientific_name | TEXT | Yes | NULL | Scientific Name (الاسم العلمي) |
-| active_ingredients | TEXT | Yes | NULL | Active Ingredients / Composition |
-| equivalent_drug | TEXT | Yes | NULL | Equivalent Drug reference |
-| manufacturer | TEXT | Yes | NULL | Manufacturer |
-| main_category_id | TEXT | No | — | FK → `categories.id` (Main Category) |
-| sub_category_id | TEXT | Yes | NULL | FK → `categories.id` (Sub-Category, self-referencing child) |
-| therapeutic_group | TEXT | Yes | NULL | Therapeutic Group (المجموعة العلاجية) |
-| **Pharmaceutical Specifications** |
-| pharmaceutical_form | TEXT | Yes | NULL | Pharmaceutical Form (شكل صيدلاني) |
-| dose_concentration | TEXT | Yes | NULL | Dose / Concentration |
-| size_volume | TEXT | Yes | NULL | Size / Volume |
-| shelf_location | TEXT | Yes | NULL | Shelf Location |
-| **Flags** |
-| has_expiry_date | INTEGER | No | 0 | Has Expiry Date flag |
-| print_barcode_label | INTEGER | No | 0 | Print Barcode Label flag |
-| is_otc | INTEGER | No | 0 | OTC / over-the-counter flag |
-| is_controlled_drug | INTEGER | No | 0 | Controlled Drug flag |
-| scale_barcode_alert | INTEGER | No | 0 | Scale Barcode Alert flag |
-| lock_auto_price_update | INTEGER | No | 0 | Lock Automatic Price Update flag |
-| requires_prescription | INTEGER | No | 0 | Requires prescription (computed selling rule) |
-| is_active | INTEGER | No | 1 | Soft-delete / inactive flag (see §28) |
-| **Pricing (master/default — see §8)** |
-| purchase_cost | INTEGER | No | 0 | Purchase Cost (master default), money minor units |
-| purchase_discount_pct | INTEGER | No | 0 | Purchase Discount % |
-| retail_price | INTEGER | No | 0 | Public / Retail Price, money minor units |
-| sub_unit_price | INTEGER | No | 0 | Sub-unit Price, money minor units |
-| wholesale_price | INTEGER | No | 0 | Wholesale Price, money minor units |
-| half_wholesale_price | INTEGER | No | 0 | Half-Wholesale Price, money minor units |
-| custom_price_1 | INTEGER | No | 0 | Custom Price 1, money minor units |
-| custom_price_2 | INTEGER | No | 0 | Custom Price 2, money minor units |
-| vat_tax_pct | INTEGER | No | 0 | VAT / Tax %, basis points |
-| profit_margin_pct | INTEGER | No | 0 | Calculated Profit Margin % (derived, see §8) |
-| **Inventory / Stock** |
-| current_stock_base | INTEGER | No | 0 | **Cached/derived** quantity in base units (see §10). NOT the source of truth. |
-| minimum_stock_base | INTEGER | No | 0 | Reorder threshold in base units |
-| **Timestamps** |
-| created_at | INTEGER | No | now | epoch ms |
-| updated_at | INTEGER | No | now | epoch ms |
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| name_ar | TEXT | NN | — | Unique Arabic name |
+| name_en | TEXT | nullable | NULL | |
+| description | TEXT | nullable | NULL | |
+| is_active | INTEGER | NN | 1 | |
+| created_at | INTEGER | NN | now | |
+| updated_at | INTEGER | NN | now | |
 
-**Indexes:** `primary_barcode` (unique where non-null), `secondary_barcode`, `trade_name_1`, `scientific_name`, `main_category_id`, `therapeutic_group`.
+**Unique:** `name_ar`.
+
+---
+
+### 4.3 `categories` (Main Categories)
+**Purpose:** main item categories (Arabic: التصنيف الرئيسي).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| name | TEXT | NN | — | Unique Arabic name |
+| name_en | TEXT | nullable | NULL | |
+| description | TEXT | nullable | NULL | |
+| is_active | INTEGER | NN | 1 | |
+| created_at | INTEGER | NN | now | |
+
+**Unique:** `name`.
+
+---
+
+### 4.4 `sub_categories`
+**Purpose:** sub-categories belonging to one main category (Arabic: التصنيف الفرعي). A dedicated table (1-2 levels: main + sub).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| category_id | TEXT | FK→`categories.id` | — | owning main category |
+| name | TEXT | NN | — | Unique per category |
+| name_en | TEXT | nullable | NULL | |
+| description | TEXT | nullable | NULL | |
+| is_active | INTEGER | NN | 1 | |
+| created_at | INTEGER | NN | now | |
+
+**Unique:** `(category_id, name)`. **Index:** `category_id`.
+
+---
+
+### 4.5 `units`
+**Purpose:** sellable/buyable unit labels (علبة Box, شريط Strip, قرص Tablet, أمبولة Ampoule, etc.).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| name_ar | TEXT | NN | — | Unique Arabic name |
+| name_en | TEXT | nullable | NULL | |
+| created_at | INTEGER | NN | now | |
+
+**Unique:** `name_ar`.
+
+---
+
+### 4.6 `item_units`
+**Purpose:** declares each item's canonical Base Unit + Large Unit relationship (§7).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| item_id | TEXT | FK→`items.id` | — | |
+| base_unit_id | TEXT | FK→`units.id` | — | Base unit (strip/fraction/tablet) |
+| large_unit_id | TEXT | FK→`units.id` | — | Large unit (box) |
+| units_per_large | INTEGER | NN | 1 | base units per large unit, e.g., 10 |
+
+**Unique:** `(item_id, base_unit_id, large_unit_id)`. **Index:** `item_id`, `units_per_large`.
+**CHECK:** `units_per_large >= 1`.
+
+---
+
+### 4.7 `items` (Medicines / Products — master data)
+**Purpose:** the complete master-data record of a product. **Every field from the original specification is an explicit column.**
+
+#### Identification
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| primary_barcode | TEXT | nullable | NULL | Primary Barcode; lookup-optimized |
+| secondary_barcode | TEXT | nullable | NULL | Secondary Barcode |
+| trade_name_1 | TEXT | NN | — | Trade Name 1 (الاسم التجاري) |
+| trade_name_2 | TEXT | nullable | NULL | Trade Name 2 |
+| scientific_name | TEXT | nullable | NULL | Scientific Name (الاسم العلمي) |
+| active_ingredients | TEXT | nullable | NULL | Active Ingredients / Composition |
+| equivalent_drug | TEXT | nullable | NULL | Equivalent Drug (free reference / note) |
+| manufacturer_id | TEXT | FK→`manufacturers.id` | nullable | FK to independent Manufacturers table |
+| main_category_id | TEXT | FK→`categories.id` | NN | FK to Main Category |
+| sub_category_id | TEXT | FK→`sub_categories.id` | nullable | FK to Sub-Category |
+| therapeutic_group_id | TEXT | FK→`therapeutic_groups.id` | nullable | FK to independent Therapeutic Groups table |
+
+#### Pharmaceutical specifications
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| pharmaceutical_form | TEXT | nullable | NULL | شكل صيدلاني |
+| dose_concentration | TEXT | nullable | NULL | Dose / Concentration |
+| size_volume | TEXT | nullable | NULL | Size / Volume |
+| shelf_location | TEXT | nullable | NULL | Shelf Location (عينية / مكان الرف) |
+
+#### Flags
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| has_expiry_date | INTEGER | NN | 0 | Has Expiry Date |
+| print_barcode_label | INTEGER | NN | 0 | Print Barcode Label |
+| is_otc | INTEGER | NN | 0 | OTC (بدون وصفة) |
+| is_controlled_drug | INTEGER | NN | 0 | Controlled Drug (دواء مخدر/خاضع للرقابة) |
+| scale_barcode_alert | INTEGER | NN | 0 | Scale Barcode Alert |
+| lock_auto_price_update | INTEGER | NN | 0 | Lock Automatic Price Update |
+| requires_prescription | INTEGER | NN | 0 | Selling rule (وصفة إلزامية) |
+| is_active | INTEGER | NN | 1 | Soft-delete flag (§28) |
+
+#### Stock limits & info
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| minimum_stock_base | INTEGER | NN | 0 | **Minimum Stock Limit** in base units (حد أدنى) |
+| maximum_stock_base | INTEGER | NN | 0 | **Maximum Stock Limit** in base units; 0 = unlimited (حد أقصى) |
+| current_stock_base | INTEGER | NN | 0 | **Derived/cached** stock in base units (§10) — NOT source of truth |
+| usage_instructions | TEXT | nullable | NULL | **Usage Instructions** (تعليمات الاستخدام) |
+| general_notes | TEXT | nullable | NULL | **General Notes** (ملاحظات عامة) |
+| license_number | TEXT | nullable | NULL | **License Number** (رقم الترخيص) |
+
+#### Pricing (master/default — see §8)
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| purchase_cost | INTEGER | NN | 0 | Master/default Purchase Cost (money) |
+| purchase_discount_pct | INTEGER | NN | 0 | Master/default Purchase Discount % (basis points; 100 = 1%) |
+| retail_price | INTEGER | NN | 0 | Public / Retail Price (money) |
+| sub_unit_price | INTEGER | NN | 0 | Sub-unit Price (money) |
+| wholesale_price | INTEGER | NN | 0 | Wholesale Price (money) |
+| half_wholesale_price | INTEGER | NN | 0 | Half-Wholesale Price (money) |
+| custom_price_1 | INTEGER | NN | 0 | Custom Price 1 (money) |
+| custom_price_2 | INTEGER | NN | 0 | Custom Price 2 (money) |
+| vat_tax_pct | INTEGER | NN | 0 | VAT / Tax % (basis points; 100 = 1%) |
+| profit_margin_pct | INTEGER | NN | 0 | **Calculated** Profit Margin % (derived, §8; basis points) |
+
+#### Timestamps
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| created_at | INTEGER | NN | now | |
+| updated_at | INTEGER | NN | now | |
+
+**Indexes:** `primary_barcode` (unique where non-null), `secondary_barcode`, `trade_name_1`, `trade_name_2`, `scientific_name`, `active_ingredients` (prefix/search index), `manufacturer_id`, `main_category_id`, `sub_category_id`, `therapeutic_group_id`.
 
 **Business rules:**
-- A product's *master/default* pricing is stored here and is distinct from *batch/purchase-specific* cost (stored on `batches` and purchase lines). See §8.
-- Historical invoices/batches preserve their own costs and are never mutated when pricing changes.
-- Quantity fields (`current_stock_base`, `minimum_stock_base`) are stored in **base units** and derived from the Stock Movement Ledger (see §10).
+- Manufacturer, Main Category, Sub-Category, and Therapeutic Group are **FKs to standalone tables** (§4.1–4.4), not free text.
+- Master/default pricing is **distinct** from batch/purchase-specific historical cost (§8).
+- Historical invoices/batches keep their own cost and are **never mutated** when pricing changes.
+- Referential integrity is preserved even if an item is later deactivated (§28).
 
 ---
 
-### `categories`
-**Purpose:** Hierarchical item categorization (main + sub categories).
+### 4.8 `batches`
+**Purpose:** the dedicated **Batch / التشغيلة** entity. Expiry, cost, and operational quantity are **attached to the batch**, never to the item alone.
 
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| name | TEXT | No | — | Category name (Arabic-first) |
-| name_en | TEXT | Yes | NULL | English name |
-| description | TEXT | Yes | NULL | |
-| parent_id | TEXT | Yes | NULL | FK → `categories.id` (self-referencing; sub-category) |
-| is_active | INTEGER | No | 1 | inactive = soft-delete |
-| created_at | INTEGER | No | now | |
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| item_id | TEXT | FK→`items.id` | — | |
+| batch_number | TEXT | NN | — | Batch / lot number |
+| expiry_date | INTEGER | nullable | NULL | epoch ms; NULL when item `has_expiry_date`=0 |
+| remaining_qty_base | INTEGER | NN | 0 | **Remaining Quantity in Base Units** |
+| purchase_cost | INTEGER | NN | 0 | **Batch-level purchase cost** (money; effective after bonuses, §13) |
+| purchase_date | INTEGER | NN | — | Purchase date |
+| supplier_id | TEXT | FK→`suppliers.id` | nullable | |
+| bonus_qty_base | INTEGER | NN | 0 | **Bonus quantity** where applicable (base units) |
+| created_at | INTEGER | NN | now | |
+| updated_at | INTEGER | NN | now | |
 
-**Rules:** `name` UNIQUE per depth. Supports main (parent_id NULL) and sub categories (parent_id set) matching Main Category / Sub-Category on the item.
+**Unique:** `(item_id, batch_number)` — a batch number is unique per item. **Indexes:** `(item_id, expiry_date)` [FEFO], `batch_number`, `supplier_id`, `expiry_date`.
 
----
+**CHECK:** `remaining_qty_base >= 0`.
 
-### `batches`
-**Purpose:** The dedicated Batch/expiry/costing entity. Every distinct receipt of stock is tracked as one or more batches (see §6 for full rules).
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| item_id | TEXT | No | — | FK → `items.id` |
-| batch_number | TEXT | No | — | Batch / lot number |
-| expiry_date | INTEGER | Yes | NULL | Expiry date epoch ms; NULL when item `has_expiry_date` = 0 |
-| remaining_qty_base | INTEGER | No | 0 | Remaining quantity in base units (§7) |
-| purchase_cost | INTEGER | No | 0 | Batch-level purchase cost (money minor units) |
-| purchase_date | INTEGER | No | — | Date purchased, epoch ms |
-| supplier_id | TEXT | Yes | NULL | FK → `suppliers.id` |
-| bonus_qty_base | INTEGER | No | 0 | Bonus quantity where applicable, base units |
-| created_at | INTEGER | No | now | |
-| updated_at | INTEGER | No | now | |
-
-**Indexes:** `(item_id, expiry_date)` for FEFO; `batch_number`; `supplier_id`.
-
-**Business rules:**
-- An item may have many batches. **The item carries no single expiry date** — expiry is per batch.
-- FEFO selection: for normal sale, select batches sorted by `expiry_date` ascending (earliest expiry first), consuming `remaining_qty_base`.
-- **Expired batches** (`expiry_date < today`) are NEVER automatically selected for normal sale.
-- Non-expiring products: `has_expiry_date`=0 ⇒ `expiry_date`=NULL and FEFO ignores expiry (uses FIFO by purchase date).
-- Batch-level costing / inventory / returns are all tracked against `batches`.
-- When a new purchase arrives with a different cost, the item's *master* `purchase_cost` is NOT overwritten automatically (respects `lock_auto_price_update`; see §8).
+**Business rules (§6):**
+- Item ⇄ Batch: 1-to-many.
+- Batch ⇄ Supplier: many-to-1.
+- Non-expiring products: `expiry_date` = NULL, FEFO degrades to FIFO by `purchase_date`.
+- **Expired batches are never automatically selected for sale.** Normal sale selection = FEFO.
+- Batch-level costing, inventory, and returns are all tracked on the batch.
+- **Historical cost retention:** each batch keeps its own cost forever; later purchases never mutate it.
 
 ---
 
-### `stock_movements` (Stock Movement Ledger)
-**Purpose:** The complete, auditable, append-only ledger of every stock change. This is the **source of truth** for inventory; `items.current_stock_base` is a derived cache (see §10).
+### 4.9 `stock_movements` (Stock Movement Ledger)
+**Purpose:** complete, auditable, append-only ledger — the **authoritative** inventory history (§10).
 
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| item_id | TEXT | No | — | FK → `items.id` |
-| batch_id | TEXT | Yes | NULL | FK → `batches.id`; NULL when not batch-bound |
-| quantity_base | INTEGER | No | 0 | Quantity change in base units (positive/negative) |
-| movement_type | TEXT | No | — | See movement types below |
-| reference_type | TEXT | Yes | NULL | e.g., 'sale','purchase','return','adjustment' |
-| reference_id | TEXT | Yes | NULL | id of the referencing document |
-| unit_cost | INTEGER | No | 0 | Unit cost at movement time, money minor units |
-| user_id | TEXT | No | — | FK → `users.id` (who caused the change) |
-| note | TEXT | Yes | NULL | Free-text note / reason |
-| created_at | INTEGER | No | now | |
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| item_id | TEXT | FK→`items.id` | — | |
+| batch_id | TEXT | FK→`batches.id` | nullable | batch-bound when applicable |
+| quantity_base | INTEGER | NN | 0 | signed, base units |
+| movement_type | TEXT | NN | — | see list below |
+| reference_type | TEXT | nullable | NULL | e.g., sale / purchase / return / adjustment |
+| reference_id | TEXT | nullable | NULL | id of the referencing document |
+| unit_cost | INTEGER | NN | 0 | unit cost at movement time (money) |
+| user_id | TEXT | FK→`users.id` | — | who caused the change |
+| note | TEXT | nullable | NULL | note / reason |
+| created_at | INTEGER | NN | now | |
 
-**Movement types (authoritative):**
+**Movement types (authoritative):** `opening_balance`, `purchase`, `sale`, `sale_return`, `purchase_return`, `stock_adjustment`, `damaged`, `expired`, `transfer`, `manual_correction`.
+
+**Indexes:** `(item_id, created_at)`, `(batch_id, created_at)`, `(reference_type, reference_id)`, `movement_type`.
+
+**CHECK:** `quantity_base != 0`.
+
+---
+
+### 4.10 `suppliers`
+**Purpose:** supplier master (المورد).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| name | TEXT | NN | — | **Supplier Name** |
+| phone | TEXT | nullable | NULL | **Phone** |
+| secondary_phone | TEXT | nullable | NULL | **Secondary Phone** |
+| address | TEXT | nullable | NULL | **Address** |
+| contact_person | TEXT | nullable | NULL | **Contact Person** |
+| email | TEXT | nullable | NULL | |
+| tax_vat_number | TEXT | nullable | NULL | **Tax / VAT Number** |
+| license_registration | TEXT | nullable | NULL | **License / Registration** |
+| notes | TEXT | nullable | NULL | **Notes** |
+| opening_balance | INTEGER | NN | 0 | **Opening Balance** (money; seed for accounting) |
+| balance | INTEGER | NN | 0 | Running balance (money) — **derived** from ledger |
+| is_active | INTEGER | NN | 1 | Active / Inactive |
+| created_at | INTEGER | NN | now | |
+| updated_at | INTEGER | NN | now | |
+
+**Indexes:** `name`, `phone`.
+
+---
+
+### 4.11 `customers`
+**Purpose:** customer/patient master (الزبون / العميل).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| name | TEXT | NN | — | **Customer Name** |
+| phone | TEXT | nullable | NULL | **Phone** |
+| email | TEXT | nullable | NULL | |
+| address | TEXT | nullable | NULL | **Address** |
+| notes | TEXT | nullable | NULL | **Notes** |
+| has_account | INTEGER | NN | 0 | **Account Balance if enabled** (1 = credit/account allowed) |
+| opening_balance | INTEGER | NN | 0 | opening money balance |
+| balance | INTEGER | NN | 0 | **Account Balance** (money; derived when `has_account`=1) |
+| date_of_birth | INTEGER | nullable | NULL | |
+| gender | TEXT | nullable | NULL | |
+| medical_history | TEXT | nullable | NULL | |
+| is_active | INTEGER | NN | 1 | |
+| created_at | INTEGER | NN | now | |
+| updated_at | INTEGER | NN | now | |
+
+**Business rule:** **Ordinary cash sale does NOT require creating a customer.** `sales_invoices.customer_id` is nullable; walk-in cash sales proceed without a customer.
+
+---
+
+### 4.12 `prescriptions`
+**Purpose:** prescription master (وصفة).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| customer_id | TEXT | FK→`customers.id` | — | |
+| doctor_name | TEXT | nullable | NULL | |
+| notes | TEXT | nullable | NULL | |
+| image_path | TEXT | nullable | NULL | scanned image |
+| created_by | TEXT | FK→`users.id` | — | |
+| created_at | INTEGER | NN | now | |
+
+### 4.13 `prescription_items`
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| prescription_id | TEXT | FK→`prescriptions.id` | — | |
+| item_id | TEXT | FK→`items.id` | — | |
+| quantity_base | INTEGER | NN | 0 | base units |
+| dosage | TEXT | nullable | NULL | |
+| frequency | TEXT | nullable | NULL | |
+
+---
+
+### 4.14 `sales_invoices`
+**Purpose:** Sales Invoice header (فاتورة بيع).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| invoice_number | TEXT | NN | — | **Invoice Number**, unique, auto-generated |
+| invoice_type | TEXT | NN | 'sale' | **Invoice Type**: 'sale' \| 'hybrid' \| 'return' |
+| customer_id | TEXT | FK→`customers.id` | nullable | NULL = walk-in cash sale |
+| user_id | TEXT | FK→`users.id` | — | cashier |
+| date | INTEGER | NN | now | **Date/Time** |
+| subtotal | INTEGER | NN | 0 | money |
+| discount_amount | INTEGER | NN | 0 | money |
+| tax_amount | INTEGER | NN | 0 | money |
+| total | INTEGER | NN | 0 | money |
+| paid_amount | INTEGER | NN | 0 | **Paid Amount** (money) |
+| remaining_amount | INTEGER | NN | 0 | **Remaining Amount** (money; credit customers) |
+| change_amount | INTEGER | NN | 0 | change back (money) |
+| payment_method | TEXT | NN | 'cash' | 'cash' \| 'card' \| 'mixed' \| 'credit' |
+| status | TEXT | NN | 'completed' | 'completed' \| 'voided' |
+| notes | TEXT | nullable | NULL | **Notes** |
+| created_at | INTEGER | NN | now | |
+| updated_at | INTEGER | NN | now | |
+
+**Unique:** `invoice_number`. **Indexes:** `invoice_number`, `date`, `customer_id`, `user_id`, `status`.
+
+---
+
+### 4.15 `sales_invoice_items`
+**Purpose:** Sales Invoice line items. Quantity is in **base units** (§7). The line is **linked to the batch** sold (FEFO). Signed quantities enable **hybrid returns** (§14).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| invoice_id | TEXT | FK→`sales_invoices.id` | — | |
+| item_id | TEXT | FK→`items.id` | — | |
+| batch_id | TEXT | FK→`batches.id` | — | **the batch sold from (FEFO)** |
+| quantity_base | INTEGER | NN | 0 | signed (base units): + sale, − return |
+| unit_type_id | TEXT | FK→`units.id` | — | **Unit Type** at sell time (box/strip/…) |
+| unit_price | INTEGER | NN | 0 | money |
+| discount | INTEGER | NN | 0 | money |
+| tax | INTEGER | NN | 0 | money |
+| line_total | INTEGER | NN | 0 | **Line Total** (money; net of discount) |
+| cost_of_goods | INTEGER | NN | 0 | **Cost** snapshot from batch (money; signed for returns) |
+| profit | INTEGER | NN | 0 | **Profit** = `line_total − cost_of_goods` (money, signed, stored) |
+| original_invoice_item_id | TEXT | FK→`sales_invoice_items.id` | nullable | set on return lines (hybrid) |
+| return_quantity_base | INTEGER | NN | 0 | cumulative returned qty in base units |
+| notes | TEXT | nullable | NULL | |
+
+**Indexes:** `invoice_id`, `item_id`, `batch_id`, `original_invoice_item_id`.
+
+**Business rule:** every positive (sale) line references the **batch sold from (FEFO batch)**; a return line references the **original invoice line** and the **original batch**.
+
+---
+
+### 4.16 `purchase_invoices`
+**Purpose:** Purchase Invoice header (فاتورة شراء).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| purchase_number | TEXT | NN | — | **Invoice Number**, unique, auto-generated |
+| supplier_id | TEXT | FK→`suppliers.id` | — | **Supplier** |
+| user_id | TEXT | FK→`users.id` | — | **User** |
+| date | INTEGER | NN | now | **Date** |
+| subtotal | INTEGER | NN | 0 | money |
+| discount_amount | INTEGER | NN | 0 | **Discount** (money) |
+| tax_amount | INTEGER | NN | 0 | **Tax** (money) |
+| total | INTEGER | NN | 0 | **Total** (money) |
+| paid_amount | INTEGER | NN | 0 | **Paid** (money) |
+| remaining_amount | INTEGER | NN | 0 | **Remaining** (money) |
+| notes | TEXT | nullable | NULL | **Notes** |
+| status | TEXT | NN | 'pending' | **Status**: 'pending' \| 'received' \| 'cancelled' |
+| expected_date | INTEGER | nullable | NULL | |
+| received_date | INTEGER | nullable | NULL | |
+| created_at | INTEGER | NN | now | |
+| updated_at | INTEGER | NN | now | |
+
+**Unique:** `purchase_number`. **Indexes:** `purchase_number`, `date`, `supplier_id`, `status`.
+
+---
+
+### 4.17 `purchase_invoice_items`
+**Purpose:** Purchase Invoice line items.
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| purchase_id | TEXT | FK→`purchase_invoices.id` | — | |
+| item_id | TEXT | FK→`items.id` | — | **Item** |
+| batch_id | TEXT | FK→`batches.id` | nullable | **Batch** created on receive (NULL until received) |
+| quantity_base | INTEGER | NN | 0 | **Quantity** in base units (purchased, net of bonus) |
+| unit_type_id | TEXT | FK→`units.id` | — | **Unit** type |
+| unit_cost | INTEGER | NN | 0 | **Purchase Cost** (money) |
+| discount | INTEGER | NN | 0 | money |
+| tax | INTEGER | NN | 0 | money |
+| line_total | INTEGER | NN | 0 | money |
+| bonus_qty_base | INTEGER | NN | 0 | total bonus quantity in base units (from §4.18) |
+| notes | TEXT | nullable | NULL | |
+
+**Indexes:** `purchase_id`, `item_id`, `batch_id`.
+
+---
+
+### 4.18 `purchase_bonuses`
+**Purpose:** explicit Bonus Engine record (بونص / هدية). One row per bonus entry per purchase line; supports Bonus 1, Bonus 2, Gift, and future **Buy A Get B** (different item).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| purchase_invoice_item_id | TEXT | FK→`purchase_invoice_items.id` | — | owning purchase line |
+| bonus_type | TEXT | NN | — | 'bonus_1' \| 'bonus_2' \| 'gift' |
+| item_id | TEXT | FK→`items.id` | nullable | **NULL = same as purchased item**; set = different item (Buy A Get B) |
+| quantity_base | INTEGER | NN | 0 | bonus quantity in base units |
+| note | TEXT | nullable | NULL | |
+| created_at | INTEGER | NN | now | |
+
+**Indexes:** `purchase_invoice_item_id`, `bonus_type`, `item_id`.
+
+---
+
+### 4.19 `returns` / `return_items`
+**Purpose:** standalone return documents. **Hybrid return invoices** (sale + return in one invoice) additionally use signed `sales_invoice_items` (§14). Both share the same batch-restore and reversal rules and run transactionally.
+
+#### `returns`
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| return_number | TEXT | NN | — | unique, auto-generated |
+| type | TEXT | NN | — | 'sale_return' \| 'purchase_return' |
+| original_invoice_id | TEXT | FK→`sales_invoices.id`\|`purchase_invoices.id` | — | **Original Invoice** |
+| original_invoice_type | TEXT | NN | — | 'sale' \| 'purchase' |
+| customer_id | TEXT | FK→`customers.id` | nullable | sale returns |
+| supplier_id | TEXT | FK→`suppliers.id` | nullable | purchase returns |
+| user_id | TEXT | FK→`users.id` | — | |
+| total | INTEGER | NN | 0 | money |
+| status | TEXT | NN | 'completed' | |
+| created_at | INTEGER | NN | now | |
+
+#### `return_items`
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| return_id | TEXT | FK→`returns.id` | — | |
+| original_invoice_item_id | TEXT | FK→ original line table | — | **Original Invoice Item** |
+| item_id | TEXT | FK→`items.id` | — | |
+| batch_id | TEXT | FK→`batches.id` | — | **Original Batch** (restoration target) |
+| quantity_base | INTEGER | NN | 0 | signed |
+| amount | INTEGER | NN | 0 | money |
+
+**Unique:** `(return_id, original_invoice_item_id)` — one line per original line.
+
+---
+
+### 4.20 `expenses`
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| category | TEXT | NN | — | 'rent' \| 'utilities' \| 'salaries' \| 'other' |
+| description | TEXT | NN | — | |
+| amount | INTEGER | NN | 0 | money |
+| receipt_path | TEXT | nullable | NULL | |
+| created_by | TEXT | FK→`users.id` | — | |
+| created_at | INTEGER | NN | now | |
+
+---
+
+### 4.21 `cashbox_transactions`
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| type | TEXT | NN | — | 'open' \| 'close' \| 'deposit' \| 'withdraw' \| 'sale' \| 'expense' |
+| amount | INTEGER | NN | 0 | money, signed |
+| reference_id | TEXT | nullable | NULL | |
+| reference_type | TEXT | nullable | NULL | |
+| note | TEXT | nullable | NULL | |
+| user_id | TEXT | FK→`users.id` | — | |
+| created_at | INTEGER | NN | now | |
+
+---
+
+### 4.22 `accounts` (Chart of Accounts)
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| code | TEXT | NN | — | unique, e.g., '1000' |
+| name | TEXT | NN | — | Arabic-first |
+| name_en | TEXT | nullable | NULL | |
+| type | TEXT | NN | — | 'asset' \| 'liability' \| 'equity' \| 'revenue' \| 'expense' |
+| parent_id | TEXT | FK→`accounts.id` | nullable | self-referencing |
+| is_active | INTEGER | NN | 1 | |
+| created_at | INTEGER | NN | now | |
+
+### 4.23 `journal_entries`
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| entry_number | TEXT | NN | — | unique |
+| date | INTEGER | NN | — | |
+| description | TEXT | NN | — | |
+| reference_type | TEXT | NN | — | 'sale' \| 'purchase' \| 'expense' \| 'return' \| 'manual' |
+| reference_id | TEXT | nullable | NULL | |
+| is_posted | INTEGER | NN | 1 | |
+| created_by | TEXT | FK→`users.id` | — | |
+| created_at | INTEGER | NN | now | |
+
+### 4.24 `journal_entry_lines`
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| journal_entry_id | TEXT | FK→`journal_entries.id` | — | |
+| account_id | TEXT | FK→`accounts.id` | — | |
+| debit | INTEGER | NN | 0 | money |
+| credit | INTEGER | NN | 0 | money |
+
+**CHECK:** `debit >= 0`, `credit >= 0`, and per entry `debit + credit > 0`. **Business rule:** per entry, `Σ(debit) == Σ(credit)`.
+
+---
+
+### 4.25 `users`
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| username | TEXT | NN | — | unique |
+| password_hash | TEXT | NN | — | bcrypt |
+| full_name | TEXT | NN | — | |
+| role_id | TEXT | FK→`roles.id` | — | |
+| is_active | INTEGER | NN | 1 | |
+| created_at | INTEGER | NN | now | |
+| updated_at | INTEGER | NN | now | |
+
+---
+
+### 4.26 `roles` / `permissions` / `role_permissions`
+**Purpose:** granular RBAC (§16) — **not** a single role string.
+
+`roles`
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| name | TEXT | NN | — | unique; e.g., admin, pharmacist, cashier |
+| name_ar | TEXT | NN | — | Arabic display name |
+| is_active | INTEGER | NN | 1 | |
+
+`permissions`
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| code | TEXT | NN | — | unique permission code (see §16) |
+| name | TEXT | NN | — | |
+| name_ar | TEXT | NN | — | Arabic label |
+
+`role_permissions`
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| role_id | TEXT | FK→`roles.id` | — | |
+| permission_id | TEXT | FK→`permissions.id` | — | |
+| granted | INTEGER | NN | 1 | allow/deny |
+
+**Unique:** `(role_id, permission_id)`.
+
+---
+
+### 4.27 `audit_logs`
+**Purpose:** **immutable**, comprehensive audit trail (سجل التدقيق).
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| user_id | TEXT | FK→`users.id` | — | **User ID** |
+| action | TEXT | NN | — | **Action** ('create','update','delete','login','logout','void','price_change','restore',…) |
+| entity_type | TEXT | NN | — | **Entity Type** ('item','sales_invoice','purchase_invoice','batch','price',…) |
+| entity_id | TEXT | NN | — | **Entity ID** |
+| old_value | TEXT | nullable | NULL | **Old Value** (JSON snapshot) |
+| new_value | TEXT | nullable | NULL | **New Value** (JSON snapshot) |
+| reason | TEXT | nullable | NULL | **Notes / Reason** |
+| ip_address | TEXT | nullable | NULL | |
+| created_at | INTEGER | NN | now | **Date/Time** |
+
+**Indexes:** `(entity_type, entity_id)`, `user_id`, `created_at`.
+**Rules:** append-only; rows are never updated or deleted (§17, §28).
+
+---
+
+### 4.28 `lost_sales`
+
+| Field | Type | NN | Default | Notes |
+|-------|------|----|---------|-------|
+| id | TEXT | PK | UUID | |
+| requested_item_name | TEXT | NN | — | **Requested Item / Product Name** |
+| barcode | TEXT | nullable | NULL | **Barcode** if known |
+| scientific_name | TEXT | nullable | NULL | **Scientific Name** |
+| quantity_requested | INTEGER | NN | 0 | **Quantity Requested** (base units) |
+| customer_name | TEXT | nullable | NULL | **Customer info if available** |
+| customer_phone | TEXT | nullable | NULL | |
+| user_id | TEXT | FK→`users.id` | — | **User** |
+| status | TEXT | NN | 'open' | **Status**: 'open' \| 'ordered' \| 'resolved' \| 'cancelled' |
+| note | TEXT | nullable | NULL | **Notes** |
+| created_at | INTEGER | NN | now | **Date/Time** |
+| updated_at | INTEGER | NN | now | |
+
+**Indexes:** `requested_item_name`, `scientific_name`, `status`, `created_at`.
+
+---
+
+### 4.29 Required Tables — Map (verification aid)
+
+| Required entity | Table | Purpose / Reason for existence |
+|-----------------|-------|-------------------------------|
+| items / medicines | `items` | Product master data |
+| batches | `batches` | Batch/expiry/cost/quantity |
+| categories | `categories` | Main categories |
+| sub_categories | `sub_categories` | Sub-categories of a main category |
+| therapeutic_groups | `therapeutic_groups` | Independent medical classification master |
+| manufacturers | `manufacturers` | Independent manufacturer master |
+| suppliers | `suppliers` | Supplier master |
+| customers | `customers` | Customer/patient master |
+| sales_invoices | `sales_invoices` | Sales invoice header |
+| sales_invoice_items | `sales_invoice_items` | Sales invoice lines (batch-linked) |
+| purchase_invoices | `purchase_invoices` | Purchase invoice header |
+| purchase_invoice_items | `purchase_invoice_items` | Purchase invoice lines |
+| purchase_bonuses | `purchase_bonuses` | Bonus engine records |
+| stock_movements | `stock_movements` | Auditable stock ledger |
+| lost_sales | `lost_sales` | Lost sales / النواقص |
+| users | `users` | System users |
+| roles | `roles` | Roles |
+| permissions | `permissions` | Granular permissions |
+| role_permissions | `role_permissions` | Role⇄Permission matrix |
+| audit_logs | `audit_logs` | Immutable audit trail |
+| *units* | `units`, `item_units` | Base/large unit dictionary + item pairing (§7) |
+| *prescriptions* | `prescriptions`, `prescription_items` | Prescriptions module |
+| *returns* | `returns`, `return_items` | Standalone return documents (§14) |
+| *expenses* | `expenses` | Expenses module |
+| *cashbox* | `cashbox_transactions` | Cash box ledger |
+| *accounting* | `accounts`, `journal_entries`, `journal_entry_lines` | Future double-entry accounting foundation (§25) |
+
+---
+
+## 5. Items / Product Model
+
+> **Critical rule:** The Items model is **never** reduced to only name/barcode/category/price/stock. Every required field is an **explicit column** in `items` (§4.7).
+
+### Identification (explicit columns)
+| Requirement | Column |
+|-------------|--------|
+| Primary Barcode | `items.primary_barcode` |
+| Secondary Barcode | `items.secondary_barcode` |
+| Trade Name 1 | `items.trade_name_1` |
+| Trade Name 2 | `items.trade_name_2` |
+| Scientific Name | `items.scientific_name` |
+| Active Ingredients / Composition | `items.active_ingredients` |
+| Equivalent Drug | `items.equivalent_drug` |
+| Manufacturer | `items.manufacturer_id` FK → `manufacturers` |
+| Main Category | `items.main_category_id` FK → `categories` |
+| Sub-Category | `items.sub_category_id` FK → `sub_categories` |
+| Therapeutic Group | `items.therapeutic_group_id` FK → `therapeutic_groups` |
+
+### Pharmaceutical Specifications
+| Requirement | Column |
+|-------------|--------|
+| Pharmaceutical Form | `items.pharmaceutical_form` |
+| Dose / Concentration | `items.dose_concentration` |
+| Size / Volume | `items.size_volume` |
+| Shelf Location | `items.shelf_location` |
+
+### Flags
+| Requirement | Column |
+|-------------|--------|
+| Has Expiry Date | `items.has_expiry_date` |
+| Print Barcode Label | `items.print_barcode_label` |
+| OTC | `items.is_otc` |
+| Controlled Drug | `items.is_controlled_drug` |
+| Scale Barcode Alert | `items.scale_barcode_alert` |
+| Lock Automatic Price Update | `items.lock_auto_price_update` |
+
+### Units
+| Requirement | Table |
+|-------------|-------|
+| Large Unit / Box | `item_units.large_unit_id` → `units` |
+| Sub-unit / Strip / Fraction | `item_units.base_unit_id` → `units` |
+| Number of Sub-units per Large Unit | `item_units.units_per_large` |
+
+### Stock
+| Requirement | Column |
+|-------------|--------|
+| Minimum Stock Limit | `items.minimum_stock_base` |
+| Maximum Stock Limit | `items.maximum_stock_base` |
+| Usage Instructions | `items.usage_instructions` |
+| General Notes | `items.general_notes` |
+| License Number | `items.license_number` |
+
+### Pricing
+| Requirement | Column |
+|-------------|--------|
+| Purchase Cost | `items.purchase_cost` (master default) + `batches.purchase_cost` (historical) |
+| Purchase Discount % | `items.purchase_discount_pct` |
+| Public / Retail Price | `items.retail_price` |
+| Sub-unit Price | `items.sub_unit_price` |
+| Wholesale Price | `items.wholesale_price` |
+| Half-Wholesale Price | `items.half_wholesale_price` |
+| Custom Price 1 | `items.custom_price_1` |
+| Custom Price 2 | `items.custom_price_2` |
+| VAT / Tax % | `items.vat_tax_pct` |
+| Calculated Profit Margin % | `items.profit_margin_pct` (derived) |
+
+None of these fields is summarized in prose only — each is an explicit schema column.
+
+---
+
+## 6. Batch Model
+
+`batches` (§4.8) is the **dedicated batch entity**. Minimum fields present:
+
+- ✅ ID — `id`
+- ✅ Item ID — `item_id` (FK)
+- ✅ Batch Number — `batch_number`
+- ✅ Expiry Date — `expiry_date`
+- ✅ Remaining Quantity in Base Units — `remaining_qty_base`
+- ✅ Purchase Cost — `purchase_cost`
+- ✅ Purchase Date — `purchase_date`
+- ✅ Supplier ID — `supplier_id` (FK)
+- ✅ Bonus Quantity where applicable — `bonus_qty_base`
+- ✅ Created At — `created_at`
+- ✅ Updated At — `updated_at`
+
+### Rules
+
+- **Batch ⇄ Item:** one item has many batches.
+- **Batch ⇄ Supplier:** many batches to one supplier.
+- **Unique rules:** `(item_id, batch_number)` unique.
+- **Indexes:** `(item_id, expiry_date)`, `batch_number`, `supplier_id`, `expiry_date`.
+- **Non-expiring products:** `expiry_date` = NULL; FEFO → FIFO by `purchase_date`.
+- **Prevent selling expired batches:** FEFO selection excludes batches where `expiry_date < today`. An expired batch is **never** automatically selected for sale.
+- **Batch selection at sale:** earliest expiry first (FEFO), consuming `remaining_qty_base`, always in **base units** (§7).
+- **Return quantity restoration:** returns restore quantity to the **original batch** (§14). Never a random batch.
+- **Historical cost retention:** each batch's `purchase_cost` is final; newer purchases never alter it (§8).
+
+> **Note:** `expiry_date` on `items` is **not** used as the inventory source. Expiry, cost, and operational quantity belong **on the batch**.
+
+---
+
+## 7. Units & Base Unit Quantity Model
+
+**Authoritative rule:** **TotalBaseUnits is the only authoritative inventory quantity.**
+
+- Every item has one **Base Unit** (شريط/قرص/وحدة جزئية) and one **Large Unit** (علبة), with `units_per_large` = number of base units per large unit — declared in `item_units`.
+- All authoritative quantities are stored as **base-unit integers** in the `_base` columns:
+  - `batches.remaining_qty_base`
+  - `stock_movements.quantity_base`
+  - `sales_invoice_items.quantity_base`
+  - `purchase_invoice_items.quantity_base`
+  - `purchase_bonuses.quantity_base`
+  - `return_items.quantity_base`
+  - `items.current_stock_base`, `minimum_stock_base`, `maximum_stock_base`
+- **Prohibited:** independent, conflicting authoritative fields such as `boxes_stock + strips_stock`. The system stores one number (base units) and derives the rest.
+
+### How conversion works
+```
+1 Box = 10 Strips (base unit = Strip)
+3 Boxes + 4 Strips → TotalBaseUnits = (3 × 10) + 4 = 34
+```
+
+- **Box → Base Units:** `base = qty_boxes × units_per_large`
+- **Strip/Fraction → Base Units:** `base = qty_strips × 1` (1:1)
+- **Display (Box + remainder):** `boxes = base ~/ units_per_large`, `remainder = base % units_per_large` → "3 علب + 4 شرائط". Display is always **derived**, never stored as two conflicting numbers.
+
+### How every operation uses base units
+| Operation | Behavior |
+|-----------|----------|
+| **Sales** | Cashier may enter in boxes and/or strips; each line is converted and stored as `quantity_base`; `unit_type_id` records the display unit at sale time (line price is per unit type, converted consistently). |
+| **Returns** | Reverse in base units against the original batch. |
+| **Purchases** | Entered and stored in base units; bonuses are base units; effective quantity (§13) is total base units. |
+| **Stock-taking (جرد)** | Counts converted (boxes→base, strips→1:1) before adjustment; the adjustment movement is in base units. |
+| **Adjustments** | `stock_movements.quantity_base` is the base-unit delta. |
+| **FEFO** | Consumption and remaining quantities are base units. |
+| **Reports** | All aggregation is in base units; display breakdown is derived for humans only. |
+| **Profit** | Uses base-unit quantities with money in integer minor units. |
+
+---
+
+## 8. Pricing & Historical Cost
+
+### Master/Default pricing vs Batch/Purchase-specific historical cost (explicit separation)
+
+| Concept | Where | Mutability |
+|---------|-------|-----------|
+| **Master/default pricing** | `items` (`purchase_cost`, `retail_price`, `wholesale_price`, `sub_unit_price`, `half_wholesale_price`, `custom_price_1/2`, `vat_tax_pct`, `purchase_discount_pct`, `profit_margin_pct`) | Editable through the **price-change workflow** — always audited (§17). Optional auto-update from purchases **only if** `lock_auto_price_update` = 0. |
+| **Batch/purchase-specific historical cost** | `batches.purchase_cost` + `purchase_invoice_items.unit_cost` | **Immutable after entry.** Never overwritten by later purchases. |
+| **Actual Batch Cost** | `batches.purchase_cost` = **effective unit cost after bonuses** (Total Actual Cost ÷ Total Effective Quantity, §13) | Set once when the purchase/purchase line is received. |
+| **Selling Price** | `items.retail_price` (default) + chosen price tier at sale time | Per-invoice snapshot on `sales_invoice_items.unit_price`. |
+| **Profit** | `sales_invoice_items.profit = line_total − cost_of_goods` (cost snapshot from the batch at sale time) | Stored at sale time; historical profit is never recomputed with later prices. |
+| **Historical Cost** | preserved per batch and per `sales_invoice_items.cost_of_goods` and per `purchase_invoice_items.unit_cost` | Immutable history. |
+
+### Rules
+1. A newer purchase with a different cost **never** changes existing batches or historical invoices.
+2. Only the **master default** may change — guarded by `lock_auto_price_update` and always **audited** (old/new price snapshot + reason).
+3. `profit_margin_pct` is **derived** from master cost and retail price, using a configured convention; it is recomputed by the price workflow and **audited**.
+4. Financial columns are **integer money**; percentage columns are integer **basis points** (§23).
+
+---
+
+## 9. Inventory Model
+
+- Inventory = `items.current_stock_base` (cached/derived total) + `batches.remaining_qty_base` (per batch) + **Stock Movement Ledger** (`stock_movements`, authoritative).
+- **Source of truth:** the ledger. `current_stock_base` is derived and periodically reconciled (§10).
+- Low/high stock alerts compare `current_stock_base` against `minimum_stock_base` / `maximum_stock_base`.
+- Stock adjustments are ledger movements of type `stock_adjustment` (or `damaged`, `expired`, `manual_correction`), permission-gated by `adjust_stock`, and audited (§16, §17).
+
+---
+
+## 10. Stock Movement Ledger
+
+**Every stock-changing operation MUST create one or more `stock_movements` rows inside the same transaction.**
+The ledger is able to **explain why an item's quantity changed** (movement type + reference + user + note).
+
+Movement types (`stock_movements.movement_type`):
 - `opening_balance`
 - `purchase`
 - `sale`
@@ -343,657 +1041,100 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 - `transfer`
 - `manual_correction`
 
-**Indexes:** `(item_id, created_at)`, `(batch_id)`, `(reference_type, reference_id)`, `movement_type`.
+Each movement records: Item ID, Batch ID (where applicable), Quantity in Base Units, Movement Type, Reference Type, Reference ID, Unit Cost, User ID, Created At, Notes (§4.9).
 
-**Business rules:**
-- Every stock-changing operation MUST create one or more ledger rows **inside the same transaction** as the parent operation (§26).
-- `items.current_stock_base` is a **derived/cached** value recomputed from the ledger sum — it is explicitly NOT the sole source of truth.
-- `quantity_base` is authoritative in base units; display quantities are derived (§7).
-- Ledger rows are immutable (append-only) — see §28.
-
----
-
-### `suppliers`
-**Purpose:** Supplier master data.
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| name | TEXT | No | — | Supplier name (Arabic-first) |
-| contact_person | TEXT | Yes | NULL | |
-| phone | TEXT | Yes | NULL | |
-| email | TEXT | Yes | NULL | |
-| address | TEXT | Yes | NULL | |
-| tax_number | TEXT | Yes | NULL | |
-| balance | INTEGER | No | 0 | Running balance, money minor units (derived from ledger/accounting) |
-| is_active | INTEGER | No | 1 | inactive = soft-delete |
-| created_at | INTEGER | No | now | |
-| updated_at | INTEGER | No | now | |
-
-**Rules:** Supplier balances are derived from the accounting/purchases ledger; never edited manually.
-
----
-
-### `customers`
-**Purpose:** Customer / Patient master data.
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| name | TEXT | No | — | Customer name |
-| phone | TEXT | Yes | NULL | |
-| email | TEXT | Yes | NULL | |
-| date_of_birth | INTEGER | Yes | NULL | epoch ms |
-| gender | TEXT | Yes | NULL | |
-| address | TEXT | Yes | NULL | |
-| medical_history | TEXT | Yes | NULL | |
-| balance | INTEGER | No | 0 | Running balance, money minor units (derived) |
-| is_active | INTEGER | No | 1 | |
-| created_at | INTEGER | No | now | |
-| updated_at | INTEGER | No | now | |
-
----
-
-### `prescriptions`
-**Purpose:** Prescription master (Arabic: وصفة).
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| customer_id | TEXT | No | — | FK → `customers.id` |
-| doctor_name | TEXT | Yes | NULL | |
-| notes | TEXT | Yes | NULL | |
-| image_path | TEXT | Yes | NULL | scanned image |
-| created_by | TEXT | No | — | FK → `users.id` |
-| created_at | INTEGER | No | now | |
-
-### `prescription_items`
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| prescription_id | TEXT | No | — | FK → `prescriptions.id` |
-| item_id | TEXT | No | — | FK → `items.id` |
-| quantity | INTEGER | No | 0 | base units |
-| dosage | TEXT | Yes | NULL | |
-| frequency | TEXT | Yes | NULL | |
-
----
-
-### `sales`
-**Purpose:** Sales / sales invoice header (Arabic: فاتورة بيع). Financial amounts are money minor units.
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| invoice_number | TEXT | No | — | Unique, auto-generated |
-| customer_id | TEXT | Yes | NULL | FK → `customers.id` |
-| user_id | TEXT | No | — | FK → `users.id` (cashier) |
-| subtotal | INTEGER | No | 0 | money minor units |
-| discount_amount | INTEGER | No | 0 | money minor units |
-| tax_amount | INTEGER | No | 0 | money minor units |
-| total | INTEGER | No | 0 | money minor units |
-| payment_method | TEXT | No | — | 'cash','card','mixed' |
-| amount_paid | INTEGER | No | 0 | money minor units |
-| change_amount | INTEGER | No | 0 | money minor units |
-| status | TEXT | No | 'completed' | 'completed','voided' |
-| is_return | INTEGER | No | 0 | 1 when this document is a return/credit |
-| created_at | INTEGER | No | now | |
-
-### `sale_items`
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| sale_id | TEXT | No | — | FK → `sales.id` |
-| item_id | TEXT | No | — | FK → `items.id` |
-| batch_id | TEXT | Yes | NULL | FK → `batches.id` (batch actually sold — FEFO) |
-| quantity_base | INTEGER | No | 0 | signed; +/- for hybrid returns (§14) |
-| unit_price | INTEGER | No | 0 | money minor units |
-| discount | INTEGER | No | 0 | money minor units |
-| total | INTEGER | No | 0 | money minor units |
-| cost_of_goods | INTEGER | No | 0 | batch cost at sale time, money minor units (for profit) |
-
-**Rules:** Cost of goods is snapshotted from the batch at sale time so historical profit is never distorted.
-
----
-
-### `purchases`
-**Purpose:** Purchase / purchase invoice header (Arabic: فاتورة شراء). Financial amounts are money minor units.
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| purchase_number | TEXT | No | — | Unique, auto-generated |
-| supplier_id | TEXT | No | — | FK → `suppliers.id` |
-| user_id | TEXT | No | — | FK → `users.id` |
-| subtotal | INTEGER | No | 0 | money minor units |
-| discount_amount | INTEGER | No | 0 | money minor units |
-| tax_amount | INTEGER | No | 0 | money minor units |
-| total | INTEGER | No | 0 | money minor units |
-| status | TEXT | No | 'pending' | 'pending','received','cancelled' |
-| expected_date | INTEGER | Yes | NULL | |
-| received_date | INTEGER | Yes | NULL | |
-| created_at | INTEGER | No | now | |
-
-### `purchase_items`
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| purchase_id | TEXT | No | — | FK → `purchases.id` |
-| item_id | TEXT | No | — | FK → `items.id` |
-| batch_id | TEXT | Yes | NULL | FK → `batches.id` (created batch, set on receive) |
-| quantity_base | INTEGER | No | 0 | purchased quantity in base units (net of bonuses) |
-| received_quantity_base | INTEGER | No | 0 | received quantity in base units |
-| unit_cost | INTEGER | No | 0 | money minor units |
-| total | INTEGER | No | 0 | money minor units |
-| bonus_1_qty_base | INTEGER | No | 0 | Bonus 1 quantity (base units) |
-| bonus_2_qty_base | INTEGER | No | 0 | Bonus 2 quantity (base units) |
-| gift_qty_base | INTEGER | No | 0 | Gift quantity (base units) |
-| bonus_reference_item_id | TEXT | Yes | NULL | FK → `items.id` when bonus item differs from purchased item (§13) |
-
-**Rules:** Bonus fields support the bonus engine (§13). Effective unit cost is computed as **Total Actual Cost / Total Effective Quantity**.
-
----
-
-### `returns`
-**Purpose:** Hybrid Return documents — a return may contain both positive and negative line quantities and must reverse revenue, cost, profit, and stock transactionally (§14).
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| return_number | TEXT | No | — | Unique, auto-generated |
-| type | TEXT | No | — | 'sale_return','purchase_return' |
-| original_invoice_id | TEXT | No | — | FK → `sales.id` or `purchases.id` (the original document) |
-| original_invoice_type | TEXT | No | — | 'sale','purchase' |
-| customer_id | TEXT | Yes | NULL | FK → `customers.id` (for sale returns) |
-| supplier_id | TEXT | Yes | NULL | FK → `suppliers.id` (for purchase returns) |
-| user_id | TEXT | No | — | FK → `users.id` |
-| total | INTEGER | No | 0 | money minor units |
-| status | TEXT | No | 'completed' | |
-| created_at | INTEGER | No | now | |
-
-### `return_items`
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| return_id | TEXT | No | — | FK → `returns.id` |
-| original_invoice_item_id | TEXT | No | — | FK → original `sale_items.id` / `purchase_items.id` |
-| item_id | TEXT | No | — | FK → `items.id` |
-| batch_id | TEXT | No | — | FK → `batches.id` (original batch) |
-| quantity_base | INTEGER | No | 0 | signed (see §14) |
-| amount | INTEGER | No | 0 | money minor units |
-
-**Rules:** Returns reference the **original invoice, original invoice item, and original batch**. Returned stock is restored to the **original batch** whenever valid; arbitrary return-to-another-batch is prevented (§14).
-
----
-
-### `expenses`
-**Purpose:** Expense records (Arabic: مصروف).
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| category | TEXT | No | — | 'rent','utilities','salaries','other' |
-| description | TEXT | No | — | |
-| amount | INTEGER | No | 0 | money minor units |
-| receipt_path | TEXT | Yes | NULL | |
-| created_by | TEXT | No | — | FK → `users.id` |
-| created_at | INTEGER | No | now | |
-
----
-
-### `cashbox_transactions`
-**Purpose:** Cash Box ledger (Arabic: الصندوق).
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| type | TEXT | No | — | 'open','close','deposit','withdraw','sale','expense' |
-| amount | INTEGER | No | 0 | money minor units (signed) |
-| reference_id | TEXT | Yes | NULL | |
-| reference_type | TEXT | Yes | NULL | |
-| note | TEXT | Yes | NULL | |
-| user_id | TEXT | No | — | FK → `users.id` |
-| created_at | INTEGER | No | now | |
-
----
-
-### `accounts` (Chart of Accounts)
-**Purpose:** Double-entry accounting foundation (see §25).
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| code | TEXT | No | — | Unique account code, e.g., '1000' |
-| name | TEXT | No | — | Arabic-first name |
-| name_en | TEXT | Yes | NULL | |
-| type | TEXT | No | — | 'asset','liability','equity','revenue','expense' |
-| parent_id | TEXT | Yes | NULL | FK → `accounts.id` (self-referencing) |
-| is_active | INTEGER | No | 1 | |
-| created_at | INTEGER | No | now | |
-
-### `journal_entries`
-**Purpose:** Accounting journal header (Arabic: قيد محاسبي).
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| entry_number | TEXT | No | — | Unique, auto-generated |
-| date | INTEGER | No | — | epoch ms |
-| description | TEXT | No | — | |
-| reference_type | TEXT | No | — | 'sale','purchase','expense','return','manual' |
-| reference_id | TEXT | Yes | NULL | |
-| is_posted | INTEGER | No | 1 | |
-| created_by | TEXT | No | — | FK → `users.id` |
-| created_at | INTEGER | No | now | |
-
-### `journal_entry_lines`
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| journal_entry_id | TEXT | No | — | FK → `journal_entries.id` |
-| account_id | TEXT | No | — | FK → `accounts.id` |
-| debit | INTEGER | No | 0 | money minor units |
-| credit | INTEGER | No | 0 | money minor units |
-
-**Rules:** Double-entry validation: per entry, sum(debit) == sum(credit). All amounts in money minor units.
-
----
-
-### `users`
-**Purpose:** System users (Arabic: المستخدمون). See §16 for the roles/permissions model.
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| username | TEXT | No | — | Unique |
-| password_hash | TEXT | No | — | bcrypt hash |
-| full_name | TEXT | No | — | |
-| role_id | TEXT | No | — | FK → `roles.id` |
-| is_active | INTEGER | No | 1 | |
-| created_at | INTEGER | No | now | |
-| updated_at | INTEGER | No | now | |
-
----
-
-### `roles` / `permissions` / `role_permissions`
-**Purpose:** Granular RBAC (§16). Explicitly **not** a single role string.
-
-`roles`
-| Field | Type | Nullable | Default | Notes |
-|-------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| name | TEXT | No | — | Unique role name |
-| name_ar | TEXT | No | — | Arabic role name |
-| is_active | INTEGER | No | 1 | |
-
-`permissions`
-| Field | Type | Nullable | Default | Notes |
-|-------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| code | TEXT | No | — | Unique permission code (e.g., 'sell','return','view_inventory','change_prices','change_purchase_cost','delete_invoice','manage_users','manage_permissions','modify_settings','adjust_stock') |
-| name | TEXT | No | — | |
-| name_ar | TEXT | No | — | Arabic label |
-
-`role_permissions`
-| Field | Type | Nullable | Default | Notes |
-|-------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| role_id | TEXT | No | — | FK → `roles.id` |
-| permission_id | TEXT | No | — | FK → `permissions.id` |
-| granted | INTEGER | No | 1 | allow/deny |
-
-**Unique:** `(role_id, permission_id)`.
-
----
-
-### `audit_log`
-**Purpose:** Immutable audit trail (Arabic: سجل التدقيق) for sensitive operations (§17).
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| user_id | TEXT | No | — | FK → `users.id` |
-| action | TEXT | No | — | 'create','update','delete','login','logout','void','restore',... |
-| entity_type | TEXT | No | — | 'item','sale','purchase','price_change','batch',... |
-| entity_id | TEXT | No | — | id of the targeted record |
-| old_value | TEXT | Yes | NULL | JSON snapshot (before) |
-| new_value | TEXT | Yes | NULL | JSON snapshot (after) |
-| reason | TEXT | Yes | NULL | Reason / notes |
-| ip_address | TEXT | Yes | NULL | |
-| created_at | INTEGER | No | now | |
-
-**Rules:** Append-only. Rows are never updated or deleted (§28). Default admin user is seeded with a system id.
-
----
-
-### `lost_sales`
-**Purpose:** Record unavailable requested products (Arabic: النواقص) for future purchasing decisions (§15).
-
-| Field | Type | Nullable | Default | Notes |
-|--------|------|----------|---------|-------|
-| id | TEXT | No | UUID | Primary Key |
-| requested_item_name | TEXT | No | — | Requested product / item name |
-| barcode | TEXT | Yes | NULL | barcode if known |
-| scientific_name | TEXT | Yes | NULL | |
-| quantity_requested | INTEGER | No | 0 | base units |
-| customer_name | TEXT | Yes | NULL | Customer information if available |
-| customer_phone | TEXT | Yes | NULL | |
-| user_id | TEXT | No | — | FK → `users.id` |
-| status | TEXT | No | 'open' | 'open','ordered','resolved','cancelled' |
-| note | TEXT | Yes | NULL | |
-| created_at | INTEGER | No | now | |
-| updated_at | INTEGER | No | now | |
-
-**Indexes:** `(requested_item_name)`, `status`, `created_at` — to power purchasing-decision reports.
-
----
-
-## 5. Items / Product Model
-
-> **CRITICAL:** The Items model MUST NOT be reduced to name/barcode/category/price/stock. The complete model is defined below and fully represented in the `items` table in §4 and §4 items.
-
-### Identification
-- **Primary Barcode**
-- **Secondary Barcode**
-- **Trade Name 1**
-- **Trade Name 2**
-- **Scientific Name**
-- **Active Ingredients / Composition**
-- **Equivalent Drug**
-- **Manufacturer**
-- **Main Category**
-- **Sub-Category**
-- **Therapeutic Group**
-
-### Pharmaceutical Specifications
-- **Pharmaceutical Form**
-- **Dose / Concentration**
-- **Size / Volume**
-- **Shelf Location**
-
-### Flags
-- **Has Expiry Date**
-- **Print Barcode Label**
-- **OTC**
-- **Controlled Drug**
-- **Scale Barcode Alert**
-- **Lock Automatic Price Update**
-
-### Units (see §7)
-- Large Unit / Box
-- Sub-unit / Strip / Fraction
-- Number of sub-units per large unit
-
-### Pricing (see §8)
-- Purchase Cost
-- Purchase Discount %
-- Public / Retail Price
-- Sub-unit Price
-- Wholesale Price
-- Half-Wholesale Price
-- Custom Price 1
-- Custom Price 2
-- VAT / Tax %
-- Calculated Profit Margin %
-
-All of the above are explicit columns in the `items` table (§4). Domain entity `Item` mirrors these exactly.
-
----
-
-## 6. Batch Model
-
-The Batch/expiry model is a first-class entity (`batches`, §4). It captures, at minimum:
-
-- ID
-- Item ID
-- Batch Number
-- Expiry Date
-- Remaining Quantity in Base Units
-- Purchase Cost
-- Purchase Date
-- Supplier ID
-- Bonus Quantity where applicable
-- Created At
-- Updated At
-
-### FEFO Behavior
-- Normal sale selects batches by **earliest expiry first** (FEFO), consuming `remaining_qty_base`.
-- For non-expiring items (`has_expiry_date` = 0), FEFO degrades to FIFO by purchase date.
-- Expired batches are **excluded** from normal sale selection.
-
-### Expired Stock Handling
-- `expired` stock movements are recorded when stock is moved out of sellable inventory due to expiry.
-- Expired batches remain visible for reporting and are clearly flagged in the UI; they are never auto-sold.
-
-### Non-Expiring Products
-- `expiry_date` = NULL when the item `has_expiry_date` = 0.
-- FEFO/expiry logic is skipped for these items.
-
-### Batch-Level Costing / Inventory / Returns
-- Cost is tracked per batch; sale cost-of-goods snapshots the batch cost at sale time.
-- Remaining quantity is tracked per batch in base units.
-- Returns restore quantity to the **original** batch (see §14).
-
----
-
-## 7. Units & Base Unit Quantity Model
-
-**Authoritative approach: Base Unit quantity model.**
-
-- Every item has a **Base Unit** (the sub-unit / strip / fraction / tablet) and a **Large Unit** (box), with `units_per_large` (number of sub-units per large unit), defined in `item_units`.
-- The **authoritative stored quantity is `TotalBaseUnits`** (stored as the integer `*_base` columns throughout the schema: `quantity_base`, `remaining_qty_base`, `current_stock_base`, etc.).
-- We **never** maintain separate authoritative values such as:
-  - `Boxes = 3`
-  - `Fractions = 4`
-- Instead, if **1 Box = 10 Fractions**, then **3 Boxes + 4 Fractions = 34 Base Units**.
-- **The system derives the display quantities from the base quantity.**
-- This rule applies consistently to **Purchases, Sales, Returns, Inventory, Stock adjustments, FEFO, Reports, and Profit calculations.**
-
-### Example
-```
-Base unit = Fraction/Strip
-Large unit = Box
-units_per_large = 10
-
-Stock entered as  3 boxes + 4 fractions
-TotalBaseUnits     = (3 * 10) + 4 = 34
-
-Display:  3 Boxes + 4 Fractions (derived from 34 base units by the UI layer)
-```
-
----
-
-## 8. Pricing Model
-
-### Required Pricing Fields (all on `items` and/or batches)
-- **Purchase Cost**
-- **Purchase Discount %**
-- **Public / Retail Price**
-- **Sub-unit Price**
-- **Wholesale Price**
-- **Half-Wholesale Price**
-- **Custom Price 1**
-- **Custom Price 2**
-- **VAT / Tax %**
-- **Calculated Profit Margin %**
-
-### Master/Default vs Batch/Purchase-Specific Cost — CLEARLY DISTINGUISHED
-- **Master/default pricing** lives on `items` (e.g., default `purchase_cost`, `retail_price`, etc.).
-- **Batch/purchase-specific cost** lives on `batches` (and on `purchase_items` for the specific invoice).
-
-### Historical Cost Preservation
-- A product's **historical purchase cost MUST NOT be overwritten** simply because a newer purchase has a different cost.
-- Historical invoices and batches **preserve their original costs** independently.
-- When a new purchase is received with a different cost, only the **master default** may be updated (and only when `lock_auto_price_update` is **off**). The new batch stores its own cost; past batches and past invoices keep theirs.
-- `lock_auto_price_update` flag: when set, the system will not auto-update the master pricing from a new purchase.
-
-### Calculated Profit Margin
-- `profit_margin_pct` is a **derived** value computed from (selling price − cost) relative to cost or selling price, per the configured convention. It is recomputed, not independently edited, except through the price-change workflow which is audited (§17).
-
----
-
-## 9. Inventory Model
-
-- Inventory is represented by:
-  - `items.current_stock_base` — a **cached/derived** total in base units.
-  - `batches.remaining_qty_base` — per-batch remaining quantities.
-  - The **Stock Movement Ledger** (`stock_movements`) — the authoritative source of truth (§10).
-- Low stock alerting uses `minimum_stock_base` (base units) compared against `current_stock_base`.
-- Stock adjustments are recorded as `stock_adjustment` (and related) movement types and are permission-gated (`adjust_stock`) and audited.
-
----
-
-## 10. Stock Movement Ledger
-
-**Purpose:** Preserve a complete, auditable Stock Movements ledger (Arabic: سجل حركة المخزون).
-
-- **Every stock-changing operation MUST create one or more `stock_movements` rows.**
-- Required movement types:
-  - `opening_balance`
-  - `purchase`
-  - `sale`
-  - `sale_return`
-  - `purchase_return`
-  - `stock_adjustment`
-  - `damaged`
-  - `expired`
-  - `transfer`
-  - `manual_correction`
-
-### Each movement includes
-- Item ID
-- Batch ID where applicable
-- Quantity in Base Units
-- Movement Type
-- Reference Type
-- Reference ID
-- Unit Cost
-- User ID
-- Created At
-- Notes
-
-### Source of Truth
-- The Stock Movement Ledger is the **auditable history of stock changes** and the authoritative source.
-- `current_stock_base` (and per-batch `remaining_qty_base`) are **derived/cache values** and are NOT the sole source of truth. They are re-synchronized from the ledger with a periodic consistency check / reconciliation job.
+**Explicit statement:** `items.current_stock_base` and `batches.remaining_qty_base` are **derived/cache values**. They are **NOT the sole source of truth**. A reconciliation job re-syncs them from the ledger.
 
 ---
 
 ## 11. Sales Model
 
-- Sales are recorded as `sales` (header) + `sale_items` (lines), each line snapshotted with:
-  - `item_id`, `batch_id` (FEFO-selected batch), `quantity_base` (signed to support returns/±lines), `unit_price`, `discount`, `total`, and `cost_of_goods` (batch cost).
-- A completed sale:
-  1. Deducts stock from FEFO batches (creating `stock_movements` of type `sale`),
-  2. Creates the sale document,
-  3. Records cash box transaction,
-  4. Posts the double-entry journal entry,
-  5. Writes audit log.
-- All of the above happen **transactionally** (§26) — any failure rolls back the entire sale.
-- Voiding a sale requires the `delete_invoice` permission and is recorded in the audit log; voids reverse stock/cash/accounting.
+- Header: `sales_invoices` (§4.14) — supports **Invoice Number, Invoice Type, Customer ID (nullable), User ID, Date/Time, Subtotal, Discount, Tax, Total, Paid Amount, Remaining Amount, Payment Method, Status, Notes, Created At, Updated At**.
+- Lines: `sales_invoice_items` (§4.15) — supports **Invoice ID, Item ID, Batch ID, Quantity in Base Units, Unit Type, Unit Price, Discount, Tax, Line Total, Cost, Profit, Original Invoice Item ID, Return Quantity, Notes**.
+- **The sale is linked to the exact batch it was sold from (FEFO).**
+- Cash sales do not require a customer (`customer_id` nullable).
+- Completed sale transaction (§26) → stock deducted, stock movement created, accounting posted, cash box updated, audit written — all or nothing.
 
 ---
 
 ## 12. Purchase Model
 
-- Purchases are recorded as `purchases` (header) + `purchase_items` (lines), with per-line bonus fields (§13).
-- On receiving a purchase:
-  1. One or more `batches` are created (with batch number, expiry, remaining qty in base units, purchase cost, supplier, purchase date, bonus qty).
-  2. Stock movements of type `purchase` are created.
-  3. Supplier balance and accounting journal entry are updated.
-  4. Master pricing may be updated only if `lock_auto_price_update` is off.
-- All transactional (§26).
+- Header: `purchase_invoices` (§4.16) — **Supplier, Invoice Number, Date, Total, Discount, Tax, Paid, Remaining, Notes, User, Status, Created At, Updated At**.
+- Lines: `purchase_invoice_items` (§4.17) — link **Item, Batch (created on receive), Quantity, Unit, Purchase Cost, Discount, Tax, Total, Bonus, Notes**.
+- Bonuses: `purchase_bonuses` (§4.18).
+- On receiving a purchase: create/update batches, apply bonuses, compute **Effective Quantity** and **Effective Cost** (§13), create stock movements, post accounting, and (if unlocked) update master pricing.
 
 ---
 
 ## 13. Purchase Bonus Engine
 
-**Purpose:** Preserve the complete bonus engine. Supports **Bonus 1**, **Bonus 2**, and **Gift**.
-
-- Fields on `purchase_items`: `bonus_1_qty_base`, `bonus_2_qty_base`, `gift_qty_base`, plus `bonus_reference_item_id`.
+**Bonuses are modeled explicitly** in `purchase_bonuses` — Bonus 1, Bonus 2, and Gift are `bonus_type` values; more rows can be added without schema changes.
 
 ### Example
 ```
 100 purchased
-+10 Bonus 1
-+5  Bonus 2
-+2  Gift
-Effective Quantity = 117 base units
++10 Bonus 1     (bonus_type = 'bonus_1')
++5  Bonus 2     (bonus_type = 'bonus_2')
++2  Gift        (bonus_type = 'gift')
+
+Effective Quantity = 100 + 10 + 5 + 2 = 117 base units
 ```
 
 ### True Effective Unit Cost
 ```
 Effective Unit Cost = Total Actual Cost / Total Effective Quantity
 ```
-- The **effective** cost (total spent ÷ total effective quantity incl. bonuses) is what is stored on the created batch(es) and used for cost-of-goods and profit.
-- **Future scenario:** the bonus item may differ from the purchased item. `bonus_reference_item_id` supports a different item being granted as bonus; when it differs, a separate batch/stock movement for the bonus item is created accordingly.
+Applied to: **Profit, Inventory valuation, Cost analysis, Purchase analysis, Pricing analysis** — and stored once on the created batch (`batches.purchase_cost`).
+
+### Buy A Get B (future, supported now)
+`purchase_bonuses.item_id` is nullable. When set, the bonus item **differs** from the purchased item (Buy A Get B). The bonus quantity is added to the bonus item's own stock with its own batch/stock movement — inside the same transaction.
 
 ---
 
 ## 14. Returns Model (Hybrid)
 
-**Purpose:** Preserve the **Hybrid Return System**.
+**Two mechanisms, one consistent rule set:**
 
-- A return/transaction may contain **both positive and negative quantities**.
-- Example transaction:
-  - Product A +2
-  - Product B +1
-  - Product C −1
-- Returns **MUST reference**:
-  - Original Invoice
-  - Original Invoice Item
-  - Original Batch
+1. **Hybrid return invoices** (§4.15): a `sales_invoice` of type `'hybrid'` whose lines carry **signed** `quantity_base`:
+   ```
+   Product A +2   (sale)
+   Product B +1   (sale)
+   Product C −1   (return, original_invoice_item_id set)
+   ```
+2. **Standalone returns** (§4.19): `returns` + `return_items`.
 
-### Rules
+### Mandatory rules
+- Returns **MUST reference**: **Original Invoice**, **Original Invoice Item**, **Original Batch**.
 - Returned stock is restored to the **original batch** whenever valid and possible.
-- The system **prevents** arbitrary return-to-another-batch behavior.
-- Returns must reverse correctly:
-  - **Revenue** (reverse sale amounts),
-  - **Cost** (reverse cost of goods),
-  - **Profit** (net effect),
+- **Arbitrary return-to-another-batch is prevented** (the UI offers only the original batch; the DB FK requires the referenced batch).
+- Returns reverse, transactionally:
+  - **Revenue** (reverse amounts),
+  - **Cost** (reverse `cost_of_goods`, signed),
+  - **Profit** (the net effect),
   - **Stock** (restore base units to the original batch).
-- All reversal happens **transactionally** (§26).
+- Full rollback on any failure (§26).
 
 ---
 
-## 15. Lost Sales Model (نواقص)
+## 15. Lost Sales Model (النواقص)
 
-**Purpose:** Preserve the **LostSales** feature using professional Arabic terminology.
-
-- Records unavailable requested products for future purchasing decisions.
-- Store (see `lost_sales` table, §4):
-  - Requested Product / Item Name
-  - Barcode
-  - Scientific Name
-  - Quantity Requested
-  - Customer information if available
-  - User
-  - Date/Time
-  - Status
-  - Notes
-
-### UX
-- Quick capture from the POS (one tap from the product-search screen when an item is not found).
-- Status lifecycle: open → ordered → resolved / cancelled.
-- Reporting: supports reports that aggregate lost sales by item/barcode/scientific name to inform purchasing (Phase 3+).
+- Captured from the POS in one tap when an item is not found; professional Arabic label **النواقص**.
+- Table: `lost_sales` (§4.28) — supports **Requested Item/Product Name, Barcode, Scientific Name, Quantity Requested, Customer info if available, User, Date/Time, Status, Notes**.
+- Status lifecycle: `open` → `ordered` → `resolved` / `cancelled`.
+- Reports aggregate lost sales by product/barcode/scientific name to drive **purchasing decisions** (Phase 3+).
 
 ---
 
 ## 16. Users, Roles & Permissions
 
-**Purpose:** Granular permissions using **Users, Roles, Permissions, RolePermissions**.
+**Granular RBAC** via `users`, `roles`, `permissions`, `role_permissions` (§4.26). The system is **not** limited to a single role string.
 
-- **Do NOT reduce permissions to a single role string.**
-- `users.role_id` points to a `roles` record; each `role` is a set of `role_permissions` granting/denying individual `permissions`.
-
-### Required granular permissions (permission codes)
+### Required granular permissions (canonical codes)
 - `sell`
 - `return`
 - `view_inventory`
+- `search`
+- `view_alternatives`
 - `change_prices`
 - `change_purchase_cost`
 - `delete_invoice`
@@ -1002,222 +1143,189 @@ Effective Unit Cost = Total Actual Cost / Total Effective Quantity
 - `modify_settings`
 - `adjust_stock`
 
-(The full RBAC extends beyond these; the DB model allows arbitrary permission codes.)
+### Reference role definitions (seeded; editable)
+| Role | Allowed | Denied |
+|------|---------|--------|
+| **Admin** | Full access (all permissions) | — |
+| **Pharmacist** | `sell`, `return`, `search`, `view_inventory`, `view_alternatives`, `change_prices` | `delete_invoice`, `change_purchase_cost`, `manage_users`, `manage_permissions`, `modify_settings` |
+| **Cashier** | `sell`, POS operations, `search` | Denied **authorized returns** only with `return` permission granted explicitly |
+
+The RBAC model is **extensible** — any new permission is simply a row in `permissions` + grants in `role_permissions`.
 
 ### Enforcement
-- Permission checks occur in the **use case layer** (domain) and are enforced in the **UI** (hide/disable unauthorized actions).
-- `manage_permissions` gates editing `role_permissions`; only users with this permission can modify the permission matrix.
-- Login/session: bcrypt-hashed passwords; inactivity auto-logout.
-- Every permission mutation is audited (§17).
+- Checked in the **use case layer** (domain) and reflected in the UI (hide/disable).
+- Password hashing: bcrypt. Inactivity auto-logout.
+- Permission mutations are audited (§17).
 
 ---
 
 ## 17. Audit Logging
 
-**Purpose:** Comprehensive, immutable auditing.
+`audit_logs` (§4.27) is **immutable** — append-only, never updated or deleted.
 
-- Sensitive operations record:
-  - User ID
-  - Action
-  - Entity Type
-  - Entity ID
-  - Old Value (JSON snapshot)
-  - New Value (JSON snapshot)
-  - Date/Time
-  - **Reason / Notes**
-- Audit history is **immutable** — rows are append-only and cannot be updated or deleted (§28).
+### Audited operations (at minimum)
+- **Price changed**
+- **Purchase cost changed**
+- **Invoice deleted / cancelled** (void)
+- **Inventory manually adjusted**
+- **Batch quantity changed**
+- **User created / updated / deactivated**
+- **Permission changed** (role_permissions mutations)
+- **Product edited / deleted**
+- Login / logout, Bulk operations, Backup/Restore
 
-### Operations audited (non-exhaustive)
-- Login / logout
-- Item create / update / delete / deactivate
-- Price changes (old and new pricing snapshots + reason)
-- Purchase cost changes
-- Sales / purchases / returns / voids
-- Stock adjustments
-- User & role & permission changes
-- Settings changes
-- Backup / restore
-- Bulk operations (per-row or a summarized batch record)
+### Recorded fields
+- User ID
+- Action
+- Entity Type
+- Entity ID
+- Old Value (JSON)
+- New Value (JSON)
+- Date/Time
+- Notes / Reason
 
 ---
 
 ## 18. Smart Alternatives Engine
 
-**Purpose:** Provide medication alternatives to the cashier with the three matching levels.
+**Matching engine implemented in Domain (service/use case), independent of the UI.**
 
-- **GREEN:** 100% match — Same active composition + same dose + same pharmaceutical form.
-- **YELLOW:** Same active composition but different dose/strength.
-- **BLUE:** At least one shared active ingredient.
+| Level | Color | Rule |
+|-------|-------|------|
+| **Green** | أخضر | 100% match: same active composition + same dose + same pharmaceutical form |
+| **Yellow** | أصفر | Same active composition but different dose/strength |
+| **Blue** | أزرق | At least one shared active ingredient |
 
 ### Rules
-- The matching engine is **independent from the UI** — it lives in Domain as a use case/service over `items` (active_ingredients, dose_concentration, pharmaceutical_form).
-- Prefer **dynamically calculated** alternatives rather than permanently storing stale matching results. No `smart_alternatives` table is required; results are computed at request time from current item data.
-- An optional cache may be used for performance but must be invalidated when item data changes; the calculation remains the authority.
+- Computed **dynamically** from current `items` data at request time — never stale stored matches.
+- Optional cache only for performance; invalidated whenever item data changes; calculation remains authoritative.
+- Extensible: additional rules can be added without UI coupling.
 
 ---
 
 ## 19. POS Workspace
 
-**Purpose:** Preserve the exact POS workspace requirement with **10 customer workspaces/tabs plus Return**.
+**Exact layout requirement: 10 customer workspaces + 1 Return tab.**
 
-- POS workspaces/tabs: **Customer 1 … Customer 10**, **Return** (11 tabs total).
-- Each workspace/tab maintains **independent state**:
-  - its own cart,
-  - its own selected customer,
-  - its own payment state/discounts/items,
-  - its own hold-bill state.
-- **No cart or customer/payment state may be lost when switching tabs.**
-- The POS workspace state is kept in memory (Riverpod families keyed by workspace index) and persisted (held bills) so state survives across the app session.
+- Tabs: **Customer 1 … Customer 10**, **Return**.
+- Each tab keeps **independent state**:
+  - Cart Items
+  - Quantities (base units + display unit)
+  - Discounts
+  - Customer
+  - Payment
+  - Notes
+  - Pending Operations
+- **No cart/customer/payment state is lost when switching tabs.**
+- State is managed with **Riverpod** (per-tab family providers), and held bills persist across the app session.
 
 ---
 
 ## 20. Barcode Scanner Architecture
 
-**Purpose:** Support a **hardware barcode scanner** independently of any visible focused text field.
+Hardware scanners emit rapid keystrokes + terminator, so the app uses a **global scanner pipeline independent of any focused text field**:
 
-- Hardware scanners typically behave as a keyboard that emits rapid keystrokes followed by a terminator (Enter/newline or a suffix).
-- Architecture-level handling: a **global scanner buffer** listens to raw key events (independent of focused widgets).
-
-### Flow (authoritative)
 ```
 Scanner
-→ Buffer (accumulate keystrokes)
-→ Detect completion (terminator / idle timeout)
-→ Normalize (trim, clean, handle scan-suffix config)
-→ Search (by primary barcode → secondary barcode → item)
+→ Buffer (global keystroke accumulation)
+→ Completion (terminator key or idle timeout)
+→ Normalize (trim, clean, configurable suffix)
+→ Database Query (primary_barcode → secondary_barcode → item)
 → Item
-→ FEFO batch (select batch per FEFO)
-→ Active POS cart (add to the current workspace tab's cart)
+→ FEFO Batch (select batch per FEFO)
+→ Active Cart (add to the current POS workspace tab)
 ```
 
-### Rules
-- Must **not interfere with normal keyboard shortcuts** (§21). Scanner input is buffered and recognized only when it matches barcode patterns; otherwise keystrokes fall through to shortcuts/fields.
-- Configurable: scanner prefix/suffix, terminator, and idle-timeout detection.
-- Works regardless of which widget is focused; does not require an open search field.
+- Does **not** depend on a permanently focused TextField.
+- Does **not** interfere with keyboard shortcuts (§21): buffered input is recognized only when it matches barcode patterns; otherwise keystrokes fall through.
+- Configurable prefix/suffix/terminator/timeout in settings.
 
 ---
 
 ## 21. Keyboard Shortcuts
 
-**Purpose:** Preserve centralized, configurable shortcuts.
+| Shortcut | Action |
+|----------|--------|
+| **F1** | Search |
+| **F2** | Toggle Box/Fraction (base-unit display) |
+| **F5** | Hold Bill |
+| **F12** | Checkout |
+| **Space / Enter** | Quick Actions |
+| **Alt + S** | Alternatives |
 
-Required default shortcuts:
-- **F1** → Search
-- **F2** → Toggle Box/Fraction (base-unit display toggle)
-- **F5** → Hold Bill
-- **F12** → Checkout
-- **Space / Enter** → Quick Actions
-- **Alt + S** → Alternatives
-
-### Rules
-- Shortcut handling is **centralized** (a dedicated `ShortcutManager` service in `core/`) and **configurable** (overridable in settings).
-- Registered application-level, independent of focused fields, coexisting with the barcode buffer (§20).
+Handling is **centralized** (a `ShortcutManager` in `core/`) and **configurable** (settings), registered app-wide, independent of focused fields, coexisting with the scanner buffer.
 
 ---
 
 ## 22. Data Grids & Bulk Actions
 
-**Purpose:** Provide professional, high-productivity data grids across modules.
+### Data grids support
+- Sorting
+- Filtering
+- Multi-column search
+- Column visibility
+- Column order
+- Inline editing
+- Multi-select
+- Bulk actions
+- Keyboard navigation
 
-Required grid features:
-- **Sorting**
-- **Filtering**
-- **Multi-column filtering**
-- **Search**
-- **Column visibility**
-- **Column ordering**
-- **Inline editing**
-- **Multi-row selection**
-- **Bulk actions**
-- **Keyboard navigation**
+### Inline editing
+Examples: **Shelf Location**, **Price**, **Category**. Every inline edit **must pass through business logic + a transaction + audit** (§17, §26) — no direct DB writes from the grid.
 
-### Bulk Actions
-- Must be **transactional** and **auditable** (§26, §17).
-- Examples: bulk price change, bulk stock adjustment, bulk deactivate, bulk status update — each runs in a transaction and emits audit records.
-- Permission-gated according to the affected operation (e.g., `change_prices`, `adjust_stock`).
+### Bulk operations (transactional + audited)
+- **Change Shelf Location**
+- **Change Category**
+- **Adjust Price by %** (requires `change_prices`; computes new integer money safely per §23)
+- Validation before commit; single atomic transaction; audit per affected row; **no partial/inconsistent updates**.
 
 ---
 
 ## 23. Financial Precision Strategy
 
-**CRITICAL CORRECTION — Do NOT use floating-point `double`/`REAL` as the authoritative representation for monetary values.**
+**Mandatory — floating-point `REAL` is forbidden for sensitive financial math.**
 
-### Authoritative approach: integer minor (fixed) currency units
+### Authoritative approach: integer smallest currency unit
+- All monetary values are **integers of the smallest currency unit** (e.g., USD cents: `$12.50 → 1250`; where cost requires 4 decimals: micro-units, exponent configurable).
+- A `Money` value type (in `core/`) encapsulates the integer amount, currency, exponent, and arithmetic that never introduces floating-point drift.
+- Percentages stored as **integer basis points** (100 bp = 1%).
+- Decimal/rounding: any derived decimal (e.g., percentage application) is computed via `Money` with an explicit rounding mode (e.g., half-up) and snaps back to integer minor units **before persistence**.
 
-- Store monetary values as **integer minor currency units** where practical.
-- Example: `$12.50 → 1250` minor units. For a currency requiring more precision (e.g., 4 decimals for some cost bases), use micro-units (e.g., `12.5000 → 125000` micro-units).
-- A dedicated `Money` value type (in `core/`) encapsulates:
-  - the integer minor-unit amount,
-  - the currency and exponent (e.g., 2 or 4 decimals),
-  - arithmetic that never introduces floating-point drift,
-  - explicit `toString`/round-trip formatting for display.
-
-### Decimal/rounding control
-- If a decimal representation is required for a particular calculation (e.g., percentages), the `Money` type controls **exactly** how precision and rounding are applied (banker's or half-up, configurable), and all such derived values snap back to integer minor units before persistence.
-
-### Scope of application (authoritative)
-Applies to:
+### Applied consistently to
 - Purchase costs
 - Selling prices
 - Discounts
 - Taxes
 - Invoice totals
 - Profit
-- Account balances
-- Supplier and customer balances (ledger-derived)
-- All columns marked `INTEGER (money minor units)` in the schema
+- Supplier balances
+- Customer balances
+- Cashbox
+- Accounting (journal entries)
+- Revenue/expense accounts
 
-### Explicit prohibition
-- **SQLite `REAL` is never used as the authoritative accounting amount.**
+### Currency
+- **Primary: USD.** The design is **configurable** (currency and exponent defined in settings; all stored values are unit-agnostic integers).
+
+**Explicit statement:** `REAL` is never used as the authoritative accounting/storage amount in this design.
 
 ---
 
 ## 24. Arabic-First UX & Localization Rules
 
-**MANDATORY — Arabic-first is a top-level architectural and UX requirement.**
+**Mandatory (not optional): the entire application is Arabic-first.**
 
-- **Arabic** is:
-  - Default language
-  - Default locale
-  - Default UI direction (RTL)
-  - Primary terminology
-- English is a **secondary** locale only and must never replace Arabic in the primary UI.
+- **Arabic** is the default language, default locale, default UI direction (RTL), and primary terminology.
+- English is supported with a ready localization structure, but **must not replace Arabic in the primary UI**.
 
-### Scope of Arabic-first content
-All user-facing content must use professional natural Arabic (NOT literal machine translation):
-- Main menus
-- Sidebar
-- Navigation
-- Buttons
-- Forms
-- Dialogs
-- Tables
-- Data grids
-- Error messages
-- Validation messages
-- Notifications
-- Tooltips
-- Search
-- POS
-- Inventory
-- Purchases
-- Sales
-- Returns
-- Reports
-- Accounting
-- Settings
-- Users
-- Permissions
-- Audit logs
-- Empty states
-- Loading states
-- Success/failure messages
+### All user-facing content in professional Arabic
+Main menus, Sidebar, Navigation, Buttons, Forms, Dialogs, Tables, Data grids, POS, Inventory, Purchases, Sales, Returns, Reports, Settings, Users, Permissions, Notifications, Validation messages, Errors, Empty states, Loading states, Success states, Tooltips, Search interfaces.
 
-### Controlled Terminology Glossary (authoritative)
-Consistent professional pharmacy/accounting terminology must be used throughout:
+**Machine/literal translation is prohibited.** Only professional, natural pharmacy & accounting Arabic is used, governed by a centralized string catalog.
 
-| English | العربية (Arabic) |
-|---------|------------------|
+### Controlled terminology glossary (authoritative)
+| English | العربية |
+|---------|---------|
 | Items | المواد / الأصناف |
 | Inventory | المخزون |
 | Purchase Invoice | فاتورة شراء |
@@ -1228,7 +1336,7 @@ Consistent professional pharmacy/accounting terminology must be used throughout:
 | Batch | التشغيلة |
 | Expiry Date | تاريخ الصلاحية |
 | Stock | المخزون / الكمية |
-| Lost Sale | النواقص |
+| Lost Sale | النواقص (نواقص) |
 | Alternative | البدائل |
 | Cash Box | الصندوق |
 | User | المستخدم |
@@ -1241,273 +1349,241 @@ Consistent professional pharmacy/accounting terminology must be used throughout:
 | Balance Sheet | الميزانية العمومية |
 | Account Statement | كشف الحساب |
 
-### Typography
-- Use **Cairo or Tajawal** consistently (bundled as app fonts for Windows and Android).
-- RTL is implemented at the architecture level, not as an afterthought: `Directionality` driven by locale; `EdgeInsetsDirectional`, `AlignmentDirectional`, `TextAlignDirectional`; `ListTile` leading/trailing; never hardcode left/right.
-- The architecture stays localization-ready for future English support, but **English must not replace Arabic in the primary UI**.
+### Typography and RTL
+- **Cairo or Tajawal** — choose one and apply uniformly.
+- **RTL is the default mode**, implemented at the architecture level (Directionality driven by locale; `EdgeInsetsDirectional`, `AlignmentDirectional`, `TextAlignDirectional`; no hardcoded left/right).
+- Localization structure (§34) keeps English ready as secondary.
+
+### Visual Status (not color-only)
+| Status | Arabic | Indicator |
+|--------|--------|-----------|
+| Expired | منتهي الصلاحية | Text + icon + badge + status color |
+| Near Expiry | قارب على الانتهاء | Text + icon + badge + status color |
+| Low Stock | مخزون منخفض | Text + icon + badge + status color |
+| Normal | طبيعي | Text + icon + badge + status color |
+
+Statuses are derived from `batches.expiry_date`/`items.is_active` and `current_stock_base` vs `minimum_stock_base`. **Never rely on color alone** — always include text, icons, and status indicators.
 
 ---
 
 ## 25. Accounting Integration Foundation
 
-**Purpose:** Ensure the database model does not prevent proper double-entry accounting later, even though the full accounting UI is not built in Phase 1.
+The full accounting **UI** is deferred, but the **database model already supports** proper double-entry accounting:
 
-- The `accounts`, `journal_entries`, `journal_entry_lines` tables (§4) provide the double-entry foundation.
-- Accounting must remain compatible with future:
-  - Cash Box
-  - Daily sales reports
-  - Monthly/yearly reports
-  - Supplier balances
-  - Customer balances
-  - Profit reports
-  - Income Statement
-  - Balance Sheet
-  - Trial Balance
-  - Account Statements
-  - Employee/Doctor revenue if required later
+- `accounts` (Chart of Accounts) — asset/liability/equity/revenue/expense, hierarchical.
+- `journal_entries` + `journal_entry_lines` — double-entry with `Σ(debit) == Σ(credit)`.
+- Every sale, purchase, return, and expense posts journal entries **transactionally** (§26).
+- Supplier/customer balances are **derived** from ledgers (never hand-edited) and support statements.
 
-### Design principles
-- Every sale, purchase, return, and expense posts a double-entry journal entry (debit == credit) transactionally.
-- Supplier/customer balances are **derived** from the ledger, not stored independently as editable values.
-- A predefined/default Chart of Accounts is seeded (assets, liabilities, equity, revenue, expenses) including cash/sales/COGS/expense accounts.
-- Reports (Trial Balance, Income Statement, Balance Sheet, Account Statement) aggregate from `journal_entries`/`journal_entry_lines` over date ranges, in money minor units.
+### Required future compatibility
+Cash Box, Daily/Monthly/Yearly reports, Supplier balances, Customer balances, Profit reports, Income Statement, Balance Sheet, Trial Balance, Account Statement, and future **employee/doctor revenue** — all supported without a radical redesign.
 
 ---
 
 ## 26. Transactions
 
-**Documented transactional behavior.**
-
-All of the following logical operations MUST run inside a single SQLite transaction; **any failure rolls back the complete logical operation**:
+All of the following are **atomic transactions**. Any failure → **complete rollback.**
 
 ### Sale
-1. Validate stock availability.
-2. Deduct stock from FEFO batches + create `stock_movements` (sale).
-3. Insert `sales` + `sale_items` (snapshot costs).
-4. Insert `cashbox_transactions` (sale).
-5. Post `journal_entries`/`journal_entry_lines`.
-6. Write `audit_log`.
-On any failure → complete rollback (no partial stock deduction, no orphaned invoice).
+```
+Create Invoice
+→ Create Invoice Items
+→ Deduct Batch (FEFO)
+→ Create Stock Movement (type = sale)
+→ Calculate Cost (snapshot batch cost)
+→ Calculate Profit (= line_total − cost)
+→ Post journal entry + cash box + audit
+→ Commit
+```
 
 ### Purchase
-1. Create `purchases` + `purchase_items`.
-2. Create/update `batches`.
-3. Create `stock_movements` (purchase + bonus).
-4. Update supplier balance (derived).
-5. Post journal entry.
-6. (Optionally) update master pricing if unlocked.
-7. Write `audit_log`.
+```
+Create Purchase
+→ Create Purchase Items
+→ Create/Update Batch
+→ Apply Bonus (purchase_bonuses)
+→ Calculate Effective Quantity
+→ Calculate Effective Cost (Total Actual Cost ÷ Effective Qty)
+→ Create Stock Movement (type = purchase; + bonus movements for different-item bonuses)
+→ Post journal entry + audit
+→ Commit
+```
 
 ### Return
-1. Create `returns` + `return_items` referencing original invoice/item/batch.
-2. Restore stock to the original batch + create `stock_movements` (sale_return / purchase_return).
-3. Reverse revenue/cost/profit via a reversing journal entry.
-4. Update cash box.
-5. Write `audit_log`.
+```
+Create Return
+→ Validate Original Transaction (invoice/line/batch exist; not already fully returned)
+→ Restore Correct Batch (the original batch only)
+→ Create Stock Movement (sale_return / purchase_return)
+→ Reverse Revenue
+→ Reverse Cost
+→ Reverse Profit
+→ Post reversing journal entry + cash box + audit
+→ Commit
+```
 
-### Stock Adjustment
-1. Create `stock_movements` (stock_adjustment / damaged / expired / manual_correction).
-2. Recompute derived `current_stock_base`.
-3. Post accounting adjustment if required.
-4. Write `audit_log`.
-
-### Bulk Operations
-- Entire batch of rows processed in one transaction; any failure rolls back the whole bulk op.
-- Each affected row emits its own audit record; the operation emits one summary audit record.
+### Stock Adjustment / Bulk Operations
+- Single transaction; any failure rolls back the whole operation; per-row audit + one summary audit record.
 
 ---
 
 ## 27. Data Integrity
 
-Preserve, at the database level:
-- **Foreign keys** (enforced; FK constraints on all relations).
-- **Unique constraints** (usernames, invoice/purchase/return/entry numbers, account codes, permission codes, role names, `name_ar` on units, `(role_id, permission_id)`, `(item_id, base_unit_id, large_unit_id)`).
-- **NOT NULL constraints** on all required fields.
-- **CHECK constraints** (e.g., `quantity_base` sign, `debit`/`credit >= 0`, positive units_per_large, movement_type in enum, staff/amount sanity).
-- **Indexes** on all FK columns and `primary_barcode`/`secondary_barcode` (barcode lookup highly optimized via a dedicated index).
-- **Referential integrity** (no orphans; cascade rules documented; historical documents keep validity).
+Explicitly preserved at the database level:
+- **Foreign Keys** — enabled (PRAGMA foreign_keys = ON) on every relation.
+- **Unique constraints** — usernames; `primary_barcode` (where non-null); invoice/purchase/return/entry numbers; account codes; permission codes; role names; unit names; `(item_id, batch_number)`; `(category_id, name)` on sub_categories; `(role_id, permission_id)`; `(item_id, base_unit_id, large_unit_id)`; `(return_id, original_invoice_item_id)`.
+- **NOT NULL** — on every required column (§4).
+- **CHECK constraints** — `units_per_large >= 1`, `remaining_qty_base >= 0`, `quantity_base != 0` (movements), `debit/credit >= 0`, money never ≤ 0 where forbidden, enums validated.
+- **Referential integrity** — no orphan records; deletion rules documented per table (§28).
+- **Cascading rules** — used only where safe (e.g., `sale_items.invoice_id`, `journal_entry_lines.journal_entry_id`, `role_permissions.role_id`, `purchase_bonuses.purchase_invoice_item_id`); **financial & ledger records are never cascade-deleted** (§28).
+- **Indexes (minimum required):**
+  - Primary Barcode — `items.primary_barcode`
+  - Secondary Barcode — `items.secondary_barcode`
+  - Scientific Name — `items.scientific_name`
+  - Composition — `items.active_ingredients`
+  - Trade Names — `items.trade_name_1`, `items.trade_name_2`
+  - Batch Number — `batches.batch_number`
+  - Expiry — `batches.expiry_date`, `(item_id, expiry_date)`
+  - Item ID — all `item_id` FKs on `batches`, `stock_movements`, `sales_invoice_items`, `purchase_invoice_items`
+  - Supplier ID — `batches.supplier_id`, `purchase_invoices.supplier_id`
+  - Invoice Number — `sales_invoices.invoice_number`, `purchase_invoices.purchase_number`
+  - Invoice Date — `sales_invoices.date`, `purchase_invoices.date`
 
-### Barcode lookup performance
-- The primary barcode index is a unique index with fast single-row lookup; secondary barcode is also indexed.
-- Barcode search is normalized (§20) and uses covering indexes on `(primary_barcode)` and `(secondary_barcode)`.
+**Barcode lookup must be very fast:** unique index on `primary_barcode`, indexed `secondary_barcode`, normalized input (§20), single-row `WHERE primary_barcode = ? OR secondary_barcode = ?`.
 
 ---
 
 ## 28. Soft Deletion & Historical Integrity
 
 - **Never physically delete** transactional/financial/history records:
-  - Invoices (sales/purchases)
-  - Returns
-  - Stock movements (ledger is append-only)
+  - Invoices (`sales_invoices`, `purchase_invoices` — `status='voided'` instead)
+  - Return documents
+  - Stock movements (append-only ledger)
   - Journal entries / lines
-  - Audit log (immutable)
-  - Lost sales (retained, soft status)
-- **Master data** (items, categories, suppliers, customers, users, accounts, roles, units) uses **soft-delete / `is_active = 0`** (inactive) rather than physical deletion, where appropriate.
-- **Historical invoices must remain valid** even if an item is later deactivated — sale/purchase lines snapshot item id + prices + costs at the time of the transaction, so changing/deactivating master data never corrupts history.
+  - Audit logs (immutable)
+  - Purchase bonuses (part of the purchase record)
+  - Lost sales (retained; status-based)
+- **Master data** uses **soft-delete flags**: `is_active = 0` (Optionally a `deleted_at` timestamp may be added later for audit; not required in Phase 1.)
+- **Historical validity:** invoices remain valid even if an item is later deactivated — lines snapshot item id + prices + batch cost at transaction time.
 
 ---
 
 ## 29. Migration Strategy
 
-- Drift **schema versioning** with explicit, versioned `schemaVersion` increments.
-- Every schema change is implemented as a **forward migration** (`MigrationStrategy.onUpgrade`).
-- **Never require deleting the database to apply schema changes.**
-- Migrations are covered by tests (`migration_test.dart`) that:
-  - Create a database at version N,
-  - Apply the migration to N+1,
-  - Assert schema and data integrity.
-- New columns use safe defaults so existing rows are preserved.
-- Backup/restore validates schema version on restore (§37).
+- **Drift schema versioning** — `schemaVersion` increments for every schema change.
+- Forward-only migrations in `MigrationStrategy.onUpgrade`.
+- **Deleting the database to apply migrations is forbidden.**
+- New columns are added **nullable or with safe defaults** so existing rows are preserved.
+- New tables are added idempotently within a version bump.
+- Migration coverage: `migration_test.dart` builds the DB at version N, runs the upgrade to N+1, and asserts schema + data integrity.
+- Restore validates the schema version and applies pending forward migrations (§37).
 
 ---
 
 ## 30. Performance Requirements
 
-The architecture must support production-scale data:
+Must support production scale:
+- **Tens of thousands of products**
+- **Large invoice history**
+- **Many stock movements**
+- **Thousands of batches**
+- **Fast barcode lookup**
 
-- **Tens of thousands** of products.
-- **Large invoice history.**
-- **Large stock movement history.**
-- **Thousands of batches.**
-- **Fast barcode lookup** (indexed, normalized).
-- **Efficient filtering** (indexed WHERE clauses, DB-side filtering via repositories/DAOs).
-- **Pagination** where appropriate (grids paginate rather than loading all rows).
-- **Low memory usage** (lazy loading, minimal in-memory copies, paginated data grids).
-
-### Concretely
-- DAOs use `LIMIT/OFFSET` (or keyset) pagination for grids.
-- `current_stock_base` cache avoids scanning full ledger per screen, while the ledger remains the authority; a reconciliation job re-syncs caches.
-- All list screens filter/sort in the database layer, not in Dart.
+**Loading the whole database into memory is forbidden.**
+- **Pagination** (LIMIT/OFFSET or keyset) on all grids.
+- **Filtering** done in the database layer (indexed WHERE), not in Dart.
+- **Indexed queries** per §27.
+- **Efficient reactive queries** (Drift `watch` on filtered/paginated DAOs).
+- `current_stock_base` cache avoids full-ledger scans; a reconciliation job re-syncs from the ledger in batches.
 
 ---
 
 ## 31. Testing Strategy
 
-| Level | Scope | Tools | Coverage target |
-|-------|-------|-------|-----------------|
-| Unit | Domain entities, use cases, money arithmetic, pricing, FEFO, bonus engine, returns, permissions, validators | `test` + `mocktail`/`mockito` | 80%+ |
-| Widget | Critical widgets (cart, data grid, forms, POS workspace, RTL rendering) | `flutter_test` | Critical paths |
-| Integration | Full flows: login → sale → return; purchase → batch → sale; trial balance accuracy | `integration_test` | Critical flows |
-| Database | DAOs, migrations, transactional rollback, FEFO query, integrity constraints | `drift` test utilities | All DAOs + migrations |
+| Level | Scope | Tools | Coverage |
+|-------|-------|-------|----------|
+| Unit | Entities, use cases, **Money**, base-unit conversions, FEFO, bonus engine, hybrid returns, RBAC, validators | `test` + `mocktail`/`mockito` | 80%+ |
+| Widget | Cart, data grid, forms, POS workspace, RTL rendering | `flutter_test` | Critical paths |
+| Integration | login→sale→return; purchase→batch→sale; trial balance accuracy | `integration_test` | Critical flows |
+| Database | DAOs, migrations, transactional rollback, integrity constraints, barcode lookup speed | `drift` test utils | All DAOs + migrations |
 
-### Critical test areas (specific to this spec)
-- **Money** arithmetic (no floating-point drift; rounding rules).
-- **FEFO** selection and **expired batch exclusion**.
-- **Bonus engine** effective quantity/cost.
-- **Hybrid returns** (positive + negative lines; reversal of revenue/cost/profit/stock; original-batch restore).
-- **Base-unit** conversions (boxes/fractions → TotalBaseUnits).
-- **RBAC** permission enforcement at use-case level.
-- **Transactional rollback** for sale/purchase/return/adjustment/bulk.
+**Critical scenarios:** Money arithmetic (no drift), FEFO + expired exclusion, bonus effective cost, hybrid returns (signed lines, original-batch restore), base-unit conversions, RBAC enforcement, atomic rollback.
 
 ---
 
 ## 32. Security Considerations
 
-- **Passwords:** bcrypt-hashed; never stored in plain text.
-- **RBAC:** granular permissions enforced in domain use cases and reflected in the UI (§16).
-- **Audit:** all sensitive mutations recorded; audit log immutable (§17).
-- **Local-only:** no network transmission in Phase 1; transport security is N/A. Password hashes are never migrated/synced insecurely.
-- **Sensitive operations** (void, price change, purchase cost change, stock adjustment, restore) require elevated permissions and are always audited with reasons.
-- **Backup/restore:** user-initiated; restore confirms before replacing data (§37).
-- Controlled drugs and prescription-only items enforce selling rules based on `is_controlled_drug` / `requires_prescription`.
+- **Passwords:** bcrypt-hashed; never plain text.
+- **RBAC:** granular permissions enforced in domain use cases + UI (§16).
+- **Audit:** immutable audit log for sensitive operations (§17).
+- **Local-only:** no network in Phase 1; transport security N/A. Hashes never synced insecurely.
+- **Sensitive gates:** void, price change, purchase-cost change, stock adjustment, backup/restore require elevated permissions + audit reason.
+- **Selling rules:** `is_controlled_drug` / `requires_prescription` enforced at sale time.
 
 ---
 
 ## 33. Responsive & Desktop / Android UI
 
-**Approach:** `LayoutBuilder` + adaptive widgets, RTL-aware.
-
-### Breakpoints
-| Mode | Width | Layout |
-|------|-------|--------|
-| Desktop (wide) | ≥ 900px | Sidebar navigation + content |
-| Desktop/Tablet (narrow) | 600–899px | Collapsed sidebar (icons) + content |
-| Mobile | < 600px | Bottom navigation / drawer + content |
-
-### Implementation
-- `ResponsiveLayout` widget wraps pages.
-- Data tables become card lists on narrow screens.
-- Dialogs become full-screen pages on mobile.
-- POS adapts: desktop 3-panel (items | cart | payment); tablet 2-panel; mobile tab-based.
+- `LayoutBuilder` + adaptive widgets, RTL-aware.
+- Desktop wide ≥ 900px: sidebar + content; 600–899px: collapsed sidebar; mobile < 600px: bottom nav / drawer.
+- POS: desktop 3-panel (items | cart | payment); tablet 2-panel; mobile tab-based.
+- Data tables → cards on narrow screens; dialogs → full-screen on mobile.
 
 ---
 
 ## 34. Localization & RTL Engineering
 
-**Package:** `flutter_localizations` + `intl` + ARB; `flutter gen-l10n`.
-
-- **Arabic** `app_ar.arb` is the **default** (primary) locale and the default `locale` on app startup.
-- **English** `app_en.arb` is secondary.
-- RTL: `Directionality` driven by locale; directional widget APIs used everywhere; tested in both RTL and LTR.
-- Fonts: **Cairo or Tajawal** bundled and used consistently.
-- Terminology follows the glossary (§24) — implemented as a centralized string catalog so the same term maps to the same Arabic string everywhere.
+- `flutter_localizations` + `intl` + ARB; `flutter gen-l10n`.
+- **`app_ar.arb` is the default locale** (Arabic); `app_en.arb` secondary.
+- RTL is default; all directional APIs used; tested in both RTL and LTR.
+- Font: **Cairo or Tajawal**, chosen once, applied uniformly.
+- Terminology follows the §24 glossary via a centralized string catalog.
 
 ---
 
 ## 35. State Management & DI
 
-- **State management:** Riverpod v2+ with code generation. Providers at data/domain boundaries; AsyncNotifier/Notifier per feature page; family providers per POS workspace tab.
-- **DI:** get_it + injectable; registers Database, repositories, use cases, core services (ShortcutManager, ScannerService, AuditService, BackupService, PdfService, ExcelService, MoneyService).
-- Provider hierarchy: `DatabaseProvider` → repository providers → use case providers → page notifiers → POS workspace family providers.
+- **Riverpod v2+** with code generation; family providers per POS workspace tab.
+- **get_it + injectable** DI: Database, repositories, use cases, domain services (FEFO, Bonus, Alternatives, Money), core services (ShortcutManager, ScannerService, AuditService, BackupService, PdfService, ExcelService).
+- Provider chain: DatabaseProvider → repositories → use cases → page notifiers → POS tab families.
 
 ---
 
 ## 36. Navigation
 
-- **GoRouter** with a `ShellRoute` main layout (sidebar) and a `redirect` guard enforcing authentication.
-- POS route is full-width (no sidebar) within the shell, containing the 10-customer + return workspace.
-- Named, type-safe routes for item detail/edit, purchase/sale invoices, reports, settings, users, etc.
-- Arabic-first UI direction applies to all screens; back/forward behavior correct on Windows and Android.
+- **GoRouter** with a `ShellRoute` (sidebar) and an auth-guard `redirect`.
+- POS route = full-width workspace (10 customers + return tabs) inside the shell.
+- Named type-safe routes; Arabic-first direction on all screens; correct back/forward on Windows and Android.
 
 ---
 
 ## 37. Backup & Restore
 
-**Mechanism:** direct SQLite file copy (with optional zip compression), user-initiated from Settings.
+**Mechanism:** direct SQLite file copy, optionally compressed (`.zip` via `archive`), user-initiated from Settings.
 
-### Backup
-1. Copy the SQLite `.db` file to a user-selected directory.
-2. Filename: `pharmacy_backup_YYYYMMDD_HHmmss.db` (optionally `.zip` via `archive`).
-3. A JSON metadata file records timestamp, app version, and **database schema version**.
-
-### Restore
-1. Select a backup `.db` file.
-2. Validate integrity (metadata + schema version).
-3. Prompt user (data will be replaced).
-4. Close DB connection; replace file; reopen.
-5. Run pending migrations if needed.
-6. Audit-log the restore.
-
-### Auto-backup
-- Optional daily automatic backup to a designated folder, configurable in settings.
+- **Backup:** copy `.db` to user-selected directory; filename `pharmacy_backup_YYYYMMDD_HHmmss.db`; JSON metadata (timestamp, app version, schema version).
+- **Restore:** select file → validate integrity + schema version → warn → close DB → replace → reopen → apply pending migrations → audit-log the restore.
+- **Auto-backup:** optional daily backup, configurable in settings.
+- Designed so that **future synchronization** can be layered on without database redesign (all entity ids are stable UUIDs; timestamps UTC).
 
 ---
 
 ## 38. Git / GitHub Workflow
 
-**Branch strategy:** simplified Git Flow.
-
 ```
-main                  ← production-ready, tagged releases, protected
-  └── develop         ← integration
-       ├── feature/*
-       ├── bugfix/*
-       └── release/v*
+main          ← production-ready, tagged, protected
+  └─ develop  ← integration
+       ├─ feature/*
+       ├─ bugfix/*
+       └─ release/v*
 ```
 
-**Rules:**
-- `main` always deployable and protected.
-- Work on feature branches from `develop`; merge via PR.
-- Conventional Commits (`feat:`, `fix:`, `chore:`, `test:`, `docs:`, `refactor:`).
-- No direct pushes to `main`.
-- Tags for releases (`v1.0.0`).
-- GitHub Actions: full test + build (analyze, unit/widget/integration/database tests, build Windows, build Android).
+- PRs required; Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`); no direct pushes to `main`; tags for releases.
+- GitHub Actions: analyze + test + build Windows + build Android on every PR and on release tags.
 
 ---
 
 ## 39. Windows Build Strategy
-
-**GitHub Actions** builds the Windows EXE on tag pushes and manual dispatch.
 
 ```yaml
 name: Build Windows
@@ -1531,247 +1607,93 @@ jobs:
           path: build/windows/x64/runner/Release/
 ```
 
-**Build targets:** Windows release / debug, Android APK. Windows-specific: icon in `windows/runner/.rc`, window title in `main.cpp`, minimum Windows 10.
+Build targets: Windows release / debug; Android APK. Windows-specific: icon in `windows/runner/.rc`, window title in `main.cpp`, minimum Windows 10.
 
 ---
 
 ## 40. Phase 1 Deliverables
 
-Phase 1 = **Foundation + Core Master Data + Stock/Items foundation** that fully lock in the corrected data model.
+Phase 1 = **Foundation + complete corrected Database model + core master-data repositories.**
 
 ### Scope
-- Project scaffolding, folder structure, Docker-free pure Flutter.
-- Complete Drift schema for **ALL** tables in §4 (items with every field, units/item_units, batches, stock_movements, categories, suppliers, customers, prescriptions, sales/sale_items, purchases/purchase_items, returns/return_items, expenses, cashbox, accounts, journal_entries/lines, users/roles/permissions/role_permissions, audit_log, lost_sales).
-- **Money** type (§23) and validation/error handling.
-- Base-units conversion service (§7).
-- Arabic-first localization scaffold (ARB) + Cairo/Tajawal fonts + RTL theme (§24, §34).
-- RBAC tables + seed default roles/permissions (§16).
-- Audit service (§17).
-- Backup file layout (schema version metadata) (§37).
-- Migration framework with schemaVersion + onUpgrade (§29).
-- DAOs + repositories for Items, Units, Batches, StockMovements, Categories (§10).
-- Data-grid scaffolding (sorting/filtering/pagination) (§22).
-- Unit tests for Money, base-units, FEFO, bonus engine, migration foundation (§31).
-- GitHub Actions workflow (test + build) (§39).
+- Project scaffolding, folder structure.
+- Complete Drift schema for **all** tables in §4 (items with every field, units/item_units, batches, categories/sub_categories, therapeutic_groups, manufacturers, suppliers, customers, prescriptions, sales_invoices/items, purchase_invoices/items, purchase_bonuses, returns/items, stock_movements, expenses, cashbox, accounts, journal_entries/lines, users/roles/permissions/role_permissions, audit_logs, lost_sales).
+- `Money` type (§23) + base-unit conversion service (§7) + validation/error handling.
+- Arabic-first localization scaffold + Cairo/Tajawal + RTL theme (§24, §34).
+- RBAC seed roles/permissions (§16); audit service (§17).
+- Backup metadata layout + migration framework (§29, §37).
+- DAOs/repositories for Items, Units, Batches, StockMovements, Categories/SubCategories, Manufacturers, TherapeuticGroups (§4).
+- Data-grid scaffolding (sort/filter/pagination) (§22).
+- Unit tests: Money, base units, FEFO, bonus engine, migration foundation (§31).
+- GitHub Actions workflow (§39).
 
 ### Explicitly NOT in Phase 1
-- Full POS guest/customer workspaces, full accounting UI, smart-alternatives UI, barcode-scanner hardware wiring, lost-sales capture UI — these are designed in this document but delivered in later phases.
+Full POS workspaces UI, full accounting UI, smart-alternatives UI, scanner hardware wiring, lost-sales capture UI, hybrid-return UI — designed here, delivered in later phases.
 
 ---
 
 ## 41. Future Implementation Roadmap
 
-### Phase 2 — Inventory & Items management
-Complete Item form (all identification, pharmaceutical, flags, units, pricing fields), category management, batch entry, stock adjustment UI, low-stock/expiry alerts, item import/export (Excel).
-
-### Phase 3 — Suppliers & Purchases
-Supplier CRUD + statements; purchase invoices; batch creation on receive; bonus engine UI; purchase returns; supplier balance reports.
-
-### Phase 4 — Customers & Prescriptions
-Customer/patient CRUD + statements; prescriptions with item lines; link prescription to sale.
-
-### Phase 5 — POS core
-Barcode-scanner service + 10-customer/return workspace; FEFO cart; payment (cash/card/mixed); receipt PDF; hold bill; Z-report; smart alternatives UI; lost sales quick-capture.
-
-### Phase 6 — Invoices & Returns
-Invoice list/view/void/PDF; hybrid returns UI (positive + negative lines); transactional reversals.
-
-### Phase 7 — Cash Box
-Open/close, deposits/withdrawals, auto entries from sales/expenses, day-end reconciliation.
-
-### Phase 8 — Expenses
-Expense CRUD + categories + receipts.
-
-### Phase 9 — Accounting
-Chart of accounts management, manual journal entries, auto-posting from sales/purchases/returns/expenses, period close.
-
-### Phase 10 — Reports
-Trial Balance, Income Statement, Balance Sheet, Account Statements, sales/inventory/purchase reports, lost-sales reports, PDF + Excel export, date-range filters, supplier/customer statements.
-
-### Phase 11 — Audit log & Settings
-Audit log viewer, app settings (business name, tax rate, currency), user/role/permission management UI.
-
-### Phase 12 — Backup/Restore & Export
-Full backup/restore UI, auto-backup, PDF/Excel export for invoices, receipts, reports, data grids.
-
-### Phase 13 — Polish & Hardening
-RTL QA, responsive polish, keyboard shortcuts, performance optimization, accessibility, error handling polish.
-
-### Phase 14 — Testing & CI/CD
-Reliability/threshold coverage, complete integration suite, Windows + Android release pipelines.
-
-### Phase 15 — Release
-Installer (Inno Setup / MSIX), icons/splash, docs, tag `v1.0.0`, GitHub Release artifacts.
+- **Phase 2 — Items & Inventory:** complete item form (all identification/pharma/flags/units/pricing/stock fields), category/sub-category/manufacturer/therapeutic-group management, batch entry, stock adjustment UI, expiry/low-stock alerts, Excel import/export.
+- **Phase 3 — Suppliers & Purchases:** supplier CRUD + statements; purchase invoices; batch creation on receive; bonus engine UI; purchase returns; supplier balance reports.
+- **Phase 4 — Customers & Prescriptions:** customer/patient CRUD + statements; prescriptions; link prescription to sale.
+- **Phase 5 — POS core:** scanner service; 10-customer + return workspace; FEFO cart; cash/card/mixed payment; receipt PDF; hold bill; Z-report; smart alternatives UI; lost-sales quick capture.
+- **Phase 6 — Invoices & Returns:** invoice list/view/void/PDF; hybrid returns UI (signed lines); transactional reversals.
+- **Phase 7 — Cash Box:** open/close, deposits/withdrawals, auto entries, day-end reconciliation.
+- **Phase 8 — Expenses:** CRUD + categories + receipts.
+- **Phase 9 — Accounting:** chart of accounts UI, manual journal entries, auto-posting, period close.
+- **Phase 10 — Reports:** Trial Balance, Income Statement, Balance Sheet, Account Statements, sales/inventory/purchase reports, lost-sales reports, PDF + Excel export, date filters, supplier/customer statements.
+- **Phase 11 — Audit log & Settings:** audit viewer, app settings (business name, tax, currency), user/role/permission management UI.
+- **Phase 12 — Backup/Restore & Export:** full backup/restore UI, auto-backup, PDF/Excel export everywhere.
+- **Phase 13 — Polish & Hardening:** RTL QA, responsive polish, shortcuts, performance, accessibility.
+- **Phase 14 — Testing & CI/CD:** coverage thresholds, integration suite, release pipelines.
+- **Phase 15 — Release:** installer (Inno Setup/MSIX), icons/splash, docs, tag `v1.0.0`, GitHub Release artifacts.
 
 ---
 
 ## 42. Requirements Coverage Checklist
 
-> This checklist reconciles every major original-specification requirement against this Architecture Plan. Each is marked **✅ Covered** unless an explicit decision is required.
+> Every requirement from the original specification and this review brief. No requirement is `Missing`.
 
-### Items / Products (CRITICAL)
-- ✅ Primary Barcode — `items.primary_barcode`
-- ✅ Secondary Barcode — `items.secondary_barcode`
-- ✅ Trade Name 1 / Trade Name 2 — `items.trade_name_1` / `trade_name_2`
-- ✅ Scientific Name — `items.scientific_name`
-- ✅ Active Ingredients / Composition — `items.active_ingredients`
-- ✅ Equivalent Drug — `items.equivalent_drug`
-- ✅ Manufacturer — `items.manufacturer`
-- ✅ Main Category / Sub-Category — `items.main_category_id` / `items.sub_category_id` → `categories`
-- ✅ Therapeutic Group — `items.therapeutic_group`
-- ✅ Pharmaceutical Form — `items.pharmaceutical_form`
-- ✅ Dose / Concentration — `items.dose_concentration`
-- ✅ Size / Volume — `items.size_volume`
-- ✅ Shelf Location — `items.shelf_location`
-- ✅ Has Expiry Date — `items.has_expiry_date`
-- ✅ Print Barcode Label — `items.print_barcode_label`
-- ✅ OTC — `items.is_otc`
-- ✅ Controlled Drug — `items.is_controlled_drug`
-- ✅ Scale Barcode Alert — `items.scale_barcode_alert`
-- ✅ Lock Automatic Price Update — `items.lock_auto_price_update`
-- ✅ Large Unit / Box, Sub-unit/Strip/Fraction, # sub-units per large unit — `item_units` + `units` (§7)
+| Requirement | Covered? | Where | Notes |
+|-------------|----------|-------|-------|
+| Items full model (all identifiers/pharma/flags/units/stock/pricing fields) | ✅ | §4.7, §5 | Every field explicit column; manufacturer/category/therapeutic group are FKs to independent tables |
+| Units / Base Unit model — TotalBaseUnits authoritative | ✅ | §7 | Single base-unit quantity; derived display; no conflicting boxes+strips fields |
+| Batches table (complete) | ✅ | §4.8, §6 | FEFO, expired exclusion, historical cost, batch returns, supplier/bonus |
+| Pricing & historical cost separation | ✅ | §8 | Master/default vs batch historical; no overwrite of history |
+| Stock Movement Ledger | ✅ | §4.9, §10 | 10 movement types; ledger authoritative; derived caches declared |
+| Purchase Invoices (+ items + bonuses) | ✅ | §4.16–4.18, §12 | All required invoice/item fields; explicit `purchase_bonuses` table |
+| Purchase Bonus Engine (Bonus1/Bonus2/Gift, effective qty & cost) | ✅ | §4.18, §13 | 100+10+5+2=117; effective unit cost; Buy A Get B supported |
+| Sales Invoices & items (batch-linked) | ✅ | §4.14–4.15, §11 | Invoice/lines include all required fields; linked to FEFO batch |
+| Hybrid Returns (signed quantities, original refs, transactional reversal) | ✅ | §4.15, §4.19, §14 | A+2/B+1/C−1; original invoice/item/batch; restore original batch only |
+| Lost Sales / النواقص | ✅ | §4.28, §15 | All required fields; status lifecycle; purchase reports |
+| Smart Alternatives (Green/Yellow/Blue, UI-independent) | ✅ | §18 | Dynamic computation; extensible |
+| Suppliers full fields | ✅ | §4.10 | Phone, secondary phone, tax/VAT, license, opening balance, notes, active |
+| Customers full fields; cash sale without customer | ✅ | §4.11 | `customer_id` nullable for walk-in cash |
+| Users/Roles/Permissions/RolePermissions granular | ✅ | §4.26, §16 | Admin/Pharmacist/Cashier reference matrix; extensible |
+| Immutable Audit Log with required operations/fields | ✅ | §4.27, §17 | Append-only; old/new/reason/date |
+| POS Workspace 10 customers + Return, per-tab state, Riverpod | ✅ | §19 | Independent cart/customer/payment/pending state |
+| Barcode Scanner pipeline (buffer→completion→normalize→query→item→FEFO→cart) | ✅ | §20 | Independent of focused field; no shortcut conflict |
+| Keyboard shortcuts (F1/F2/F5/F12/Space·Enter/Alt+S), centralized/configurable | ✅ | §21 | |
+| Data grids (sort/filter/multi-column/visibility/order/inline/multi-select/bulk/keyboard) | ✅ | §22 | Inline edits via business logic+transaction+audit |
+| Bulk operations (shelf location, category, price by %) transactional + audited | ✅ | §22 | No partial/inconsistent updates |
+| Expiry/visual status (Expired/Near/Low/Normal) with text+icon+indicator | ✅ | §24 | Not color-only |
+| Database integrity (FK/unique/NOT NULL/CHECK/RI/indexes/cascades/no orphans) | ✅ | §27 | Explicit minimum index list; fast barcode lookup |
+| Transactions (sale/purchase/return/adjustment/bulk atomic flows) | ✅ | §26 | Full rollback on any failure |
+| Money / Financial precision — no REAL; integer units; USD configurable | ✅ | §23 | Applied to costs/prices/discounts/taxes/totals/profit/balances/cashbox/accounting |
+| Soft delete & historical preservation | ✅ | §28 | Financial/history never physically deleted; master uses is_active |
+| Migration strategy (Drift versioning, no DB deletion) | ✅ | §29 | Forward migrations; safe defaults; tests |
+| Performance (10k+ products, large history, pagination, indexed, no full load) | ✅ | §30 | |
+| Arabic-first professional UI (mandatory) + glossary + Cairo/Tajawal + RTL default | ✅ | §24, §34 | English secondary only; glossary table present |
+| Offline-First — SQLite source of truth; future backup/restore/sync without redesign | ✅ | §3, §30, §37 | |
+| Future Accounting Foundation (cash box, reports, balances, financial statements, employee/doctor revenue) | ✅ | §25 | DB model supports double-entry; UI deferred |
+| Required Architecture Tables map | ✅ | §4.29 | All listed entities present with purpose |
+| Technology & delivery (Flutter, Material 3, Windows primary, Android dev, offline, CI, Windows EXE) | ✅ | §2, §39 | |
+| Phase 1 scope explicitly defined | ✅ | §40 | |
+| Requirements Coverage Checklist present | ✅ | §42 | This table |
 
-### Units / Base Unit Quantity Model (CRITICAL)
-- ✅ TotalBaseUnits authoritative base-unit model (§7)
-- ✅ Derived display quantities; no separate `Boxes=3`/`Fractions=4` authority
-- ✅ Applies to Purchases, Sales, Returns, Inventory, Adjustments, FEFO, Reports, Profit
-
-### Batch / Expiry Model (CRITICAL)
-- ✅ Dedicated `batches` table with all required fields (§6)
-- ✅ FEFO behavior
-- ✅ Expired-stock handling; expired never auto-selected for sale
-- ✅ Non-expiring products
-- ✅ Batch-level costing
-- ✅ Batch-level inventory
-- ✅ Batch-level returns
-
-### Stock Movement Ledger
-- ✅ All 10 movement types (opening, purchase, sale, sale_return, purchase_return, adjustment, damaged, expired, transfer, manual_correction) (§10)
-- ✅ Each movement includes item/batch/quantity base/type/reference/unit cost/user/time/notes
-- ✅ Ledger is authoritative; `current_stock` is derived/cached, not sole source of truth
-
-### Pricing Model
-- ✅ Purchase Cost
-- ✅ Purchase Discount %
-- ✅ Public / Retail Price
-- ✅ Sub-unit Price
-- ✅ Wholesale Price
-- ✅ Half-Wholesale Price
-- ✅ Custom Price 1 / Custom Price 2
-- ✅ VAT / Tax %
-- ✅ Calculated Profit Margin %
-- ✅ Master/default vs batch/purchase-specific distinction
-- ✅ Historical purchase cost never overwritten by newer purchase
-- ✅ Historical invoices/batches preserve original costs
-
-### Purchase Bonuses
-- ✅ Bonus 1 / Bonus 2 / Gift
-- ✅ Effective Quantity (e.g., 100+10+5+2 = 117)
-- ✅ True Effective Unit Cost = Total Actual Cost / Total Effective Quantity
-- ✅ Future scenario: bonus item differs from purchased item (`bonus_reference_item_id`)
-
-### Returns (Hybrid)
-- ✅ Positive and negative quantities in one transaction
-- ✅ References original invoice / invoice item / batch
-- ✅ Restore to original batch; prevents arbitrary batch swapping
-- ✅ Reverses revenue, cost, profit, stock transactionally
-
-### Smart Alternatives
-- ✅ GREEN (same composition+dose+form)
-- ✅ YELLOW (same composition, different dose/strength)
-- ✅ BLUE (≥1 shared active ingredient)
-- ✅ Matching engine independent of UI
-- ✅ Dynamically calculated, not stale stored results
-
-### Lost Sales (نواقص)
-- ✅ Professional Arabic terminology (النواقص)
-- ✅ Quick recording of unavailable products
-- ✅ Fields: requested item/barcode/scientific name/qty/customer/user/datetime/status/notes
-- ✅ Future purchasing-decision reports
-
-### Users / Roles / Permissions
-- ✅ Users, Roles, Permissions, RolePermissions tables
-- ✅ Not reduced to a single role string
-- ✅ Sell, Return, View Inventory, Change Prices, Change Purchase Cost, Delete/Cancel Invoice, Manage Users, Manage Permissions, Modify Settings, Adjust Stock
-
-### Audit Log
-- ✅ User ID, Action, Entity Type, Entity ID, Old/New Value, Date/Time, Reason/Notes
-- ✅ Immutable audit history
-
-### POS Workspace
-- ✅ Customer 1–10 + Return (11 tabs)
-- ✅ Independent state per tab; no state loss on switch
-
-### Barcode Scanning
-- ✅ Scanner → Buffer → Detect completion → Normalize → Search → Item → FEFO batch → Active POS cart
-- ✅ Independent of focused field
-- ✅ Does not interfere with keyboard shortcuts
-
-### Keyboard Shortcuts
-- ✅ F1 Search, F2 Toggle Box/Fraction, F5 Hold Bill, F12 Checkout, Space/Enter Quick Actions, Alt+S Alternatives
-- ✅ Centralized and configurable
-
-### Data Grids & Bulk Actions
-- ✅ Sorting, filtering, multi-column filtering, search, column visibility, column ordering, inline editing, multi-row selection, bulk actions, keyboard navigation
-- ✅ Bulk actions transactional and auditable
-
-### Money / Financial Precision (CRITICAL)
-- ✅ Integer minor-unit Money type; no `double`/`REAL` authority
-- ✅ Explicit rounding/precision control
-- ✅ Applies to costs, prices, discounts, taxes, totals, profit, balances
-
-### Arabic-First Professional UI (MANDATORY)
-- ✅ Arabic default language/locale/direction/terminology
-- ✅ English secondary only
-- ✅ Professional natural Arabic (not machine translation) across all UI areas
-- ✅ Controlled terminology glossary (§24)
-- ✅ Cairo / Tajawal consistent typography
-- ✅ RTL at architecture level
-
-### Accounting Foundation
-- ✅ Accounts / Journal Entries / Lines double-entry foundation
-- ✅ Compatible with Cash Box, daily/monthly/yearly reports, supplier/customer balances, profit reports, Income Statement, Balance Sheet, Trial Balance, Account Statements, future employee/doctor revenue
-- ✅ Accounting UI deferred but DB model supports it
-
-### Database Integrity
-- ✅ Foreign keys, unique constraints, NOT NULL, CHECK constraints, indexes, referential integrity
-- ✅ Optimized barcode lookup
-
-### Transactions
-- ✅ Sale, Purchase, Return, Stock Adjustment, Bulk — full transactional rollback
-
-### Soft Delete / Historical Integrity
-- ✅ No physical deletion of invoices/movements/audit/financial history
-- ✅ Master data soft-delete/inactive
-- ✅ Historical invoices remain valid if item deactivated
-
-### Migrations
-- ✅ Drift schema versioning + forward migrations; no DB deletion required
-
-### Performance
-- ✅ Tens of thousands of products, large invoice & movement history, thousands of batches, fast barcode lookup, efficient filtering, pagination, low memory
-
-### Architecture Quality
-- ✅ Clear separation: Presentation / Domain / Data / Database
-- ✅ Business rules independent of UI
-- ✅ Database behind repositories/DAOs; replaceable data layer
-
-### Technology & Delivery (from the original overarching requirements)
-- ✅ Flutter, Material 3
-- ✅ Windows Desktop primary, Android dev/test
-- ✅ Arabic RTL primary, English secondary
-- ✅ Responsive UI (desktop + Android)
-- ✅ Offline-first, local SQLite (Drift)
-- ✅ Clean Architecture, feature-based modularity
-- ✅ PDF / Excel export
-- ✅ Backup & restore
-- ✅ Search, filtering, advanced reports
-- ✅ Strong validation & error handling
-- ✅ Automated tests
-- ✅ Windows EXE via GitHub Actions
-
-**Result:** All original major requirements are marked **✅ Covered**. No requirement is silently omitted.
+**Result:** every original requirement is **✅ Covered**. No unresolved or missing requirements.
 
 ---
 
-*End of document. This is the authoritative architecture blueprint for the Pharmacy Management & POS system.*
+*End of the final specification. This document is the authoritative blueprint for implementing the Pharmacy Management & POS system.*
