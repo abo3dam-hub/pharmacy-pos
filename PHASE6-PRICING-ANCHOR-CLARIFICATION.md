@@ -90,16 +90,9 @@ Item: Panadol
     batch.unitCostMicros = cost per Tablet from supplier
 
   Partial-unit sale: 7 Tablets
-    BaseUnitPrice = 1000000 ÷ 100 = 10000 micros ($1.00 per Strip... 
-```
-
-Wait — this reveals an important detail. Let me recalculate.
-
-```
-  Partial-unit sale: 7 Tablets
-    BaseUnitPrice = 1000000 ÷ 100 = 10000 micros ($1.00 per Tablet)
-    PartialUnitPrice = 10000 × 11000 ÷ 10000 = 11000 micros ($1.10 per Tablet)
-    LineTotal = 11000 × 7 = 77000 micros ($7.70)
+    BaseUnitPrice = 100000 ÷ 100 = 1000 micros ($0.10 per Tablet)
+    PartialUnitPrice = 1000 × 11000 ÷ 10000 = 1100 micros ($0.11 per Tablet)
+    LineTotal = 1100 × 7 = 7700 micros ($0.77)
 ```
 
 **Correct.** The Case price is never used. The Box selling price is the anchor.
@@ -114,7 +107,7 @@ Item: Syrup
     unitsPerLarge = 1
 
   items:
-    sellingPriceMicros = 500000  ($5.00 per Bottle)
+    sellingPriceMicros = 50000  ($5.00 per Bottle)
 
   Partial-unit sale: N/A (Bottle is both Commercial Retail Unit AND Base Unit)
 ```
@@ -131,15 +124,15 @@ Item: Powder
     unitsPerLarge = 10  (1 Pack = 10 Sachets)
 
   items:
-    sellingPriceMicros = 300000  ($3.00 per Pack)
+    sellingPriceMicros = 30000  ($3.00 per Pack)
 
   Purchase: 1 Carton = 50 Packs
     UI converts: 50 × 10 = 500 base units
 
   Partial-unit sale: 3 Sachets
-    BaseUnitPrice = 300000 ÷ 10 = 30000 micros ($3.00 per Sachet)
-    PartialUnitPrice = 30000 × 11000 ÷ 10000 = 33000 micros ($3.30 per Sachet)
-    LineTotal = 33000 × 3 = 99000 micros ($9.90)
+    BaseUnitPrice = 30000 ÷ 10 = 3000 micros ($0.30 per Sachet)
+    PartialUnitPrice = 3000 × 11000 ÷ 10000 = 3300 micros ($0.33 per Sachet)
+    LineTotal = 3300 × 3 = 9900 micros ($0.99)
 ```
 
 **Correct.** Carton price never enters retail pricing.
@@ -186,20 +179,20 @@ The current schema is **sufficient** for Phase 6 pricing. The three-tier model w
 ```
 1. Pharmacist creates item "Panadol"
 2. Sets:
-   - sellingPriceMicros = 1000000  (Box price = $10.00)
+   - sellingPriceMicros = 100000  (Box price = $10.00)
    - item_units:
      - baseUnitId = unit_tablet
      - largeUnitId = unit_box
      - unitsPerLarge = 100  (1 Box = 100 Tablets)
 3. System auto-derives:
    - subUnitPriceMicros = calculatePartialUnitPrice(
-       sellingPriceMicros: 1000000,
+       sellingPriceMicros: 100000,
        unitsPerLarge: 100,
        markupBasisPoints: 1000
      )
-   - = 1000000 ÷ 100 × 1.10
-   - = 10000 × 1.10
-   - = 11000 micros ($1.10 per Tablet)
+   - = 100000 ÷ 100 × 1.10
+   - = 1000 × 1.10
+   - = 1100 micros ($0.11 per Tablet)
 ```
 
 ### 5.2 Purchase (per transaction)
@@ -213,7 +206,7 @@ The current schema is **sufficient** for Phase 6 pricing. The three-tier model w
    - costPerTablet = $72.00 ÷ 1200 = $0.06
 3. System creates:
    - batch.quantityBase = 1200
-   - batch.unitCostMicros = 60000 ($0.06 per Tablet)
+   - batch.unitCostMicros = 600 ($0.06 per Tablet)
 ```
 
 ### 5.3 Sale — Full Box
@@ -222,9 +215,9 @@ The current schema is **sufficient** for Phase 6 pricing. The three-tier model w
 1. Customer buys 1 Box
 2. SaleLineRequest:
    - quantityBase = 100
-   - unitPriceMicros = sellingPriceMicros = 1000000 ($10.00)
+   - unitPriceMicros = sellingPriceMicros = 100000 ($10.00)
    - unitTypeId = unit_box
-3. LineTotal = 1000000 × 1 = 1000000 ($10.00)
+3. LineTotal = 100000 × 1 = 100000 ($10.00)
 ```
 
 ### 5.4 Sale — Partial Units (7 Tablets)
@@ -233,9 +226,9 @@ The current schema is **sufficient** for Phase 6 pricing. The three-tier model w
 1. Customer buys 7 Tablets
 2. SaleLineRequest:
    - quantityBase = 7
-   - unitPriceMicros = subUnitPriceMicros = 11000 ($1.10)
+   - unitPriceMicros = subUnitPriceMicros = 1100 ($0.11)
    - unitTypeId = unit_tablet
-3. LineTotal = 11000 × 7 = 77000 ($7.70)
+3. LineTotal = 1100 × 7 = 7700 ($0.77)
 ```
 
 ### 5.5 Sale — Mixed (1 Box + 5 Tablets)
@@ -243,15 +236,15 @@ The current schema is **sufficient** for Phase 6 pricing. The three-tier model w
 ```
 Line 1: Box
   - quantityBase = 100
-  - unitPriceMicros = 1000000 (package price, no markup)
+  - unitPriceMicros = 100000 (package price, no markup)
   - unitTypeId = unit_box
 
 Line 2: Tablets
   - quantityBase = 5
-  - unitPriceMicros = 11000 (base unit price + markup)
+  - unitPriceMicros = 1100 (base unit price + markup)
   - unitTypeId = unit_tablet
 
-Total = 1000000 + 55000 = 1055000 ($105.50)
+Total = 100000 + 5500 = 105500 ($10.55)
 ```
 
 ---
