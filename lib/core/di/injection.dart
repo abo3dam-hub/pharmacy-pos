@@ -65,6 +65,9 @@ import '../../features/prescriptions/application/prescriptions_controller.dart';
 import '../../features/prescriptions/data/repositories/prescription_repository_impl.dart';
 import '../../features/prescriptions/domain/repositories/prescription_repository.dart';
 import '../../features/prescriptions/domain/usecases/prescriptions_use_cases.dart';
+import '../../features/sales/data/pos_catalog_dao.dart';
+import '../../features/sales/data/sales_repository_impl.dart';
+import '../../features/sales/domain/repositories/sales_repository.dart';
 import '../../features/suppliers/application/suppliers_controller.dart';
 import '../../features/suppliers/data/repositories/supplier_repository_impl.dart';
 import '../../features/suppliers/domain/repositories/supplier_repository.dart';
@@ -113,6 +116,19 @@ void setupDependencies() {
   _registerInventory(db);
   _registerPhase4(db);
   _registerPhase5(db);
+  _registerPhase7(db);
+}
+
+/// Phase 7 — POS workspace data layer over the existing transactional engine.
+void _registerPhase7(AppDatabase db) {
+  getIt.registerLazySingleton<PosCatalogDao>(() => PosCatalogDao(db));
+  getIt.registerLazySingleton<SalesRepository>(() => SalesRepositoryImpl(
+        db,
+        getIt<PosCatalogDao>(),
+        getIt<StockService>(),
+        getIt<SaleService>(),
+        getIt<ReturnService>(),
+      ));
 }
 
 /// Phase 5 — Customers & Prescriptions graph (customer master, derived

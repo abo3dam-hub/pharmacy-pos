@@ -22,6 +22,8 @@ import '../../features/prescriptions/presentation/pages/prescription_form_page.d
 import '../../features/purchases/presentation/pages/purchase_detail_page.dart';
 import '../../features/purchases/presentation/pages/purchase_form_page.dart';
 import '../../features/purchases/presentation/pages/purchases_page.dart';
+import '../../features/sales/presentation/pages/pos_invoice_page.dart';
+import '../../features/sales/presentation/pages/pos_workspace_page.dart';
 import '../../features/suppliers/presentation/pages/supplier_statement_page.dart';
 import '../../features/suppliers/presentation/pages/suppliers_page.dart';
 
@@ -62,6 +64,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (path == '/login') return '/';
       if (path == AppSection.users.path &&
           !authState.permissions.contains(Perm.usersView)) {
+        return '/access-denied';
+      }
+      if (path.startsWith(AppSection.sale.path) &&
+          !authState.permissions.contains(Perm.salesView)) {
         return '/access-denied';
       }
       if (path.startsWith(AppSection.inventory.path) &&
@@ -141,6 +147,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                 ],
+                if (section == AppSection.sale)
+                  GoRoute(
+                    path: 'invoice/:invoiceId',
+                    builder: (context, state) => PosInvoicePage(
+                      invoiceId: state.pathParameters['invoiceId']!,
+                    ),
+                  ),
                 if (section == AppSection.customers) ...[
                   GoRoute(
                     path: 'statement/:customerId',
@@ -173,6 +186,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 /// Placeholder modules render `SectionPlaceholder`; real modules return their
 /// page. `/users` is the first built module (§16).
 Widget _sectionPage(AppSection section, BuildContext context) {
+  if (section == AppSection.sale) return const PosWorkspacePage();
   if (section == AppSection.users) return const UsersPage();
   if (section == AppSection.inventory) return const InventoryPage();
   if (section == AppSection.suppliers) return const SuppliersPage();

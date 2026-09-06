@@ -2852,12 +2852,353 @@ abstract class AppLocalizations {
   /// **'لا يمكن ربط هذه الوصفة بالبيع'**
   String get prescriptionCannotPrepare;
 
+  /// No description provided for @partialSaleSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعدادات البيع الجزئي'**
   String get partialSaleSection;
+
+  /// No description provided for @partialSaleEnabled.
+  ///
+  /// In ar, this message translates to:
+  /// **'السماح بالبيع الجزئي'**
   String get partialSaleEnabled;
+
+  /// No description provided for @partialSaleSellablePart.
+  ///
+  /// In ar, this message translates to:
+  /// **'وحدة البيع الجزئي'**
   String get partialSaleSellablePart;
+
+  /// No description provided for @partialSalePartsPerFull.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الأجزاء في العبوة الكاملة'**
   String get partialSalePartsPerFull;
+
+  /// No description provided for @partialSaleBaseQuantity.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الوحدات الأساسية في الجزء'**
   String get partialSaleBaseQuantity;
+
+  /// No description provided for @partialSaleMarkupPercent.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الزيادة %'**
   String get partialSaleMarkupPercent;
+
+  /// No description provided for @posSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث عن دواء بالاسم أو الباركود...'**
+  String get posSearchHint;
+
+  /// No description provided for @posScanOrSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح الباركود أو ابحث عن منتج'**
+  String get posScanOrSearch;
+
+  /// No description provided for @posCustomerTab.
+  ///
+  /// In ar, this message translates to:
+  /// **'عميل {tab}'**
+  String posCustomerTab(int tab);
+
+  /// No description provided for @posReturnTab.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجعات'**
+  String get posReturnTab;
+
+  /// No description provided for @posCartItemEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'السلة فارغة — أضف أصنافاً للبيع'**
+  String get posCartItemEmpty;
+
+  /// No description provided for @posUnitBox.
+  ///
+  /// In ar, this message translates to:
+  /// **'علبة'**
+  String get posUnitBox;
+
+  /// No description provided for @posUnitStrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'شرائط'**
+  String get posUnitStrip;
+
+  /// No description provided for @posUnitUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'وحدة'**
+  String get posUnitUnit;
+
+  /// No description provided for @posTotalLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي'**
+  String get posTotalLabel;
+
+  /// No description provided for @posPayButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفع (F12)'**
+  String get posPayButton;
+
+  /// No description provided for @posHoldBill.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ فاتورة (F5)'**
+  String get posHoldBill;
+
+  /// No description provided for @posHoldBillSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ الفاتورة مؤقتاً'**
+  String get posHoldBillSaved;
+
+  /// No description provided for @posHoldBillRestored.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استرجاع الفاتورة'**
+  String get posHoldBillRestored;
+
+  /// No description provided for @posHoldBillEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد فواتير محفوظة'**
+  String get posHoldBillEmpty;
+
+  /// No description provided for @posCheckoutComplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إتمام البيع بنجاح'**
+  String get posCheckoutComplete;
+
+  /// No description provided for @posPrintReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'طباعة الإيصال'**
+  String get posPrintReceipt;
+
+  /// No description provided for @posReceiptSummaryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملخص الإيصال'**
+  String get posReceiptSummaryTitle;
+
+  /// No description provided for @posCashReceived.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المقبوض'**
+  String get posCashReceived;
+
+  /// No description provided for @posCardAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيمة البطاقة'**
+  String get posCardAmount;
+
+  /// No description provided for @posChangeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباقي'**
+  String get posChangeLabel;
+
+  /// No description provided for @posMixedPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفع مختلط (نقد + بطاقة)'**
+  String get posMixedPayment;
+
+  /// No description provided for @posInvalidPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ غير كافٍ أو غير صحيح'**
+  String get posInvalidPayment;
+
+  /// No description provided for @posItemNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'المنتج غير موجود في الدليل'**
+  String get posItemNotFound;
+
+  /// No description provided for @posOutOfStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفدت الكمية'**
+  String get posOutOfStock;
+
+  /// No description provided for @posRequiresPrescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتطلب وصفة طبية نشطة'**
+  String get posRequiresPrescription;
+
+  /// No description provided for @posReturnSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث برقم الفاتورة أو اسم العميل...'**
+  String get posReturnSearchHint;
+
+  /// No description provided for @posNoInvoices.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد فواتير مطابقة'**
+  String get posNoInvoices;
+
+  /// No description provided for @posReturnableQuantity.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المرتجعة'**
+  String get posReturnableQuantity;
+
+  /// No description provided for @posReturnButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرجاع'**
+  String get posReturnButton;
+
+  /// No description provided for @posReturnReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب المرتجع'**
+  String get posReturnReason;
+
+  /// No description provided for @posReturnSuccess.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استلام المرتجع بنجاح'**
+  String get posReturnSuccess;
+
+  /// No description provided for @posOverReturnBlocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن إرجاع أكثر من الكمية الأصلية'**
+  String get posOverReturnBlocked;
+
+  /// No description provided for @posLostSaleTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل منتج ناقص'**
+  String get posLostSaleTitle;
+
+  /// No description provided for @posLostSalePrompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل اسم المنتج وكميته'**
+  String get posLostSalePrompt;
+
+  /// No description provided for @posNoResults.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نتائج مطابقة'**
+  String get posNoResults;
+
+  /// No description provided for @posCustomerLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'العميل'**
+  String get posCustomerLabel;
+
+  /// No description provided for @posPrescriptionLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصفة'**
+  String get posPrescriptionLabel;
+
+  /// No description provided for @posActivePrescriptions.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصفات النشطة'**
+  String get posActivePrescriptions;
+
+  /// No description provided for @posNoPrescriptions.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد وصفات نشطة لهذا العميل'**
+  String get posNoPrescriptions;
+
+  /// No description provided for @posPriceChange.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل السعر'**
+  String get posPriceChange;
+
+  /// No description provided for @posItemAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت إضافة المنتج للسلة'**
+  String get posItemAdded;
+
+  /// No description provided for @posCartCleared.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تفريغ السلة'**
+  String get posCartCleared;
+
+  /// No description provided for @posQuantityUpdated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث الكمية'**
+  String get posQuantityUpdated;
+
+  /// No description provided for @posInvoiceTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة البيع'**
+  String get posInvoiceTitle;
+
+  /// No description provided for @posSaleNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الفاتورة'**
+  String get posSaleNumber;
+
+  /// No description provided for @posSaleDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get posSaleDate;
+
+  /// No description provided for @posLineItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'المنتج'**
+  String get posLineItem;
+
+  /// No description provided for @posLineQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get posLineQty;
+
+  /// No description provided for @posLineUnitPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر الوحدة'**
+  String get posLineUnitPrice;
+
+  /// No description provided for @posLineTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي'**
+  String get posLineTotal;
+
+  /// No description provided for @posLineDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصم'**
+  String get posLineDiscount;
+
+  /// No description provided for @posLineReturnable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية القابلة للإرجاع'**
+  String get posLineReturnable;
 }
 
 class _AppLocalizationsDelegate

@@ -1441,4 +1441,163 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get partialSaleMarkupPercent => 'Markup %';
+
+  @override
+  String get posSearchHint => 'Search by name or barcode...';
+
+  @override
+  String get posScanOrSearch => 'Scan barcode or search products';
+
+  @override
+  String posCustomerTab(int tab) {
+    return 'Customer $tab';
+  }
+
+  @override
+  String get posReturnTab => 'Returns';
+
+  @override
+  String get posCartItemEmpty => 'Cart is empty — add items to sell';
+
+  @override
+  String get posUnitBox => 'Box';
+
+  @override
+  String get posUnitStrip => 'Strips';
+
+  @override
+  String get posUnitUnit => 'Unit';
+
+  @override
+  String get posTotalLabel => 'Total';
+
+  @override
+  String get posPayButton => 'Pay (F12)';
+
+  @override
+  String get posHoldBill => 'Hold Bill (F5)';
+
+  @override
+  String get posHoldBillSaved => 'Bill held successfully';
+
+  @override
+  String get posHoldBillRestored => 'Bill restored';
+
+  @override
+  String get posHoldBillEmpty => 'No held bills';
+
+  @override
+  String get posCheckoutComplete => 'Sale completed successfully';
+
+  @override
+  String get posPrintReceipt => 'Print Receipt';
+
+  @override
+  String get posReceiptSummaryTitle => 'Receipt Summary';
+
+  @override
+  String get posCashReceived => 'Cash Received';
+
+  @override
+  String get posCardAmount => 'Card Amount';
+
+  @override
+  String get posChangeLabel => 'Change';
+
+  @override
+  String get posMixedPayment => 'Mixed Payment (Cash + Card)';
+
+  @override
+  String get posInvalidPayment => 'Insufficient or invalid amount';
+
+  @override
+  String get posItemNotFound => 'Product not found';
+
+  @override
+  String get posOutOfStock => 'Out of stock';
+
+  @override
+  String get posRequiresPrescription => 'Requires active prescription';
+
+  @override
+  String get posReturnSearchHint => 'Search by invoice number or customer...';
+
+  @override
+  String get posNoInvoices => 'No matching invoices';
+
+  @override
+  String get posReturnableQuantity => 'Returnable Quantity';
+
+  @override
+  String get posReturnButton => 'Return';
+
+  @override
+  String get posReturnReason => 'Return Reason';
+
+  @override
+  String get posReturnSuccess => 'Return processed successfully';
+
+  @override
+  String get posOverReturnBlocked =>
+      'Cannot return more than original quantity';
+
+  @override
+  String get posLostSaleTitle => 'Record Lost Sale';
+
+  @override
+  String get posLostSalePrompt => 'Enter product name and quantity';
+
+  @override
+  String get posNoResults => 'No matching results';
+
+  @override
+  String get posCustomerLabel => 'Customer';
+
+  @override
+  String get posPrescriptionLabel => 'Prescription';
+
+  @override
+  String get posActivePrescriptions => 'Active Prescriptions';
+
+  @override
+  String get posNoPrescriptions => 'No active prescriptions for this customer';
+
+  @override
+  String get posPriceChange => 'Change Price';
+
+  @override
+  String get posItemAdded => 'Item added to cart';
+
+  @override
+  String get posCartCleared => 'Cart cleared';
+
+  @override
+  String get posQuantityUpdated => 'Quantity updated';
+
+  @override
+  String get posInvoiceTitle => 'Sale Invoice';
+
+  @override
+  String get posSaleNumber => 'Invoice Number';
+
+  @override
+  String get posSaleDate => 'Date';
+
+  @override
+  String get posLineItem => 'Product';
+
+  @override
+  String get posLineQty => 'Qty';
+
+  @override
+  String get posLineUnitPrice => 'Unit Price';
+
+  @override
+  String get posLineTotal => 'Total';
+
+  @override
+  String get posLineDiscount => 'Discount';
+
+  @override
+  String get posLineReturnable => 'Returnable Quantity';
 }

@@ -33,6 +33,10 @@ import '../../features/inventory/domain/services/inventory_view_builder.dart';
 import '../../features/purchases/application/purchases_controller.dart';
 import '../../features/purchases/domain/usecases/purchases_use_cases.dart';
 import '../../features/prescriptions/application/prescriptions_controller.dart';
+import '../../features/sales/data/pos_catalog_dao.dart';
+import '../../features/sales/domain/repositories/sales_repository.dart';
+import '../../features/sales/presentation/controllers/pos_workspace_controller.dart';
+import '../../features/sales/presentation/controllers/pos_workspace_state.dart';
 import '../../features/suppliers/application/suppliers_controller.dart';
 import '../../features/suppliers/domain/usecases/suppliers_use_cases.dart';
 import '../../shared/database/app_database.dart';
@@ -110,6 +114,21 @@ final customersControllerProvider =
 final prescriptionsControllerProvider =
     StateNotifierProvider<PrescriptionsController, PrescriptionsViewState>(
         (ref) => getIt<PrescriptionsController>());
+
+/// POS (Phase 7) — the data layer plus one independent workspace controller
+/// per customer tab (§5 tabs).
+final posCatalogDaoProvider = Provider<PosCatalogDao>((ref) => getIt<PosCatalogDao>());
+final salesRepositoryProvider =
+    Provider<SalesRepository>((ref) => getIt<SalesRepository>());
+final posWorkspaceControllerProvider = StateNotifierProvider
+    .family<PosWorkspaceController, PosWorkspaceState, int>((
+      ref,
+      tabIndex,
+    ) =>
+        PosWorkspaceController(
+          tabIndex: tabIndex,
+          repository: getIt<SalesRepository>(),
+        ));
 final allCustomersUseCaseProvider =
     Provider<AllCustomersUseCase>((ref) => getIt<AllCustomersUseCase>());
 final allSuppliersUseCaseProvider =

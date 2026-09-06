@@ -1437,4 +1437,162 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get partialSaleMarkupPercent => 'نسبة الزيادة %';
+
+  @override
+  String get posSearchHint => 'ابحث عن دواء بالاسم أو الباركود...';
+
+  @override
+  String get posScanOrSearch => 'امسح الباركود أو ابحث عن منتج';
+
+  @override
+  String posCustomerTab(int tab) {
+    return 'عميل $tab';
+  }
+
+  @override
+  String get posReturnTab => 'مرتجعات';
+
+  @override
+  String get posCartItemEmpty => 'السلة فارغة — أضف أصنافاً للبيع';
+
+  @override
+  String get posUnitBox => 'علبة';
+
+  @override
+  String get posUnitStrip => 'شرائط';
+
+  @override
+  String get posUnitUnit => 'وحدة';
+
+  @override
+  String get posTotalLabel => 'الإجمالي';
+
+  @override
+  String get posPayButton => 'دفع (F12)';
+
+  @override
+  String get posHoldBill => 'حفظ فاتورة (F5)';
+
+  @override
+  String get posHoldBillSaved => 'تم حفظ الفاتورة مؤقتاً';
+
+  @override
+  String get posHoldBillRestored => 'تم استرجاع الفاتورة';
+
+  @override
+  String get posHoldBillEmpty => 'لا توجد فواتير محفوظة';
+
+  @override
+  String get posCheckoutComplete => 'تم إتمام البيع بنجاح';
+
+  @override
+  String get posPrintReceipt => 'طباعة الإيصال';
+
+  @override
+  String get posReceiptSummaryTitle => 'ملخص الإيصال';
+
+  @override
+  String get posCashReceived => 'المبلغ المقبوض';
+
+  @override
+  String get posCardAmount => 'قيمة البطاقة';
+
+  @override
+  String get posChangeLabel => 'الباقي';
+
+  @override
+  String get posMixedPayment => 'دفع مختلط (نقد + بطاقة)';
+
+  @override
+  String get posInvalidPayment => 'المبلغ غير كافٍ أو غير صحيح';
+
+  @override
+  String get posItemNotFound => 'المنتج غير موجود في الدليل';
+
+  @override
+  String get posOutOfStock => 'نفدت الكمية';
+
+  @override
+  String get posRequiresPrescription => 'يتطلب وصفة طبية نشطة';
+
+  @override
+  String get posReturnSearchHint => 'ابحث برقم الفاتورة أو اسم العميل...';
+
+  @override
+  String get posNoInvoices => 'لا توجد فواتير مطابقة';
+
+  @override
+  String get posReturnableQuantity => 'الكمية المرتجعة';
+
+  @override
+  String get posReturnButton => 'إرجاع';
+
+  @override
+  String get posReturnReason => 'سبب المرتجع';
+
+  @override
+  String get posReturnSuccess => 'تم استلام المرتجع بنجاح';
+
+  @override
+  String get posOverReturnBlocked => 'لا يمكن إرجاع أكثر من الكمية الأصلية';
+
+  @override
+  String get posLostSaleTitle => 'تسجيل منتج ناقص';
+
+  @override
+  String get posLostSalePrompt => 'أدخل اسم المنتج وكميته';
+
+  @override
+  String get posNoResults => 'لا توجد نتائج مطابقة';
+
+  @override
+  String get posCustomerLabel => 'العميل';
+
+  @override
+  String get posPrescriptionLabel => 'الوصفة';
+
+  @override
+  String get posActivePrescriptions => 'الوصفات النشطة';
+
+  @override
+  String get posNoPrescriptions => 'لا توجد وصفات نشطة لهذا العميل';
+
+  @override
+  String get posPriceChange => 'تعديل السعر';
+
+  @override
+  String get posItemAdded => 'تمت إضافة المنتج للسلة';
+
+  @override
+  String get posCartCleared => 'تم تفريغ السلة';
+
+  @override
+  String get posQuantityUpdated => 'تم تحديث الكمية';
+
+  @override
+  String get posInvoiceTitle => 'فاتورة البيع';
+
+  @override
+  String get posSaleNumber => 'رقم الفاتورة';
+
+  @override
+  String get posSaleDate => 'التاريخ';
+
+  @override
+  String get posLineItem => 'المنتج';
+
+  @override
+  String get posLineQty => 'الكمية';
+
+  @override
+  String get posLineUnitPrice => 'سعر الوحدة';
+
+  @override
+  String get posLineTotal => 'الإجمالي';
+
+  @override
+  String get posLineDiscount => 'الخصم';
+
+  @override
+  String get posLineReturnable => 'الكمية القابلة للإرجاع';
 }
