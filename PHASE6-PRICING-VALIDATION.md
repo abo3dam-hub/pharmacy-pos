@@ -1,8 +1,15 @@
 # PHASE 6 — FINAL PRICING BUSINESS VALIDATION
 
+> **⚠️ SUPERSEDED BY PHASE6-PARTIAL-SALE-DESIGN-LOCK.md**
+>
+> The automatic packaging-hierarchy pricing model validated in this document has been replaced by the explicit pharmacist-controlled partial-sale configuration.
+>
+> **Authoritative document:** `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md`
+
 **Pharmacy Management & POS**
 **Date:** 2026-09-06
 **Status:** BUSINESS VALIDATION — DESIGN ONLY, NO CODE CHANGES
+**Superseded:** 2026-09-06
 
 ---
 

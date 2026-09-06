@@ -1,8 +1,17 @@
 # PRE-PHASE-6 FINAL DESIGN LOCK
 
+> **⚠️ PARTIAL-SALE SECTIONS SUPERSEDED BY PHASE6-PARTIAL-SALE-DESIGN-LOCK.md**
+>
+> The partial-unit pricing model described in Sections 6–8 of this document has been replaced by the explicit pharmacist-controlled partial-sale configuration.
+>
+> **Authoritative document for partial-sale pricing:** `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md`
+>
+> All other sections (prescription lifecycle, dispensing, linkage, historical pricing, rounding, accounting, returns, transaction atomicity, concurrency, test plan) remain valid.
+
 **Pharmacy Management & POS**
 **Date:** 2026-09-06
 **Status:** DESIGN ONLY — NO CODE CHANGES
+**Partial-sale sections superseded:** 2026-09-06
 
 ---
 

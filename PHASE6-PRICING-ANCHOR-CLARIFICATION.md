@@ -1,8 +1,15 @@
 # PHASE 6 — FINAL PRICING ANCHOR CLARIFICATION
 
+> **⚠️ SUPERSEDED BY PHASE6-PARTIAL-SALE-DESIGN-LOCK.md**
+>
+> The automatic packaging-hierarchy pricing model described in this document has been replaced by the explicit pharmacist-controlled partial-sale configuration.
+>
+> **Authoritative document:** `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md`
+
 **Pharmacy Management & POS**
 **Date:** 2026-09-06
 **Status:** DESIGN CLARIFICATION ONLY — NO CODE CHANGES
+**Superseded:** 2026-09-06
 
 ---
 
