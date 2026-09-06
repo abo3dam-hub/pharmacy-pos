@@ -94,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -166,6 +166,18 @@ class AppDatabase extends _$AppDatabase {
         ),
         mode: InsertMode.insertOrIgnore,
       );
+    }
+    if (from < 6) {
+      // Phase 6 gap closure: `lost_sales` was never created by the upgrade
+      // path (only fresh installs). Forward-only healing for databases that
+      // predate v6 — create it when absent, ignore when already present.
+      final absent = await customSelect(
+        "SELECT COUNT(*) AS c FROM sqlite_master "
+        "WHERE type = 'table' AND name = 'lost_sales'",
+      ).getSingle();
+      if (absent.read<int>('c') == 0) {
+        await m.createTable(lostSales);
+      }
     }
   }
 }

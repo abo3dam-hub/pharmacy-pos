@@ -27,6 +27,9 @@ class PosCatalogItem {
     required this.largeUnitName,
     required this.unitsPerLarge,
     required this.partialSaleEnabled,
+    this.dose,
+    this.pharmaForm,
+    this.sizeVolume,
     this.sellablePartUnitId,
     this.sellablePartUnitName,
     this.partsPerFullProduct,
@@ -64,6 +67,13 @@ class PosCatalogItem {
   final String largeUnitId;
   final String largeUnitName;
   final int unitsPerLarge;
+
+  /// Composition descriptors reported in the smart-alternatives panels and
+  /// receipts (master `items` columns): dose/strength, pharmaceutical form and
+  /// pack size/volume. All nullable — many legacy items have no values.
+  final String? dose;
+  final String? pharmaForm;
+  final String? sizeVolume;
 
   // ── Partial-sale configuration (Phase 6 Design Lock) ──────────────────
   final bool partialSaleEnabled;

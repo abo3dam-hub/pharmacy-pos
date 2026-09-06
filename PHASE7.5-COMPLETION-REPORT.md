@@ -1,7 +1,7 @@
 # PHASE 7.5 – Financial Lifecycle Foundation — Completion Report
 
 - **Base commit:** `f64ac5c40bbaf4a940d013d004228162dcf7bf6d`
-- **Final commit:** `13b5a90e816deaa5a795faac00698da0965b909e`
+- **Final commit:** `98f4651f71f29c45944e98a2feaac527c8bfef0e`
 - **Tests:** `+304: All tests passed!` (was 286 before this phase; +18 new/updated)
 - **Analyzer:** `flutter analyze` → **No issues found!** (0 issues)
 - **Schema:** drift v5 (`CustomerDao` feeds widened, `customer_payments` table added, `acc_1200` inventory account seeded)

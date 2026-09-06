@@ -20,6 +20,8 @@ import '../../domain/services/return_service.dart';
 import '../../domain/services/sale_service.dart';
 import '../../domain/services/stock_service.dart';
 import '../../features/auth/application/auth_controller.dart';
+import '../../features/sales/data/z_report_dao.dart';
+import '../../shared/database/settings_dao.dart';
 import '../../features/auth/application/users_controller.dart';
 import '../../features/auth/data/daos/user_dao.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
@@ -122,6 +124,8 @@ void setupDependencies() {
 /// Phase 7 — POS workspace data layer over the existing transactional engine.
 void _registerPhase7(AppDatabase db) {
   getIt.registerLazySingleton<PosCatalogDao>(() => PosCatalogDao(db));
+  getIt.registerLazySingleton<SettingsDao>(() => SettingsDao(db));
+  getIt.registerLazySingleton<ZReportDao>(() => ZReportDao(db));
   getIt.registerLazySingleton<SalesRepository>(() => SalesRepositoryImpl(
         db,
         getIt<PosCatalogDao>(),

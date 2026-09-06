@@ -1489,6 +1489,87 @@ class AppLocalizationsAr extends AppLocalizations {
   String get posPrintReceipt => 'طباعة الإيصال';
 
   @override
+  String get posPrintFailed => 'تعذر طباعة المستند';
+
+  @override
+  String get zReportTitle => 'تقرير نهاية الوردية (Z)';
+
+  @override
+  String get zReportPrint => 'طباعة التقرير';
+
+  @override
+  String get zReportPeriodPrefix => 'الفترة';
+
+  @override
+  String get zReportFrom => 'من';
+
+  @override
+  String get zReportTo => 'إلى';
+
+  @override
+  String get zReportDays => 'أيام';
+
+  @override
+  String get zReportSalesSummary => 'ملخص المبيعات';
+
+  @override
+  String get zReportReturnsSection => 'المرتجعات والإلغاءات';
+
+  @override
+  String get zReportDrawerSection => 'تسوية الخزينة';
+
+  @override
+  String get zReportInvoicesCount => 'عدد الفواتير';
+
+  @override
+  String get zReportUnitsSold => 'الوحدات المباعة';
+
+  @override
+  String get zReportTotalSales => 'إجمالي المبيعات';
+
+  @override
+  String get zReportCash => 'نقداً';
+
+  @override
+  String get zReportCard => 'بطاقة';
+
+  @override
+  String get zReportCredit => 'آجل (ذمم)';
+
+  @override
+  String get zReportReturnsBrief => 'المرتجعات (عدد / قيمة)';
+
+  @override
+  String get zReportVoidsBrief => 'الفواتير الملغاة (عدد / قيمة)';
+
+  @override
+  String get zReportCustomerCollected => 'تحصيل ذمم العملاء';
+
+  @override
+  String get zReportCustomerRefunded => 'استرداد ذمم العملاء';
+
+  @override
+  String get zReportDrawerOpening => 'رصيد الافتتاح';
+
+  @override
+  String get zReportDrawerNet => 'صافي الحركات';
+
+  @override
+  String get zReportDrawerExpected => 'الرصيد المتوقع (نهاية الفترة)';
+
+  @override
+  String get zReportDrawerLedger => 'الرصيد الجاري (سجل الخزينة)';
+
+  @override
+  String get zReportDrawerDeclared => 'الإغلاق المعلن';
+
+  @override
+  String get zReportDrawerDiff => 'فرق الخزينة';
+
+  @override
+  String get zReportEmptyPeriod => 'لا توجد مبيعات ضمن الفترة المحددة';
+
+  @override
   String get posReceiptSummaryTitle => 'ملخص الإيصال';
 
   @override
@@ -1543,6 +1624,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get posLostSalePrompt => 'أدخل اسم المنتج وكميته';
 
   @override
+  String get posLostSaleName => 'اسم/مواصفة المنتج';
+
+  @override
+  String get posLostSaleSciName => 'الاسم العلمي';
+
+  @override
+  String get posLostSaleNotes => 'ملاحظات';
+
+  @override
+  String get posLostSaleQty => 'الكمية المطلوبة';
+
+  @override
+  String get posLostSaleSaved => 'تم تسجيل المنتج الناقص';
+
+  @override
   String get posNoResults => 'لا توجد نتائج مطابقة';
 
   @override
@@ -1595,4 +1691,25 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get posLineReturnable => 'الكمية القابلة للإرجاع';
+
+  @override
+  String get posAlternativesTitle => 'البدائل المقترحة لـ';
+
+  @override
+  String get posAlternativesTier1 => 'مطابق: نفس المكون والجرعة والشكل';
+
+  @override
+  String get posAlternativesTier2 => 'نفس المكون بجرعة أو شكل مختلف';
+
+  @override
+  String get posAlternativesTier3 => 'يشارك مكوناً فعالاً';
+
+  @override
+  String get posAlternativesEmpty => 'لا توجد بدائل متاحة حالياً';
+
+  @override
+  String get posAlternativesFailed => 'تعذر تحميل البدائل';
+
+  @override
+  String get posAvailableStock => 'متاح';
 }

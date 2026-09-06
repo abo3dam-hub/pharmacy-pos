@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/data_grid/page_request.dart';
 import '../../sales/domain/entities/pos_catalog_item.dart';
+import '../../sales/domain/services/smart_alternatives_service.dart';
 import '../../../shared/database/app_database.dart';
 
 /// POS-facing catalog queries (§5 search panel). All filtering/counting stays
@@ -98,29 +99,39 @@ final query = _db.select(_db.items)
     return hydrated.isEmpty ? null : hydrated.first;
   }
 
-  /// Bounded "same family" lookup (therapeutic group or active ingredient),
-  /// always active + currently available — computed live for alternatives.
-  Future<List<PosCatalogItem>> alternatives({
+  /// Bounded candidate set for the smart-alternatives engine (§18): products
+  /// in the same therapeutic group OR matching any active-ingredient token of
+  /// the requested item, always active + currently available. The engine does
+  /// the authoritative tier ranking afterwards (candidates here are a superset
+  /// of the final alternatives).
+  Future<List<PosCatalogItem>> alternativeCandidates({
     required String itemId,
     String? therapeuticGroupId,
     String? activeIngredient,
-    int limit = 12,
+    int limit = 18,
   }) async {
-    if ((therapeuticGroupId == null || therapeuticGroupId.isEmpty) &&
-        (activeIngredient == null || activeIngredient.isEmpty)) {
+    final group = (therapeuticGroupId ?? '').trim();
+    final tokens = SmartAlternativesService.ingredientTokens(activeIngredient);
+    if (group.isEmpty && tokens.isEmpty) {
       return const [];
     }
-    final conds = <Expression<bool>>[
+    final family = <Expression<bool>>[];
+    if (group.isNotEmpty) {
+      family.add(_db.items.therapeuticGroupId.equals(group));
+    }
+    if (tokens.isNotEmpty) {
+      final likes = <Expression<bool>>[];
+      for (final token in tokens) {
+        likes.add(_db.items.activeIngredient
+            .like('%${_escapeLike(token)}%'));
+      }
+      family.add(likes.length == 1 ? likes.first : likes.reduce((a, b) => a | b));
+    }
+    final filter = <Expression<bool>>[
       _db.items.isActive.equals(true),
       _db.items.id.equals(itemId).not(),
-    ];
-    if (therapeuticGroupId != null && therapeuticGroupId.isNotEmpty) {
-      conds.add(_db.items.therapeuticGroupId.equals(therapeuticGroupId));
-    }
-    if (activeIngredient != null && activeIngredient.isNotEmpty) {
-      conds.add(_db.items.activeIngredient.equals(activeIngredient));
-    }
-    final filter = conds.reduce((a, b) => a & b);
+      family.reduce((a, b) => a | b),
+    ].reduce((a, b) => a & b);
 
     final candidates = await (_db.select(_db.items)
           ..where((i) => filter)
@@ -128,7 +139,6 @@ final query = _db.select(_db.items)
           ..limit(limit * 3))
         .get();
     final hydrated = await hydrate(candidates);
-    // Availability filter happens here (bounded candidate set).
     return [for (final item in hydrated) if (item.availableStockBase > 0) item]
         .take(limit)
         .toList();
@@ -213,6 +223,9 @@ final query = _db.select(_db.items)
       scientificName: r.scientificName,
       activeIngredient: r.activeIngredient,
       therapeuticGroupId: r.therapeuticGroupId,
+      dose: r.dose,
+      pharmaForm: r.pharmaForm,
+      sizeVolume: r.sizeVolume,
       primaryBarcode: r.primaryBarcode,
       secondaryBarcode: r.secondaryBarcode,
       isOtc: r.isOtc,

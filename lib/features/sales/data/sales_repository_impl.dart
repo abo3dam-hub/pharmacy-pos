@@ -12,7 +12,9 @@ import '../../../shared/models/enums.dart';
 import '../../sales/domain/entities/pos_catalog_item.dart';
 import '../../sales/domain/entities/pos_customer.dart';
 import '../../sales/domain/entities/pos_invoice.dart';
+import '../../sales/domain/entities/smart_alternative.dart';
 import '../../sales/domain/repositories/sales_repository.dart';
+import '../../sales/domain/services/smart_alternatives_service.dart';
 import '../../sales/domain/usecases/payment_calculator.dart';
 import 'pos_catalog_dao.dart';
 
@@ -409,12 +411,17 @@ class SalesRepositoryImpl implements SalesRepository {
   // ── Alternatives & lost sales ────────────────────────────────────────
 
   @override
-  Future<List<PosCatalogItem>> smartAlternatives(PosCatalogItem item) =>
-      _catalogDao.alternatives(
-        itemId: item.id,
-        therapeuticGroupId: item.therapeuticGroupId,
-        activeIngredient: item.activeIngredient,
-      );
+  Future<List<SmartAlternative>> smartAlternatives(
+    PosCatalogItem item, {
+    int limit = 12,
+  }) async {
+    final candidates = await _catalogDao.alternativeCandidates(
+      itemId: item.id,
+      therapeuticGroupId: item.therapeuticGroupId,
+      activeIngredient: item.activeIngredient,
+    );
+    return const SmartAlternativesService().rank(item, candidates, limit: limit);
+  }
 
   @override
   Future<void> recordLostSale(PosLostSaleDraft draft) async {

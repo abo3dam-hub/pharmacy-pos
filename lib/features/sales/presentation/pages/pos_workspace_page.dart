@@ -8,6 +8,8 @@ import '../../../../core/constants/app_sections.dart';
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/money/money.dart';
+import '../../../../core/pdf/pdf_arabic.dart';
+import '../../../../core/pdf/pdf_documents.dart';
 import '../../../../core/shortcuts/barcode_buffer.dart';
 import '../../../../core/shortcuts/pos_shortcuts.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -18,6 +20,7 @@ import '../../domain/entities/pos_cart.dart';
 import '../../domain/entities/pos_catalog_item.dart';
 import '../../domain/entities/pos_customer.dart';
 import '../../domain/entities/pos_invoice.dart';
+import '../../domain/entities/smart_alternative.dart';
 import '../../domain/usecases/payment_calculator.dart';
 import '../controllers/pos_workspace_controller.dart';
 import '../controllers/pos_workspace_state.dart';
@@ -135,14 +138,27 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
               children: [
                 Material(
                   color: Theme.of(context).colorScheme.surface,
-                  child: TabBar(
-                    controller: _tabController,
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    tabs: [
-                      for (var i = 0; i < kPosCustomerTabCount; i++)
-                        Tab(text: _l10n.posCustomerTab(i + 1)),
-                      Tab(text: _l10n.posReturnTab),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TabBar(
+                          controller: _tabController,
+                          isScrollable: true,
+                          tabAlignment: TabAlignment.start,
+                          tabs: [
+                            for (var i = 0; i < kPosCustomerTabCount; i++)
+                              Tab(text: _l10n.posCustomerTab(i + 1)),
+                            Tab(text: _l10n.posReturnTab),
+                          ],
+                        ),
+                      ),
+                      if (_permissions.contains(Perm.reportsViewSales))
+                        IconButton(
+                          tooltip: _l10n.zReportTitle,
+                          onPressed: () =>
+                              context.push('/${AppSection.sale.path}/z-report'),
+                          icon: const Icon(Icons.summarize_outlined),
+                        ),
                     ],
                   ),
                 ),
@@ -157,6 +173,8 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
                           barcodeBuffer: _buffers[i],
                           onLineSelected: (lineIndex) =>
                               _selectedLineByTab[i] = lineIndex,
+                          onAlternatives: (item) => _showAlternatives(
+                              tabIndex: i, item: item),
                         ),
                       _ReturnTab(
                         state: ref.watch(
@@ -206,33 +224,37 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
     }
   }
 
-  Future<void> _showAlternatives({required int tabIndex}) async {
+  Future<void> _showAlternatives({
+    required int tabIndex,
+    PosCatalogItem? item,
+  }) async {
     if (tabIndex >= kPosCustomerTabCount) return;
-    final notifier = _notifier(tabIndex);
-    final state = notifier.currentState;
-    PosCatalogItem? item;
-    if (_selectedLineByTab[tabIndex] != null &&
-        _selectedLineByTab[tabIndex]! < state.cart.length) {
-      item = state.cart[_selectedLineByTab[tabIndex]!].item;
-    } else if (state.searchResults?.items.isNotEmpty ?? false) {
-      item = state.searchResults!.items.first;
-    }
-    final picked = item;
-    if (picked == null || !mounted) return;
     if (!_permissions.contains(Perm.viewAlternatives)) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(_l10n.authPermissionDenied)));
       return;
     }
-    if (!mounted) return;
+    final notifier = _notifier(tabIndex);
+    final state = notifier.currentState;
+    final picked = item ??
+        (() {
+          if (_selectedLineByTab[tabIndex] != null &&
+              _selectedLineByTab[tabIndex]! < state.cart.length) {
+            return state.cart[_selectedLineByTab[tabIndex]!].item;
+          }
+          return state.searchResults?.items.isNotEmpty ?? false
+              ? state.searchResults!.items.first
+              : null;
+        })();
+    if (picked == null || !mounted) return;
     await showDialog<void>(
       context: context,
       builder: (_) => _AlternativesDialog(
-        item: picked,
+        requested: picked,
         onPick: (alt) {
           Navigator.of(context).pop();
-          notifier.addToCart(alt);
+          notifier.addToCart(alt.item);
         },
       ),
     );
@@ -247,12 +269,14 @@ class _TabWorkspace extends ConsumerWidget {
     required this.searchFocusNode,
     required this.barcodeBuffer,
     required this.onLineSelected,
+    required this.onAlternatives,
   });
 
   final int tabIndex;
   final FocusNode searchFocusNode;
   final BarcodeBuffer barcodeBuffer;
   final ValueChanged<int> onLineSelected;
+  final ValueChanged<PosCatalogItem> onAlternatives;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -275,18 +299,21 @@ class _TabWorkspace extends ConsumerWidget {
         searchFocusNode: searchFocusNode,
         barcodeBuffer: barcodeBuffer,
         onLineSelected: onLineSelected,
+        onAlternatives: (item) => onAlternatives(item),
       ),
       tablet: _PanelsRow(
         tabIndex: tabIndex,
         searchFocusNode: searchFocusNode,
         barcodeBuffer: barcodeBuffer,
         onLineSelected: onLineSelected,
+        onAlternatives: (item) => onAlternatives(item),
       ),
       compact: _CompactLayout(
         tabIndex: tabIndex,
         searchFocusNode: searchFocusNode,
         barcodeBuffer: barcodeBuffer,
         onLineSelected: onLineSelected,
+        onAlternatives: (item) => onAlternatives(item),
       ),
     );
   }
@@ -298,12 +325,14 @@ class _PanelsRow extends ConsumerWidget {
     required this.searchFocusNode,
     required this.barcodeBuffer,
     required this.onLineSelected,
+    required this.onAlternatives,
   });
 
   final int tabIndex;
   final FocusNode searchFocusNode;
   final BarcodeBuffer barcodeBuffer;
   final ValueChanged<int> onLineSelected;
+  final ValueChanged<PosCatalogItem> onAlternatives;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -323,6 +352,7 @@ class _PanelsRow extends ConsumerWidget {
               tabIndex: tabIndex,
               searchFocusNode: searchFocusNode,
               barcodeBuffer: barcodeBuffer,
+              onAlternatives: onAlternatives,
             ),
           ),
           const SizedBox(width: AppSpacing.m),
@@ -374,12 +404,14 @@ class _CompactLayout extends ConsumerWidget {
     required this.searchFocusNode,
     required this.barcodeBuffer,
     required this.onLineSelected,
+    required this.onAlternatives,
   });
 
   final int tabIndex;
   final FocusNode searchFocusNode;
   final BarcodeBuffer barcodeBuffer;
   final ValueChanged<int> onLineSelected;
+  final ValueChanged<PosCatalogItem> onAlternatives;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -393,6 +425,7 @@ class _CompactLayout extends ConsumerWidget {
             tabIndex: tabIndex,
             searchFocusNode: searchFocusNode,
             barcodeBuffer: barcodeBuffer,
+            onAlternatives: onAlternatives,
           ),
         ),
         Positioned(
@@ -429,11 +462,13 @@ class _SearchPanel extends ConsumerStatefulWidget {
     required this.tabIndex,
     required this.searchFocusNode,
     required this.barcodeBuffer,
+    required this.onAlternatives,
   });
 
   final int tabIndex;
   final FocusNode searchFocusNode;
   final BarcodeBuffer barcodeBuffer;
+  final ValueChanged<PosCatalogItem> onAlternatives;
 
   @override
   ConsumerState<_SearchPanel> createState() => _SearchPanelState();
@@ -514,6 +549,11 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
                                   widget.tabIndex)
                               .notifier)
                           .addToCart(item),
+                      canViewAlternatives:
+                          ref.read(authControllerProvider).permissions.contains(
+                                Perm.viewAlternatives,
+                              ),
+                      onAlternatives: widget.onAlternatives,
                       onLostSale: state.searchQuery.isNotEmpty &&
                               (state.searchResults?.items.isEmpty ?? true)
                           ? () => _showLostSaleDialog(l10n, state.searchQuery)
@@ -532,8 +572,10 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
     final notifier =
         ref.read(posWorkspaceControllerProvider(widget.tabIndex).notifier);
     final ok = await notifier.captureLostSale(
-      productName: draft.$1,
-      quantity: draft.$2,
+      productName: draft.name,
+      quantity: draft.quantity,
+      scientificName: draft.scientificName,
+      note: draft.note,
       actingUserId: ref.read(authControllerProvider).user?.id ?? '',
       permissions: ref.read(authControllerProvider).permissions,
       barcode: barcode,
@@ -541,7 +583,7 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
     if (ok && mounted) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text('تم تسجيل الناقص')));
+        ..showSnackBar(SnackBar(content: Text(l10n.posLostSaleSaved)));
     }
   }
 }
@@ -550,11 +592,15 @@ class _ProductList extends StatelessWidget {
   const _ProductList({
     required this.items,
     required this.onAdd,
+    this.canViewAlternatives = false,
+    this.onAlternatives,
     this.onLostSale,
   });
 
   final List<PosCatalogItem> items;
   final ValueChanged<PosCatalogItem> onAdd;
+  final bool canViewAlternatives;
+  final ValueChanged<PosCatalogItem>? onAlternatives;
   final VoidCallback? onLostSale;
 
   @override
@@ -606,21 +652,33 @@ class _ProductList extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          trailing: Column(
+          trailing: Row(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                Money.fromUnits(item.baseUnitPriceMicros).formatArabicDigits(),
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text(
-                isOut ? l10n.posOutOfStock : 'المتاح: $available',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isOut
-                          ? Theme.of(context).colorScheme.error
-                          : null,
-                    ),
+              if (canViewAlternatives && !isOut)
+                IconButton(
+                  tooltip: l10n.navAlternatives,
+                  icon: const Icon(Icons.swap_horiz, size: 20),
+                  onPressed: () => onAlternatives?.call(item),
+                ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    Money.fromUnits(item.baseUnitPriceMicros)
+                        .formatArabicDigits(),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    isOut ? l10n.posOutOfStock : 'المتاح: $available',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isOut
+                              ? Theme.of(context).colorScheme.error
+                              : null,
+                        ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1127,13 +1185,28 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
 
 // ── Shared dialogs ──────────────────────────────────────────────────────
 
-class _ReceiptDialog extends StatelessWidget {
+class _ReceiptDialog extends ConsumerWidget {
   const _ReceiptDialog({required this.invoice});
 
   final PosInvoiceView invoice;
 
+  Future<void> _print(BuildContext context, WidgetRef ref) async {
+    final pharmacy = await ref.read(settingsDaoProvider).getString(
+          pharmacyNameSettingKey,
+        ) ??
+        pharmacyFallbackName();
+    try {
+      await ReceiptPdfService().print(invoice, pharmacy);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).posPrintFailed)));
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
       title: Row(
@@ -1186,6 +1259,11 @@ class _ReceiptDialog extends StatelessWidget {
       ),
       actions: [
         TextButton.icon(
+          onPressed: () => _print(context, ref),
+          icon: const Icon(Icons.print_outlined),
+          label: Text(l10n.posPrintReceipt),
+        ),
+        TextButton.icon(
           onPressed: () =>
               context.push('/${AppSection.sale.path}/invoice/${invoice.id}'),
           icon: const Icon(Icons.article_outlined),
@@ -1223,14 +1301,18 @@ class _ReceiptDialog extends StatelessWidget {
   }
 }
 
-Future<(String, int)?> showLostSaleDialog(
+Future<({String name, int quantity, String? scientificName, String? note})?>
+    showLostSaleDialog(
   BuildContext context, {
   required String barcode,
 }) async {
   final name = TextEditingController(text: barcode.trim());
+  final scientificName = TextEditingController();
+  final note = TextEditingController();
   final qty = TextEditingController(text: '1');
   final l10n = AppLocalizations.of(context);
-  final result = await showDialog<(String, int)>(
+  final result = await showDialog<
+      ({String name, int quantity, String? scientificName, String? note})>(
     context: context,
     builder: (ctx) => AlertDialog(
       title: Text(l10n.posLostSaleTitle),
@@ -1239,13 +1321,24 @@ Future<(String, int)?> showLostSaleDialog(
         children: [
           TextField(
             controller: name,
-            decoration: InputDecoration(labelText: 'اسم/مواصفة المنتج'),
+            autofocus: true,
+            decoration: InputDecoration(labelText: l10n.posLostSaleName),
+          ),
+          const SizedBox(height: AppSpacing.s),
+          TextField(
+            controller: scientificName,
+            decoration: InputDecoration(labelText: l10n.posLostSaleSciName),
+          ),
+          const SizedBox(height: AppSpacing.s),
+          TextField(
+            controller: note,
+            decoration: InputDecoration(labelText: l10n.posLostSaleNotes),
           ),
           const SizedBox(height: AppSpacing.s),
           TextField(
             controller: qty,
             keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: 'الكمية المطلوبة'),
+            decoration: InputDecoration(labelText: l10n.posLostSaleQty),
           ),
         ],
       ),
@@ -1255,16 +1348,26 @@ Future<(String, int)?> showLostSaleDialog(
           child: Text(l10n.commonCancel),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(
-            ctx,
-          ).pop((qty.text.trim().isEmpty ? '1' : qty.text.trim(),
-              name.text.trim().isEmpty ? barcode : name.text.trim())),
+          onPressed: () {
+            final text =
+                qty.text.trim().isEmpty ? 1 : int.tryParse(qty.text.trim());
+            Navigator.of(ctx).pop((
+              name: name.text.trim().isEmpty ? barcode : name.text.trim(),
+              quantity: (text ?? 1).clamp(1, 99999),
+              scientificName: scientificName.text.trim().isEmpty
+                  ? null
+                  : scientificName.text.trim(),
+              note: note.text.trim().isEmpty ? null : note.text.trim(),
+            ));
+          },
           child: Text(l10n.commonSave),
         ),
       ],
     ),
   );
   name.dispose();
+  scientificName.dispose();
+  note.dispose();
   qty.dispose();
   return result;
 }
@@ -1320,29 +1423,32 @@ class _HoldBillsSheet extends ConsumerWidget {
 }
 
 class _AlternativesDialog extends ConsumerWidget {
-  const _AlternativesDialog({required this.item, required this.onPick});
+  const _AlternativesDialog({required this.requested, required this.onPick});
 
-  final PosCatalogItem item;
-  final ValueChanged<PosCatalogItem> onPick;
+  final PosCatalogItem requested;
+  final ValueChanged<SmartAlternative> onPick;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text('البدائل المقترحة لـ ${item.tradeName}'),
+      title: Text('${l10n.posAlternativesTitle} ${requested.tradeName}'),
       content: SizedBox(
         width: 460,
-        child: FutureBuilder<List<PosCatalogItem>>(
+        child: FutureBuilder<List<SmartAlternative>>(
           future: ref
               .read(salesRepositoryProvider)
-              .smartAlternatives(item),
+              .smartAlternatives(requested),
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
               return const Center(child: CircularProgressIndicator());
             }
-            final list = snapshot.data ?? const <PosCatalogItem>[];
+            if (snapshot.hasError) {
+              return Center(child: Text(l10n.posAlternativesFailed));
+            }
+            final list = snapshot.data ?? const <SmartAlternative>[];
             if (list.isEmpty) {
-              return const Center(child: Text('لا توجد بدائل متاحة حالياً'));
+              return Center(child: Text(l10n.posAlternativesEmpty));
             }
             return ListView.separated(
               shrinkWrap: true,
@@ -1351,11 +1457,22 @@ class _AlternativesDialog extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final alt = list[index];
                 return ListTile(
-                  title: Text(alt.tradeName),
-                  subtitle: Text('${alt.scientificName} · متاح: '
-                      '${alt.availableStockBase}'),
-                  trailing: Text(Money.fromUnits(alt.baseUnitPriceMicros)
-                      .formatArabicDigits()),
+                  dense: true,
+                  leading: _TierBadge(tier: alt.tier),
+                  title: Text(alt.item.tradeName),
+                  subtitle: Text(
+                    '${alt.item.scientificName}'
+                    '${(alt.item.dose?.isNotEmpty ?? false) ? ' · ${alt.item.dose}' : ''}'
+                    '${(alt.item.pharmaForm?.isNotEmpty ?? false) ? ' · ${alt.item.pharmaForm}' : ''}'
+                    ' · ${l10n.posAvailableStock}: '
+                    '${alt.item.availableStockBase}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Text(
+                    Money.fromUnits(alt.item.baseUnitPriceMicros)
+                        .formatArabicDigits(),
+                  ),
                   onTap: () => onPick(alt),
                 );
               },
@@ -1369,6 +1486,55 @@ class _AlternativesDialog extends ConsumerWidget {
           child: Text(l10n.commonClose),
         ),
       ],
+    );
+  }
+}
+
+/// Colored tier badge (green / yellow / blue) for the alternatives panel.
+class _TierBadge extends StatelessWidget {
+  const _TierBadge({required this.tier});
+
+  final SmartAlternativeTier tier;
+
+  static const _colors = <SmartAlternativeTier, Color>{
+    SmartAlternativeTier.tier1: Color(0xFF2E7D32),
+    SmartAlternativeTier.tier2: Color(0xFFF9A825),
+    SmartAlternativeTier.tier3: Color(0xFF1976D2),
+  };
+
+  static const _labels = <SmartAlternativeTier, String>{
+    SmartAlternativeTier.tier1: '1',
+    SmartAlternativeTier.tier2: '2',
+    SmartAlternativeTier.tier3: '3',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final label = switch (tier) {
+      SmartAlternativeTier.tier1 => l10n.posAlternativesTier1,
+      SmartAlternativeTier.tier2 => l10n.posAlternativesTier2,
+      SmartAlternativeTier.tier3 => l10n.posAlternativesTier3,
+    };
+    return Tooltip(
+      message: label,
+      child: Container(
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: _colors[tier],
+          shape: BoxShape.circle,
+        ),
+        child: Text(
+          _labels[tier]!,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ),
     );
   }
 }

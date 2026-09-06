@@ -1493,6 +1493,87 @@ class AppLocalizationsEn extends AppLocalizations {
   String get posPrintReceipt => 'Print Receipt';
 
   @override
+  String get posPrintFailed => 'Failed to print document';
+
+  @override
+  String get zReportTitle => 'End-of-Shift Report (Z)';
+
+  @override
+  String get zReportPrint => 'Print Report';
+
+  @override
+  String get zReportPeriodPrefix => 'Period';
+
+  @override
+  String get zReportFrom => 'From';
+
+  @override
+  String get zReportTo => 'To';
+
+  @override
+  String get zReportDays => 'day(s)';
+
+  @override
+  String get zReportSalesSummary => 'Sales Summary';
+
+  @override
+  String get zReportReturnsSection => 'Returns & Voided';
+
+  @override
+  String get zReportDrawerSection => 'Drawer Reconciliation';
+
+  @override
+  String get zReportInvoicesCount => 'Invoices';
+
+  @override
+  String get zReportUnitsSold => 'Units Sold';
+
+  @override
+  String get zReportTotalSales => 'Total Sales';
+
+  @override
+  String get zReportCash => 'Cash';
+
+  @override
+  String get zReportCard => 'Card';
+
+  @override
+  String get zReportCredit => 'Credit (A/R)';
+
+  @override
+  String get zReportReturnsBrief => 'Returns (count / value)';
+
+  @override
+  String get zReportVoidsBrief => 'Voided invoices (count / value)';
+
+  @override
+  String get zReportCustomerCollected => 'Customer credit collected';
+
+  @override
+  String get zReportCustomerRefunded => 'Customer credit refunded';
+
+  @override
+  String get zReportDrawerOpening => 'Opening balance';
+
+  @override
+  String get zReportDrawerNet => 'Net moves';
+
+  @override
+  String get zReportDrawerExpected => 'Expected closing';
+
+  @override
+  String get zReportDrawerLedger => 'Ledger running balance';
+
+  @override
+  String get zReportDrawerDeclared => 'Declared closing';
+
+  @override
+  String get zReportDrawerDiff => 'Drawer difference';
+
+  @override
+  String get zReportEmptyPeriod => 'No sales in the selected period';
+
+  @override
   String get posReceiptSummaryTitle => 'Receipt Summary';
 
   @override
@@ -1548,6 +1629,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get posLostSalePrompt => 'Enter product name and quantity';
 
   @override
+  String get posLostSaleName => 'Product name / description';
+
+  @override
+  String get posLostSaleSciName => 'Scientific name';
+
+  @override
+  String get posLostSaleNotes => 'Notes';
+
+  @override
+  String get posLostSaleQty => 'Requested quantity';
+
+  @override
+  String get posLostSaleSaved => 'Lost sale recorded';
+
+  @override
   String get posNoResults => 'No matching results';
 
   @override
@@ -1600,4 +1696,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get posLineReturnable => 'Returnable Quantity';
+
+  @override
+  String get posAlternativesTitle => 'Suggested alternatives for';
+
+  @override
+  String get posAlternativesTier1 => 'Match: same ingredient, dose & form';
+
+  @override
+  String get posAlternativesTier2 => 'Same ingredient, different dose or form';
+
+  @override
+  String get posAlternativesTier3 => 'Shares an active ingredient';
+
+  @override
+  String get posAlternativesEmpty => 'No alternatives available';
+
+  @override
+  String get posAlternativesFailed => 'Could not load alternatives';
+
+  @override
+  String get posAvailableStock => 'Available';
 }

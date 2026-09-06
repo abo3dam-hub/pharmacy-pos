@@ -2,6 +2,7 @@ import '../../../../core/data_grid/page_request.dart';
 import '../entities/pos_catalog_item.dart';
 import '../entities/pos_customer.dart';
 import '../entities/pos_invoice.dart';
+import '../entities/smart_alternative.dart';
 
 /// Return input for the return panel (references the ORIGINAL invoice line).
 class PosReturnCommand {
@@ -71,7 +72,10 @@ abstract interface class SalesRepository {
 
   /// Smart alternatives for [item]: same therapeutic/ingredient group, active,
   /// available — computed at request time, never a stored table.
-  Future<List<PosCatalogItem>> smartAlternatives(PosCatalogItem item);
+  /// Live smart alternatives (§18): ranks products that share the therapeutic
+  /// group or an active ingredient with [item] into the green/yellow/blue
+  /// tiers. Computed at request time — never persisted.
+  Future<List<SmartAlternative>> smartAlternatives(PosCatalogItem item);
 
   Future<void> recordLostSale(PosLostSaleDraft draft);
 

@@ -7,7 +7,9 @@ import 'package:pharmacy_pos/features/sales/domain/entities/pos_cart.dart';
 import 'package:pharmacy_pos/features/sales/domain/entities/pos_catalog_item.dart';
 import 'package:pharmacy_pos/features/sales/domain/entities/pos_customer.dart';
 import 'package:pharmacy_pos/features/sales/domain/entities/pos_invoice.dart';
+import 'package:pharmacy_pos/features/sales/domain/entities/smart_alternative.dart';
 import 'package:pharmacy_pos/features/sales/domain/repositories/sales_repository.dart';
+import 'package:pharmacy_pos/features/sales/domain/services/smart_alternatives_service.dart';
 import 'package:pharmacy_pos/features/sales/domain/usecases/payment_calculator.dart';
 import 'package:pharmacy_pos/features/sales/domain/usecases/pos_pricing.dart';
 import 'package:pharmacy_pos/features/sales/presentation/controllers/pos_workspace_controller.dart';
@@ -199,7 +201,7 @@ class _FakeSalesRepository implements SalesRepository {
   Future<PosInvoiceView?> invoiceViewById(String invoiceId) async => null;
 
   @override
-  Future<List<PosCatalogItem>> smartAlternatives(PosCatalogItem item) async =>
+  Future<List<SmartAlternative>> smartAlternatives(PosCatalogItem item) async =>
       const [];
 
   @override
@@ -211,6 +213,44 @@ class _FakeSalesRepository implements SalesRepository {
 
 PosWorkspaceController _controller(_FakeSalesRepository fake) =>
     PosWorkspaceController(tabIndex: 0, repository: fake);
+
+/// Smart-alternatives fixture builder (tier-engine tests).
+PosCatalogItem _altItem({
+  required String id,
+  required String tradeName,
+  required String activeIngredient,
+  String? dose,
+  String? pharmaForm,
+  String? therapeuticGroupId = 'tg_1',
+  int availableStockBase = 10,
+  bool isActive = true,
+}) =>
+    PosCatalogItem(
+      id: id,
+      tradeName: tradeName,
+      tradeNameEn: tradeName,
+      scientificName: 'Sci $id',
+      activeIngredient: activeIngredient,
+      therapeuticGroupId: therapeuticGroupId,
+      primaryBarcode: 'b_$id',
+      secondaryBarcode: null,
+      isOtc: true,
+      isControlledDrug: false,
+      requiresPrescription: false,
+      isActive: isActive,
+      sellingPriceMicros: 1000,
+      vatRateBasisPoints: 1500,
+      currentStockBase: availableStockBase,
+      availableStockBase: availableStockBase,
+      baseUnitId: 'unit_strip',
+      baseUnitName: 'شريط',
+      largeUnitId: 'box',
+      largeUnitName: 'علبة',
+      unitsPerLarge: 10,
+      partialSaleEnabled: false,
+      dose: dose,
+      pharmaForm: pharmaForm,
+    );
 
 void main() {
   group('PosLinePricer', () {
@@ -818,6 +858,166 @@ void main() {
       await ctrl.handleScannedBarcode('0000000000000');
       expect(ctrl.currentState.cart, isEmpty);
       expect(ctrl.currentState.searchQuery, '0000000000000');
+    });
+  });
+
+  group('SmartAlternativesService', () {
+    const engine = SmartAlternativesService();
+
+    PosCatalogItem requested({int stock = 10}) => _altItem(
+          id: 'req',
+          tradeName: 'Panadol',
+          activeIngredient: 'Paracetamol',
+          dose: '500 mg',
+          pharmaForm: 'tablet',
+          availableStockBase: stock,
+        );
+
+    test('ingredient tokenizer splits and normalizes compound lists', () {
+      expect(
+        SmartAlternativesService.ingredientTokens('Paracetamol + Caffeine'),
+        {'paracetamol', 'caffeine'},
+      );
+      expect(
+        SmartAlternativesService.ingredientTokens('أموكسيسيلين & حمض الكلافولانيك'),
+        {'أموكسيسيلين', 'حمض الكلافولانيك'},
+      );
+      expect(SmartAlternativesService.ingredientTokens('  lead  '), {'lead'});
+      expect(SmartAlternativesService.ingredientTokens(''), isEmpty);
+      expect(SmartAlternativesService.ingredientTokens(null), isEmpty);
+    });
+
+    test('green tier: same ingredient, dose and form', () {
+      final ranked = engine.rank(requested(), [
+        _altItem(
+          id: 'c1',
+          tradeName: 'Panadol Extra',
+          activeIngredient: 'Paracetamol',
+          dose: '500 mg',
+          pharmaForm: 'tablet',
+        ),
+      ]);
+      expect(ranked, hasLength(1));
+      expect(ranked.single.tier, SmartAlternativeTier.tier1);
+      expect(ranked.single.item.id, 'c1');
+    });
+
+    test('yellow tier: same ingredient, different dose', () {
+      final ranked = engine.rank(requested(), [
+        _altItem(
+          id: 'c2',
+          tradeName: 'Panadol Kid',
+          activeIngredient: 'Paracetamol',
+          dose: '125 mg',
+          pharmaForm: 'tablet',
+        ),
+      ]);
+      expect(ranked.single.tier, SmartAlternativeTier.tier2);
+    });
+
+    test('blue tier: shares an active ingredient (partial overlap)', () {
+      final ranked = engine.rank(requested(), [
+        _altItem(
+          id: 'c3',
+          tradeName: 'Cold Plus',
+          activeIngredient: 'Paracetamol + Caffeine',
+        ),
+      ]);
+      expect(ranked.single.tier, SmartAlternativeTier.tier3);
+    });
+
+    test('drops unrelated, inactive and out-of-stock candidates', () {
+      final ranked = engine.rank(requested(), [
+        _altItem(
+          id: 'x1',
+          tradeName: 'Ibuprofen',
+          activeIngredient: 'Ibuprofen',
+        ),
+        _altItem(
+          id: 'x2',
+          tradeName: 'Inactive Match',
+          activeIngredient: 'Paracetamol',
+          dose: '500 mg',
+          pharmaForm: 'tablet',
+          isActive: false,
+        ),
+        _altItem(
+          id: 'x3',
+          tradeName: 'Sold Out',
+          activeIngredient: 'Paracetamol',
+          dose: '500 mg',
+          pharmaForm: 'tablet',
+          availableStockBase: 0,
+        ),
+      ]);
+      expect(ranked, isEmpty);
+    });
+
+    test('ranks tier1 before tier2 before tier3', () {
+      final ranked = engine.rank(requested(), [
+        _altItem(
+          id: 'c3',
+          tradeName: 'Blue',
+          activeIngredient: 'Paracetamol + Caffeine',
+        ),
+        _altItem(
+          id: 'c2',
+          tradeName: 'Yellow',
+          activeIngredient: 'Paracetamol',
+          dose: '250 mg',
+          pharmaForm: 'suspension',
+        ),
+        _altItem(
+          id: 'c1',
+          tradeName: 'Green',
+          activeIngredient: 'Paracetamol',
+          dose: '500 mg',
+          pharmaForm: 'tablet',
+        ),
+      ]);
+      expect(
+        ranked.map((a) => a.tier),
+        equals([
+          SmartAlternativeTier.tier1,
+          SmartAlternativeTier.tier2,
+          SmartAlternativeTier.tier3,
+        ]),
+      );
+    });
+
+    test('prefers higher available stock within the same tier', () {
+      final ranked = engine.rank(requested(), [
+        _altItem(
+          id: 'lo',
+          tradeName: 'Low Stock',
+          activeIngredient: 'Paracetamol + Caffeine',
+          availableStockBase: 2,
+        ),
+        _altItem(
+          id: 'hi',
+          tradeName: 'High Stock',
+          activeIngredient: 'Caffeine + Paracetamol',
+          availableStockBase: 40,
+        ),
+      ]);
+      expect(ranked.first.item.id, 'hi');
+    });
+
+    test('respects the result limit', () {
+      final many = [
+        for (var i = 0; i < 20; i++)
+          _altItem(
+            id: 'b$i',
+            tradeName: 'Brand $i',
+            activeIngredient: 'Paracetamol + Caffeine',
+            availableStockBase: i + 1,
+          ),
+      ];
+      final ranked = engine.rank(requested(), many, limit: 5);
+      expect(ranked, hasLength(5));
+      expect(ranked.first.item.availableStockBase,
+          many.map((i) => i.availableStockBase).reduce(
+              (a, b) => a > b ? a : b));
     });
   });
 }

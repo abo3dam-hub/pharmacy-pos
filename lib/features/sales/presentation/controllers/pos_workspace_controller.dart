@@ -586,6 +586,8 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
     required String actingUserId,
     required Set<String> permissions,
     String? barcode,
+    String? scientificName,
+    String? note,
   }) async {
     if (!permissions.contains(Perm.lostSalesCreate) &&
         !permissions.contains(Perm.salesCreate)) {
@@ -598,9 +600,16 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
         quantityRequested: quantity,
         userId: actingUserId,
         barcode: barcode,
+        scientificName:
+            (scientificName == null || scientificName.trim().isEmpty)
+                ? null
+                : scientificName.trim(),
         customerName: state.customer?.name,
         customerPhone: state.customer?.phone,
-        note: 'سجل من نقطة البيع (مسح لم يُعثر عليه)',
+        note:
+            (note == null || note.trim().isEmpty)
+                ? 'سجل من نقطة البيع (مسح لم يُعثر عليه)'
+                : note.trim(),
       ));
       state = state.copyWith(
         searchQuery: '',

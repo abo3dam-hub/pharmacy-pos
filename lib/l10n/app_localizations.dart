@@ -2984,6 +2984,168 @@ abstract class AppLocalizations {
   /// **'طباعة الإيصال'**
   String get posPrintReceipt;
 
+  /// No description provided for @posPrintFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر طباعة المستند'**
+  String get posPrintFailed;
+
+  /// No description provided for @zReportTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقرير نهاية الوردية (Z)'**
+  String get zReportTitle;
+
+  /// No description provided for @zReportPrint.
+  ///
+  /// In ar, this message translates to:
+  /// **'طباعة التقرير'**
+  String get zReportPrint;
+
+  /// No description provided for @zReportPeriodPrefix.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفترة'**
+  String get zReportPeriodPrefix;
+
+  /// No description provided for @zReportFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'من'**
+  String get zReportFrom;
+
+  /// No description provided for @zReportTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلى'**
+  String get zReportTo;
+
+  /// No description provided for @zReportDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'أيام'**
+  String get zReportDays;
+
+  /// No description provided for @zReportSalesSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملخص المبيعات'**
+  String get zReportSalesSummary;
+
+  /// No description provided for @zReportReturnsSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'المرتجعات والإلغاءات'**
+  String get zReportReturnsSection;
+
+  /// No description provided for @zReportDrawerSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسوية الخزينة'**
+  String get zReportDrawerSection;
+
+  /// No description provided for @zReportInvoicesCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الفواتير'**
+  String get zReportInvoicesCount;
+
+  /// No description provided for @zReportUnitsSold.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدات المباعة'**
+  String get zReportUnitsSold;
+
+  /// No description provided for @zReportTotalSales.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي المبيعات'**
+  String get zReportTotalSales;
+
+  /// No description provided for @zReportCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقداً'**
+  String get zReportCash;
+
+  /// No description provided for @zReportCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقة'**
+  String get zReportCard;
+
+  /// No description provided for @zReportCredit.
+  ///
+  /// In ar, this message translates to:
+  /// **'آجل (ذمم)'**
+  String get zReportCredit;
+
+  /// No description provided for @zReportReturnsBrief.
+  ///
+  /// In ar, this message translates to:
+  /// **'المرتجعات (عدد / قيمة)'**
+  String get zReportReturnsBrief;
+
+  /// No description provided for @zReportVoidsBrief.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفواتير الملغاة (عدد / قيمة)'**
+  String get zReportVoidsBrief;
+
+  /// No description provided for @zReportCustomerCollected.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحصيل ذمم العملاء'**
+  String get zReportCustomerCollected;
+
+  /// No description provided for @zReportCustomerRefunded.
+  ///
+  /// In ar, this message translates to:
+  /// **'استرداد ذمم العملاء'**
+  String get zReportCustomerRefunded;
+
+  /// No description provided for @zReportDrawerOpening.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيد الافتتاح'**
+  String get zReportDrawerOpening;
+
+  /// No description provided for @zReportDrawerNet.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي الحركات'**
+  String get zReportDrawerNet;
+
+  /// No description provided for @zReportDrawerExpected.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد المتوقع (نهاية الفترة)'**
+  String get zReportDrawerExpected;
+
+  /// No description provided for @zReportDrawerLedger.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الجاري (سجل الخزينة)'**
+  String get zReportDrawerLedger;
+
+  /// No description provided for @zReportDrawerDeclared.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإغلاق المعلن'**
+  String get zReportDrawerDeclared;
+
+  /// No description provided for @zReportDrawerDiff.
+  ///
+  /// In ar, this message translates to:
+  /// **'فرق الخزينة'**
+  String get zReportDrawerDiff;
+
+  /// No description provided for @zReportEmptyPeriod.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مبيعات ضمن الفترة المحددة'**
+  String get zReportEmptyPeriod;
+
   /// No description provided for @posReceiptSummaryTitle.
   ///
   /// In ar, this message translates to:
@@ -3092,6 +3254,36 @@ abstract class AppLocalizations {
   /// **'أدخل اسم المنتج وكميته'**
   String get posLostSalePrompt;
 
+  /// No description provided for @posLostSaleName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم/مواصفة المنتج'**
+  String get posLostSaleName;
+
+  /// No description provided for @posLostSaleSciName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم العلمي'**
+  String get posLostSaleSciName;
+
+  /// No description provided for @posLostSaleNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات'**
+  String get posLostSaleNotes;
+
+  /// No description provided for @posLostSaleQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المطلوبة'**
+  String get posLostSaleQty;
+
+  /// No description provided for @posLostSaleSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تسجيل المنتج الناقص'**
+  String get posLostSaleSaved;
+
   /// No description provided for @posNoResults.
   ///
   /// In ar, this message translates to:
@@ -3199,6 +3391,48 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الكمية القابلة للإرجاع'**
   String get posLineReturnable;
+
+  /// No description provided for @posAlternativesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'البدائل المقترحة لـ'**
+  String get posAlternativesTitle;
+
+  /// No description provided for @posAlternativesTier1.
+  ///
+  /// In ar, this message translates to:
+  /// **'مطابق: نفس المكون والجرعة والشكل'**
+  String get posAlternativesTier1;
+
+  /// No description provided for @posAlternativesTier2.
+  ///
+  /// In ar, this message translates to:
+  /// **'نفس المكون بجرعة أو شكل مختلف'**
+  String get posAlternativesTier2;
+
+  /// No description provided for @posAlternativesTier3.
+  ///
+  /// In ar, this message translates to:
+  /// **'يشارك مكوناً فعالاً'**
+  String get posAlternativesTier3;
+
+  /// No description provided for @posAlternativesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بدائل متاحة حالياً'**
+  String get posAlternativesEmpty;
+
+  /// No description provided for @posAlternativesFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر تحميل البدائل'**
+  String get posAlternativesFailed;
+
+  /// No description provided for @posAvailableStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح'**
+  String get posAvailableStock;
 }
 
 class _AppLocalizationsDelegate

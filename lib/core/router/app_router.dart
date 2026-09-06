@@ -24,6 +24,7 @@ import '../../features/purchases/presentation/pages/purchase_form_page.dart';
 import '../../features/purchases/presentation/pages/purchases_page.dart';
 import '../../features/sales/presentation/pages/pos_invoice_page.dart';
 import '../../features/sales/presentation/pages/pos_workspace_page.dart';
+import '../../features/sales/presentation/pages/z_report_page.dart';
 import '../../features/suppliers/presentation/pages/supplier_statement_page.dart';
 import '../../features/suppliers/presentation/pages/suppliers_page.dart';
 
@@ -68,6 +69,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       if (path.startsWith(AppSection.sale.path) &&
           !authState.permissions.contains(Perm.salesView)) {
+        return '/access-denied';
+      }
+      if (path == '${AppSection.sale.path}/z-report' &&
+          !authState.permissions.contains(Perm.reportsViewSales)) {
         return '/access-denied';
       }
       if (path.startsWith(AppSection.inventory.path) &&
@@ -147,13 +152,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                 ],
-                if (section == AppSection.sale)
+                if (section == AppSection.sale) ...[
                   GoRoute(
                     path: 'invoice/:invoiceId',
                     builder: (context, state) => PosInvoicePage(
                       invoiceId: state.pathParameters['invoiceId']!,
                     ),
                   ),
+                  GoRoute(
+                    path: 'z-report',
+                    builder: (context, _) => const ZReportPage(),
+                  ),
+                ],
                 if (section == AppSection.customers) ...[
                   GoRoute(
                     path: 'statement/:customerId',

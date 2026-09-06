@@ -34,12 +34,14 @@ import '../../features/purchases/application/purchases_controller.dart';
 import '../../features/purchases/domain/usecases/purchases_use_cases.dart';
 import '../../features/prescriptions/application/prescriptions_controller.dart';
 import '../../features/sales/data/pos_catalog_dao.dart';
+import '../../features/sales/data/z_report_dao.dart';
 import '../../features/sales/domain/repositories/sales_repository.dart';
 import '../../features/sales/presentation/controllers/pos_workspace_controller.dart';
 import '../../features/sales/presentation/controllers/pos_workspace_state.dart';
 import '../../features/suppliers/application/suppliers_controller.dart';
 import '../../features/suppliers/domain/usecases/suppliers_use_cases.dart';
 import '../../shared/database/app_database.dart';
+import '../../shared/database/settings_dao.dart';
 import 'injection.dart';
 
 /// Riverpod-agnostic providers for [[getIt]]-owned singletons (§35).
@@ -120,6 +122,8 @@ final prescriptionsControllerProvider =
 final posCatalogDaoProvider = Provider<PosCatalogDao>((ref) => getIt<PosCatalogDao>());
 final salesRepositoryProvider =
     Provider<SalesRepository>((ref) => getIt<SalesRepository>());
+final settingsDaoProvider = Provider<SettingsDao>((ref) => getIt<SettingsDao>());
+final zReportDaoProvider = Provider<ZReportDao>((ref) => getIt<ZReportDao>());
 final posWorkspaceControllerProvider = StateNotifierProvider
     .family<PosWorkspaceController, PosWorkspaceState, int>((
       ref,

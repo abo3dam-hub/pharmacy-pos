@@ -10,14 +10,14 @@ import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 import 'helpers.dart';
 
-/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5) for v1→v5
+/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5) for v1→v6
 /// upgrade — implementers must keep this mirror in lockstep with
 /// `AppDatabase._migrate` in `app_database.dart`.
 class _V1Database extends AppDatabase {
   _V1Database(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -73,6 +73,15 @@ class _V1Database extends AppDatabase {
               mode: InsertMode.insertOrIgnore,
             );
           }
+          if (from < 6) {
+            final absent = await customSelect(
+              "SELECT COUNT(*) AS c FROM sqlite_master "
+              "WHERE type = 'table' AND name = 'lost_sales'",
+            ).getSingle();
+            if (absent.read<int>('c') == 0) {
+              await m.createTable(lostSales);
+            }
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -97,7 +106,7 @@ void main() {
 
     File dbFile() => File('${dir.path}/store.db');
 
-    test('fresh database creates at schema v5 with all columns', () async {
+    test('fresh database creates at schema v6 with all columns', () async {
       ensureSqlite();
       final path = dbFile().path;
 
@@ -109,8 +118,8 @@ void main() {
       // Verify schema version is 5.
       final userVersion =
           await db.customSelect('PRAGMA user_version').getSingle();
-      expect(userVersion.data.values.first, 5,
-          reason: 'fresh DB must be schema v5');
+      expect(userVersion.data.values.first, 6,
+          reason: 'fresh DB must be schema v6');
 
       // Verify partial-sale columns exist on items.
       final item = await (db.select(db.items)
@@ -157,6 +166,20 @@ void main() {
       await db.customSelect(
           "SELECT COUNT(*) AS c FROM customer_payments WHERE 1 = 0").getSingle();
 
+      // Lost sales table is part of the schema (gap closure §4.28/§15).
+      final lsNow = DateTime.now().millisecondsSinceEpoch;
+      await db.into(db.lostSales).insert(
+            LostSalesCompanion.insert(
+              id: 'ls_fresh',
+              requestedItemName: 'ناقص اختباري',
+              quantityRequested: 1,
+              userId: 'user_admin',
+              status: LostSaleStatus.open,
+              createdAt: lsNow,
+              updatedAt: lsNow,
+            ),
+          );
+
       // Inventory system account seeded by the v5 migration.
       final acc1200 = await (db.select(db.accounts)
             ..where((a) => a.code.equals('1200')))
@@ -179,11 +202,11 @@ void main() {
       expect(reopenedItem.currentStockBase, 7);
       final reopenedVersion =
           await reopened.customSelect('PRAGMA user_version').getSingle();
-      expect(reopenedVersion.data.values.first, 5);
+      expect(reopenedVersion.data.values.first, 6);
       await reopened.close();
     });
 
-    test('v1 → v5 migration adds all Phase 6 + financial columns without data loss',
+    test('v1 → v6 migration adds all Phase 6 + financial columns without data loss',
         () async {
       ensureSqlite();
       final path = dbFile().path;
@@ -191,7 +214,7 @@ void main() {
       // Create a v5 database with data.
       final db = AppDatabase.fromFilePath(path);
       final itemId = await insertItem(db);
-      expect(db.schemaVersion, 5);
+      expect(db.schemaVersion, 6);
 
       // Verify the new columns exist before simulating v1.
       final beforeItem = await (db.select(db.items)
@@ -234,8 +257,8 @@ void main() {
       final userVersion = await upgraded
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(userVersion.data.values.first, 5,
-          reason: 'v1 → v5 migration must set user_version to 5');
+      expect(userVersion.data.values.first, 6,
+          reason: 'v1 → v6 migration must set user_version to 6');
 
       // Verify app_settings created.
       final settings = await upgraded.select(upgraded.appSettings).get();
@@ -287,6 +310,22 @@ void main() {
             ..where((a) => a.code.equals('1200')))
           .getSingle();
       expect(acc1200.isSystem, true, reason: 'v5 seeds the inventory account');
+
+      // v6 heals the missing `lost_sales` table for upgraded databases.
+      final lsNow = DateTime.now().millisecondsSinceEpoch;
+      final ls = await upgraded.into(upgraded.lostSales).insertReturning(
+            LostSalesCompanion.insert(
+              id: 'ls_mig',
+              requestedItemName: 'ناقص بعد الترقية',
+              scientificName: const Value('Substance X'),
+              quantityRequested: 3,
+              userId: 'user_admin',
+              status: LostSaleStatus.open,
+              createdAt: lsNow,
+              updatedAt: lsNow,
+            ),
+          );
+      expect(ls.id, 'ls_mig', reason: 'lost_sales table created on upgrade');
 
       await upgraded.close();
     });

@@ -3,13 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../core/money/money.dart';
+import '../../../../core/pdf/pdf_arabic.dart';
+import '../../../../core/pdf/pdf_documents.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/pos_invoice.dart';
 
-/// §5 invoice/receipt view — read-only persisted sale invoice. Printing is a
-/// documented Phase-7 limitation (no PDF pipeline yet).
+/// §5 invoice/receipt view — read-only persisted sale invoice, printable as a
+/// PDF via [InvoicePdfService].
 class PosInvoicePage extends ConsumerStatefulWidget {
   const PosInvoicePage({super.key, required this.invoiceId});
 
@@ -21,11 +23,35 @@ class PosInvoicePage extends ConsumerStatefulWidget {
 
 class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
   late Future<PosInvoiceView?> _future;
+  PosInvoiceView? _invoice;
 
   @override
   void initState() {
     super.initState();
-    _future = ref.read(salesRepositoryProvider).invoiceViewById(widget.invoiceId);
+    _future = ref
+        .read(salesRepositoryProvider)
+        .invoiceViewById(widget.invoiceId)
+        .then((value) {
+      _invoice = value;
+      return value;
+    });
+  }
+
+  Future<void> _printInvoice() async {
+    final invoice = _invoice;
+    if (invoice == null) return;
+    final pharmacy = await ref.read(settingsDaoProvider).getString(
+          pharmacyNameSettingKey,
+        ) ??
+        pharmacyFallbackName();
+    try {
+      await InvoicePdfService().print(invoice, pharmacy);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).posPrintFailed)));
+    }
   }
 
   @override
@@ -37,13 +63,7 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
         actions: [
           IconButton(
             tooltip: l10n.posPrintReceipt,
-            onPressed: () {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  const SnackBar(content: Text('الطباعة غير متاحة في هذه النسخة')),
-                );
-            },
+            onPressed: _invoice == null ? null : () async => _printInvoice(),
             icon: const Icon(Icons.print_outlined),
           ),
         ],
