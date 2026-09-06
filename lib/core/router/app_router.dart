@@ -13,8 +13,12 @@ import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/presentation/pages/access_denied_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/users_page.dart';
+import '../../features/customers/presentation/pages/customer_statement_page.dart';
+import '../../features/customers/presentation/pages/customers_page.dart';
 import '../../features/inventory/presentation/pages/batches_page.dart';
 import '../../features/inventory/presentation/pages/inventory_page.dart';
+import '../../features/prescriptions/presentation/pages/prescription_detail_page.dart';
+import '../../features/prescriptions/presentation/pages/prescription_form_page.dart';
 import '../../features/purchases/presentation/pages/purchase_detail_page.dart';
 import '../../features/purchases/presentation/pages/purchase_form_page.dart';
 import '../../features/purchases/presentation/pages/purchases_page.dart';
@@ -70,6 +74,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       if (path.startsWith(AppSection.purchases.path) &&
           !authState.permissions.contains(Perm.purchasesView)) {
+        return '/access-denied';
+      }
+      if (path.startsWith(AppSection.customers.path) &&
+          !authState.permissions.contains(Perm.customersView)) {
         return '/access-denied';
       }
       return null;
@@ -133,6 +141,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                 ],
+                if (section == AppSection.customers) ...[
+                  GoRoute(
+                    path: 'statement/:customerId',
+                    builder: (context, state) => CustomerStatementView(
+                      customerId: state.pathParameters['customerId']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'prescriptions/new',
+                    name: 'prescription-new',
+                    builder: (context, _) => const PrescriptionFormPage(),
+                  ),
+                  GoRoute(
+                    path: 'prescriptions/detail/:id',
+                    name: 'prescription-detail',
+                    builder: (context, state) => PrescriptionDetailPage(
+                      prescriptionId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
               ],
             ),
         ],
@@ -149,6 +177,7 @@ Widget _sectionPage(AppSection section, BuildContext context) {
   if (section == AppSection.inventory) return const InventoryPage();
   if (section == AppSection.suppliers) return const SuppliersPage();
   if (section == AppSection.purchases) return const PurchasesPage();
+  if (section == AppSection.customers) return const CustomersPage();
   final l10n = AppLocalizations.of(context);
   return SectionPlaceholder(
     icon: section.icon,

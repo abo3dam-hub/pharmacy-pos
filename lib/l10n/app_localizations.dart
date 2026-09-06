@@ -1854,13 +1854,13 @@ abstract class AppLocalizations {
   ///
   /// In ar, this message translates to:
   /// **'تعطيل المورد «{name}»؟'**
-  String supplierDeactivateConfirmMessage(String name);
+  String supplierDeactivateConfirmMessage(Object name);
 
   /// No description provided for @supplierActivateConfirmMessage.
   ///
   /// In ar, this message translates to:
   /// **'إعادة تفعيل المورد «{name}»؟'**
-  String supplierActivateConfirmMessage(String name);
+  String supplierActivateConfirmMessage(Object name);
 
   /// No description provided for @supplierBalance.
   ///
@@ -1938,13 +1938,13 @@ abstract class AppLocalizations {
   ///
   /// In ar, this message translates to:
   /// **'فاتورة شراء {number}'**
-  String statementRowInvoice(String number);
+  String statementRowInvoice(Object number);
 
   /// No description provided for @statementRowReturn.
   ///
   /// In ar, this message translates to:
   /// **'مرتجع مشتريات {number}'**
-  String statementRowReturn(String number);
+  String statementRowReturn(Object number);
 
   /// No description provided for @statementNoData.
   ///
@@ -2353,6 +2353,498 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الاسم مطلوب'**
   String get supplierNameRequired;
+
+  /// No description provided for @customersTab.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملاء'**
+  String get customersTab;
+
+  /// No description provided for @customersEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد عملاء'**
+  String get customersEmpty;
+
+  /// No description provided for @customersSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث بالاسم أو الهاتف أو البريد'**
+  String get customersSearchHint;
+
+  /// No description provided for @customerAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة عميل'**
+  String get customerAdd;
+
+  /// No description provided for @customerAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عميل جديد'**
+  String get customerAddTitle;
+
+  /// No description provided for @customerEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل عميل'**
+  String get customerEditTitle;
+
+  /// No description provided for @customerName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم العميل'**
+  String get customerName;
+
+  /// No description provided for @customerPhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الهاتف'**
+  String get customerPhone;
+
+  /// No description provided for @customerSecondaryPhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'هاتف آخر'**
+  String get customerSecondaryPhone;
+
+  /// No description provided for @customerEmail.
+  ///
+  /// In ar, this message translates to:
+  /// **'البريد الإلكتروني'**
+  String get customerEmail;
+
+  /// No description provided for @customerAddress.
+  ///
+  /// In ar, this message translates to:
+  /// **'العنوان'**
+  String get customerAddress;
+
+  /// No description provided for @customerNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات'**
+  String get customerNotes;
+
+  /// No description provided for @customerHasAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب آجل (ائتماني)'**
+  String get customerHasAccount;
+
+  /// No description provided for @customerAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب'**
+  String get customerAccount;
+
+  /// No description provided for @customerAccountEnabled.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفعّل'**
+  String get customerAccountEnabled;
+
+  /// No description provided for @customerAccountDisabled.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مفعّل'**
+  String get customerAccountDisabled;
+
+  /// No description provided for @customerOpeningBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الافتتاحي'**
+  String get customerOpeningBalance;
+
+  /// No description provided for @customerCreditLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الائتماني'**
+  String get customerCreditLimit;
+
+  /// No description provided for @customerDateOfBirth.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الميلاد'**
+  String get customerDateOfBirth;
+
+  /// No description provided for @customerGender.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجنس'**
+  String get customerGender;
+
+  /// No description provided for @customerGenderMale.
+  ///
+  /// In ar, this message translates to:
+  /// **'ذكر'**
+  String get customerGenderMale;
+
+  /// No description provided for @customerGenderFemale.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنثى'**
+  String get customerGenderFemale;
+
+  /// No description provided for @customerMedicalHistory.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ المرضي'**
+  String get customerMedicalHistory;
+
+  /// No description provided for @customerTaxVatNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرقم الضريبي'**
+  String get customerTaxVatNumber;
+
+  /// No description provided for @customerBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيد الحساب'**
+  String get customerBalance;
+
+  /// No description provided for @customerNameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم العميل مطلوب'**
+  String get customerNameRequired;
+
+  /// No description provided for @customerCreatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إضافة العميل'**
+  String get customerCreatedMessage;
+
+  /// No description provided for @customerUpdatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث بيانات العميل'**
+  String get customerUpdatedMessage;
+
+  /// No description provided for @customerActivatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تفعيل العميل'**
+  String get customerActivatedMessage;
+
+  /// No description provided for @customerDeactivatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعطيل العميل'**
+  String get customerDeactivatedMessage;
+
+  /// No description provided for @customerAccountEnabledMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تفعيل الحساب الائتماني'**
+  String get customerAccountEnabledMessage;
+
+  /// No description provided for @customerAccountDisabledMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعطيل الحساب الائتماني'**
+  String get customerAccountDisabledMessage;
+
+  /// No description provided for @customerDeactivateConfirmMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعطيل العميل «{name}»؟'**
+  String customerDeactivateConfirmMessage(String name);
+
+  /// No description provided for @customerActivateConfirmMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة تفعيل العميل «{name}»؟'**
+  String customerActivateConfirmMessage(String name);
+
+  /// No description provided for @customerAccountDisableConfirmMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعطيل الحساب الائتماني للعميل «{name}»؟'**
+  String customerAccountDisableConfirmMessage(String name);
+
+  /// No description provided for @customerAccountEnableConfirmMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل الحساب الائتماني للعميل «{name}»؟'**
+  String customerAccountEnableConfirmMessage(String name);
+
+  /// No description provided for @customerStatement.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف الحساب'**
+  String get customerStatement;
+
+  /// No description provided for @customerViewPrescriptions.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصفات العميل'**
+  String get customerViewPrescriptions;
+
+  /// No description provided for @customerStatementDateFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'من'**
+  String get customerStatementDateFrom;
+
+  /// No description provided for @customerStatementDateTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلى'**
+  String get customerStatementDateTo;
+
+  /// No description provided for @statementRowSaleInvoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة بيع {number}'**
+  String statementRowSaleInvoice(String number);
+
+  /// No description provided for @statementRowSaleReturn.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع بيع {number}'**
+  String statementRowSaleReturn(String number);
+
+  /// No description provided for @prescriptionsTab.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصفات الطبية'**
+  String get prescriptionsTab;
+
+  /// No description provided for @prescriptionsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد وصفات'**
+  String get prescriptionsEmpty;
+
+  /// No description provided for @prescriptionsSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث برقم الوصفة أو المريض أو الطبيب'**
+  String get prescriptionsSearchHint;
+
+  /// No description provided for @prescriptionAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصفة جديدة'**
+  String get prescriptionAdd;
+
+  /// No description provided for @prescriptionAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصفة طبية جديدة'**
+  String get prescriptionAddTitle;
+
+  /// No description provided for @prescriptionNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الوصفة'**
+  String get prescriptionNumber;
+
+  /// No description provided for @prescriptionPatient.
+  ///
+  /// In ar, this message translates to:
+  /// **'المريض'**
+  String get prescriptionPatient;
+
+  /// No description provided for @prescriptionPatientName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المريض'**
+  String get prescriptionPatientName;
+
+  /// No description provided for @prescriptionPatientAge.
+  ///
+  /// In ar, this message translates to:
+  /// **'العمر'**
+  String get prescriptionPatientAge;
+
+  /// No description provided for @prescriptionPatientGender.
+  ///
+  /// In ar, this message translates to:
+  /// **'جنس المريض'**
+  String get prescriptionPatientGender;
+
+  /// No description provided for @prescriptionDoctorName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الطبيب'**
+  String get prescriptionDoctorName;
+
+  /// No description provided for @prescriptionDoctorSpecialty.
+  ///
+  /// In ar, this message translates to:
+  /// **'التخصص'**
+  String get prescriptionDoctorSpecialty;
+
+  /// No description provided for @prescriptionClinicHospital.
+  ///
+  /// In ar, this message translates to:
+  /// **'العيادة / المستشفى'**
+  String get prescriptionClinicHospital;
+
+  /// No description provided for @prescriptionIssuedAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الوصفة'**
+  String get prescriptionIssuedAt;
+
+  /// No description provided for @prescriptionExpiryAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء'**
+  String get prescriptionExpiryAt;
+
+  /// No description provided for @prescriptionNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات الوصفة'**
+  String get prescriptionNotes;
+
+  /// No description provided for @prescriptionImagePath.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسار صورة الوصفة'**
+  String get prescriptionImagePath;
+
+  /// No description provided for @prescriptionItems.
+  ///
+  /// In ar, this message translates to:
+  /// **'أصناف الوصفة'**
+  String get prescriptionItems;
+
+  /// No description provided for @prescriptionAddItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة صنف'**
+  String get prescriptionAddItem;
+
+  /// No description provided for @prescriptionItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصنف'**
+  String get prescriptionItem;
+
+  /// No description provided for @prescriptionQuantity.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية (الوحدات الأساسية)'**
+  String get prescriptionQuantity;
+
+  /// No description provided for @prescriptionDosage.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة'**
+  String get prescriptionDosage;
+
+  /// No description provided for @prescriptionFrequency.
+  ///
+  /// In ar, this message translates to:
+  /// **'التكرار'**
+  String get prescriptionFrequency;
+
+  /// No description provided for @prescriptionDurationDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدة العلاج (أيام)'**
+  String get prescriptionDurationDays;
+
+  /// No description provided for @prescriptionLineNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات السطر'**
+  String get prescriptionLineNotes;
+
+  /// No description provided for @prescriptionStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get prescriptionStatus;
+
+  /// No description provided for @prescriptionStatusActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'نشطة'**
+  String get prescriptionStatusActive;
+
+  /// No description provided for @prescriptionStatusDispensed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم صرفها'**
+  String get prescriptionStatusDispensed;
+
+  /// No description provided for @prescriptionStatusExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهية'**
+  String get prescriptionStatusExpired;
+
+  /// No description provided for @prescriptionStatusCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغاة'**
+  String get prescriptionStatusCancelled;
+
+  /// No description provided for @prescriptionCustomer.
+  ///
+  /// In ar, this message translates to:
+  /// **'العميل'**
+  String get prescriptionCustomer;
+
+  /// No description provided for @prescriptionRequiredCustomer.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب اختيار عميل للوصفة — لا تُنشأ وصفات بدون مريض'**
+  String get prescriptionRequiredCustomer;
+
+  /// No description provided for @prescriptionRequiredPatient.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المريض مطلوب'**
+  String get prescriptionRequiredPatient;
+
+  /// No description provided for @prescriptionRequiredItems.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف صنفاً واحداً على الأقل'**
+  String get prescriptionRequiredItems;
+
+  /// No description provided for @prescriptionRequiredQuantity.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية يجب أن تكون أكبر من صفر'**
+  String get prescriptionRequiredQuantity;
+
+  /// No description provided for @prescriptionCreatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إنشاء الوصفة'**
+  String get prescriptionCreatedMessage;
+
+  /// No description provided for @prescriptionDetail.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الوصفة'**
+  String get prescriptionDetail;
+
+  /// No description provided for @prescriptionPrepareForSale.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجهيز للبيع'**
+  String get prescriptionPrepareForSale;
+
+  /// No description provided for @prescriptionPreparedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصفة جاهزة للربط في نقطة البيع'**
+  String get prescriptionPreparedMessage;
+
+  /// No description provided for @prescriptionCannotPrepare.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن ربط هذه الوصفة بالبيع'**
+  String get prescriptionCannotPrepare;
 }
 
 class _AppLocalizationsDelegate

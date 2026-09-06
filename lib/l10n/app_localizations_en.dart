@@ -900,12 +900,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get supplierDeactivatedMessage => 'Supplier deactivated';
 
   @override
-  String supplierDeactivateConfirmMessage(String name) {
+  String supplierDeactivateConfirmMessage(Object name) {
     return 'Deactivate supplier\"$name\"?';
   }
 
   @override
-  String supplierActivateConfirmMessage(String name) {
+  String supplierActivateConfirmMessage(Object name) {
     return 'Activate supplier\"$name\"?';
   }
 
@@ -946,12 +946,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statementBalance => 'Balance';
 
   @override
-  String statementRowInvoice(String number) {
+  String statementRowInvoice(Object number) {
     return 'Purchase invoice $number';
   }
 
   @override
-  String statementRowReturn(String number) {
+  String statementRowReturn(Object number) {
     return 'Purchase return $number';
   }
 
@@ -1158,4 +1158,266 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supplierNameRequired => 'Name is required';
+
+  @override
+  String get customersTab => 'Customers';
+
+  @override
+  String get customersEmpty => 'No customers found';
+
+  @override
+  String get customersSearchHint => 'Search by name, phone, or email';
+
+  @override
+  String get customerAdd => 'Add customer';
+
+  @override
+  String get customerAddTitle => 'New customer';
+
+  @override
+  String get customerEditTitle => 'Edit customer';
+
+  @override
+  String get customerName => 'Customer name';
+
+  @override
+  String get customerPhone => 'Phone';
+
+  @override
+  String get customerSecondaryPhone => 'Secondary phone';
+
+  @override
+  String get customerEmail => 'Email';
+
+  @override
+  String get customerAddress => 'Address';
+
+  @override
+  String get customerNotes => 'Notes';
+
+  @override
+  String get customerHasAccount => 'Credit account';
+
+  @override
+  String get customerAccount => 'Account';
+
+  @override
+  String get customerAccountEnabled => 'Enabled';
+
+  @override
+  String get customerAccountDisabled => 'Disabled';
+
+  @override
+  String get customerOpeningBalance => 'Opening balance';
+
+  @override
+  String get customerCreditLimit => 'Credit limit';
+
+  @override
+  String get customerDateOfBirth => 'Date of birth';
+
+  @override
+  String get customerGender => 'Gender';
+
+  @override
+  String get customerGenderMale => 'Male';
+
+  @override
+  String get customerGenderFemale => 'Female';
+
+  @override
+  String get customerMedicalHistory => 'Medical history';
+
+  @override
+  String get customerTaxVatNumber => 'Tax / VAT number';
+
+  @override
+  String get customerBalance => 'Account balance';
+
+  @override
+  String get customerNameRequired => 'Customer name is required';
+
+  @override
+  String get customerCreatedMessage => 'Customer added';
+
+  @override
+  String get customerUpdatedMessage => 'Customer updated';
+
+  @override
+  String get customerActivatedMessage => 'Customer re-activated';
+
+  @override
+  String get customerDeactivatedMessage => 'Customer deactivated';
+
+  @override
+  String get customerAccountEnabledMessage => 'Credit account enabled';
+
+  @override
+  String get customerAccountDisabledMessage => 'Credit account disabled';
+
+  @override
+  String customerDeactivateConfirmMessage(String name) {
+    return 'Deactivate customer\"$name\"?';
+  }
+
+  @override
+  String customerActivateConfirmMessage(String name) {
+    return 'Re-activate customer\"$name\"?';
+  }
+
+  @override
+  String customerAccountDisableConfirmMessage(String name) {
+    return 'Disable credit account for\"$name\"?';
+  }
+
+  @override
+  String customerAccountEnableConfirmMessage(String name) {
+    return 'Enable credit account for\"$name\"?';
+  }
+
+  @override
+  String get customerStatement => 'Statement';
+
+  @override
+  String get customerViewPrescriptions => 'Customer prescriptions';
+
+  @override
+  String get customerStatementDateFrom => 'From';
+
+  @override
+  String get customerStatementDateTo => 'To';
+
+  @override
+  String statementRowSaleInvoice(String number) {
+    return 'Sales invoice $number';
+  }
+
+  @override
+  String statementRowSaleReturn(String number) {
+    return 'Sales return $number';
+  }
+
+  @override
+  String get prescriptionsTab => 'Prescriptions';
+
+  @override
+  String get prescriptionsEmpty => 'No prescriptions found';
+
+  @override
+  String get prescriptionsSearchHint => 'Search by number, patient, or doctor';
+
+  @override
+  String get prescriptionAdd => 'New prescription';
+
+  @override
+  String get prescriptionAddTitle => 'New prescription';
+
+  @override
+  String get prescriptionNumber => 'Prescription No.';
+
+  @override
+  String get prescriptionPatient => 'Patient';
+
+  @override
+  String get prescriptionPatientName => 'Patient name';
+
+  @override
+  String get prescriptionPatientAge => 'Age';
+
+  @override
+  String get prescriptionPatientGender => 'Patient gender';
+
+  @override
+  String get prescriptionDoctorName => 'Doctor name';
+
+  @override
+  String get prescriptionDoctorSpecialty => 'Specialty';
+
+  @override
+  String get prescriptionClinicHospital => 'Clinic / hospital';
+
+  @override
+  String get prescriptionIssuedAt => 'Prescription date';
+
+  @override
+  String get prescriptionExpiryAt => 'Expiry date';
+
+  @override
+  String get prescriptionNotes => 'Prescription notes';
+
+  @override
+  String get prescriptionImagePath => 'Prescription image path';
+
+  @override
+  String get prescriptionItems => 'Prescription items';
+
+  @override
+  String get prescriptionAddItem => 'Add item';
+
+  @override
+  String get prescriptionItem => 'Item';
+
+  @override
+  String get prescriptionQuantity => 'Quantity (base units)';
+
+  @override
+  String get prescriptionDosage => 'Dosage';
+
+  @override
+  String get prescriptionFrequency => 'Frequency';
+
+  @override
+  String get prescriptionDurationDays => 'Duration (days)';
+
+  @override
+  String get prescriptionLineNotes => 'Line notes';
+
+  @override
+  String get prescriptionStatus => 'Status';
+
+  @override
+  String get prescriptionStatusActive => 'Active';
+
+  @override
+  String get prescriptionStatusDispensed => 'Dispensed';
+
+  @override
+  String get prescriptionStatusExpired => 'Expired';
+
+  @override
+  String get prescriptionStatusCancelled => 'Cancelled';
+
+  @override
+  String get prescriptionCustomer => 'Customer';
+
+  @override
+  String get prescriptionRequiredCustomer =>
+      'Select a customer — prescriptions require a patient';
+
+  @override
+  String get prescriptionRequiredPatient => 'Patient name is required';
+
+  @override
+  String get prescriptionRequiredItems => 'Add at least one item';
+
+  @override
+  String get prescriptionRequiredQuantity =>
+      'Quantity must be greater than zero';
+
+  @override
+  String get prescriptionCreatedMessage => 'Prescription created';
+
+  @override
+  String get prescriptionDetail => 'Prescription details';
+
+  @override
+  String get prescriptionPrepareForSale => 'Prepare for sale';
+
+  @override
+  String get prescriptionPreparedMessage =>
+      'Prescription is ready to link at the POS';
+
+  @override
+  String get prescriptionCannotPrepare =>
+      'This prescription cannot be linked to a sale';
 }

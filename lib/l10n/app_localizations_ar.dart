@@ -899,12 +899,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get supplierDeactivatedMessage => 'تم تعطيل المورد';
 
   @override
-  String supplierDeactivateConfirmMessage(String name) {
+  String supplierDeactivateConfirmMessage(Object name) {
     return 'تعطيل المورد «$name»؟';
   }
 
   @override
-  String supplierActivateConfirmMessage(String name) {
+  String supplierActivateConfirmMessage(Object name) {
     return 'إعادة تفعيل المورد «$name»؟';
   }
 
@@ -945,12 +945,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get statementBalance => 'الرصيد';
 
   @override
-  String statementRowInvoice(String number) {
+  String statementRowInvoice(Object number) {
     return 'فاتورة شراء $number';
   }
 
   @override
-  String statementRowReturn(String number) {
+  String statementRowReturn(Object number) {
     return 'مرتجع مشتريات $number';
   }
 
@@ -1157,4 +1157,263 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get supplierNameRequired => 'الاسم مطلوب';
+
+  @override
+  String get customersTab => 'العملاء';
+
+  @override
+  String get customersEmpty => 'لا يوجد عملاء';
+
+  @override
+  String get customersSearchHint => 'بحث بالاسم أو الهاتف أو البريد';
+
+  @override
+  String get customerAdd => 'إضافة عميل';
+
+  @override
+  String get customerAddTitle => 'عميل جديد';
+
+  @override
+  String get customerEditTitle => 'تعديل عميل';
+
+  @override
+  String get customerName => 'اسم العميل';
+
+  @override
+  String get customerPhone => 'رقم الهاتف';
+
+  @override
+  String get customerSecondaryPhone => 'هاتف آخر';
+
+  @override
+  String get customerEmail => 'البريد الإلكتروني';
+
+  @override
+  String get customerAddress => 'العنوان';
+
+  @override
+  String get customerNotes => 'ملاحظات';
+
+  @override
+  String get customerHasAccount => 'حساب آجل (ائتماني)';
+
+  @override
+  String get customerAccount => 'الحساب';
+
+  @override
+  String get customerAccountEnabled => 'مفعّل';
+
+  @override
+  String get customerAccountDisabled => 'غير مفعّل';
+
+  @override
+  String get customerOpeningBalance => 'الرصيد الافتتاحي';
+
+  @override
+  String get customerCreditLimit => 'الحد الائتماني';
+
+  @override
+  String get customerDateOfBirth => 'تاريخ الميلاد';
+
+  @override
+  String get customerGender => 'الجنس';
+
+  @override
+  String get customerGenderMale => 'ذكر';
+
+  @override
+  String get customerGenderFemale => 'أنثى';
+
+  @override
+  String get customerMedicalHistory => 'التاريخ المرضي';
+
+  @override
+  String get customerTaxVatNumber => 'الرقم الضريبي';
+
+  @override
+  String get customerBalance => 'رصيد الحساب';
+
+  @override
+  String get customerNameRequired => 'اسم العميل مطلوب';
+
+  @override
+  String get customerCreatedMessage => 'تم إضافة العميل';
+
+  @override
+  String get customerUpdatedMessage => 'تم تحديث بيانات العميل';
+
+  @override
+  String get customerActivatedMessage => 'تم تفعيل العميل';
+
+  @override
+  String get customerDeactivatedMessage => 'تم تعطيل العميل';
+
+  @override
+  String get customerAccountEnabledMessage => 'تم تفعيل الحساب الائتماني';
+
+  @override
+  String get customerAccountDisabledMessage => 'تم تعطيل الحساب الائتماني';
+
+  @override
+  String customerDeactivateConfirmMessage(String name) {
+    return 'تعطيل العميل «$name»؟';
+  }
+
+  @override
+  String customerActivateConfirmMessage(String name) {
+    return 'إعادة تفعيل العميل «$name»؟';
+  }
+
+  @override
+  String customerAccountDisableConfirmMessage(String name) {
+    return 'تعطيل الحساب الائتماني للعميل «$name»؟';
+  }
+
+  @override
+  String customerAccountEnableConfirmMessage(String name) {
+    return 'تفعيل الحساب الائتماني للعميل «$name»؟';
+  }
+
+  @override
+  String get customerStatement => 'كشف الحساب';
+
+  @override
+  String get customerViewPrescriptions => 'وصفات العميل';
+
+  @override
+  String get customerStatementDateFrom => 'من';
+
+  @override
+  String get customerStatementDateTo => 'إلى';
+
+  @override
+  String statementRowSaleInvoice(String number) {
+    return 'فاتورة بيع $number';
+  }
+
+  @override
+  String statementRowSaleReturn(String number) {
+    return 'مرتجع بيع $number';
+  }
+
+  @override
+  String get prescriptionsTab => 'الوصفات الطبية';
+
+  @override
+  String get prescriptionsEmpty => 'لا توجد وصفات';
+
+  @override
+  String get prescriptionsSearchHint => 'بحث برقم الوصفة أو المريض أو الطبيب';
+
+  @override
+  String get prescriptionAdd => 'وصفة جديدة';
+
+  @override
+  String get prescriptionAddTitle => 'وصفة طبية جديدة';
+
+  @override
+  String get prescriptionNumber => 'رقم الوصفة';
+
+  @override
+  String get prescriptionPatient => 'المريض';
+
+  @override
+  String get prescriptionPatientName => 'اسم المريض';
+
+  @override
+  String get prescriptionPatientAge => 'العمر';
+
+  @override
+  String get prescriptionPatientGender => 'جنس المريض';
+
+  @override
+  String get prescriptionDoctorName => 'اسم الطبيب';
+
+  @override
+  String get prescriptionDoctorSpecialty => 'التخصص';
+
+  @override
+  String get prescriptionClinicHospital => 'العيادة / المستشفى';
+
+  @override
+  String get prescriptionIssuedAt => 'تاريخ الوصفة';
+
+  @override
+  String get prescriptionExpiryAt => 'تاريخ الانتهاء';
+
+  @override
+  String get prescriptionNotes => 'ملاحظات الوصفة';
+
+  @override
+  String get prescriptionImagePath => 'مسار صورة الوصفة';
+
+  @override
+  String get prescriptionItems => 'أصناف الوصفة';
+
+  @override
+  String get prescriptionAddItem => 'إضافة صنف';
+
+  @override
+  String get prescriptionItem => 'الصنف';
+
+  @override
+  String get prescriptionQuantity => 'الكمية (الوحدات الأساسية)';
+
+  @override
+  String get prescriptionDosage => 'الجرعة';
+
+  @override
+  String get prescriptionFrequency => 'التكرار';
+
+  @override
+  String get prescriptionDurationDays => 'مدة العلاج (أيام)';
+
+  @override
+  String get prescriptionLineNotes => 'ملاحظات السطر';
+
+  @override
+  String get prescriptionStatus => 'الحالة';
+
+  @override
+  String get prescriptionStatusActive => 'نشطة';
+
+  @override
+  String get prescriptionStatusDispensed => 'تم صرفها';
+
+  @override
+  String get prescriptionStatusExpired => 'منتهية';
+
+  @override
+  String get prescriptionStatusCancelled => 'ملغاة';
+
+  @override
+  String get prescriptionCustomer => 'العميل';
+
+  @override
+  String get prescriptionRequiredCustomer =>
+      'يجب اختيار عميل للوصفة — لا تُنشأ وصفات بدون مريض';
+
+  @override
+  String get prescriptionRequiredPatient => 'اسم المريض مطلوب';
+
+  @override
+  String get prescriptionRequiredItems => 'أضف صنفاً واحداً على الأقل';
+
+  @override
+  String get prescriptionRequiredQuantity => 'الكمية يجب أن تكون أكبر من صفر';
+
+  @override
+  String get prescriptionCreatedMessage => 'تم إنشاء الوصفة';
+
+  @override
+  String get prescriptionDetail => 'تفاصيل الوصفة';
+
+  @override
+  String get prescriptionPrepareForSale => 'تجهيز للبيع';
+
+  @override
+  String get prescriptionPreparedMessage => 'الوصفة جاهزة للربط في نقطة البيع';
+
+  @override
+  String get prescriptionCannotPrepare => 'لا يمكن ربط هذه الوصفة بالبيع';
 }

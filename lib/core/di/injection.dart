@@ -2,8 +2,10 @@ import 'package:get_it/get_it.dart';
 
 import '../../data/daos/batch_dao.dart';
 import '../../data/daos/category_dao.dart';
+import '../../data/daos/customer_dao.dart';
 import '../../data/daos/item_dao.dart';
 import '../../data/daos/manufacturer_dao.dart';
+import '../../data/daos/prescription_dao.dart';
 import '../../data/daos/purchase_dao.dart';
 import '../../data/daos/supplier_dao.dart';
 import '../../data/daos/stock_movement_dao.dart';
@@ -33,6 +35,10 @@ import '../../features/auth/domain/usecases/login.dart';
 import '../../features/auth/domain/usecases/logout.dart';
 import '../../features/auth/domain/usecases/reactivate_user.dart';
 import '../../features/auth/domain/usecases/update_user.dart';
+import '../../features/customers/application/customers_controller.dart';
+import '../../features/customers/data/repositories/customer_repository_impl.dart';
+import '../../features/customers/domain/repositories/customer_repository.dart';
+import '../../features/customers/domain/usecases/customers_use_cases.dart';
 import '../../features/inventory/application/inventory_controller.dart';
 import '../../features/inventory/application/master_data_controller.dart';
 import '../../features/inventory/data/repositories/inventory_repository_impl.dart';
@@ -55,6 +61,10 @@ import '../../features/purchases/application/purchases_controller.dart';
 import '../../features/purchases/data/repositories/purchases_repository_impl.dart';
 import '../../features/purchases/domain/repositories/purchases_repository.dart';
 import '../../features/purchases/domain/usecases/purchases_use_cases.dart';
+import '../../features/prescriptions/application/prescriptions_controller.dart';
+import '../../features/prescriptions/data/repositories/prescription_repository_impl.dart';
+import '../../features/prescriptions/domain/repositories/prescription_repository.dart';
+import '../../features/prescriptions/domain/usecases/prescriptions_use_cases.dart';
 import '../../features/suppliers/application/suppliers_controller.dart';
 import '../../features/suppliers/data/repositories/supplier_repository_impl.dart';
 import '../../features/suppliers/domain/repositories/supplier_repository.dart';
@@ -96,10 +106,74 @@ void setupDependencies() {
       () => TherapeuticGroupDao(db));
   getIt.registerLazySingleton<SupplierDao>(() => SupplierDao(db));
   getIt.registerLazySingleton<PurchaseDao>(() => PurchaseDao(db));
+  getIt.registerLazySingleton<CustomerDao>(() => CustomerDao(db));
+  getIt.registerLazySingleton<PrescriptionDao>(() => PrescriptionDao(db));
 
   _registerAuth(db);
   _registerInventory(db);
   _registerPhase4(db);
+  _registerPhase5(db);
+}
+
+/// Phase 5 — Customers & Prescriptions graph (customer master, derived
+/// customer statements, prescriptions with items and the sale-preparation
+/// lookup that Phase 6 POS consumes).
+void _registerPhase5(AppDatabase db) {
+  final audit = getIt<AuditService>();
+  final perms = getIt<PermissionService>();
+
+  getIt.registerLazySingleton<CustomerRepository>(
+    () => CustomerRepositoryImpl(db, getIt<CustomerDao>()),
+  );
+  getIt.registerLazySingleton<PrescriptionRepository>(
+    () => PrescriptionRepositoryImpl(db, getIt<PrescriptionDao>()),
+  );
+
+  final cusRepo = getIt<CustomerRepository>();
+  final rxRepo = getIt<PrescriptionRepository>();
+
+  getIt.registerLazySingleton<ListCustomersUseCase>(
+      () => ListCustomersUseCase(cusRepo, perms));
+  getIt.registerLazySingleton<AllCustomersUseCase>(
+      () => AllCustomersUseCase(cusRepo, perms));
+  getIt.registerLazySingleton<CreateCustomerUseCase>(
+      () => CreateCustomerUseCase(cusRepo, perms, audit));
+  getIt.registerLazySingleton<UpdateCustomerUseCase>(
+      () => UpdateCustomerUseCase(cusRepo, perms, audit));
+  getIt.registerLazySingleton<SetCustomerActiveUseCase>(
+      () => SetCustomerActiveUseCase(cusRepo, perms, audit));
+  getIt.registerLazySingleton<SetCustomerAccountUseCase>(
+      () => SetCustomerAccountUseCase(cusRepo, perms, audit));
+  getIt.registerLazySingleton<CustomerStatementUseCase>(
+      () => CustomerStatementUseCase(cusRepo, perms));
+
+  getIt.registerLazySingleton<ListPrescriptionsUseCase>(
+      () => ListPrescriptionsUseCase(rxRepo, perms));
+  getIt.registerLazySingleton<CreatePrescriptionUseCase>(
+      () => CreatePrescriptionUseCase(rxRepo, perms, audit));
+  getIt.registerLazySingleton<GetPrescriptionDetailUseCase>(
+      () => GetPrescriptionDetailUseCase(rxRepo, perms));
+  getIt.registerLazySingleton<CustomerActivePrescriptionsUseCase>(
+      () => CustomerActivePrescriptionsUseCase(rxRepo, perms));
+  getIt.registerLazySingleton<PreparePrescriptionForSaleUseCase>(
+      () => PreparePrescriptionForSaleUseCase(rxRepo, perms));
+
+  getIt.registerLazySingleton<CustomersController>(() => CustomersController(
+        getIt<ListCustomersUseCase>(),
+        getIt<CreateCustomerUseCase>(),
+        getIt<UpdateCustomerUseCase>(),
+        getIt<SetCustomerActiveUseCase>(),
+        getIt<SetCustomerAccountUseCase>(),
+        getIt<CustomerStatementUseCase>(),
+      ));
+
+  getIt.registerLazySingleton<PrescriptionsController>(
+      () => PrescriptionsController(
+            getIt<ListPrescriptionsUseCase>(),
+            getIt<CreatePrescriptionUseCase>(),
+            getIt<GetPrescriptionDetailUseCase>(),
+            getIt<PreparePrescriptionForSaleUseCase>(),
+          ));
 }
 
 /// Phase 4 — Suppliers & Purchases graph (suppliers master, statements,

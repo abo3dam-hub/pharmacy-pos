@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/daos/batch_dao.dart';
 import '../../data/daos/category_dao.dart';
+import '../../data/daos/customer_dao.dart';
 import '../../data/daos/item_dao.dart';
 import '../../data/daos/manufacturer_dao.dart';
+import '../../data/daos/prescription_dao.dart';
 import '../../data/daos/purchase_dao.dart';
 import '../../data/daos/supplier_dao.dart';
 import '../../data/daos/stock_movement_dao.dart';
@@ -21,6 +23,8 @@ import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/application/users_controller.dart';
 import '../../features/auth/data/daos/user_dao.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
+import '../../features/customers/application/customers_controller.dart';
+import '../../features/customers/domain/usecases/customers_use_cases.dart';
 import '../../features/inventory/application/inventory_controller.dart';
 import '../../features/inventory/application/master_data_controller.dart';
 import '../../features/inventory/domain/repositories/inventory_repository.dart';
@@ -28,6 +32,7 @@ import '../../features/inventory/domain/services/inventory_excel_service.dart';
 import '../../features/inventory/domain/services/inventory_view_builder.dart';
 import '../../features/purchases/application/purchases_controller.dart';
 import '../../features/purchases/domain/usecases/purchases_use_cases.dart';
+import '../../features/prescriptions/application/prescriptions_controller.dart';
 import '../../features/suppliers/application/suppliers_controller.dart';
 import '../../features/suppliers/domain/usecases/suppliers_use_cases.dart';
 import '../../shared/database/app_database.dart';
@@ -90,12 +95,23 @@ final masterDataControllerProvider =
 
 final supplierDaoProvider = Provider<SupplierDao>((ref) => getIt<SupplierDao>());
 final purchaseDaoProvider = Provider<PurchaseDao>((ref) => getIt<PurchaseDao>());
+final customerDaoProvider = Provider<CustomerDao>((ref) => getIt<CustomerDao>());
+final prescriptionDaoProvider =
+    Provider<PrescriptionDao>((ref) => getIt<PrescriptionDao>());
 final suppliersControllerProvider =
     StateNotifierProvider<SuppliersController, SuppliersViewState>(
         (ref) => getIt<SuppliersController>());
 final purchasesControllerProvider =
     StateNotifierProvider<PurchasesController, PurchasesViewState>(
         (ref) => getIt<PurchasesController>());
+final customersControllerProvider =
+    StateNotifierProvider<CustomersController, CustomersViewState>(
+        (ref) => getIt<CustomersController>());
+final prescriptionsControllerProvider =
+    StateNotifierProvider<PrescriptionsController, PrescriptionsViewState>(
+        (ref) => getIt<PrescriptionsController>());
+final allCustomersUseCaseProvider =
+    Provider<AllCustomersUseCase>((ref) => getIt<AllCustomersUseCase>());
 final allSuppliersUseCaseProvider =
     Provider<AllSuppliersUseCase>((ref) => getIt<AllSuppliersUseCase>());
 final getPurchaseDetailUseCaseProvider =
