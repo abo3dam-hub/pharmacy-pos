@@ -195,13 +195,21 @@ void main() {
   });
 
   // ── TEST C: Partial-sale in actual sale flow ────────────────────────
+  //
+  // The SaleService API computes: unitPriceMicros × quantityBase.
+  // For partial-sale items, the caller must decompose into lines, each with
+  // the correct per-base-unit price. The decomposition is NOT bypassed.
 
-  group('TEST C — Partial-sale in actual sale flow', () {
-    test('selling strips at partial price with stock deduction', () async {
-      final itemId = await insertItem(db);
-      final supplierId = await insertSupplier(db);
+  group('TEST C — Partial-sale actual business flow', () {
+    late String itemId;
+    late String supplierId;
 
-      // Configure item for partial sale.
+    /// Helper: configure item for partial sale and purchase stock.
+    Future<void> setupPartialSaleItem() async {
+      itemId = await insertItem(db);
+      supplierId = await insertSupplier(db);
+
+      // Configure: Box = $10, 10 strips/box, 10 base/strip, 10% markup.
       await (db.update(db.items)..where((i) => i.id.equals(itemId))).write(
         ItemsCompanion(
           partialSaleEnabled: const Value(true),
@@ -212,74 +220,355 @@ void main() {
         ),
       );
 
-      // Purchase 200 base units (= 20 boxes = 200 strips).
+      // Purchase 300 base units (= 30 boxes) to cover all test scenarios.
       final purchaseNow = DateTime.now().millisecondsSinceEpoch;
       await PurchaseService().recordPurchase(
         db,
         PurchaseRequest(
-          invoiceNumber: 'PI-C1',
+          invoiceNumber: 'PI-C',
           supplierId: supplierId,
           invoiceDate: purchaseNow,
           userId: 'user_admin',
           lines: [
             PurchaseLineRequest(
               itemId: itemId,
-              quantityBase: 200,
+              quantityBase: 300,
               unitCostMicros: 10000,
               unitTypeId: 'unit_strip',
-              batchNumber: 'BATCH-C1',
+              batchNumber: 'BATCH-C',
               expiryDate: purchaseNow + 365 * 86400000,
             ),
           ],
         ),
       );
+    }
 
-      // Calculate partial price.
-      final partialPrice = calc.calculatePartialPrice(
-        sellingPriceMicros: 100000, // $10 retail
+    /// Decompose a strip quantity into sale lines with correct per-base-unit
+    /// prices. This is the actual business flow: the POS layer decomposes
+    /// the customer's strip request into full-box and partial-strips lines.
+    List<SaleLineRequest> decomposeIntoSaleLines({
+      required String itemId,
+      required int quantityParts,
+      required int partsPerFullProduct,
+      required int sellablePartBaseQuantity,
+      required int fullRetailPriceMicros,
+      required int partialSellingPriceMicros,
+    }) {
+      final completeProducts = quantityParts ~/ partsPerFullProduct;
+      final remainingParts = quantityParts % partsPerFullProduct;
+      final lines = <SaleLineRequest>[];
+
+      // Full-box portion: price per base = fullRetail / (parts × basePerPart).
+      if (completeProducts > 0) {
+        final fullBoxBaseQty =
+            completeProducts * partsPerFullProduct * sellablePartBaseQuantity;
+        final fullBoxPricePerBase =
+            fullRetailPriceMicros ~/ (partsPerFullProduct * sellablePartBaseQuantity);
+        lines.add(SaleLineRequest(
+          itemId: itemId,
+          quantityBase: fullBoxBaseQty,
+          unitPriceMicros: fullBoxPricePerBase,
+          unitTypeId: 'unit_strip',
+        ));
+      }
+
+      // Partial-strips portion: price per base = partialPrice / basePerPart.
+      if (remainingParts > 0) {
+        final partialBaseQty = remainingParts * sellablePartBaseQuantity;
+        final partialPricePerBase =
+            partialSellingPriceMicros ~/ sellablePartBaseQuantity;
+        lines.add(SaleLineRequest(
+          itemId: itemId,
+          quantityBase: partialBaseQty,
+          unitPriceMicros: partialPricePerBase,
+          unitTypeId: 'unit_strip',
+        ));
+      }
+
+      return lines;
+    }
+
+    test('13 strips → 1 box + 3 strips → \$13.30 → 130 base units', () async {
+      await setupPartialSaleItem();
+
+      // Step 1: Compute partial price per strip.
+      final partialPricePerStrip = calc.calculatePartialPrice(
+        sellingPriceMicros: 100000, // $10.00
         partsPerFullProduct: 10,
-        markupBasisPoints: 1000,
+        markupBasisPoints: 1000, // 10%
       );
-      expect(partialPrice, 11000);
+      expect(partialPricePerStrip, 11000); // $1.10 per strip
 
-      // Sell 13 strips (decomposes to 1 box + 3 strips).
-      final decomposed = calc.decompose(
+      // Step 2: Decompose 13 strips.
+      final decomposition = calc.decompose(
         quantityParts: 13,
         partsPerFullProduct: 10,
         sellablePartBaseQuantity: 10,
         fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: partialPrice,
+        partialSellingPriceMicros: partialPricePerStrip,
       );
+      expect(decomposition.completeProducts, 1);
+      expect(decomposition.remainingParts, 3);
+      expect(decomposition.totalBaseQuantity, 130);
+      expect(decomposition.totalPriceMicros, 133000); // $13.30
 
-      // Sell totalBaseQuantity (130) base units at the partial price.
-      // All 130 base units are sold at the per-unit partial price.
-      final expectedTotal = partialPrice * decomposed.totalBaseQuantity;
-      final saleOutcome = await SaleService().recordSale(
+      // Step 3: Create sale lines via decomposition (actual business flow).
+      final saleLines = decomposeIntoSaleLines(
+        itemId: itemId,
+        quantityParts: 13,
+        partsPerFullProduct: 10,
+        sellablePartBaseQuantity: 10,
+        fullRetailPriceMicros: 100000,
+        partialSellingPriceMicros: partialPricePerStrip,
+      );
+      expect(saleLines, hasLength(2)); // 1 full box + 1 partial
+
+      // Step 4: Execute sale.
+      final outcome = await SaleService().recordSale(
         db,
         SaleRequest(
           invoiceNumber: 'SI-C1',
           userId: 'user_admin',
           paymentMethod: PaymentMethod.cash,
-          paidMicros: expectedTotal,
-          lines: [
-            SaleLineRequest(
-              itemId: itemId,
-              quantityBase: decomposed.totalBaseQuantity,
-              unitPriceMicros: 100000, // full retail (ignored for partial)
-              unitTypeId: 'unit_strip',
-              partialSaleUnitPriceMicros: partialPrice,
-            ),
-          ],
+          paidMicros: decomposition.totalPriceMicros,
+          lines: saleLines,
         ),
       );
 
-      expect(saleOutcome.invoice.totalMicros, expectedTotal);
-      expect(saleOutcome.lines.single.quantityBaseSigned, 130);
+      // Step 5: Verify invoice total = $13.30.
+      expect(outcome.invoice.totalMicros, 133000);
+
+      // Step 6: Verify two lines created (full box + partial strips).
+      expect(outcome.lines, hasLength(2));
+
+      // Full box line: 100 base units at $0.10/base = $10.00.
+      final fullBoxLine = outcome.lines.firstWhere(
+          (l) => l.unitPriceMicros == 1000 && l.quantityBaseSigned == 100);
+      expect(fullBoxLine.lineTotalMicros, 100000); // $10.00
+
+      // Partial strips line: 30 base units at $0.11/base = $3.30.
+      final partialLine = outcome.lines.firstWhere(
+          (l) => l.unitPriceMicros == 1100 && l.quantityBaseSigned == 30);
+      expect(partialLine.lineTotalMicros, 33000); // $3.30
+
+      // Step 7: Verify stock deducted = 130 base units.
+      final item = await (db.select(db.items)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(item.currentStockBase, 170); // 300 - 130
+
+      // Step 8: Verify FEFO ledger.
+      final movs = await (db.select(db.stockMovements)
+            ..where((m) => m.itemId.equals(itemId)))
+          .get();
+      final saleMovs =
+          movs.where((m) => m.movementType == MovementType.sale).toList();
+      expect(saleMovs, hasLength(2)); // 2 batch allocations
+      final totalDeducted =
+          saleMovs.fold<int>(0, (sum, m) => sum + m.quantityBaseSigned);
+      expect(totalDeducted, -130);
+    });
+
+    test('10 strips → 1 box → \$10.00 (NO cumulative markup)', () async {
+      await setupPartialSaleItem();
+
+      // 10 strips = exactly 1 box. Must be sold at full retail, NOT at
+      // partial price with markup. The partial markup applies only to
+      // quantities that don't fill a complete box.
+      final partialPricePerStrip = calc.calculatePartialPrice(
+        sellingPriceMicros: 100000,
+        partsPerFullProduct: 10,
+        markupBasisPoints: 1000,
+      );
+
+      final decomposition = calc.decompose(
+        quantityParts: 10,
+        partsPerFullProduct: 10,
+        sellablePartBaseQuantity: 10,
+        fullRetailPriceMicros: 100000,
+        partialSellingPriceMicros: partialPricePerStrip,
+      );
+      expect(decomposition.completeProducts, 1);
+      expect(decomposition.remainingParts, 0);
+      expect(decomposition.totalPriceMicros, 100000); // $10.00, NOT $11.00
+
+      final saleLines = decomposeIntoSaleLines(
+        itemId: itemId,
+        quantityParts: 10,
+        partsPerFullProduct: 10,
+        sellablePartBaseQuantity: 10,
+        fullRetailPriceMicros: 100000,
+        partialSellingPriceMicros: partialPricePerStrip,
+      );
+      expect(saleLines, hasLength(1)); // Only 1 full-box line
+
+      final outcome = await SaleService().recordSale(
+        db,
+        SaleRequest(
+          invoiceNumber: 'SI-C2',
+          userId: 'user_admin',
+          paymentMethod: PaymentMethod.cash,
+          paidMicros: decomposition.totalPriceMicros,
+          lines: saleLines,
+        ),
+      );
+
+      // CRITICAL: 10 strips = $10.00, NOT $11.00.
+      expect(outcome.invoice.totalMicros, 100000);
 
       final item = await (db.select(db.items)
             ..where((i) => i.id.equals(itemId)))
           .getSingle();
-      expect(item.currentStockBase, 70); // 200 - 130
+      expect(item.currentStockBase, 200); // 300 - 100
+    });
+
+    test('3 strips → 0 boxes + 3 strips → \$3.30 → 30 base units', () async {
+      await setupPartialSaleItem();
+
+      final partialPricePerStrip = calc.calculatePartialPrice(
+        sellingPriceMicros: 100000,
+        partsPerFullProduct: 10,
+        markupBasisPoints: 1000,
+      );
+
+      final decomposition = calc.decompose(
+        quantityParts: 3,
+        partsPerFullProduct: 10,
+        sellablePartBaseQuantity: 10,
+        fullRetailPriceMicros: 100000,
+        partialSellingPriceMicros: partialPricePerStrip,
+      );
+      expect(decomposition.completeProducts, 0);
+      expect(decomposition.remainingParts, 3);
+      expect(decomposition.totalPriceMicros, 33000); // $3.30
+
+      final saleLines = decomposeIntoSaleLines(
+        itemId: itemId,
+        quantityParts: 3,
+        partsPerFullProduct: 10,
+        sellablePartBaseQuantity: 10,
+        fullRetailPriceMicros: 100000,
+        partialSellingPriceMicros: partialPricePerStrip,
+      );
+      expect(saleLines, hasLength(1)); // Only partial strips
+
+      final outcome = await SaleService().recordSale(
+        db,
+        SaleRequest(
+          invoiceNumber: 'SI-C3',
+          userId: 'user_admin',
+          paymentMethod: PaymentMethod.cash,
+          paidMicros: decomposition.totalPriceMicros,
+          lines: saleLines,
+        ),
+      );
+
+      expect(outcome.invoice.totalMicros, 33000); // $3.30
+      expect(outcome.lines, hasLength(1));
+      expect(outcome.lines.single.quantityBaseSigned, 30);
+
+      final item = await (db.select(db.items)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(item.currentStockBase, 270); // 300 - 30
+    });
+
+    test('27 strips → 2 boxes + 7 strips → \$27.70 → 270 base units', () async {
+      await setupPartialSaleItem();
+
+      final partialPricePerStrip = calc.calculatePartialPrice(
+        sellingPriceMicros: 100000,
+        partsPerFullProduct: 10,
+        markupBasisPoints: 1000,
+      );
+
+      final decomposition = calc.decompose(
+        quantityParts: 27,
+        partsPerFullProduct: 10,
+        sellablePartBaseQuantity: 10,
+        fullRetailPriceMicros: 100000,
+        partialSellingPriceMicros: partialPricePerStrip,
+      );
+      expect(decomposition.completeProducts, 2);
+      expect(decomposition.remainingParts, 7);
+      expect(decomposition.totalPriceMicros, 277000); // $27.70
+
+      final saleLines = decomposeIntoSaleLines(
+        itemId: itemId,
+        quantityParts: 27,
+        partsPerFullProduct: 10,
+        sellablePartBaseQuantity: 10,
+        fullRetailPriceMicros: 100000,
+        partialSellingPriceMicros: partialPricePerStrip,
+      );
+      expect(saleLines, hasLength(2));
+
+      final outcome = await SaleService().recordSale(
+        db,
+        SaleRequest(
+          invoiceNumber: 'SI-C4',
+          userId: 'user_admin',
+          paymentMethod: PaymentMethod.cash,
+          paidMicros: decomposition.totalPriceMicros,
+          lines: saleLines,
+        ),
+      );
+
+      expect(outcome.invoice.totalMicros, 277000); // $27.70
+
+      final item = await (db.select(db.items)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(item.currentStockBase, 30); // 300 - 270
+    });
+
+    test('1 strip → 0 boxes + 1 strip → \$1.10 → 10 base units', () async {
+      await setupPartialSaleItem();
+
+      final partialPricePerStrip = calc.calculatePartialPrice(
+        sellingPriceMicros: 100000,
+        partsPerFullProduct: 10,
+        markupBasisPoints: 1000,
+      );
+
+      final decomposition = calc.decompose(
+        quantityParts: 1,
+        partsPerFullProduct: 10,
+        sellablePartBaseQuantity: 10,
+        fullRetailPriceMicros: 100000,
+        partialSellingPriceMicros: partialPricePerStrip,
+      );
+      expect(decomposition.completeProducts, 0);
+      expect(decomposition.remainingParts, 1);
+      expect(decomposition.totalPriceMicros, 11000); // $1.10
+
+      final saleLines = decomposeIntoSaleLines(
+        itemId: itemId,
+        quantityParts: 1,
+        partsPerFullProduct: 10,
+        sellablePartBaseQuantity: 10,
+        fullRetailPriceMicros: 100000,
+        partialSellingPriceMicros: partialPricePerStrip,
+      );
+      expect(saleLines, hasLength(1));
+
+      final outcome = await SaleService().recordSale(
+        db,
+        SaleRequest(
+          invoiceNumber: 'SI-C5',
+          userId: 'user_admin',
+          paymentMethod: PaymentMethod.cash,
+          paidMicros: decomposition.totalPriceMicros,
+          lines: saleLines,
+        ),
+      );
+
+      expect(outcome.invoice.totalMicros, 11000); // $1.10
+
+      final item = await (db.select(db.items)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(item.currentStockBase, 290); // 300 - 10
     });
   });
 
@@ -702,6 +991,131 @@ void main() {
             ..where((i) => i.id.equals(itemId)))
           .getSingle();
       expect(item.currentStockBase, 15); // 20 - 8 + 3
+    });
+
+    test('return all dispensed quantity reverts status to ACTIVE', () async {
+      final itemId = await insertItem(db);
+      final supplierId = await insertSupplier(db);
+
+      final custNow = DateTime.now().millisecondsSinceEpoch;
+      await db.into(db.customers).insert(
+            CustomersCompanion.insert(
+              id: 'cust_ret_all',
+              name: 'مرتجع كامل',
+              createdAt: custNow,
+              updatedAt: custNow,
+            ),
+          );
+
+      final rxNow = DateTime.now().millisecondsSinceEpoch;
+      final rxId = 'rx_ret_all';
+      await db.into(db.prescriptions).insert(
+            PrescriptionsCompanion.insert(
+              id: rxId,
+              prescriptionNumber: 'RX-RET-ALL',
+              customerId: 'cust_ret_all',
+              patientName: 'مرتجع كامل',
+              issuedAt: rxNow,
+              status: PrescriptionStatus.active,
+              createdBy: 'user_admin',
+              createdAt: rxNow,
+              updatedAt: rxNow,
+            ),
+          );
+      final piId = 'pi_ret_all';
+      await db.into(db.prescriptionItems).insert(
+            PrescriptionItemsCompanion.insert(
+              id: piId,
+              prescriptionId: rxId,
+              itemId: itemId,
+              quantityBase: 10,
+              createdAt: rxNow,
+            ),
+          );
+
+      final purchaseNow = DateTime.now().millisecondsSinceEpoch;
+      await PurchaseService().recordPurchase(
+        db,
+        PurchaseRequest(
+          invoiceNumber: 'PI-E2',
+          supplierId: supplierId,
+          invoiceDate: purchaseNow,
+          userId: 'user_admin',
+          lines: [
+            PurchaseLineRequest(
+              itemId: itemId,
+              quantityBase: 20,
+              unitCostMicros: 10000,
+              unitTypeId: 'unit_strip',
+              batchNumber: 'BATCH-E2',
+              expiryDate: purchaseNow + 365 * 86400000,
+            ),
+          ],
+        ),
+      );
+
+      // Dispense 6 of 10.
+      final saleOutcome = await SaleService().recordSale(
+        db,
+        SaleRequest(
+          invoiceNumber: 'SI-E2',
+          userId: 'user_admin',
+          paymentMethod: PaymentMethod.cash,
+          paidMicros: 120000,
+          prescriptionId: rxId,
+          lines: [
+            SaleLineRequest(
+              itemId: itemId,
+              quantityBase: 6,
+              unitPriceMicros: 20000,
+              unitTypeId: 'unit_strip',
+              prescriptionItemId: piId,
+            ),
+          ],
+        ),
+      );
+
+      // Verify partially_dispensed.
+      var pi = await (db.select(db.prescriptionItems)
+            ..where((p) => p.id.equals(piId)))
+          .getSingle();
+      expect(pi.dispensedQuantityBase, 6);
+      var rx = await (db.select(db.prescriptions)
+            ..where((p) => p.id.equals(rxId)))
+          .getSingle();
+      expect(rx.status, PrescriptionStatus.partially_dispensed);
+
+      // Return ALL 6 dispensed units.
+      final saleLineId = saleOutcome.lines.single.id;
+      await ReturnService().recordSaleReturn(
+        db,
+        SaleReturnRequest(
+          returnNumber: 'RET-E2',
+          originalInvoiceItemId: saleLineId,
+          quantityBase: 6,
+          userId: 'user_admin',
+          reason: 'إلغاء الصرف بالكامل',
+        ),
+      );
+
+      // Verify dispensed quantity is now 0.
+      pi = await (db.select(db.prescriptionItems)
+            ..where((p) => p.id.equals(piId)))
+          .getSingle();
+      expect(pi.dispensedQuantityBase, 0);
+      expect(pi.isDispensed, false);
+
+      // Status reverts to ACTIVE (nothing dispensed).
+      rx = await (db.select(db.prescriptions)
+            ..where((p) => p.id.equals(rxId)))
+          .getSingle();
+      expect(rx.status, PrescriptionStatus.active);
+
+      // Stock fully restored.
+      final item = await (db.select(db.items)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(item.currentStockBase, 20); // 20 - 6 + 6
     });
   });
 

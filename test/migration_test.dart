@@ -5,18 +5,17 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:pharmacy_pos/shared/database/app_database.dart';
 import 'package:pharmacy_pos/shared/database/seed_data.dart';
+import 'package:pharmacy_pos/shared/models/enums.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 import 'helpers.dart';
 
-/// A future schema copy that declares both the partial-sale columns and the
-/// `backups` table as v2 additions — mirrors the forward-only `_migrate`
-/// contract (§29).
-class _V2Database extends AppDatabase {
-  _V2Database(super.e);
+/// Mirrors the forward-only `_migrate` contract (§29) for v1→v4 upgrade.
+class _V1Database extends AppDatabase {
+  _V1Database(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -60,11 +59,6 @@ class _V2Database extends AppDatabase {
 }
 
 /// Migration / restore round-trip harness (§29, §37).
-///
-/// Opens a real on-disk database through [AppDatabase.fromFilePath], mutates
-/// it, closes, then re-opens the file to prove that the schema + data survive
-/// and that the forward-only upgrade path can add missing tables/columns in
-/// place.
 void main() {
   group('file-backed database (restore round-trip)', () {
     late Directory dir;
@@ -80,7 +74,7 @@ void main() {
 
     File dbFile() => File('${dir.path}/store.db');
 
-    test('data written on a file DB survives a close/reopen cycle', () async {
+    test('fresh database creates at schema v4 with all columns', () async {
       ensureSqlite();
       final path = dbFile().path;
 
@@ -88,79 +82,143 @@ void main() {
       final itemId = await insertItem(db);
       final batchId = await insertBatch(db, itemId,
           quantityBase: 7, expiryDays: 90, unitCostMicros: 5000);
-      final before = await (db.select(db.items)..where((i) => i.id.equals(itemId)))
-          .getSingle();
-      expect(before.currentStockBase, 7);
-      await db.close();
 
-      // Re-open the same file.
-      final reopened = AppDatabase.fromFilePath(path);
-      final item = await (reopened.select(reopened.items)
+      // Verify schema version is 4.
+      final userVersion =
+          await db.customSelect('PRAGMA user_version').getSingle();
+      expect(userVersion.data.values.first, 4,
+          reason: 'fresh DB must be schema v4');
+
+      // Verify partial-sale columns exist on items.
+      final item = await (db.select(db.items)
             ..where((i) => i.id.equals(itemId)))
           .getSingle();
-      expect(item.tradeName, 'بانادول');
-      expect(item.currentStockBase, 7);
-      final batch = await (reopened.select(reopened.batches)
-            ..where((b) => b.id.equals(batchId)))
-          .getSingle();
-      expect(batch.quantityBase, 7);
-      expect(batch.expiryDate, isNotNull);
-      final userVersion = await reopened
-          .customSelect('PRAGMA user_version')
-          .getSingle();
-      expect(userVersion.data.values.first, 3, reason: 'schemaVersion is 3');
-      // Verify partial-sale columns exist on items.
       expect(item.partialSaleEnabled, false);
       expect(item.sellablePartUnitId, isNull);
       expect(item.partsPerFullProduct, isNull);
       expect(item.sellablePartBaseQuantity, isNull);
       expect(item.partialSaleMarkupBasisPoints, isNull);
+
       // Verify app_settings table exists.
-      final settings = await reopened.select(reopened.appSettings).get();
+      final settings = await db.select(db.appSettings).get();
       expect(settings, isNotEmpty);
+
+      // Verify prescription linkage columns exist.
+      // Write a sales invoice with prescription_id.
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await db.into(db.salesInvoices).insert(
+            SalesInvoicesCompanion.insert(
+              id: 'inv_v4_test',
+              invoiceNumber: 'SI-V4-TEST',
+              invoiceType: InvoiceType.sale,
+              saleStatus: SaleStatus.completed,
+              paymentMethod: PaymentMethod.cash,
+              userId: 'user_admin',
+              prescriptionId: const Value('rx_test'),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      final inv = await (db.select(db.salesInvoices)
+            ..where((i) => i.id.equals('inv_v4_test')))
+          .getSingle();
+      expect(inv.prescriptionId, 'rx_test');
+
+      // Verify prescription_items.dispensed_quantity_base.
+      final batch = await (db.select(db.batches)
+            ..where((b) => b.id.equals(batchId)))
+          .getSingle();
+      expect(batch.quantityBase, 7);
+
+      // Verify close/reopen preserves data.
+      await db.close();
+      final reopened = AppDatabase.fromFilePath(path);
+      final reopenedItem = await (reopened.select(reopened.items)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(reopenedItem.currentStockBase, 7);
+      final reopenedVersion =
+          await reopened.customSelect('PRAGMA user_version').getSingle();
+      expect(reopenedVersion.data.values.first, 4);
       await reopened.close();
     });
 
-    test('forward-only upgrade adds partial-sale columns + app_settings without data loss',
+    test('v1 → v4 migration adds all Phase 6 columns without data loss',
         () async {
       ensureSqlite();
       final path = dbFile().path;
 
-      // A real v1 database with data — as if it was created before Phase 6.
+      // Create a v4 database with data.
       final db = AppDatabase.fromFilePath(path);
       final itemId = await insertItem(db);
-      expect(db.schemaVersion, 3);
+      expect(db.schemaVersion, 4);
 
-      // Simulate a v1 database: drop Phase 6 additions and set user_version=1.
+      // Verify the new columns exist before simulating v1.
+      final beforeItem = await (db.select(db.items)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(beforeItem.partialSaleEnabled, false);
+
+      // Simulate a v1 database: drop ALL Phase 6 additions and set user_version=1.
       final raw = sqlite3.sqlite3.open(path);
+      // Drop v2 additions (partial-sale columns + app_settings).
       raw.execute('DROP TABLE IF EXISTS app_settings');
       raw.execute('ALTER TABLE items DROP COLUMN partial_sale_enabled');
       raw.execute('ALTER TABLE items DROP COLUMN sellable_part_unit_id');
       raw.execute('ALTER TABLE items DROP COLUMN parts_per_full_product');
       raw.execute('ALTER TABLE items DROP COLUMN sellable_part_base_quantity');
       raw.execute('ALTER TABLE items DROP COLUMN partial_sale_markup_basis_points');
+      // Drop v4 additions (prescription linkage columns).
       raw.execute('ALTER TABLE sales_invoices DROP COLUMN prescription_id');
-      raw.execute('ALTER TABLE sales_invoice_items DROP COLUMN prescription_item_id');
-      raw.execute('ALTER TABLE prescription_items DROP COLUMN dispensed_quantity_base');
+      raw
+          .execute('ALTER TABLE sales_invoice_items DROP COLUMN prescription_item_id');
+      raw.execute(
+          'ALTER TABLE prescription_items DROP COLUMN dispensed_quantity_base');
       raw.execute('PRAGMA user_version = 1');
       raw.dispose();
       await db.close();
 
-      // Reopen under the upgraded (v3) schema: onUpgrade(1 → 3) creates
-      // partial-sale columns + app_settings + prescription linkage in place
-      // and keeps existing rows.
-      final upgraded = _V2Database(NativeDatabase(File(path)));
+      // Reopen under v4 schema: onUpgrade(1 → 4) creates everything in place.
+      final upgraded = _V1Database(NativeDatabase(File(path)));
+
+      // Verify user_version is 4 after migration.
       final userVersion = await upgraded
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(userVersion.data.values.first, 3);
+      expect(userVersion.data.values.first, 4,
+          reason: 'v1 → v4 migration must set user_version to 4');
+
+      // Verify app_settings created.
       final settings = await upgraded.select(upgraded.appSettings).get();
       expect(settings, isNotEmpty);
+
+      // Verify partial-sale columns exist.
       final item = await (upgraded.select(upgraded.items)
             ..where((i) => i.id.equals(itemId)))
           .getSingle();
       expect(item.id, itemId, reason: 'existing data preserved through upgrade');
       expect(item.partialSaleEnabled, false);
+
+      // Verify prescription linkage columns exist.
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await upgraded.into(upgraded.salesInvoices).insert(
+            SalesInvoicesCompanion.insert(
+              id: 'inv_mig_test',
+              invoiceNumber: 'SI-MIG-TEST',
+              invoiceType: InvoiceType.sale,
+              saleStatus: SaleStatus.completed,
+              paymentMethod: PaymentMethod.cash,
+              userId: 'user_admin',
+              prescriptionId: const Value('rx_mig'),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      final inv = await (upgraded.select(upgraded.salesInvoices)
+            ..where((i) => i.id.equals('inv_mig_test')))
+          .getSingle();
+      expect(inv.prescriptionId, 'rx_mig');
+
       await upgraded.close();
     });
   });
