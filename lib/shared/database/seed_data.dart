@@ -85,6 +85,15 @@ Future<void> seedDefaults(AppDatabase db) async {
         createdAt: now,
         updatedAt: now,
       ),
+      RoleRow(
+        id: 'role_viewer',
+        name: 'viewer',
+        nameAr: 'مشاهد',
+        isSystem: true,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
     ]);
   });
 
@@ -202,6 +211,42 @@ Future<void> seedDefaults(AppDatabase db) async {
             RolePermissionsCompanion.insert(
               id: 'rp_cashier_${p.id.value}',
               roleId: 'role_cashier',
+              permissionId: p.id.value,
+              granted: const Value(true),
+              createdAt: now,
+            ),
+      ],
+    );
+  });
+
+  // Viewer role → read-only: search, inventory views, stock views, sales /
+  // purchases / customers reports. Never mutating rights (§16 roles).
+  final viewerCodes = {
+    Perm.search,
+    Perm.viewInventory,
+    Perm.viewAlternatives,
+    Perm.inventoryView,
+    Perm.stockView,
+    Perm.salesView,
+    Perm.purchasesView,
+    Perm.suppliersView,
+    Perm.customersView,
+    Perm.reportsViewSales,
+    Perm.reportsViewPurchases,
+    Perm.reportsViewInventory,
+    Perm.reportsViewProfit,
+    Perm.cashboxView,
+    Perm.expensesView,
+  };
+  await db.batch((batch) {
+    batch.insertAll(
+      db.rolePermissions,
+      [
+        for (final p in permRows)
+          if (viewerCodes.contains(p.code.value))
+            RolePermissionsCompanion.insert(
+              id: 'rp_viewer_${p.id.value}',
+              roleId: 'role_viewer',
               permissionId: p.id.value,
               granted: const Value(true),
               createdAt: now,

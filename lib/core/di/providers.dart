@@ -15,11 +15,25 @@ import '../../domain/services/purchase_service.dart';
 import '../../domain/services/return_service.dart';
 import '../../domain/services/sale_service.dart';
 import '../../domain/services/stock_service.dart';
+import '../../features/auth/application/auth_controller.dart';
+import '../../features/auth/application/users_controller.dart';
+import '../../features/auth/data/daos/user_dao.dart';
+import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../shared/database/app_database.dart';
 import 'injection.dart';
 
 /// Riverpod-agnostic providers for [[getIt]]-owned singletons (§35).
 final databaseProvider = Provider<AppDatabase>((ref) => getIt<AppDatabase>());
+
+final authControllerProvider =
+    StateNotifierProvider<AuthController, AuthState>(
+        (ref) => getIt<AuthController>());
+final usersViewControllerProvider =
+    StateNotifierProvider<UsersViewController, UsersViewState>(
+        (ref) => getIt<UsersViewController>());
+final authRepositoryProvider =
+    Provider<AuthRepository>((ref) => getIt<AuthRepository>());
+final userDaoProvider = Provider<UserDao>((ref) => getIt<UserDao>());
 
 final baseUnitConverterProvider = Provider<BaseUnitConverter>(
     (ref) => getIt<BaseUnitConverter>());

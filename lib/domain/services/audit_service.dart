@@ -21,6 +21,8 @@ String auditActionToStored(AuditAction action) {
       return 'login';
     case AuditAction.logout:
       return 'logout';
+    case AuditAction.loginFailed:
+      return 'login_failed';
     case AuditAction.voidOrder:
       return 'void';
     case AuditAction.restore:

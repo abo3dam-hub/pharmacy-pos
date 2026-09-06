@@ -30,11 +30,12 @@ void main() {
       expect(units.every((u) => u.name.isNotEmpty), isTrue);
 
       final roles = await db.select(db.roles).get();
-      expect(roles, hasLength(3));
+      expect(roles, hasLength(4));
       expect(roles.map((r) => r.id), containsAll([
         'role_admin',
         'role_pharmacist',
         'role_cashier',
+        'role_viewer',
       ]));
     });
 

@@ -106,3 +106,16 @@ Shared `AppResponsiveLayout` selects per-layout children; `AppShell` routes all 
 - ✅ `flutter analyze` No issues; `flutter test` 76/76.
 - ✅ Commit `893a805` + push `origin/main`.
 - ✅ Stopped; awaiting the separate Phase 2 prompt.
+
+---
+
+## 12. Addendum — Phase 2 (Authentication & Users) shipped on this foundation
+
+The auth/user module (Phase 2) was built **on top of** the funds above without duplicating or restyling them:
+
+- `LoginPage`, `AccessDeniedPage`, `UsersPage` and the user dialogs consume only `AppColors` / `AppSpacing` / `AppRadius` / `AppTypography` / `AppTheme` tokens (no new literals) and reuse `AppShell`, `AppResponsiveLayout`, `AppDataTable`, `SearchField`, `LoadingOverlay`, `showAppConfirmDialog`.
+- `AppShell` gained optional `selectedSection` / `child` / `onSectionSelected` / `appBarActions` (backward-compatible; the design-system tests still pass).
+- `AppDataTable` now scrolls horizontally when columns exceed the viewport (wide users grid).
+- Phase 2 added `AppSection.users`, GoRouter routes and `NavigationRail`/drawer entry reuse the same `AppSection` label + icon SSOT.
+
+This foundation remains the single source of truth; the PLAN §0 contract now names the exact SSOT files and immutability rules.

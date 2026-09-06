@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:pharmacy_pos/core/config/app_config.dart';
@@ -14,6 +15,22 @@ import 'package:pharmacy_pos/core/widgets/loading_overlay.dart';
 import 'package:pharmacy_pos/core/widgets/search_field.dart';
 import 'package:pharmacy_pos/l10n/app_localizations.dart';
 import 'package:pharmacy_pos/main.dart';
+
+import 'auth_harness.dart';
+
+/// Signs in through the real login form using the seeded dev admin
+/// (locale-agnostic: uses field order, not localized labels).
+Future<void> _signIn(
+  WidgetTester tester, {
+  required String username,
+  required String password,
+}) async {
+  final fields = find.byType(TextFormField);
+  await tester.enterText(fields.at(0), username);
+  await tester.enterText(fields.at(1), password);
+  await tester.tap(find.byType(FilledButton));
+  await tester.pumpAndSettle();
+}
 
 /// Widget harness reusing the app's own Arabic-first localization delegates.
 Widget harness(Widget home) {
@@ -69,18 +86,40 @@ void main() {
   group('Design System — RTL / LTR', () {
     testWidgets('Arabic is the default locale and renders RTL',
         (tester) async {
-      await tester.pumpWidget(const PharmacyApp());
+      final harness_ = await buildAuthHarness();
+      addTearDown(harness_.db.close);
+      addTearDown(harness_.container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: harness_.container,
+          child: const PharmacyApp(),
+        ),
+      );
       await tester.pumpAndSettle();
+      await _signIn(tester, username: 'admin', password: 'Admin@123');
+      await tester.pumpAndSettle();
+
       final ctx = tester.element(find.text('الرئيسية').first);
       expect(Directionality.of(ctx), TextDirection.rtl);
     });
 
     testWidgets('English locale renders LTR through the same pipeline',
         (tester) async {
+      final harness_ = await buildAuthHarness();
+      addTearDown(harness_.db.close);
+      addTearDown(harness_.container.dispose);
+
       await tester.pumpWidget(
-        PharmacyApp(locale: const Locale('en')),
+        UncontrolledProviderScope(
+          container: harness_.container,
+          child: const PharmacyApp(locale: Locale('en')),
+        ),
       );
       await tester.pumpAndSettle();
+      await _signIn(tester, username: 'admin', password: 'Admin@123');
+      await tester.pumpAndSettle();
+
       expect(find.text('Dashboard'), findsWidgets);
       final ctx = tester.element(find.text('Dashboard').first);
       expect(Directionality.of(ctx), TextDirection.ltr);

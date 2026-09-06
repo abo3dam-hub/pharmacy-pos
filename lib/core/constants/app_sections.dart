@@ -15,11 +15,34 @@ enum AppSection {
   suppliers(Icons.local_shipping_outlined),
   accounts(Icons.account_balance_wallet_outlined),
   reports(Icons.bar_chart),
-  settings(Icons.settings_outlined);
+  settings(Icons.settings_outlined),
+  users(Icons.manage_accounts_outlined);
 
   const AppSection(this.icon);
 
   final IconData icon;
+
+  /// Canonical route path for the section (used by the shell's GoRouter).
+  String get path => switch (this) {
+        AppSection.dashboard => '/',
+        AppSection.sale => '/sale',
+        AppSection.inventory => '/inventory',
+        AppSection.purchases => '/purchases',
+        AppSection.customers => '/customers',
+        AppSection.suppliers => '/suppliers',
+        AppSection.accounts => '/accounts',
+        AppSection.reports => '/reports',
+        AppSection.settings => '/settings',
+        AppSection.users => '/users',
+      };
+
+  /// Resolves a route path back to its section (unknown → dashboard).
+  static AppSection fromPath(String path) {
+    for (final section in AppSection.values) {
+      if (section.path == path) return section;
+    }
+    return AppSection.dashboard;
+  }
 
   String label(AppLocalizations l10n) => switch (this) {
         AppSection.dashboard => l10n.navDashboard,
@@ -31,5 +54,6 @@ enum AppSection {
         AppSection.accounts => l10n.navAccounts,
         AppSection.reports => l10n.navReports,
         AppSection.settings => l10n.navSettings,
+        AppSection.users => l10n.navUsers,
       };
 }

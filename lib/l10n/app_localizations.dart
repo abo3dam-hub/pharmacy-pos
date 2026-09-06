@@ -164,6 +164,12 @@ abstract class AppLocalizations {
   /// **'الإعدادات'**
   String get navSettings;
 
+  /// No description provided for @navUsers.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستخدمون'**
+  String get navUsers;
+
   /// No description provided for @navAlternatives.
   ///
   /// In ar, this message translates to:
@@ -338,6 +344,12 @@ abstract class AppLocalizations {
   /// **'تسجيل الدخول'**
   String get loginTitle;
 
+  /// No description provided for @loginWelcome.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل الدخول إلى النظام'**
+  String get loginWelcome;
+
   /// No description provided for @loginUsername.
   ///
   /// In ar, this message translates to:
@@ -362,6 +374,12 @@ abstract class AppLocalizations {
   /// **'اسم المستخدم أو كلمة المرور غير صحيحة'**
   String get loginFailed;
 
+  /// No description provided for @loginUserInactive.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا المستخدم غير مفعّل'**
+  String get loginUserInactive;
+
   /// No description provided for @userLogout.
   ///
   /// In ar, this message translates to:
@@ -377,7 +395,7 @@ abstract class AppLocalizations {
   /// No description provided for @roleAdmin.
   ///
   /// In ar, this message translates to:
-  /// **'مدير'**
+  /// **'مدير النظام'**
   String get roleAdmin;
 
   /// No description provided for @rolePharmacist.
@@ -391,6 +409,240 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'أمين الصندوق'**
   String get roleCashier;
+
+  /// No description provided for @roleViewer.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاهد'**
+  String get roleViewer;
+
+  /// No description provided for @authPermissionDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليس لديك صلاحية لتنفيذ هذا الإجراء'**
+  String get authPermissionDenied;
+
+  /// No description provided for @authSaveError.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدث خطأ أثناء حفظ البيانات'**
+  String get authSaveError;
+
+  /// No description provided for @usersTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستخدمون'**
+  String get usersTitle;
+
+  /// No description provided for @usersList.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة المستخدمين'**
+  String get usersList;
+
+  /// No description provided for @usersAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مستخدم'**
+  String get usersAdd;
+
+  /// No description provided for @usersCreateTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مستخدم جديد'**
+  String get usersCreateTitle;
+
+  /// No description provided for @usersEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل مستخدم'**
+  String get usersEditTitle;
+
+  /// No description provided for @usersSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث عن مستخدم بالاسم أو اسم المستخدم'**
+  String get usersSearchHint;
+
+  /// No description provided for @usersEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد مستخدمون مطابقون'**
+  String get usersEmpty;
+
+  /// No description provided for @userFullName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم الكامل'**
+  String get userFullName;
+
+  /// No description provided for @userUsername.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المستخدم'**
+  String get userUsername;
+
+  /// No description provided for @userPhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الهاتف'**
+  String get userPhone;
+
+  /// No description provided for @userNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات'**
+  String get userNotes;
+
+  /// No description provided for @userStatusActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفعّل'**
+  String get userStatusActive;
+
+  /// No description provided for @userStatusInactive.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير مفعّل'**
+  String get userStatusInactive;
+
+  /// No description provided for @userLastLogin.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر تسجيل دخول'**
+  String get userLastLogin;
+
+  /// No description provided for @userNeverLoggedIn.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يسجل الدخول بعد'**
+  String get userNeverLoggedIn;
+
+  /// No description provided for @userLastLoginLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'دخول أخير'**
+  String get userLastLoginLabel;
+
+  /// No description provided for @userActivate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفعيل'**
+  String get userActivate;
+
+  /// No description provided for @userDeactivate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعطيل'**
+  String get userDeactivate;
+
+  /// No description provided for @userDeactivateConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعطيل المستخدم'**
+  String get userDeactivateConfirmTitle;
+
+  /// No description provided for @userDeactivateConfirmMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد تعطيل المستخدم «{name}»؟'**
+  String userDeactivateConfirmMessage(String name);
+
+  /// No description provided for @userActivateConfirmMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد تفعيل المستخدم «{name}»؟'**
+  String userActivateConfirmMessage(String name);
+
+  /// No description provided for @userChangePassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير كلمة المرور'**
+  String get userChangePassword;
+
+  /// No description provided for @userChangePasswordTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير كلمة المرور'**
+  String get userChangePasswordTitle;
+
+  /// No description provided for @userNewPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة المرور الجديدة'**
+  String get userNewPassword;
+
+  /// No description provided for @userConfirmPassword.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد كلمة المرور'**
+  String get userConfirmPassword;
+
+  /// No description provided for @userPasswordMismatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمتا المرور غير متطابقتين'**
+  String get userPasswordMismatch;
+
+  /// No description provided for @userPasswordMinLength.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلمة المرور يجب أن تكون 6 أحرف على الأقل'**
+  String get userPasswordMinLength;
+
+  /// No description provided for @userRequiredField.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا الحقل مطلوب'**
+  String get userRequiredField;
+
+  /// No description provided for @userUsernameExists.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المستخدم مستخدم مسبقًا'**
+  String get userUsernameExists;
+
+  /// No description provided for @userCreatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إنشاء المستخدم'**
+  String get userCreatedMessage;
+
+  /// No description provided for @userUpdatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث المستخدم'**
+  String get userUpdatedMessage;
+
+  /// No description provided for @userActivatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تفعيل المستخدم'**
+  String get userActivatedMessage;
+
+  /// No description provided for @userDeactivatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعطيل المستخدم'**
+  String get userDeactivatedMessage;
+
+  /// No description provided for @userPasswordChangedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تغيير كلمة المرور'**
+  String get userPasswordChangedMessage;
+
+  /// No description provided for @accessDeniedTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصول مرفوض'**
+  String get accessDeniedTitle;
+
+  /// No description provided for @accessDeniedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليس لديك صلاحية للوصول إلى هذه الصفحة'**
+  String get accessDeniedMessage;
 
   /// No description provided for @checkout.
   ///

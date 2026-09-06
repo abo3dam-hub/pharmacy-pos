@@ -43,6 +43,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navSettings => 'Settings';
 
   @override
+  String get navUsers => 'Users';
+
+  @override
   String get navAlternatives => 'Alternatives';
 
   @override
@@ -130,6 +133,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginTitle => 'Sign in';
 
   @override
+  String get loginWelcome => 'Sign in to the system';
+
+  @override
   String get loginUsername => 'Username';
 
   @override
@@ -142,19 +148,145 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginFailed => 'Incorrect username or password';
 
   @override
+  String get loginUserInactive => 'This user is inactive';
+
+  @override
   String get userLogout => 'Sign out';
 
   @override
   String get userRole => 'Role';
 
   @override
-  String get roleAdmin => 'Admin';
+  String get roleAdmin => 'System admin';
 
   @override
   String get rolePharmacist => 'Pharmacist';
 
   @override
   String get roleCashier => 'Cashier';
+
+  @override
+  String get roleViewer => 'Viewer';
+
+  @override
+  String get authPermissionDenied =>
+      'You are not allowed to perform this action';
+
+  @override
+  String get authSaveError => 'An error occurred while saving data';
+
+  @override
+  String get usersTitle => 'Users';
+
+  @override
+  String get usersList => 'Users list';
+
+  @override
+  String get usersAdd => 'Add user';
+
+  @override
+  String get usersCreateTitle => 'Add new user';
+
+  @override
+  String get usersEditTitle => 'Edit user';
+
+  @override
+  String get usersSearchHint => 'Search users by name or username';
+
+  @override
+  String get usersEmpty => 'No matching users found';
+
+  @override
+  String get userFullName => 'Full name';
+
+  @override
+  String get userUsername => 'Username';
+
+  @override
+  String get userPhone => 'Phone';
+
+  @override
+  String get userNotes => 'Notes';
+
+  @override
+  String get userStatusActive => 'Active';
+
+  @override
+  String get userStatusInactive => 'Inactive';
+
+  @override
+  String get userLastLogin => 'Last login';
+
+  @override
+  String get userNeverLoggedIn => 'Never signed in';
+
+  @override
+  String get userLastLoginLabel => 'Last login';
+
+  @override
+  String get userActivate => 'Activate';
+
+  @override
+  String get userDeactivate => 'Deactivate';
+
+  @override
+  String get userDeactivateConfirmTitle => 'Deactivate user';
+
+  @override
+  String userDeactivateConfirmMessage(String name) {
+    return 'Deactivate user \"$name\"?';
+  }
+
+  @override
+  String userActivateConfirmMessage(String name) {
+    return 'Activate user \"$name\"?';
+  }
+
+  @override
+  String get userChangePassword => 'Change password';
+
+  @override
+  String get userChangePasswordTitle => 'Change password';
+
+  @override
+  String get userNewPassword => 'New password';
+
+  @override
+  String get userConfirmPassword => 'Confirm password';
+
+  @override
+  String get userPasswordMismatch => 'Passwords do not match';
+
+  @override
+  String get userPasswordMinLength => 'Password must be at least 6 characters';
+
+  @override
+  String get userRequiredField => 'This field is required';
+
+  @override
+  String get userUsernameExists => 'Username is already taken';
+
+  @override
+  String get userCreatedMessage => 'User created';
+
+  @override
+  String get userUpdatedMessage => 'User updated';
+
+  @override
+  String get userActivatedMessage => 'User activated';
+
+  @override
+  String get userDeactivatedMessage => 'User deactivated';
+
+  @override
+  String get userPasswordChangedMessage => 'Password changed';
+
+  @override
+  String get accessDeniedTitle => 'Access denied';
+
+  @override
+  String get accessDeniedMessage =>
+      'You do not have permission to access this page';
 
   @override
   String get checkout => 'Checkout';

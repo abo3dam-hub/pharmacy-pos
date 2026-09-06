@@ -10,6 +10,7 @@
 
 ## Table of Contents
 
+0. [Design System Contract (SSOT & Immutability)](#0-design-system-contract-ssot--immutability)
 1. [Project Goals](#1-project-goals)
 2. [Technology Stack](#2-technology-stack)
 3. [Architecture](#3-architecture)
@@ -52,6 +53,32 @@
 40. [Phase 1 Deliverables](#40-phase-1-deliverables)
 41. [Future Implementation Roadmap](#41-future-implementation-roadmap)
 42. [Requirements Coverage Checklist](#42-requirements-coverage-checklist)
+
+---
+
+## 0. Design System Contract (SSOT & Immutability)
+
+> Implemented and enforced across the Flutter codebase. This is the **binding** rule set for every screen, widget, and theme; deviations are defects, not improvements.
+
+### Single source of truth (SSOT)
+
+| Concern | Single source | Notes |
+|---------|---------------|-------|
+| Color palette (incl. RTL-safe semantic tokens) | `lib/core/theme/app_colors.dart` | Primary medical green `#00696D`, accent muted purple `#7B6A9E`, quiet error; light + dark variants; the only color literals allowed in the app |
+| Typography family/hierarchy & numeric/DIN styling | `lib/core/theme/app_text_styles.dart` (`AppTypography`) + `design.md` | Cairo/Tajawal; section/page/table/numeric/caption/label scales via ThemeExtension |
+| Spacing/radius/layout breakpoints | `lib/core/theme/app_dimensions.dart` | Unified scale; `AppRadius`, `AppSpacing`, `AppBreakpoints`, `AppLayoutTokens`; no ad-hoc magic numbers in pages |
+| Component themes (inputs, dialogs, cards, tables, nav) | `lib/core/theme/app_theme.dart` | Central `ThemeData` — pages never override Material component styling |
+| Shared widgets (forms, data grid, dialogs, overlays, search, amount) | `lib/core/widgets/*` | Reuse, never re-implement |
+| Responsive rail/drawer + breakpoints | `AppBreakpoints` + `lib/core/widgets/responsive_layout.dart` | Desktop rail / tablet / compact drawer |
+| Navigation sections | `lib/core/constants/app_sections.dart` | Single enum → shell rail/drawer + GoRouter routes |
+
+### Immutability rules
+
+- **No new colors, font families, or typography scales** outside the SSOT above; any addition lands in the tokens + `design.md` + a design-system test (§33).
+- **No new shared-concern widgets** duplicated in a page; extend `lib/core/widgets/*` instead.
+- **No per-page responsive decisions** outside `AppResponsiveLayout`.
+- **No hardcoded Arabic/English strings** — all labels via `AppLocalizations` (ARB catalog; 127-key parity ar ⇄ en).
+- All build/lint/test gates must stay green (see GitHub Actions).
 
 ---
 
@@ -1149,6 +1176,9 @@ Applied to: **Profit, Inventory valuation, Cost analysis, Purchase analysis, Pri
 | **Admin** | Full access (all permissions) | — |
 | **Pharmacist** | `sell`, `return`, `search`, `view_inventory`, `view_alternatives`, `change_prices` | `delete_invoice`, `change_purchase_cost`, `manage_users`, `manage_permissions`, `modify_settings` |
 | **Cashier** | `sell`, POS operations, `search` | Denied **authorized returns** only with `return` permission granted explicitly |
+| **Viewer** | Read-only: `search`, `view_inventory`, `view_alternatives`, inventory/stock/sales/purchases/customers view, reports view, `cashbox.view`, `expenses.view` | All mutating permissions, `users.*`, `roles.*`, `settings.*`, `backup*` |
+
+> **Phase 2 status (implemented):** full granular RBAC, bcrypt hashing, use-case‑layer enforcement (`ensurePermission` → `UnauthorizedException`), seeded roles/permissions incl. **viewer**, admin-only Users module, and authorization-aware route/section gating. `users.view/create/edit` are the admin-module permissions.
 
 The RBAC model is **extensible** — any new permission is simply a row in `permissions` + grants in `role_permissions`.
 
@@ -1173,6 +1203,8 @@ The RBAC model is **extensible** — any new permission is simply a row in `perm
 - **Permission changed** (role_permissions mutations)
 - **Product edited / deleted**
 - Login / logout, Bulk operations, Backup/Restore
+
+> **Phase 2 status (implemented):** `AuditService` writes append-only rows; login success/failure & logout are audited by the application layer; user create/update/activate/deactivate and password change are audited on success. `login_failed` was added to the stored action literals. Unknown-username failures are not auditable because `audit_logs.userId` is NOT NULL — a documented limitation, never a stored-`null` row.
 
 ### Recorded fields
 - User ID
@@ -1547,6 +1579,8 @@ Must support production scale:
 - **get_it + injectable** DI: Database, repositories, use cases, domain services (FEFO, Bonus, Alternatives, Money), core services (ShortcutManager, ScannerService, AuditService, BackupService, PdfService, ExcelService).
 - Provider chain: DatabaseProvider → repositories → use cases → page notifiers → POS tab families.
 
+> **Phase 2 status (implemented):** `get_it` (manual, no `injectable`) registers the auth/user graph (UserDao, AuthRepository, per-action use cases, AuthController, UsersViewController); Riverpod `StateNotifierProvider`s (`authControllerProvider`, `usersViewControllerProvider`) wrap the singletons so widgets stay provider-reactive while state stays in controllers.
+
 ---
 
 ## 36. Navigation
@@ -1554,6 +1588,8 @@ Must support production scale:
 - **GoRouter** with a `ShellRoute` (sidebar) and an auth-guard `redirect`.
 - POS route = full-width workspace (10 customers + return tabs) inside the shell.
 - Named type-safe routes; Arabic-first direction on all screens; correct back/forward on Windows and Android.
+
+> **Phase 2 status (implemented):** GoRouter v14 with an auth-aware `redirect`, `/login` + `/access-denied` routes, a single `ShellRoute` hosting one route per `AppSection` (real UsersPage + placeholders), and a refresh `Listenable` bridged from the AuthController stream. Unauthenticated → `/login`; authenticated hitting `/login` → `/`; `/users` without `users.view` → `/access-denied`.
 
 ---
 
@@ -1634,20 +1670,23 @@ Full POS workspaces UI, full accounting UI, smart-alternatives UI, scanner hardw
 
 ## 41. Future Implementation Roadmap
 
-- **Phase 2 — Items & Inventory:** complete item form (all identification/pharma/flags/units/pricing/stock fields), category/sub-category/manufacturer/therapeutic-group management, batch entry, stock adjustment UI, expiry/low-stock alerts, Excel import/export.
-- **Phase 3 — Suppliers & Purchases:** supplier CRUD + statements; purchase invoices; batch creation on receive; bonus engine UI; purchase returns; supplier balance reports.
-- **Phase 4 — Customers & Prescriptions:** customer/patient CRUD + statements; prescriptions; link prescription to sale.
-- **Phase 5 — POS core:** scanner service; 10-customer + return workspace; FEFO cart; cash/card/mixed payment; receipt PDF; hold bill; Z-report; smart alternatives UI; lost-sales quick capture.
-- **Phase 6 — Invoices & Returns:** invoice list/view/void/PDF; hybrid returns UI (signed lines); transactional reversals.
-- **Phase 7 — Cash Box:** open/close, deposits/withdrawals, auto entries, day-end reconciliation.
-- **Phase 8 — Expenses:** CRUD + categories + receipts.
-- **Phase 9 — Accounting:** chart of accounts UI, manual journal entries, auto-posting, period close.
-- **Phase 10 — Reports:** Trial Balance, Income Statement, Balance Sheet, Account Statements, sales/inventory/purchase reports, lost-sales reports, PDF + Excel export, date filters, supplier/customer statements.
-- **Phase 11 — Audit log & Settings:** audit viewer, app settings (business name, tax, currency), user/role/permission management UI.
-- **Phase 12 — Backup/Restore & Export:** full backup/restore UI, auto-backup, PDF/Excel export everywhere.
-- **Phase 13 — Polish & Hardening:** RTL QA, responsive polish, shortcuts, performance, accessibility.
-- **Phase 14 — Testing & CI/CD:** coverage thresholds, integration suite, release pipelines.
-- **Phase 15 — Release:** installer (Inno Setup/MSIX), icons/splash, docs, tag `v1.0.0`, GitHub Release artifacts.
+> Phase numbering follows delivery order. **Phase 2 (Authentication & Users) shipped ahead of the UI roadmap below** because every subsequent module runs inside the authenticated shell. Auth/user roadmap items below that are already delivered are marked *(delivered in Phase 2)*.
+
+- **Phase 2 (delivered) — Authentication & Users:** in-memory session, login/logout, bcrypt, granular RBAC, admin Users module (create/edit/deactivate/reactivate/change password, search + pagination, desktop table + compact cards), login scaffold, user + audit seeding, auth/use-case/controller/widget tests.
+- **Phase 3 — Items & Inventory:** complete item form (all identification/pharma/flags/units/pricing/stock fields), category/sub-category/manufacturer/therapeutic-group management, batch entry, stock adjustment UI, expiry/low-stock alerts, Excel import/export.
+- **Phase 4 — Suppliers & Purchases:** supplier CRUD + statements; purchase invoices; batch creation on receive; bonus engine UI; purchase returns; supplier balance reports.
+- **Phase 5 — Customers & Prescriptions:** customer/patient CRUD + statements; prescriptions; link prescription to sale.
+- **Phase 6 — POS core:** scanner service; 10-customer + return workspace; FEFO cart; cash/card/mixed payment; receipt PDF; hold bill; Z-report; smart alternatives UI; lost-sales quick capture.
+- **Phase 7 — Invoices & Returns:** invoice list/view/void/PDF; hybrid returns UI (signed lines); transactional reversals.
+- **Phase 8 — Cash Box:** open/close, deposits/withdrawals, auto entries, day-end reconciliation.
+- **Phase 9 — Expenses:** CRUD + categories + receipts.
+- **Phase 10 — Accounting:** chart of accounts UI, manual journal entries, auto-posting, period close.
+- **Phase 11 — Reports:** Trial Balance, Income Statement, Balance Sheet, Account Statements, sales/inventory/purchase reports, lost-sales reports, PDF + Excel export, date filters, supplier/customer statements.
+- **Phase 12 — Audit log & Settings:** audit viewer, app settings (business name, tax, currency), user/role/permission management UI.
+- **Phase 13 — Backup/Restore & Export:** full backup/restore UI, auto-backup, PDF/Excel export everywhere.
+- **Phase 14 — Polish & Hardening:** RTL QA, responsive polish, shortcuts, performance, accessibility.
+- **Phase 15 — Testing & CI/CD:** coverage thresholds, integration suite, release pipelines.
+- **Phase 16 — Release:** installer (Inno Setup/MSIX), icons/splash, docs, tag `v1.0.0`, GitHub Release artifacts.
 
 ---
 

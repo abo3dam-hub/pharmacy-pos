@@ -75,6 +75,7 @@ enum AuditAction {
   delete,
   login,
   logout,
+  loginFailed,
   voidOrder,
   restore,
   priceChange,

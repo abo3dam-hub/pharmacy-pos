@@ -11,8 +11,34 @@ import '../theme/app_text_styles.dart';
 /// the current section title, and the main content area. Future slots — global
 /// search (F1), notifications and the user area — attach through the top-bar
 /// `actions`. No business functionality is implemented here.
+///
+/// Two usage modes (backward compatible):
+///   * stateless routing — pass [selectedSection], [child],
+///     [onSectionSelected] (used by GoRouter's shell route); navigation taps
+///     call back so the router moves pages.
+///   * stateful foundation — no extra args; taps swap the internal placeholder.
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({
+    super.key,
+    this.selectedSection = AppSection.dashboard,
+    this.child,
+    this.onSectionSelected,
+    this.appBarActions = const [],
+  });
+
+  /// Section currently shown by the surrounding router (defaults in
+  /// standalone mode). Kept in sync with the rail/drawer highlight.
+  final AppSection selectedSection;
+
+  /// Page body rendered inside the shell when routing is active.
+  final Widget? child;
+
+  /// Invoked when the user picks a destination in routing mode (e.g.
+  /// `context.go`); absent → internal placeholder selection.
+  final ValueChanged<AppSection>? onSectionSelected;
+
+  /// Extra top-bar actions (e.g. the auth feature's logout button).
+  final List<Widget> appBarActions;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -21,7 +47,21 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _index = 0;
 
+  bool get _routed => widget.onSectionSelected != null;
+
+  @override
+  void didUpdateWidget(AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_routed) {
+      _index = AppSection.values.indexOf(widget.selectedSection);
+    }
+  }
+
   void _select(AppSection section) {
+    if (_routed) {
+      widget.onSectionSelected?.call(section);
+      return;
+    }
     setState(() => _index = AppSection.values.indexOf(section));
     Navigator.of(context, rootNavigator: true).popUntil((route) => route.isFirst);
   }
@@ -30,35 +70,34 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final sections = AppSection.values;
-    final selected = sections[_index];
+    final selected = _routed ? widget.selectedSection : sections[_index];
     final layout = AppLayout.of(context);
     final compact = layout == AppLayout.compact;
 
-    final page = _SectionPlaceholder(
-      icon: selected.icon,
-      subtitle: l10n.appSlogan,
-      title: selected.label(l10n),
-    );
+    final page = widget.child ??
+        SectionPlaceholder(
+          icon: selected.icon,
+          subtitle: l10n.appSlogan,
+          title: selected.label(l10n),
+        );
 
     return Scaffold(
       appBar: AppBar(
         title: Text(selected.label(l10n)),
-        // Future hosts: global search, notifications, user area (§11).
-        actions: const [],
+        actions: widget.appBarActions,
       ),
-      drawer: compact ? _AppDrawer(selected: selected, onSelect: _select) : null,
+      drawer: compact ? AppDrawer(selected: selected, onSelect: _select) : null,
       body: SafeArea(
         child: compact
             ? page
             : Row(
                 children: [
                   NavigationRail(
-                    selectedIndex: _index,
+                    selectedIndex: AppSection.values.indexOf(selected),
                     labelType: layout == AppLayout.desktop
                         ? NavigationRailLabelType.all
                         : NavigationRailLabelType.none,
-                    onDestinationSelected: (i) =>
-                        setState(() => _index = i),
+                    onDestinationSelected: (i) => _select(sections[i]),
                     destinations: [
                       for (final section in sections)
                         NavigationRailDestination(
@@ -81,8 +120,9 @@ class _AppShellState extends State<AppShell> {
   }
 }
 
-class _AppDrawer extends StatelessWidget {
-  const _AppDrawer({required this.selected, required this.onSelect});
+/// Side navigation shown on compact (<600) layouts.
+class AppDrawer extends StatelessWidget {
+  const AppDrawer({super.key, required this.selected, required this.onSelect});
 
   final AppSection selected;
   final ValueChanged<AppSection> onSelect;
@@ -114,9 +154,10 @@ class _AppDrawer extends StatelessWidget {
 }
 
 /// Transient placeholder rendered until the real module pages land in later
-/// phases — keeps the shell navigable and testable today.
-class _SectionPlaceholder extends StatelessWidget {
-  const _SectionPlaceholder({
+/// phases. Public so module pages can reuse it for empty states.
+class SectionPlaceholder extends StatelessWidget {
+  const SectionPlaceholder({
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
