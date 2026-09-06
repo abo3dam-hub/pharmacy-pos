@@ -828,4 +828,333 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get inventoryBatchView => 'عرض التشغيلات';
+
+  @override
+  String get suppliersTab => 'الموردون';
+
+  @override
+  String get suppliersBalancesTab => 'الأرصدة';
+
+  @override
+  String get suppliersEmpty => 'لا يوجد موردون';
+
+  @override
+  String get suppliersSearchHint => 'بحث بالاسم أو الهاتف أو الكود';
+
+  @override
+  String get supplierAdd => 'إضافة مورد';
+
+  @override
+  String get supplierAddTitle => 'مورد جديد';
+
+  @override
+  String get supplierEditTitle => 'تعديل مورد';
+
+  @override
+  String get supplierName => 'الاسم';
+
+  @override
+  String get supplierCode => 'الكود';
+
+  @override
+  String get supplierPhone => 'الهاتف';
+
+  @override
+  String get supplierSecondaryPhone => 'هاتف ثانٍ';
+
+  @override
+  String get supplierEmail => 'البريد الإلكتروني';
+
+  @override
+  String get supplierAddress => 'العنوان';
+
+  @override
+  String get supplierContactPerson => 'جهة الاتصال';
+
+  @override
+  String get supplierTaxVatNumber => 'الرقم الضريبي';
+
+  @override
+  String get supplierLicenseRegistration => 'الترخيص / السجل';
+
+  @override
+  String get supplierOpeningBalance => 'الرصيد الافتتاحي';
+
+  @override
+  String get supplierCreditLimit => 'الحد الائتماني';
+
+  @override
+  String get supplierNotes => 'ملاحظات';
+
+  @override
+  String get supplierCreatedMessage => 'تمت إضافة المورد';
+
+  @override
+  String get supplierUpdatedMessage => 'تم تعديل المورد';
+
+  @override
+  String get supplierActivatedMessage => 'تمت إعادة تفعيل المورد';
+
+  @override
+  String get supplierDeactivatedMessage => 'تم تعطيل المورد';
+
+  @override
+  String supplierDeactivateConfirmMessage(String name) {
+    return 'تعطيل المورد «$name»؟';
+  }
+
+  @override
+  String supplierActivateConfirmMessage(String name) {
+    return 'إعادة تفعيل المورد «$name»؟';
+  }
+
+  @override
+  String get supplierBalance => 'الرصيد';
+
+  @override
+  String get supplierStatement => 'كشف الحساب';
+
+  @override
+  String get supplierStatementTitle => 'كشف حساب المورد';
+
+  @override
+  String get supplierStatementDateFrom => 'من';
+
+  @override
+  String get supplierStatementDateTo => 'إلى';
+
+  @override
+  String get statementDate => 'التاريخ';
+
+  @override
+  String get statementDescription => 'البيان';
+
+  @override
+  String get statementDebit => 'مدين';
+
+  @override
+  String get statementCredit => 'دائن';
+
+  @override
+  String get statementOpening => 'الرصيد الافتتاحي';
+
+  @override
+  String get statementClosing => 'الرصيد الختامي';
+
+  @override
+  String get statementBalance => 'الرصيد';
+
+  @override
+  String statementRowInvoice(String number) {
+    return 'فاتورة شراء $number';
+  }
+
+  @override
+  String statementRowReturn(String number) {
+    return 'مرتجع مشتريات $number';
+  }
+
+  @override
+  String get statementNoData => 'لا توجد حركات في هذا النطاق';
+
+  @override
+  String get purchaseStatusPending => 'معلّقة';
+
+  @override
+  String get purchaseStatusReceived => 'مُستلمة';
+
+  @override
+  String get purchaseStatusCancelled => 'ملغاة';
+
+  @override
+  String get purchaseAddInvoice => 'فاتورة شراء جديدة';
+
+  @override
+  String get purchasesEmpty => 'لا توجد فواتير شراء';
+
+  @override
+  String get purchasesSearchHint => 'بحث برقم الفاتورة';
+
+  @override
+  String get purchasesFilterSupplier => 'كل الموردين';
+
+  @override
+  String get purchasesFilterStatus => 'كل الحالات';
+
+  @override
+  String get purchaseInvoiceNumber => 'رقم الفاتورة';
+
+  @override
+  String get purchaseInvoiceDate => 'التاريخ';
+
+  @override
+  String get purchaseSupplierLabel => 'المورد';
+
+  @override
+  String get purchaseTotal => 'الإجمالي';
+
+  @override
+  String get purchasePaid => 'المدفوع';
+
+  @override
+  String get purchaseRemaining => 'المتبقي';
+
+  @override
+  String get purchaseCreateTitle => 'فاتورة شراء جديدة';
+
+  @override
+  String get purchaseEditTitle => 'تعديل فاتورة الشراء';
+
+  @override
+  String get purchaseOrderNumber => 'رقم الفاتورة';
+
+  @override
+  String get purchaseOrderDate => 'تاريخ الفاتورة';
+
+  @override
+  String get purchaseExpectedDate => 'التاريخ المتوقع (اختياري)';
+
+  @override
+  String get purchasePaidAmount => 'المبلغ المدفوع';
+
+  @override
+  String get purchaseNotes => 'ملاحظات';
+
+  @override
+  String get purchaseSubtotal => 'المجموع الفرعي';
+
+  @override
+  String get purchaseDiscount => 'الخصومات';
+
+  @override
+  String get purchaseGrandTotal => 'الإجمالي النهائي';
+
+  @override
+  String get purchaseItemPlaceholder => 'اختر منتجاً';
+
+  @override
+  String get purchaseItemSearchHint => 'بحث عن منتج…';
+
+  @override
+  String get purchaseQty => 'الكمية';
+
+  @override
+  String get purchaseUnitCost => 'سعر الوحدة';
+
+  @override
+  String get purchaseUnitType => 'الوحدة';
+
+  @override
+  String get purchaseDiscountPct => 'الخصم %';
+
+  @override
+  String get purchaseBonus => 'الهدايا/البونص';
+
+  @override
+  String get purchaseAddLine => 'إضافة سطر';
+
+  @override
+  String get purchaseRemoveLine => 'حذف السطر';
+
+  @override
+  String get purchaseNoLines => 'أضف سطراً واحداً على الأقل';
+
+  @override
+  String get purchaseReceive => 'استلام';
+
+  @override
+  String get purchaseCancel => 'إلغاء الفاتورة';
+
+  @override
+  String get purchaseReturn => 'مرتجع';
+
+  @override
+  String get purchaseReceiveTitle => 'استلام فاتورة الشراء';
+
+  @override
+  String get purchaseReceiveIntro => 'أدخل أرقام التشغيلات لاستلام المخزون';
+
+  @override
+  String get purchaseBatchNumber => 'رقم التشغيلة';
+
+  @override
+  String get purchaseExpiryDate => 'تاريخ الصلاحية (اختياري)';
+
+  @override
+  String get purchaseReceivedMessage => 'تم استلام الفاتورة وإنشاء التشغيلات';
+
+  @override
+  String get purchaseCreatedMessage => 'تم حفظ فاتورة الشراء';
+
+  @override
+  String get purchaseUpdatedMessage => 'تم تعديل فاتورة الشراء';
+
+  @override
+  String get purchaseCancelledMessage => 'تم إلغاء فاتورة الشراء';
+
+  @override
+  String get purchaseCancelConfirm => 'إلغاء هذه الفاتورة؟';
+
+  @override
+  String get purchaseDetailTitle => 'فاتورة شراء';
+
+  @override
+  String get purchaseReturnTitle => 'مرتجع مشتريات';
+
+  @override
+  String get purchaseReturnOrderNo => 'رقم المرتجع';
+
+  @override
+  String get purchaseReturnQty => 'الكمية المرتجعة';
+
+  @override
+  String get purchaseReturnAvailable => 'المتاح';
+
+  @override
+  String get purchaseReturnReason => 'السبب (اختياري)';
+
+  @override
+  String get purchaseReturnSavedMessage => 'تم تسجيل المرتجع';
+
+  @override
+  String get purchaseReturnValidation => 'تحقق من كميات المرتجع';
+
+  @override
+  String get purchaseBonus1 => 'بونص 1';
+
+  @override
+  String get purchaseBonus2 => 'بونص 2';
+
+  @override
+  String get purchaseBonusGift => 'هدية';
+
+  @override
+  String get purchaseBonusButton => 'بونص';
+
+  @override
+  String get purchaseBonusItem => 'منتج البونص';
+
+  @override
+  String get purchaseStatusLabel => 'الحالة';
+
+  @override
+  String get purchaseRequiredSupplier => 'اختر المورد';
+
+  @override
+  String get purchaseRequiredLines => 'أضف سطراً واحداً على الأقل';
+
+  @override
+  String get purchaseRequiredNumber => 'رقم الفاتورة مطلوب';
+
+  @override
+  String get purchaseItemNotNull => 'اختر منتجاً لكل سطر';
+
+  @override
+  String get purchaseQtyPositive => 'الكمية يجب أن تكون موجبة';
+
+  @override
+  String get purchaseCostPositive => 'سعر الوحدة يجب أن يكون موجباً';
+
+  @override
+  String get supplierNameRequired => 'الاسم مطلوب';
 }

@@ -15,6 +15,11 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/users_page.dart';
 import '../../features/inventory/presentation/pages/batches_page.dart';
 import '../../features/inventory/presentation/pages/inventory_page.dart';
+import '../../features/purchases/presentation/pages/purchase_detail_page.dart';
+import '../../features/purchases/presentation/pages/purchase_form_page.dart';
+import '../../features/purchases/presentation/pages/purchases_page.dart';
+import '../../features/suppliers/presentation/pages/supplier_statement_page.dart';
+import '../../features/suppliers/presentation/pages/suppliers_page.dart';
 
 /// Bridges a [Stream] to the [Listenable] interface GoRouter refreshes on.
 class _GoRouterListenable extends ChangeNotifier {
@@ -59,6 +64,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           !authState.permissions.contains(Perm.inventoryView)) {
         return '/access-denied';
       }
+      if (path.startsWith(AppSection.suppliers.path) &&
+          !authState.permissions.contains(Perm.suppliersView)) {
+        return '/access-denied';
+      }
+      if (path.startsWith(AppSection.purchases.path) &&
+          !authState.permissions.contains(Perm.purchasesView)) {
+        return '/access-denied';
+      }
       return null;
     },
     routes: [
@@ -95,6 +108,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       itemId: state.pathParameters['itemId']!,
                     ),
                   ),
+                if (section == AppSection.suppliers)
+                  GoRoute(
+                    path: 'statement/:supplierId',
+                    builder: (context, state) => SupplierStatementView(
+                      supplierId: state.pathParameters['supplierId']!,
+                    ),
+                  ),
+                if (section == AppSection.purchases) ...[
+                  GoRoute(
+                    path: 'new',
+                    builder: (context, _) => const PurchaseFormPage(),
+                  ),
+                  GoRoute(
+                    path: 'edit/:id',
+                    builder: (context, state) => PurchaseFormPage(
+                      invoiceId: state.pathParameters['id'],
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'detail/:id',
+                    builder: (context, state) => PurchaseDetailPage(
+                      invoiceId: state.pathParameters['id']!,
+                    ),
+                  ),
+                ],
               ],
             ),
         ],
@@ -109,6 +147,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 Widget _sectionPage(AppSection section, BuildContext context) {
   if (section == AppSection.users) return const UsersPage();
   if (section == AppSection.inventory) return const InventoryPage();
+  if (section == AppSection.suppliers) return const SuppliersPage();
+  if (section == AppSection.purchases) return const PurchasesPage();
   final l10n = AppLocalizations.of(context);
   return SectionPlaceholder(
     icon: section.icon,

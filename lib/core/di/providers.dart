@@ -4,6 +4,8 @@ import '../../data/daos/batch_dao.dart';
 import '../../data/daos/category_dao.dart';
 import '../../data/daos/item_dao.dart';
 import '../../data/daos/manufacturer_dao.dart';
+import '../../data/daos/purchase_dao.dart';
+import '../../data/daos/supplier_dao.dart';
 import '../../data/daos/stock_movement_dao.dart';
 import '../../data/daos/therapeutic_group_dao.dart';
 import '../../data/daos/unit_dao.dart';
@@ -24,6 +26,10 @@ import '../../features/inventory/application/master_data_controller.dart';
 import '../../features/inventory/domain/repositories/inventory_repository.dart';
 import '../../features/inventory/domain/services/inventory_excel_service.dart';
 import '../../features/inventory/domain/services/inventory_view_builder.dart';
+import '../../features/purchases/application/purchases_controller.dart';
+import '../../features/purchases/domain/usecases/purchases_use_cases.dart';
+import '../../features/suppliers/application/suppliers_controller.dart';
+import '../../features/suppliers/domain/usecases/suppliers_use_cases.dart';
 import '../../shared/database/app_database.dart';
 import 'injection.dart';
 
@@ -81,3 +87,26 @@ final inventoryControllerProvider =
 final masterDataControllerProvider =
     StateNotifierProvider<MasterDataController, MasterDataViewState>(
         (ref) => getIt<MasterDataController>());
+
+final supplierDaoProvider = Provider<SupplierDao>((ref) => getIt<SupplierDao>());
+final purchaseDaoProvider = Provider<PurchaseDao>((ref) => getIt<PurchaseDao>());
+final suppliersControllerProvider =
+    StateNotifierProvider<SuppliersController, SuppliersViewState>(
+        (ref) => getIt<SuppliersController>());
+final purchasesControllerProvider =
+    StateNotifierProvider<PurchasesController, PurchasesViewState>(
+        (ref) => getIt<PurchasesController>());
+final allSuppliersUseCaseProvider =
+    Provider<AllSuppliersUseCase>((ref) => getIt<AllSuppliersUseCase>());
+final getPurchaseDetailUseCaseProvider =
+    Provider<GetPurchaseDetailUseCase>((ref) => getIt<GetPurchaseDetailUseCase>());
+final createPurchaseUseCaseProvider =
+    Provider<CreatePurchaseUseCase>((ref) => getIt<CreatePurchaseUseCase>());
+final updatePendingPurchaseUseCaseProvider =
+    Provider<UpdatePendingPurchaseUseCase>(
+        (ref) => getIt<UpdatePendingPurchaseUseCase>());
+final getAvailableReturnQtyUseCaseProvider =
+    Provider<GetAvailableReturnQtyUseCase>(
+        (ref) => getIt<GetAvailableReturnQtyUseCase>());
+final purchaseReturnUseCaseProvider =
+    Provider<PurchaseReturnUseCase>((ref) => getIt<PurchaseReturnUseCase>());

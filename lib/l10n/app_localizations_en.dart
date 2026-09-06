@@ -829,4 +829,333 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryBatchView => 'View batches';
+
+  @override
+  String get suppliersTab => 'Suppliers';
+
+  @override
+  String get suppliersBalancesTab => 'Balances';
+
+  @override
+  String get suppliersEmpty => 'No suppliers found';
+
+  @override
+  String get suppliersSearchHint => 'Search by name, phone or code';
+
+  @override
+  String get supplierAdd => 'Add Supplier';
+
+  @override
+  String get supplierAddTitle => 'New Supplier';
+
+  @override
+  String get supplierEditTitle => 'Edit Supplier';
+
+  @override
+  String get supplierName => 'Name';
+
+  @override
+  String get supplierCode => 'Code';
+
+  @override
+  String get supplierPhone => 'Phone';
+
+  @override
+  String get supplierSecondaryPhone => 'Secondary phone';
+
+  @override
+  String get supplierEmail => 'Email';
+
+  @override
+  String get supplierAddress => 'Address';
+
+  @override
+  String get supplierContactPerson => 'Contact person';
+
+  @override
+  String get supplierTaxVatNumber => 'Tax / VAT number';
+
+  @override
+  String get supplierLicenseRegistration => 'License / registration';
+
+  @override
+  String get supplierOpeningBalance => 'Opening balance';
+
+  @override
+  String get supplierCreditLimit => 'Credit limit';
+
+  @override
+  String get supplierNotes => 'Notes';
+
+  @override
+  String get supplierCreatedMessage => 'Supplier added';
+
+  @override
+  String get supplierUpdatedMessage => 'Supplier updated';
+
+  @override
+  String get supplierActivatedMessage => 'Supplier re-activated';
+
+  @override
+  String get supplierDeactivatedMessage => 'Supplier deactivated';
+
+  @override
+  String supplierDeactivateConfirmMessage(String name) {
+    return 'Deactivate supplier\"$name\"?';
+  }
+
+  @override
+  String supplierActivateConfirmMessage(String name) {
+    return 'Activate supplier\"$name\"?';
+  }
+
+  @override
+  String get supplierBalance => 'Balance';
+
+  @override
+  String get supplierStatement => 'Statement';
+
+  @override
+  String get supplierStatementTitle => 'Supplier Statement';
+
+  @override
+  String get supplierStatementDateFrom => 'From';
+
+  @override
+  String get supplierStatementDateTo => 'To';
+
+  @override
+  String get statementDate => 'Date';
+
+  @override
+  String get statementDescription => 'Description';
+
+  @override
+  String get statementDebit => 'Debit';
+
+  @override
+  String get statementCredit => 'Credit';
+
+  @override
+  String get statementOpening => 'Opening balance';
+
+  @override
+  String get statementClosing => 'Closing balance';
+
+  @override
+  String get statementBalance => 'Balance';
+
+  @override
+  String statementRowInvoice(String number) {
+    return 'Purchase invoice $number';
+  }
+
+  @override
+  String statementRowReturn(String number) {
+    return 'Purchase return $number';
+  }
+
+  @override
+  String get statementNoData => 'No transactions in this range';
+
+  @override
+  String get purchaseStatusPending => 'Pending';
+
+  @override
+  String get purchaseStatusReceived => 'Received';
+
+  @override
+  String get purchaseStatusCancelled => 'Cancelled';
+
+  @override
+  String get purchaseAddInvoice => 'New Purchase';
+
+  @override
+  String get purchasesEmpty => 'No purchase invoices found';
+
+  @override
+  String get purchasesSearchHint => 'Search by invoice number';
+
+  @override
+  String get purchasesFilterSupplier => 'All suppliers';
+
+  @override
+  String get purchasesFilterStatus => 'All statuses';
+
+  @override
+  String get purchaseInvoiceNumber => 'Invoice No.';
+
+  @override
+  String get purchaseInvoiceDate => 'Date';
+
+  @override
+  String get purchaseSupplierLabel => 'Supplier';
+
+  @override
+  String get purchaseTotal => 'Total';
+
+  @override
+  String get purchasePaid => 'Paid';
+
+  @override
+  String get purchaseRemaining => 'Remaining';
+
+  @override
+  String get purchaseCreateTitle => 'New Purchase Invoice';
+
+  @override
+  String get purchaseEditTitle => 'Edit Purchase Invoice';
+
+  @override
+  String get purchaseOrderNumber => 'Invoice number';
+
+  @override
+  String get purchaseOrderDate => 'Invoice date';
+
+  @override
+  String get purchaseExpectedDate => 'Expected date (optional)';
+
+  @override
+  String get purchasePaidAmount => 'Paid amount';
+
+  @override
+  String get purchaseNotes => 'Notes';
+
+  @override
+  String get purchaseSubtotal => 'Subtotal';
+
+  @override
+  String get purchaseDiscount => 'Discounts';
+
+  @override
+  String get purchaseGrandTotal => 'Grand total';
+
+  @override
+  String get purchaseItemPlaceholder => 'Select item';
+
+  @override
+  String get purchaseItemSearchHint => 'Search items…';
+
+  @override
+  String get purchaseQty => 'Quantity';
+
+  @override
+  String get purchaseUnitCost => 'Unit cost';
+
+  @override
+  String get purchaseUnitType => 'Unit type';
+
+  @override
+  String get purchaseDiscountPct => 'Discount %';
+
+  @override
+  String get purchaseBonus => 'Bonus';
+
+  @override
+  String get purchaseAddLine => 'Add line';
+
+  @override
+  String get purchaseRemoveLine => 'Remove line';
+
+  @override
+  String get purchaseNoLines => 'Add at least one line';
+
+  @override
+  String get purchaseReceive => 'Receive';
+
+  @override
+  String get purchaseCancel => 'Cancel Invoice';
+
+  @override
+  String get purchaseReturn => 'Return';
+
+  @override
+  String get purchaseReceiveTitle => 'Receive Purchase';
+
+  @override
+  String get purchaseReceiveIntro => 'Enter batch numbers to receive stock';
+
+  @override
+  String get purchaseBatchNumber => 'Batch number';
+
+  @override
+  String get purchaseExpiryDate => 'Expiry date (optional)';
+
+  @override
+  String get purchaseReceivedMessage => 'Purchase received - batches created';
+
+  @override
+  String get purchaseCreatedMessage => 'Purchase invoice saved';
+
+  @override
+  String get purchaseUpdatedMessage => 'Purchase invoice updated';
+
+  @override
+  String get purchaseCancelledMessage => 'Purchase invoice cancelled';
+
+  @override
+  String get purchaseCancelConfirm => 'Cancel this purchase invoice?';
+
+  @override
+  String get purchaseDetailTitle => 'Purchase Invoice';
+
+  @override
+  String get purchaseReturnTitle => 'Purchase Return';
+
+  @override
+  String get purchaseReturnOrderNo => 'Return number';
+
+  @override
+  String get purchaseReturnQty => 'Quantity to return';
+
+  @override
+  String get purchaseReturnAvailable => 'Available';
+
+  @override
+  String get purchaseReturnReason => 'Reason (optional)';
+
+  @override
+  String get purchaseReturnSavedMessage => 'Return recorded';
+
+  @override
+  String get purchaseReturnValidation => 'Check return quantities';
+
+  @override
+  String get purchaseBonus1 => 'Bonus 1';
+
+  @override
+  String get purchaseBonus2 => 'Bonus 2';
+
+  @override
+  String get purchaseBonusGift => 'Gift';
+
+  @override
+  String get purchaseBonusButton => 'Bonus';
+
+  @override
+  String get purchaseBonusItem => 'Bonus item';
+
+  @override
+  String get purchaseStatusLabel => 'Status';
+
+  @override
+  String get purchaseRequiredSupplier => 'Select a supplier';
+
+  @override
+  String get purchaseRequiredLines => 'Add at least one line';
+
+  @override
+  String get purchaseRequiredNumber => 'Invoice number is required';
+
+  @override
+  String get purchaseItemNotNull => 'Select an item for every line';
+
+  @override
+  String get purchaseQtyPositive => 'Quantity must be positive';
+
+  @override
+  String get purchaseCostPositive => 'Unit cost must be positive';
+
+  @override
+  String get supplierNameRequired => 'Name is required';
 }

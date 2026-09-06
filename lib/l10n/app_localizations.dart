@@ -1711,6 +1711,648 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'عرض التشغيلات'**
   String get inventoryBatchView;
+
+  /// No description provided for @suppliersTab.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموردون'**
+  String get suppliersTab;
+
+  /// No description provided for @suppliersBalancesTab.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرصدة'**
+  String get suppliersBalancesTab;
+
+  /// No description provided for @suppliersEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد موردون'**
+  String get suppliersEmpty;
+
+  /// No description provided for @suppliersSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث بالاسم أو الهاتف أو الكود'**
+  String get suppliersSearchHint;
+
+  /// No description provided for @supplierAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مورد'**
+  String get supplierAdd;
+
+  /// No description provided for @supplierAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مورد جديد'**
+  String get supplierAddTitle;
+
+  /// No description provided for @supplierEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل مورد'**
+  String get supplierEditTitle;
+
+  /// No description provided for @supplierName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get supplierName;
+
+  /// No description provided for @supplierCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكود'**
+  String get supplierCode;
+
+  /// No description provided for @supplierPhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهاتف'**
+  String get supplierPhone;
+
+  /// No description provided for @supplierSecondaryPhone.
+  ///
+  /// In ar, this message translates to:
+  /// **'هاتف ثانٍ'**
+  String get supplierSecondaryPhone;
+
+  /// No description provided for @supplierEmail.
+  ///
+  /// In ar, this message translates to:
+  /// **'البريد الإلكتروني'**
+  String get supplierEmail;
+
+  /// No description provided for @supplierAddress.
+  ///
+  /// In ar, this message translates to:
+  /// **'العنوان'**
+  String get supplierAddress;
+
+  /// No description provided for @supplierContactPerson.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهة الاتصال'**
+  String get supplierContactPerson;
+
+  /// No description provided for @supplierTaxVatNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرقم الضريبي'**
+  String get supplierTaxVatNumber;
+
+  /// No description provided for @supplierLicenseRegistration.
+  ///
+  /// In ar, this message translates to:
+  /// **'الترخيص / السجل'**
+  String get supplierLicenseRegistration;
+
+  /// No description provided for @supplierOpeningBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الافتتاحي'**
+  String get supplierOpeningBalance;
+
+  /// No description provided for @supplierCreditLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الائتماني'**
+  String get supplierCreditLimit;
+
+  /// No description provided for @supplierNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات'**
+  String get supplierNotes;
+
+  /// No description provided for @supplierCreatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت إضافة المورد'**
+  String get supplierCreatedMessage;
+
+  /// No description provided for @supplierUpdatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعديل المورد'**
+  String get supplierUpdatedMessage;
+
+  /// No description provided for @supplierActivatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت إعادة تفعيل المورد'**
+  String get supplierActivatedMessage;
+
+  /// No description provided for @supplierDeactivatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعطيل المورد'**
+  String get supplierDeactivatedMessage;
+
+  /// No description provided for @supplierDeactivateConfirmMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعطيل المورد «{name}»؟'**
+  String supplierDeactivateConfirmMessage(String name);
+
+  /// No description provided for @supplierActivateConfirmMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة تفعيل المورد «{name}»؟'**
+  String supplierActivateConfirmMessage(String name);
+
+  /// No description provided for @supplierBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد'**
+  String get supplierBalance;
+
+  /// No description provided for @supplierStatement.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف الحساب'**
+  String get supplierStatement;
+
+  /// No description provided for @supplierStatementTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف حساب المورد'**
+  String get supplierStatementTitle;
+
+  /// No description provided for @supplierStatementDateFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'من'**
+  String get supplierStatementDateFrom;
+
+  /// No description provided for @supplierStatementDateTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلى'**
+  String get supplierStatementDateTo;
+
+  /// No description provided for @statementDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get statementDate;
+
+  /// No description provided for @statementDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيان'**
+  String get statementDescription;
+
+  /// No description provided for @statementDebit.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدين'**
+  String get statementDebit;
+
+  /// No description provided for @statementCredit.
+  ///
+  /// In ar, this message translates to:
+  /// **'دائن'**
+  String get statementCredit;
+
+  /// No description provided for @statementOpening.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الافتتاحي'**
+  String get statementOpening;
+
+  /// No description provided for @statementClosing.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الختامي'**
+  String get statementClosing;
+
+  /// No description provided for @statementBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد'**
+  String get statementBalance;
+
+  /// No description provided for @statementRowInvoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة شراء {number}'**
+  String statementRowInvoice(String number);
+
+  /// No description provided for @statementRowReturn.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع مشتريات {number}'**
+  String statementRowReturn(String number);
+
+  /// No description provided for @statementNoData.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد حركات في هذا النطاق'**
+  String get statementNoData;
+
+  /// No description provided for @purchaseStatusPending.
+  ///
+  /// In ar, this message translates to:
+  /// **'معلّقة'**
+  String get purchaseStatusPending;
+
+  /// No description provided for @purchaseStatusReceived.
+  ///
+  /// In ar, this message translates to:
+  /// **'مُستلمة'**
+  String get purchaseStatusReceived;
+
+  /// No description provided for @purchaseStatusCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغاة'**
+  String get purchaseStatusCancelled;
+
+  /// No description provided for @purchaseAddInvoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة شراء جديدة'**
+  String get purchaseAddInvoice;
+
+  /// No description provided for @purchasesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد فواتير شراء'**
+  String get purchasesEmpty;
+
+  /// No description provided for @purchasesSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث برقم الفاتورة'**
+  String get purchasesSearchHint;
+
+  /// No description provided for @purchasesFilterSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الموردين'**
+  String get purchasesFilterSupplier;
+
+  /// No description provided for @purchasesFilterStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الحالات'**
+  String get purchasesFilterStatus;
+
+  /// No description provided for @purchaseInvoiceNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الفاتورة'**
+  String get purchaseInvoiceNumber;
+
+  /// No description provided for @purchaseInvoiceDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get purchaseInvoiceDate;
+
+  /// No description provided for @purchaseSupplierLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المورد'**
+  String get purchaseSupplierLabel;
+
+  /// No description provided for @purchaseTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي'**
+  String get purchaseTotal;
+
+  /// No description provided for @purchasePaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدفوع'**
+  String get purchasePaid;
+
+  /// No description provided for @purchaseRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي'**
+  String get purchaseRemaining;
+
+  /// No description provided for @purchaseCreateTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة شراء جديدة'**
+  String get purchaseCreateTitle;
+
+  /// No description provided for @purchaseEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل فاتورة الشراء'**
+  String get purchaseEditTitle;
+
+  /// No description provided for @purchaseOrderNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الفاتورة'**
+  String get purchaseOrderNumber;
+
+  /// No description provided for @purchaseOrderDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الفاتورة'**
+  String get purchaseOrderDate;
+
+  /// No description provided for @purchaseExpectedDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ المتوقع (اختياري)'**
+  String get purchaseExpectedDate;
+
+  /// No description provided for @purchasePaidAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المدفوع'**
+  String get purchasePaidAmount;
+
+  /// No description provided for @purchaseNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات'**
+  String get purchaseNotes;
+
+  /// No description provided for @purchaseSubtotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'المجموع الفرعي'**
+  String get purchaseSubtotal;
+
+  /// No description provided for @purchaseDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصومات'**
+  String get purchaseDiscount;
+
+  /// No description provided for @purchaseGrandTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي النهائي'**
+  String get purchaseGrandTotal;
+
+  /// No description provided for @purchaseItemPlaceholder.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر منتجاً'**
+  String get purchaseItemPlaceholder;
+
+  /// No description provided for @purchaseItemSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث عن منتج…'**
+  String get purchaseItemSearchHint;
+
+  /// No description provided for @purchaseQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get purchaseQty;
+
+  /// No description provided for @purchaseUnitCost.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر الوحدة'**
+  String get purchaseUnitCost;
+
+  /// No description provided for @purchaseUnitType.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدة'**
+  String get purchaseUnitType;
+
+  /// No description provided for @purchaseDiscountPct.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصم %'**
+  String get purchaseDiscountPct;
+
+  /// No description provided for @purchaseBonus.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدايا/البونص'**
+  String get purchaseBonus;
+
+  /// No description provided for @purchaseAddLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة سطر'**
+  String get purchaseAddLine;
+
+  /// No description provided for @purchaseRemoveLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف السطر'**
+  String get purchaseRemoveLine;
+
+  /// No description provided for @purchaseNoLines.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف سطراً واحداً على الأقل'**
+  String get purchaseNoLines;
+
+  /// No description provided for @purchaseReceive.
+  ///
+  /// In ar, this message translates to:
+  /// **'استلام'**
+  String get purchaseReceive;
+
+  /// No description provided for @purchaseCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الفاتورة'**
+  String get purchaseCancel;
+
+  /// No description provided for @purchaseReturn.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع'**
+  String get purchaseReturn;
+
+  /// No description provided for @purchaseReceiveTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'استلام فاتورة الشراء'**
+  String get purchaseReceiveTitle;
+
+  /// No description provided for @purchaseReceiveIntro.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل أرقام التشغيلات لاستلام المخزون'**
+  String get purchaseReceiveIntro;
+
+  /// No description provided for @purchaseBatchNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم التشغيلة'**
+  String get purchaseBatchNumber;
+
+  /// No description provided for @purchaseExpiryDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الصلاحية (اختياري)'**
+  String get purchaseExpiryDate;
+
+  /// No description provided for @purchaseReceivedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استلام الفاتورة وإنشاء التشغيلات'**
+  String get purchaseReceivedMessage;
+
+  /// No description provided for @purchaseCreatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ فاتورة الشراء'**
+  String get purchaseCreatedMessage;
+
+  /// No description provided for @purchaseUpdatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعديل فاتورة الشراء'**
+  String get purchaseUpdatedMessage;
+
+  /// No description provided for @purchaseCancelledMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إلغاء فاتورة الشراء'**
+  String get purchaseCancelledMessage;
+
+  /// No description provided for @purchaseCancelConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء هذه الفاتورة؟'**
+  String get purchaseCancelConfirm;
+
+  /// No description provided for @purchaseDetailTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة شراء'**
+  String get purchaseDetailTitle;
+
+  /// No description provided for @purchaseReturnTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع مشتريات'**
+  String get purchaseReturnTitle;
+
+  /// No description provided for @purchaseReturnOrderNo.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم المرتجع'**
+  String get purchaseReturnOrderNo;
+
+  /// No description provided for @purchaseReturnQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المرتجعة'**
+  String get purchaseReturnQty;
+
+  /// No description provided for @purchaseReturnAvailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتاح'**
+  String get purchaseReturnAvailable;
+
+  /// No description provided for @purchaseReturnReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'السبب (اختياري)'**
+  String get purchaseReturnReason;
+
+  /// No description provided for @purchaseReturnSavedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تسجيل المرتجع'**
+  String get purchaseReturnSavedMessage;
+
+  /// No description provided for @purchaseReturnValidation.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحقق من كميات المرتجع'**
+  String get purchaseReturnValidation;
+
+  /// No description provided for @purchaseBonus1.
+  ///
+  /// In ar, this message translates to:
+  /// **'بونص 1'**
+  String get purchaseBonus1;
+
+  /// No description provided for @purchaseBonus2.
+  ///
+  /// In ar, this message translates to:
+  /// **'بونص 2'**
+  String get purchaseBonus2;
+
+  /// No description provided for @purchaseBonusGift.
+  ///
+  /// In ar, this message translates to:
+  /// **'هدية'**
+  String get purchaseBonusGift;
+
+  /// No description provided for @purchaseBonusButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'بونص'**
+  String get purchaseBonusButton;
+
+  /// No description provided for @purchaseBonusItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتج البونص'**
+  String get purchaseBonusItem;
+
+  /// No description provided for @purchaseStatusLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get purchaseStatusLabel;
+
+  /// No description provided for @purchaseRequiredSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر المورد'**
+  String get purchaseRequiredSupplier;
+
+  /// No description provided for @purchaseRequiredLines.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف سطراً واحداً على الأقل'**
+  String get purchaseRequiredLines;
+
+  /// No description provided for @purchaseRequiredNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الفاتورة مطلوب'**
+  String get purchaseRequiredNumber;
+
+  /// No description provided for @purchaseItemNotNull.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر منتجاً لكل سطر'**
+  String get purchaseItemNotNull;
+
+  /// No description provided for @purchaseQtyPositive.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية يجب أن تكون موجبة'**
+  String get purchaseQtyPositive;
+
+  /// No description provided for @purchaseCostPositive.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر الوحدة يجب أن يكون موجباً'**
+  String get purchaseCostPositive;
+
+  /// No description provided for @supplierNameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم مطلوب'**
+  String get supplierNameRequired;
 }
 
 class _AppLocalizationsDelegate

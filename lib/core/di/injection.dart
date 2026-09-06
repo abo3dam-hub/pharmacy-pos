@@ -4,6 +4,8 @@ import '../../data/daos/batch_dao.dart';
 import '../../data/daos/category_dao.dart';
 import '../../data/daos/item_dao.dart';
 import '../../data/daos/manufacturer_dao.dart';
+import '../../data/daos/purchase_dao.dart';
+import '../../data/daos/supplier_dao.dart';
 import '../../data/daos/stock_movement_dao.dart';
 import '../../data/daos/therapeutic_group_dao.dart';
 import '../../data/daos/unit_dao.dart';
@@ -49,6 +51,14 @@ import '../../features/inventory/domain/usecases/set_item_active.dart';
 import '../../features/inventory/domain/usecases/stock_use_cases.dart';
 import '../../features/inventory/domain/usecases/units_use_cases.dart';
 import '../../features/inventory/domain/usecases/update_item.dart';
+import '../../features/purchases/application/purchases_controller.dart';
+import '../../features/purchases/data/repositories/purchases_repository_impl.dart';
+import '../../features/purchases/domain/repositories/purchases_repository.dart';
+import '../../features/purchases/domain/usecases/purchases_use_cases.dart';
+import '../../features/suppliers/application/suppliers_controller.dart';
+import '../../features/suppliers/data/repositories/supplier_repository_impl.dart';
+import '../../features/suppliers/domain/repositories/supplier_repository.dart';
+import '../../features/suppliers/domain/usecases/suppliers_use_cases.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/models/enums.dart';
 
@@ -84,9 +94,86 @@ void setupDependencies() {
   getIt.registerLazySingleton<ManufacturerDao>(() => ManufacturerDao(db));
   getIt.registerLazySingleton<TherapeuticGroupDao>(
       () => TherapeuticGroupDao(db));
+  getIt.registerLazySingleton<SupplierDao>(() => SupplierDao(db));
+  getIt.registerLazySingleton<PurchaseDao>(() => PurchaseDao(db));
 
   _registerAuth(db);
   _registerInventory(db);
+  _registerPhase4(db);
+}
+
+/// Phase 4 — Suppliers & Purchases graph (suppliers master, statements,
+/// balances, purchase invoices with bonuses/returns).
+void _registerPhase4(AppDatabase db) {
+  final audit = getIt<AuditService>();
+  final perms = getIt<PermissionService>();
+
+  getIt.registerLazySingleton<SupplierRepository>(
+    () => SupplierRepositoryImpl(db, getIt<SupplierDao>()),
+  );
+  getIt.registerLazySingleton<PurchasesRepository>(
+    () => PurchasesRepositoryImpl(
+      db,
+      getIt<PurchaseDao>(),
+      getIt<SupplierDao>(),
+      getIt<BonusCalculator>(),
+      getIt<StockService>(),
+      audit,
+    ),
+  );
+
+  final supRepo = getIt<SupplierRepository>();
+  final purRepo = getIt<PurchasesRepository>();
+
+  getIt.registerLazySingleton<ListSuppliersUseCase>(
+      () => ListSuppliersUseCase(supRepo, perms));
+  getIt.registerLazySingleton<AllSuppliersUseCase>(
+      () => AllSuppliersUseCase(supRepo, perms));
+  getIt.registerLazySingleton<CreateSupplierUseCase>(
+      () => CreateSupplierUseCase(supRepo, perms, audit));
+  getIt.registerLazySingleton<UpdateSupplierUseCase>(
+      () => UpdateSupplierUseCase(supRepo, perms, audit));
+  getIt.registerLazySingleton<SetSupplierActiveUseCase>(
+      () => SetSupplierActiveUseCase(supRepo, perms, audit));
+  getIt.registerLazySingleton<SupplierBalancesUseCase>(
+      () => SupplierBalancesUseCase(supRepo, perms));
+  getIt.registerLazySingleton<SupplierStatementUseCase>(
+      () => SupplierStatementUseCase(supRepo, perms));
+
+  getIt.registerLazySingleton<ListPurchasesUseCase>(
+      () => ListPurchasesUseCase(purRepo, perms));
+  getIt.registerLazySingleton<GetPurchaseDetailUseCase>(
+      () => GetPurchaseDetailUseCase(purRepo, perms));
+  getIt.registerLazySingleton<CreatePurchaseUseCase>(
+      () => CreatePurchaseUseCase(purRepo, perms));
+  getIt.registerLazySingleton<UpdatePendingPurchaseUseCase>(
+      () => UpdatePendingPurchaseUseCase(purRepo, perms));
+  getIt.registerLazySingleton<ReceivePurchaseUseCase>(
+      () => ReceivePurchaseUseCase(purRepo, perms));
+  getIt.registerLazySingleton<CancelPurchaseUseCase>(
+      () => CancelPurchaseUseCase(purRepo, perms));
+  getIt.registerLazySingleton<PurchaseReturnUseCase>(
+      () => PurchaseReturnUseCase(purRepo, perms));
+  getIt.registerLazySingleton<GetAvailableReturnQtyUseCase>(
+      () => GetAvailableReturnQtyUseCase(purRepo, perms));
+
+  getIt.registerLazySingleton<SuppliersController>(() => SuppliersController(
+        getIt<ListSuppliersUseCase>(),
+        getIt<CreateSupplierUseCase>(),
+        getIt<UpdateSupplierUseCase>(),
+        getIt<SetSupplierActiveUseCase>(),
+        getIt<SupplierBalancesUseCase>(),
+        getIt<SupplierStatementUseCase>(),
+      ));
+
+  getIt.registerLazySingleton<PurchasesController>(() => PurchasesController(
+        getIt<ListPurchasesUseCase>(),
+        getIt<ReceivePurchaseUseCase>(),
+        getIt<CancelPurchaseUseCase>(),
+        getIt<CreatePurchaseUseCase>(),
+        getIt<UpdatePendingPurchaseUseCase>(),
+        getIt<PurchaseReturnUseCase>(),
+      ));
 }
 
 /// Inventory & categories module (§3, §4). The feature is wired over the
