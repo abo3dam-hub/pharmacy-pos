@@ -85,7 +85,7 @@ void main() {
     final verification = await service.verifyRestore(backupPath,
         expectedChecksum: checksum);
     expect(verification.ok, isTrue, reason: 'PRAGMA integrity_check == ok');
-    expect(verification.schemaVersion, 2);
+    expect(verification.schemaVersion, 3);
     expect(verification.latestChecksumMatches, isTrue);
 
     // Data survived in the restored copy.

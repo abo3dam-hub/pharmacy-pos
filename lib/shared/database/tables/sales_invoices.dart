@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import '../../models/enum_value_converter.dart';
 import '../../models/enums.dart';
 import 'customers.dart';
+import 'prescriptions.dart';
 import 'users.dart';
 
 /// Sales invoice header (§4.14, §11). `userId` (the cashier) is NOT NULL;
@@ -40,6 +41,10 @@ class SalesInvoices extends Table {
 
   /// Remaining balance (credit customers) = total − paid, §4.14.
   IntColumn get remainingMicros => integer().withDefault(const Constant(0))();
+
+  /// Linked prescription when dispensed from RX (Phase 6 §4.14).
+  TextColumn get prescriptionId =>
+      text().nullable().references(Prescriptions, #id)();
 
   TextColumn get notes => text().nullable()();
   TextColumn get voidReason => text().nullable()();

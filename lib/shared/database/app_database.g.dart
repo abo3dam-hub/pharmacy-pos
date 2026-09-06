@@ -10409,6 +10409,17 @@ class $PrescriptionItemsTable extends PrescriptionItems
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _dispensedQuantityBaseMeta =
+      const VerificationMeta('dispensedQuantityBase');
+  @override
+  late final GeneratedColumn<int> dispensedQuantityBase = GeneratedColumn<int>(
+    'dispensed_quantity_base',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -10431,6 +10442,7 @@ class $PrescriptionItemsTable extends PrescriptionItems
     durationDays,
     notes,
     isDispensed,
+    dispensedQuantityBase,
     createdAt,
   ];
   @override
@@ -10516,6 +10528,15 @@ class $PrescriptionItemsTable extends PrescriptionItems
         ),
       );
     }
+    if (data.containsKey('dispensed_quantity_base')) {
+      context.handle(
+        _dispensedQuantityBaseMeta,
+        dispensedQuantityBase.isAcceptableOrUnknown(
+          data['dispensed_quantity_base']!,
+          _dispensedQuantityBaseMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -10569,6 +10590,10 @@ class $PrescriptionItemsTable extends PrescriptionItems
         DriftSqlType.bool,
         data['${effectivePrefix}is_dispensed'],
       )!,
+      dispensedQuantityBase: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}dispensed_quantity_base'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -10593,6 +10618,9 @@ class PrescriptionItemRow extends DataClass
   final int? durationDays;
   final String? notes;
   final bool isDispensed;
+
+  /// Cumulative base units dispensed across one or more invoices (Phase 6 §12).
+  final int dispensedQuantityBase;
   final int createdAt;
   const PrescriptionItemRow({
     required this.id,
@@ -10604,6 +10632,7 @@ class PrescriptionItemRow extends DataClass
     this.durationDays,
     this.notes,
     required this.isDispensed,
+    required this.dispensedQuantityBase,
     required this.createdAt,
   });
   @override
@@ -10626,6 +10655,7 @@ class PrescriptionItemRow extends DataClass
       map['notes'] = Variable<String>(notes);
     }
     map['is_dispensed'] = Variable<bool>(isDispensed);
+    map['dispensed_quantity_base'] = Variable<int>(dispensedQuantityBase);
     map['created_at'] = Variable<int>(createdAt);
     return map;
   }
@@ -10649,6 +10679,7 @@ class PrescriptionItemRow extends DataClass
           ? const Value.absent()
           : Value(notes),
       isDispensed: Value(isDispensed),
+      dispensedQuantityBase: Value(dispensedQuantityBase),
       createdAt: Value(createdAt),
     );
   }
@@ -10668,6 +10699,9 @@ class PrescriptionItemRow extends DataClass
       durationDays: serializer.fromJson<int?>(json['durationDays']),
       notes: serializer.fromJson<String?>(json['notes']),
       isDispensed: serializer.fromJson<bool>(json['isDispensed']),
+      dispensedQuantityBase: serializer.fromJson<int>(
+        json['dispensedQuantityBase'],
+      ),
       createdAt: serializer.fromJson<int>(json['createdAt']),
     );
   }
@@ -10684,6 +10718,7 @@ class PrescriptionItemRow extends DataClass
       'durationDays': serializer.toJson<int?>(durationDays),
       'notes': serializer.toJson<String?>(notes),
       'isDispensed': serializer.toJson<bool>(isDispensed),
+      'dispensedQuantityBase': serializer.toJson<int>(dispensedQuantityBase),
       'createdAt': serializer.toJson<int>(createdAt),
     };
   }
@@ -10698,6 +10733,7 @@ class PrescriptionItemRow extends DataClass
     Value<int?> durationDays = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     bool? isDispensed,
+    int? dispensedQuantityBase,
     int? createdAt,
   }) => PrescriptionItemRow(
     id: id ?? this.id,
@@ -10709,6 +10745,7 @@ class PrescriptionItemRow extends DataClass
     durationDays: durationDays.present ? durationDays.value : this.durationDays,
     notes: notes.present ? notes.value : this.notes,
     isDispensed: isDispensed ?? this.isDispensed,
+    dispensedQuantityBase: dispensedQuantityBase ?? this.dispensedQuantityBase,
     createdAt: createdAt ?? this.createdAt,
   );
   PrescriptionItemRow copyWithCompanion(PrescriptionItemsCompanion data) {
@@ -10730,6 +10767,9 @@ class PrescriptionItemRow extends DataClass
       isDispensed: data.isDispensed.present
           ? data.isDispensed.value
           : this.isDispensed,
+      dispensedQuantityBase: data.dispensedQuantityBase.present
+          ? data.dispensedQuantityBase.value
+          : this.dispensedQuantityBase,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -10746,6 +10786,7 @@ class PrescriptionItemRow extends DataClass
           ..write('durationDays: $durationDays, ')
           ..write('notes: $notes, ')
           ..write('isDispensed: $isDispensed, ')
+          ..write('dispensedQuantityBase: $dispensedQuantityBase, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -10762,6 +10803,7 @@ class PrescriptionItemRow extends DataClass
     durationDays,
     notes,
     isDispensed,
+    dispensedQuantityBase,
     createdAt,
   );
   @override
@@ -10777,6 +10819,7 @@ class PrescriptionItemRow extends DataClass
           other.durationDays == this.durationDays &&
           other.notes == this.notes &&
           other.isDispensed == this.isDispensed &&
+          other.dispensedQuantityBase == this.dispensedQuantityBase &&
           other.createdAt == this.createdAt);
 }
 
@@ -10790,6 +10833,7 @@ class PrescriptionItemsCompanion extends UpdateCompanion<PrescriptionItemRow> {
   final Value<int?> durationDays;
   final Value<String?> notes;
   final Value<bool> isDispensed;
+  final Value<int> dispensedQuantityBase;
   final Value<int> createdAt;
   final Value<int> rowid;
   const PrescriptionItemsCompanion({
@@ -10802,6 +10846,7 @@ class PrescriptionItemsCompanion extends UpdateCompanion<PrescriptionItemRow> {
     this.durationDays = const Value.absent(),
     this.notes = const Value.absent(),
     this.isDispensed = const Value.absent(),
+    this.dispensedQuantityBase = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -10815,6 +10860,7 @@ class PrescriptionItemsCompanion extends UpdateCompanion<PrescriptionItemRow> {
     this.durationDays = const Value.absent(),
     this.notes = const Value.absent(),
     this.isDispensed = const Value.absent(),
+    this.dispensedQuantityBase = const Value.absent(),
     required int createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -10832,6 +10878,7 @@ class PrescriptionItemsCompanion extends UpdateCompanion<PrescriptionItemRow> {
     Expression<int>? durationDays,
     Expression<String>? notes,
     Expression<bool>? isDispensed,
+    Expression<int>? dispensedQuantityBase,
     Expression<int>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -10845,6 +10892,8 @@ class PrescriptionItemsCompanion extends UpdateCompanion<PrescriptionItemRow> {
       if (durationDays != null) 'duration_days': durationDays,
       if (notes != null) 'notes': notes,
       if (isDispensed != null) 'is_dispensed': isDispensed,
+      if (dispensedQuantityBase != null)
+        'dispensed_quantity_base': dispensedQuantityBase,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -10860,6 +10909,7 @@ class PrescriptionItemsCompanion extends UpdateCompanion<PrescriptionItemRow> {
     Value<int?>? durationDays,
     Value<String?>? notes,
     Value<bool>? isDispensed,
+    Value<int>? dispensedQuantityBase,
     Value<int>? createdAt,
     Value<int>? rowid,
   }) {
@@ -10873,6 +10923,8 @@ class PrescriptionItemsCompanion extends UpdateCompanion<PrescriptionItemRow> {
       durationDays: durationDays ?? this.durationDays,
       notes: notes ?? this.notes,
       isDispensed: isDispensed ?? this.isDispensed,
+      dispensedQuantityBase:
+          dispensedQuantityBase ?? this.dispensedQuantityBase,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -10908,6 +10960,11 @@ class PrescriptionItemsCompanion extends UpdateCompanion<PrescriptionItemRow> {
     if (isDispensed.present) {
       map['is_dispensed'] = Variable<bool>(isDispensed.value);
     }
+    if (dispensedQuantityBase.present) {
+      map['dispensed_quantity_base'] = Variable<int>(
+        dispensedQuantityBase.value,
+      );
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
@@ -10929,6 +10986,7 @@ class PrescriptionItemsCompanion extends UpdateCompanion<PrescriptionItemRow> {
           ..write('durationDays: $durationDays, ')
           ..write('notes: $notes, ')
           ..write('isDispensed: $isDispensed, ')
+          ..write('dispensedQuantityBase: $dispensedQuantityBase, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -11129,6 +11187,17 @@ class $SalesInvoicesTable extends SalesInvoices
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _prescriptionIdMeta = const VerificationMeta(
+    'prescriptionId',
+  );
+  @override
+  late final GeneratedColumn<String> prescriptionId = GeneratedColumn<String>(
+    'prescription_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -11190,6 +11259,7 @@ class $SalesInvoicesTable extends SalesInvoices
     paidMicros,
     changeMicros,
     remainingMicros,
+    prescriptionId,
     notes,
     voidReason,
     createdAt,
@@ -11324,6 +11394,15 @@ class $SalesInvoicesTable extends SalesInvoices
         ),
       );
     }
+    if (data.containsKey('prescription_id')) {
+      context.handle(
+        _prescriptionIdMeta,
+        prescriptionId.isAcceptableOrUnknown(
+          data['prescription_id']!,
+          _prescriptionIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('notes')) {
       context.handle(
         _notesMeta,
@@ -11435,6 +11514,10 @@ class $SalesInvoicesTable extends SalesInvoices
         DriftSqlType.int,
         data['${effectivePrefix}remaining_micros'],
       )!,
+      prescriptionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prescription_id'],
+      ),
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -11493,6 +11576,9 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
 
   /// Remaining balance (credit customers) = total − paid, §4.14.
   final int remainingMicros;
+
+  /// Linked prescription when dispensed from RX (Phase 6 §4.14).
+  final String? prescriptionId;
   final String? notes;
   final String? voidReason;
   final int createdAt;
@@ -11515,6 +11601,7 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
     required this.paidMicros,
     required this.changeMicros,
     required this.remainingMicros,
+    this.prescriptionId,
     this.notes,
     this.voidReason,
     required this.createdAt,
@@ -11556,6 +11643,9 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
     map['paid_micros'] = Variable<int>(paidMicros);
     map['change_micros'] = Variable<int>(changeMicros);
     map['remaining_micros'] = Variable<int>(remainingMicros);
+    if (!nullToAbsent || prescriptionId != null) {
+      map['prescription_id'] = Variable<String>(prescriptionId);
+    }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
@@ -11590,6 +11680,9 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
       paidMicros: Value(paidMicros),
       changeMicros: Value(changeMicros),
       remainingMicros: Value(remainingMicros),
+      prescriptionId: prescriptionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(prescriptionId),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
@@ -11632,6 +11725,7 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
       paidMicros: serializer.fromJson<int>(json['paidMicros']),
       changeMicros: serializer.fromJson<int>(json['changeMicros']),
       remainingMicros: serializer.fromJson<int>(json['remainingMicros']),
+      prescriptionId: serializer.fromJson<String?>(json['prescriptionId']),
       notes: serializer.fromJson<String?>(json['notes']),
       voidReason: serializer.fromJson<String?>(json['voidReason']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
@@ -11663,6 +11757,7 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
       'paidMicros': serializer.toJson<int>(paidMicros),
       'changeMicros': serializer.toJson<int>(changeMicros),
       'remainingMicros': serializer.toJson<int>(remainingMicros),
+      'prescriptionId': serializer.toJson<String?>(prescriptionId),
       'notes': serializer.toJson<String?>(notes),
       'voidReason': serializer.toJson<String?>(voidReason),
       'createdAt': serializer.toJson<int>(createdAt),
@@ -11688,6 +11783,7 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
     int? paidMicros,
     int? changeMicros,
     int? remainingMicros,
+    Value<String?> prescriptionId = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     Value<String?> voidReason = const Value.absent(),
     int? createdAt,
@@ -11712,6 +11808,9 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
     paidMicros: paidMicros ?? this.paidMicros,
     changeMicros: changeMicros ?? this.changeMicros,
     remainingMicros: remainingMicros ?? this.remainingMicros,
+    prescriptionId: prescriptionId.present
+        ? prescriptionId.value
+        : this.prescriptionId,
     notes: notes.present ? notes.value : this.notes,
     voidReason: voidReason.present ? voidReason.value : this.voidReason,
     createdAt: createdAt ?? this.createdAt,
@@ -11766,6 +11865,9 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
       remainingMicros: data.remainingMicros.present
           ? data.remainingMicros.value
           : this.remainingMicros,
+      prescriptionId: data.prescriptionId.present
+          ? data.prescriptionId.value
+          : this.prescriptionId,
       notes: data.notes.present ? data.notes.value : this.notes,
       voidReason: data.voidReason.present
           ? data.voidReason.value
@@ -11795,6 +11897,7 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
           ..write('paidMicros: $paidMicros, ')
           ..write('changeMicros: $changeMicros, ')
           ..write('remainingMicros: $remainingMicros, ')
+          ..write('prescriptionId: $prescriptionId, ')
           ..write('notes: $notes, ')
           ..write('voidReason: $voidReason, ')
           ..write('createdAt: $createdAt, ')
@@ -11822,6 +11925,7 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
     paidMicros,
     changeMicros,
     remainingMicros,
+    prescriptionId,
     notes,
     voidReason,
     createdAt,
@@ -11848,6 +11952,7 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
           other.paidMicros == this.paidMicros &&
           other.changeMicros == this.changeMicros &&
           other.remainingMicros == this.remainingMicros &&
+          other.prescriptionId == this.prescriptionId &&
           other.notes == this.notes &&
           other.voidReason == this.voidReason &&
           other.createdAt == this.createdAt &&
@@ -11872,6 +11977,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
   final Value<int> paidMicros;
   final Value<int> changeMicros;
   final Value<int> remainingMicros;
+  final Value<String?> prescriptionId;
   final Value<String?> notes;
   final Value<String?> voidReason;
   final Value<int> createdAt;
@@ -11895,6 +12001,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
     this.paidMicros = const Value.absent(),
     this.changeMicros = const Value.absent(),
     this.remainingMicros = const Value.absent(),
+    this.prescriptionId = const Value.absent(),
     this.notes = const Value.absent(),
     this.voidReason = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -11919,6 +12026,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
     this.paidMicros = const Value.absent(),
     this.changeMicros = const Value.absent(),
     this.remainingMicros = const Value.absent(),
+    this.prescriptionId = const Value.absent(),
     this.notes = const Value.absent(),
     this.voidReason = const Value.absent(),
     required int createdAt,
@@ -11950,6 +12058,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
     Expression<int>? paidMicros,
     Expression<int>? changeMicros,
     Expression<int>? remainingMicros,
+    Expression<String>? prescriptionId,
     Expression<String>? notes,
     Expression<String>? voidReason,
     Expression<int>? createdAt,
@@ -11975,6 +12084,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
       if (paidMicros != null) 'paid_micros': paidMicros,
       if (changeMicros != null) 'change_micros': changeMicros,
       if (remainingMicros != null) 'remaining_micros': remainingMicros,
+      if (prescriptionId != null) 'prescription_id': prescriptionId,
       if (notes != null) 'notes': notes,
       if (voidReason != null) 'void_reason': voidReason,
       if (createdAt != null) 'created_at': createdAt,
@@ -12001,6 +12111,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
     Value<int>? paidMicros,
     Value<int>? changeMicros,
     Value<int>? remainingMicros,
+    Value<String?>? prescriptionId,
     Value<String?>? notes,
     Value<String?>? voidReason,
     Value<int>? createdAt,
@@ -12025,6 +12136,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
       paidMicros: paidMicros ?? this.paidMicros,
       changeMicros: changeMicros ?? this.changeMicros,
       remainingMicros: remainingMicros ?? this.remainingMicros,
+      prescriptionId: prescriptionId ?? this.prescriptionId,
       notes: notes ?? this.notes,
       voidReason: voidReason ?? this.voidReason,
       createdAt: createdAt ?? this.createdAt,
@@ -12093,6 +12205,9 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
     if (remainingMicros.present) {
       map['remaining_micros'] = Variable<int>(remainingMicros.value);
     }
+    if (prescriptionId.present) {
+      map['prescription_id'] = Variable<String>(prescriptionId.value);
+    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
@@ -12131,6 +12246,7 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
           ..write('paidMicros: $paidMicros, ')
           ..write('changeMicros: $changeMicros, ')
           ..write('remainingMicros: $remainingMicros, ')
+          ..write('prescriptionId: $prescriptionId, ')
           ..write('notes: $notes, ')
           ..write('voidReason: $voidReason, ')
           ..write('createdAt: $createdAt, ')
@@ -12204,6 +12320,17 @@ class $SalesInvoiceItemsTable extends SalesInvoiceItems
   late final GeneratedColumn<String> originalInvoiceItemId =
       GeneratedColumn<String>(
         'original_invoice_item_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _prescriptionItemIdMeta =
+      const VerificationMeta('prescriptionItemId');
+  @override
+  late final GeneratedColumn<String> prescriptionItemId =
+      GeneratedColumn<String>(
+        'prescription_item_id',
         aliasedName,
         true,
         type: DriftSqlType.string,
@@ -12374,6 +12501,7 @@ class $SalesInvoiceItemsTable extends SalesInvoiceItems
     batchId,
     unitTypeId,
     originalInvoiceItemId,
+    prescriptionItemId,
     quantityBaseSigned,
     unitPriceMicros,
     vatRateBasisPoints,
@@ -12447,6 +12575,15 @@ class $SalesInvoiceItemsTable extends SalesInvoiceItems
         originalInvoiceItemId.isAcceptableOrUnknown(
           data['original_invoice_item_id']!,
           _originalInvoiceItemIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('prescription_item_id')) {
+      context.handle(
+        _prescriptionItemIdMeta,
+        prescriptionItemId.isAcceptableOrUnknown(
+          data['prescription_item_id']!,
+          _prescriptionItemIdMeta,
         ),
       );
     }
@@ -12606,6 +12743,10 @@ class $SalesInvoiceItemsTable extends SalesInvoiceItems
         DriftSqlType.string,
         data['${effectivePrefix}original_invoice_item_id'],
       ),
+      prescriptionItemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prescription_item_id'],
+      ),
       quantityBaseSigned: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}quantity_base_signed'],
@@ -12685,6 +12826,9 @@ class SalesInvoiceItemRow extends DataClass
 
   /// For return lines, the original sold line being reversed.
   final String? originalInvoiceItemId;
+
+  /// Linked prescription item when dispensed from RX (Phase 6 §4.15).
+  final String? prescriptionItemId;
   final int quantityBaseSigned;
   final int unitPriceMicros;
   final int vatRateBasisPoints;
@@ -12710,6 +12854,7 @@ class SalesInvoiceItemRow extends DataClass
     required this.batchId,
     required this.unitTypeId,
     this.originalInvoiceItemId,
+    this.prescriptionItemId,
     required this.quantityBaseSigned,
     required this.unitPriceMicros,
     required this.vatRateBasisPoints,
@@ -12735,6 +12880,9 @@ class SalesInvoiceItemRow extends DataClass
     map['unit_type_id'] = Variable<String>(unitTypeId);
     if (!nullToAbsent || originalInvoiceItemId != null) {
       map['original_invoice_item_id'] = Variable<String>(originalInvoiceItemId);
+    }
+    if (!nullToAbsent || prescriptionItemId != null) {
+      map['prescription_item_id'] = Variable<String>(prescriptionItemId);
     }
     map['quantity_base_signed'] = Variable<int>(quantityBaseSigned);
     map['unit_price_micros'] = Variable<int>(unitPriceMicros);
@@ -12765,6 +12913,9 @@ class SalesInvoiceItemRow extends DataClass
       originalInvoiceItemId: originalInvoiceItemId == null && nullToAbsent
           ? const Value.absent()
           : Value(originalInvoiceItemId),
+      prescriptionItemId: prescriptionItemId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(prescriptionItemId),
       quantityBaseSigned: Value(quantityBaseSigned),
       unitPriceMicros: Value(unitPriceMicros),
       vatRateBasisPoints: Value(vatRateBasisPoints),
@@ -12798,6 +12949,9 @@ class SalesInvoiceItemRow extends DataClass
       originalInvoiceItemId: serializer.fromJson<String?>(
         json['originalInvoiceItemId'],
       ),
+      prescriptionItemId: serializer.fromJson<String?>(
+        json['prescriptionItemId'],
+      ),
       quantityBaseSigned: serializer.fromJson<int>(json['quantityBaseSigned']),
       unitPriceMicros: serializer.fromJson<int>(json['unitPriceMicros']),
       vatRateBasisPoints: serializer.fromJson<int>(json['vatRateBasisPoints']),
@@ -12828,6 +12982,7 @@ class SalesInvoiceItemRow extends DataClass
       'originalInvoiceItemId': serializer.toJson<String?>(
         originalInvoiceItemId,
       ),
+      'prescriptionItemId': serializer.toJson<String?>(prescriptionItemId),
       'quantityBaseSigned': serializer.toJson<int>(quantityBaseSigned),
       'unitPriceMicros': serializer.toJson<int>(unitPriceMicros),
       'vatRateBasisPoints': serializer.toJson<int>(vatRateBasisPoints),
@@ -12854,6 +13009,7 @@ class SalesInvoiceItemRow extends DataClass
     String? batchId,
     String? unitTypeId,
     Value<String?> originalInvoiceItemId = const Value.absent(),
+    Value<String?> prescriptionItemId = const Value.absent(),
     int? quantityBaseSigned,
     int? unitPriceMicros,
     int? vatRateBasisPoints,
@@ -12877,6 +13033,9 @@ class SalesInvoiceItemRow extends DataClass
     originalInvoiceItemId: originalInvoiceItemId.present
         ? originalInvoiceItemId.value
         : this.originalInvoiceItemId,
+    prescriptionItemId: prescriptionItemId.present
+        ? prescriptionItemId.value
+        : this.prescriptionItemId,
     quantityBaseSigned: quantityBaseSigned ?? this.quantityBaseSigned,
     unitPriceMicros: unitPriceMicros ?? this.unitPriceMicros,
     vatRateBasisPoints: vatRateBasisPoints ?? this.vatRateBasisPoints,
@@ -12905,6 +13064,9 @@ class SalesInvoiceItemRow extends DataClass
       originalInvoiceItemId: data.originalInvoiceItemId.present
           ? data.originalInvoiceItemId.value
           : this.originalInvoiceItemId,
+      prescriptionItemId: data.prescriptionItemId.present
+          ? data.prescriptionItemId.value
+          : this.prescriptionItemId,
       quantityBaseSigned: data.quantityBaseSigned.present
           ? data.quantityBaseSigned.value
           : this.quantityBaseSigned,
@@ -12953,6 +13115,7 @@ class SalesInvoiceItemRow extends DataClass
           ..write('batchId: $batchId, ')
           ..write('unitTypeId: $unitTypeId, ')
           ..write('originalInvoiceItemId: $originalInvoiceItemId, ')
+          ..write('prescriptionItemId: $prescriptionItemId, ')
           ..write('quantityBaseSigned: $quantityBaseSigned, ')
           ..write('unitPriceMicros: $unitPriceMicros, ')
           ..write('vatRateBasisPoints: $vatRateBasisPoints, ')
@@ -12972,13 +13135,14 @@ class SalesInvoiceItemRow extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     invoiceId,
     itemId,
     batchId,
     unitTypeId,
     originalInvoiceItemId,
+    prescriptionItemId,
     quantityBaseSigned,
     unitPriceMicros,
     vatRateBasisPoints,
@@ -12993,7 +13157,7 @@ class SalesInvoiceItemRow extends DataClass
     returnQuantityBase,
     notes,
     createdAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -13004,6 +13168,7 @@ class SalesInvoiceItemRow extends DataClass
           other.batchId == this.batchId &&
           other.unitTypeId == this.unitTypeId &&
           other.originalInvoiceItemId == this.originalInvoiceItemId &&
+          other.prescriptionItemId == this.prescriptionItemId &&
           other.quantityBaseSigned == this.quantityBaseSigned &&
           other.unitPriceMicros == this.unitPriceMicros &&
           other.vatRateBasisPoints == this.vatRateBasisPoints &&
@@ -13027,6 +13192,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
   final Value<String> batchId;
   final Value<String> unitTypeId;
   final Value<String?> originalInvoiceItemId;
+  final Value<String?> prescriptionItemId;
   final Value<int> quantityBaseSigned;
   final Value<int> unitPriceMicros;
   final Value<int> vatRateBasisPoints;
@@ -13049,6 +13215,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
     this.batchId = const Value.absent(),
     this.unitTypeId = const Value.absent(),
     this.originalInvoiceItemId = const Value.absent(),
+    this.prescriptionItemId = const Value.absent(),
     this.quantityBaseSigned = const Value.absent(),
     this.unitPriceMicros = const Value.absent(),
     this.vatRateBasisPoints = const Value.absent(),
@@ -13072,6 +13239,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
     required String batchId,
     required String unitTypeId,
     this.originalInvoiceItemId = const Value.absent(),
+    this.prescriptionItemId = const Value.absent(),
     required int quantityBaseSigned,
     required int unitPriceMicros,
     this.vatRateBasisPoints = const Value.absent(),
@@ -13102,6 +13270,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
     Expression<String>? batchId,
     Expression<String>? unitTypeId,
     Expression<String>? originalInvoiceItemId,
+    Expression<String>? prescriptionItemId,
     Expression<int>? quantityBaseSigned,
     Expression<int>? unitPriceMicros,
     Expression<int>? vatRateBasisPoints,
@@ -13126,6 +13295,8 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
       if (unitTypeId != null) 'unit_type_id': unitTypeId,
       if (originalInvoiceItemId != null)
         'original_invoice_item_id': originalInvoiceItemId,
+      if (prescriptionItemId != null)
+        'prescription_item_id': prescriptionItemId,
       if (quantityBaseSigned != null)
         'quantity_base_signed': quantityBaseSigned,
       if (unitPriceMicros != null) 'unit_price_micros': unitPriceMicros,
@@ -13157,6 +13328,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
     Value<String>? batchId,
     Value<String>? unitTypeId,
     Value<String?>? originalInvoiceItemId,
+    Value<String?>? prescriptionItemId,
     Value<int>? quantityBaseSigned,
     Value<int>? unitPriceMicros,
     Value<int>? vatRateBasisPoints,
@@ -13181,6 +13353,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
       unitTypeId: unitTypeId ?? this.unitTypeId,
       originalInvoiceItemId:
           originalInvoiceItemId ?? this.originalInvoiceItemId,
+      prescriptionItemId: prescriptionItemId ?? this.prescriptionItemId,
       quantityBaseSigned: quantityBaseSigned ?? this.quantityBaseSigned,
       unitPriceMicros: unitPriceMicros ?? this.unitPriceMicros,
       vatRateBasisPoints: vatRateBasisPoints ?? this.vatRateBasisPoints,
@@ -13222,6 +13395,9 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
       map['original_invoice_item_id'] = Variable<String>(
         originalInvoiceItemId.value,
       );
+    }
+    if (prescriptionItemId.present) {
+      map['prescription_item_id'] = Variable<String>(prescriptionItemId.value);
     }
     if (quantityBaseSigned.present) {
       map['quantity_base_signed'] = Variable<int>(quantityBaseSigned.value);
@@ -13282,6 +13458,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
           ..write('batchId: $batchId, ')
           ..write('unitTypeId: $unitTypeId, ')
           ..write('originalInvoiceItemId: $originalInvoiceItemId, ')
+          ..write('prescriptionItemId: $prescriptionItemId, ')
           ..write('quantityBaseSigned: $quantityBaseSigned, ')
           ..write('unitPriceMicros: $unitPriceMicros, ')
           ..write('vatRateBasisPoints: $vatRateBasisPoints, ')
@@ -30195,6 +30372,7 @@ typedef $$PrescriptionItemsTableCreateCompanionBuilder =
       Value<int?> durationDays,
       Value<String?> notes,
       Value<bool> isDispensed,
+      Value<int> dispensedQuantityBase,
       required int createdAt,
       Value<int> rowid,
     });
@@ -30209,6 +30387,7 @@ typedef $$PrescriptionItemsTableUpdateCompanionBuilder =
       Value<int?> durationDays,
       Value<String?> notes,
       Value<bool> isDispensed,
+      Value<int> dispensedQuantityBase,
       Value<int> createdAt,
       Value<int> rowid,
     });
@@ -30264,6 +30443,11 @@ class $$PrescriptionItemsTableFilterComposer
 
   ColumnFilters<bool> get isDispensed => $composableBuilder(
     column: $table.isDispensed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dispensedQuantityBase => $composableBuilder(
+    column: $table.dispensedQuantityBase,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30327,6 +30511,11 @@ class $$PrescriptionItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get dispensedQuantityBase => $composableBuilder(
+    column: $table.dispensedQuantityBase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -30374,6 +30563,11 @@ class $$PrescriptionItemsTableAnnotationComposer
 
   GeneratedColumn<bool> get isDispensed => $composableBuilder(
     column: $table.isDispensed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get dispensedQuantityBase => $composableBuilder(
+    column: $table.dispensedQuantityBase,
     builder: (column) => column,
   );
 
@@ -30430,6 +30624,7 @@ class $$PrescriptionItemsTableTableManager
                 Value<int?> durationDays = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<bool> isDispensed = const Value.absent(),
+                Value<int> dispensedQuantityBase = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PrescriptionItemsCompanion(
@@ -30442,6 +30637,7 @@ class $$PrescriptionItemsTableTableManager
                 durationDays: durationDays,
                 notes: notes,
                 isDispensed: isDispensed,
+                dispensedQuantityBase: dispensedQuantityBase,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -30456,6 +30652,7 @@ class $$PrescriptionItemsTableTableManager
                 Value<int?> durationDays = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<bool> isDispensed = const Value.absent(),
+                Value<int> dispensedQuantityBase = const Value.absent(),
                 required int createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => PrescriptionItemsCompanion.insert(
@@ -30468,6 +30665,7 @@ class $$PrescriptionItemsTableTableManager
                 durationDays: durationDays,
                 notes: notes,
                 isDispensed: isDispensed,
+                dispensedQuantityBase: dispensedQuantityBase,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -30519,6 +30717,7 @@ typedef $$SalesInvoicesTableCreateCompanionBuilder =
       Value<int> paidMicros,
       Value<int> changeMicros,
       Value<int> remainingMicros,
+      Value<String?> prescriptionId,
       Value<String?> notes,
       Value<String?> voidReason,
       required int createdAt,
@@ -30544,6 +30743,7 @@ typedef $$SalesInvoicesTableUpdateCompanionBuilder =
       Value<int> paidMicros,
       Value<int> changeMicros,
       Value<int> remainingMicros,
+      Value<String?> prescriptionId,
       Value<String?> notes,
       Value<String?> voidReason,
       Value<int> createdAt,
@@ -30645,6 +30845,11 @@ class $$SalesInvoicesTableFilterComposer
 
   ColumnFilters<int> get remainingMicros => $composableBuilder(
     column: $table.remainingMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prescriptionId => $composableBuilder(
+    column: $table.prescriptionId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30763,6 +30968,11 @@ class $$SalesInvoicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get prescriptionId => $composableBuilder(
+    column: $table.prescriptionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
@@ -30877,6 +31087,11 @@ class $$SalesInvoicesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get prescriptionId => $composableBuilder(
+    column: $table.prescriptionId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
@@ -30940,6 +31155,7 @@ class $$SalesInvoicesTableTableManager
                 Value<int> paidMicros = const Value.absent(),
                 Value<int> changeMicros = const Value.absent(),
                 Value<int> remainingMicros = const Value.absent(),
+                Value<String?> prescriptionId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> voidReason = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
@@ -30963,6 +31179,7 @@ class $$SalesInvoicesTableTableManager
                 paidMicros: paidMicros,
                 changeMicros: changeMicros,
                 remainingMicros: remainingMicros,
+                prescriptionId: prescriptionId,
                 notes: notes,
                 voidReason: voidReason,
                 createdAt: createdAt,
@@ -30988,6 +31205,7 @@ class $$SalesInvoicesTableTableManager
                 Value<int> paidMicros = const Value.absent(),
                 Value<int> changeMicros = const Value.absent(),
                 Value<int> remainingMicros = const Value.absent(),
+                Value<String?> prescriptionId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> voidReason = const Value.absent(),
                 required int createdAt,
@@ -31011,6 +31229,7 @@ class $$SalesInvoicesTableTableManager
                 paidMicros: paidMicros,
                 changeMicros: changeMicros,
                 remainingMicros: remainingMicros,
+                prescriptionId: prescriptionId,
                 notes: notes,
                 voidReason: voidReason,
                 createdAt: createdAt,
@@ -31050,6 +31269,7 @@ typedef $$SalesInvoiceItemsTableCreateCompanionBuilder =
       required String batchId,
       required String unitTypeId,
       Value<String?> originalInvoiceItemId,
+      Value<String?> prescriptionItemId,
       required int quantityBaseSigned,
       required int unitPriceMicros,
       Value<int> vatRateBasisPoints,
@@ -31074,6 +31294,7 @@ typedef $$SalesInvoiceItemsTableUpdateCompanionBuilder =
       Value<String> batchId,
       Value<String> unitTypeId,
       Value<String?> originalInvoiceItemId,
+      Value<String?> prescriptionItemId,
       Value<int> quantityBaseSigned,
       Value<int> unitPriceMicros,
       Value<int> vatRateBasisPoints,
@@ -31127,6 +31348,11 @@ class $$SalesInvoiceItemsTableFilterComposer
 
   ColumnFilters<String> get originalInvoiceItemId => $composableBuilder(
     column: $table.originalInvoiceItemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get prescriptionItemId => $composableBuilder(
+    column: $table.prescriptionItemId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -31240,6 +31466,11 @@ class $$SalesInvoiceItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get prescriptionItemId => $composableBuilder(
+    column: $table.prescriptionItemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get quantityBaseSigned => $composableBuilder(
     column: $table.quantityBaseSigned,
     builder: (column) => ColumnOrderings(column),
@@ -31339,6 +31570,11 @@ class $$SalesInvoiceItemsTableAnnotationComposer
 
   GeneratedColumn<String> get originalInvoiceItemId => $composableBuilder(
     column: $table.originalInvoiceItemId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get prescriptionItemId => $composableBuilder(
+    column: $table.prescriptionItemId,
     builder: (column) => column,
   );
 
@@ -31453,6 +31689,7 @@ class $$SalesInvoiceItemsTableTableManager
                 Value<String> batchId = const Value.absent(),
                 Value<String> unitTypeId = const Value.absent(),
                 Value<String?> originalInvoiceItemId = const Value.absent(),
+                Value<String?> prescriptionItemId = const Value.absent(),
                 Value<int> quantityBaseSigned = const Value.absent(),
                 Value<int> unitPriceMicros = const Value.absent(),
                 Value<int> vatRateBasisPoints = const Value.absent(),
@@ -31475,6 +31712,7 @@ class $$SalesInvoiceItemsTableTableManager
                 batchId: batchId,
                 unitTypeId: unitTypeId,
                 originalInvoiceItemId: originalInvoiceItemId,
+                prescriptionItemId: prescriptionItemId,
                 quantityBaseSigned: quantityBaseSigned,
                 unitPriceMicros: unitPriceMicros,
                 vatRateBasisPoints: vatRateBasisPoints,
@@ -31499,6 +31737,7 @@ class $$SalesInvoiceItemsTableTableManager
                 required String batchId,
                 required String unitTypeId,
                 Value<String?> originalInvoiceItemId = const Value.absent(),
+                Value<String?> prescriptionItemId = const Value.absent(),
                 required int quantityBaseSigned,
                 required int unitPriceMicros,
                 Value<int> vatRateBasisPoints = const Value.absent(),
@@ -31521,6 +31760,7 @@ class $$SalesInvoiceItemsTableTableManager
                 batchId: batchId,
                 unitTypeId: unitTypeId,
                 originalInvoiceItemId: originalInvoiceItemId,
+                prescriptionItemId: prescriptionItemId,
                 quantityBaseSigned: quantityBaseSigned,
                 unitPriceMicros: unitPriceMicros,
                 vatRateBasisPoints: vatRateBasisPoints,

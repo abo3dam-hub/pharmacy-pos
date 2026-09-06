@@ -16,7 +16,7 @@ class _V2Database extends AppDatabase {
   _V2Database(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -40,6 +40,16 @@ class _V2Database extends AppDatabase {
                 updatedAt: now,
               ),
             );
+          }
+          if (from < 3) {
+            await m.createTable(backups);
+          }
+          if (from < 4) {
+            await m.addColumn(salesInvoices, salesInvoices.prescriptionId);
+            await m.addColumn(
+                salesInvoiceItems, salesInvoiceItems.prescriptionItemId);
+            await m.addColumn(
+                prescriptionItems, prescriptionItems.dispensedQuantityBase);
           }
         },
         beforeOpen: (details) async {
@@ -98,7 +108,7 @@ void main() {
       final userVersion = await reopened
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(userVersion.data.values.first, 2, reason: 'schemaVersion is 2');
+      expect(userVersion.data.values.first, 3, reason: 'schemaVersion is 3');
       // Verify partial-sale columns exist on items.
       expect(item.partialSaleEnabled, false);
       expect(item.sellablePartUnitId, isNull);
@@ -119,7 +129,7 @@ void main() {
       // A real v1 database with data — as if it was created before Phase 6.
       final db = AppDatabase.fromFilePath(path);
       final itemId = await insertItem(db);
-      expect(db.schemaVersion, 2);
+      expect(db.schemaVersion, 3);
 
       // Simulate a v1 database: drop Phase 6 additions and set user_version=1.
       final raw = sqlite3.sqlite3.open(path);
@@ -129,17 +139,21 @@ void main() {
       raw.execute('ALTER TABLE items DROP COLUMN parts_per_full_product');
       raw.execute('ALTER TABLE items DROP COLUMN sellable_part_base_quantity');
       raw.execute('ALTER TABLE items DROP COLUMN partial_sale_markup_basis_points');
+      raw.execute('ALTER TABLE sales_invoices DROP COLUMN prescription_id');
+      raw.execute('ALTER TABLE sales_invoice_items DROP COLUMN prescription_item_id');
+      raw.execute('ALTER TABLE prescription_items DROP COLUMN dispensed_quantity_base');
       raw.execute('PRAGMA user_version = 1');
       raw.dispose();
       await db.close();
 
-      // Reopen under the upgraded (v2) schema: onUpgrade(1 → 2) creates
-      // partial-sale columns + app_settings in place and keeps existing rows.
+      // Reopen under the upgraded (v3) schema: onUpgrade(1 → 3) creates
+      // partial-sale columns + app_settings + prescription linkage in place
+      // and keeps existing rows.
       final upgraded = _V2Database(NativeDatabase(File(path)));
       final userVersion = await upgraded
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(userVersion.data.values.first, 2);
+      expect(userVersion.data.values.first, 3);
       final settings = await upgraded.select(upgraded.appSettings).get();
       expect(settings, isNotEmpty);
       final item = await (upgraded.select(upgraded.items)

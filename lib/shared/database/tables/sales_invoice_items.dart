@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'batches.dart';
 import 'items.dart';
+import 'prescription_items.dart';
 import 'sales_invoices.dart';
 import 'units.dart';
 
@@ -29,6 +30,10 @@ class SalesInvoiceItems extends Table {
   /// For return lines, the original sold line being reversed.
   TextColumn get originalInvoiceItemId =>
       text().nullable().references(SalesInvoiceItems, #id)();
+
+  /// Linked prescription item when dispensed from RX (Phase 6 §4.15).
+  TextColumn get prescriptionItemId =>
+      text().nullable().references(PrescriptionItems, #id)();
 
   IntColumn get quantityBaseSigned => integer()();
   IntColumn get unitPriceMicros => integer()();

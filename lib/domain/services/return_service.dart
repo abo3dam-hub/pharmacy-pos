@@ -184,6 +184,33 @@ class ReturnService {
         },
       );
 
+      // Reverse prescription dispensing if the returned line was from a
+      // prescription (Phase 6).
+      if (originalLine.prescriptionItemId != null) {
+        final pi = await (db.select(db.prescriptionItems)
+              ..where((p) =>
+                  p.id.equals(originalLine.prescriptionItemId!)))
+            .getSingleOrNull();
+        if (pi != null) {
+          final newDispensed =
+              (pi.dispensedQuantityBase - request.quantityBase)
+                  .clamp(0, pi.quantityBase);
+          final fullyDispensed = newDispensed >= pi.quantityBase;
+          await (db.update(db.prescriptionItems)
+                ..where((p) =>
+                    p.id.equals(originalLine.prescriptionItemId!)))
+              .write(
+            PrescriptionItemsCompanion(
+              dispensedQuantityBase: Value(newDispensed),
+              isDispensed: Value(fullyDispensed),
+            ),
+          );
+          // Recheck prescription status.
+          await _recheckPrescriptionStatus(
+              db, pi.prescriptionId);
+        }
+      }
+
       final saved = await (db.select(db.returns)
             ..where((r) => r.id.equals(returnId)))
           .getSingle();
@@ -192,5 +219,37 @@ class ReturnService {
           .getSingle();
       return SaleReturnOutcome(returnOrder: saved, returnItem: line);
     });
+  }
+
+  /// Recheck and update prescription status after a return.
+  Future<void> _recheckPrescriptionStatus(
+      AppDatabase db, String prescriptionId) async {
+    final items = await (db.select(db.prescriptionItems)
+          ..where((p) => p.prescriptionId.equals(prescriptionId)))
+        .get();
+    if (items.isEmpty) return;
+
+    final allDispensed =
+        items.every((i) => i.dispensedQuantityBase >= i.quantityBase);
+    final anyDispensed = items.any((i) => i.dispensedQuantityBase > 0);
+
+    PrescriptionStatus newStatus;
+    if (allDispensed) {
+      newStatus = PrescriptionStatus.dispensed;
+    } else if (anyDispensed) {
+      newStatus = PrescriptionStatus.partially_dispensed;
+    } else {
+      newStatus = PrescriptionStatus.active;
+    }
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await (db.update(db.prescriptions)
+          ..where((p) => p.id.equals(prescriptionId)))
+        .write(
+      PrescriptionsCompanion(
+        status: Value(newStatus),
+        updatedAt: Value(now),
+      ),
+    );
   }
 }

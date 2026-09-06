@@ -19,6 +19,8 @@ class SaleLineRequest {
     required this.unitTypeId,
     this.vatRateBasisPoints = 0,
     this.discountBasisPoints = 0,
+    this.prescriptionItemId,
+    this.partialSaleUnitPriceMicros,
   });
 
   final String itemId;
@@ -29,6 +31,14 @@ class SaleLineRequest {
   final String unitTypeId;
   final int vatRateBasisPoints;
   final int discountBasisPoints;
+
+  /// When dispensing from a prescription, the linked prescription item (Phase 6).
+  final String? prescriptionItemId;
+
+  /// When selling a partial-sale item, the pre-calculated unit price per
+  /// base-unit from [PartialPriceCalculator]. When null, [unitPriceMicros]
+  /// is used as-is (normal full-product sale).
+  final int? partialSaleUnitPriceMicros;
 }
 
 class SaleRequest {
@@ -41,6 +51,7 @@ class SaleRequest {
     this.paidMicros = 0,
     this.notes,
     this.saleStatus = SaleStatus.completed,
+    this.prescriptionId,
   });
 
   final String invoiceNumber;
@@ -51,6 +62,9 @@ class SaleRequest {
   final int paidMicros;
   final String? notes;
   final SaleStatus saleStatus;
+
+  /// When dispensing from a prescription, the linked prescription (Phase 6).
+  final String? prescriptionId;
 }
 
 class SaleOutcome {
@@ -69,9 +83,22 @@ class SaleOutcome {
 /// deduction, stock ledger, invoice header + batch-linked lines, caches, audit.
 ///
 /// Each sold line is linked to the exact batch it was consumed from (FEFO).
+///
+/// Partial-sale support (Phase 6): when a line provides
+/// [SaleLineRequest.partialSaleUnitPriceMicros], the caller has pre-computed
+/// the unit price via [PartialPriceCalculator]. The sale service passes it
+/// through to the line item and inventory at the pre-computed rate.
+///
+/// Prescription dispensing (Phase 6): when `prescriptionId` is provided on the
+/// request and/or `prescriptionItemId` on a line, the sale links back to the
+/// prescription and updates `dispensedQuantityBase` on the prescription item.
+/// The prescription status is automatically updated to `partially_dispensed`
+/// or `dispensed` as appropriate.
 class SaleService {
-  SaleService({AuditService? audit, PermissionService? permissions})
-      : _audit = audit ?? const AuditService(),
+  SaleService({
+    AuditService? audit,
+    PermissionService? permissions,
+  })  : _audit = audit ?? const AuditService(),
         _permissions = permissions ?? const PermissionService();
 
   final AuditService _audit;
@@ -88,6 +115,40 @@ class SaleService {
     if (request.saleStatus == SaleStatus.completed) {
       await _permissions.requireUserPermission(
           db, request.userId, Perm.salesCreate);
+    }
+
+    // Validate prescription linkage (Phase 6).
+    if (request.prescriptionId != null) {
+      final rx = await (db.select(db.prescriptions)
+            ..where((p) => p.id.equals(request.prescriptionId!)))
+          .getSingleOrNull();
+      if (rx == null) {
+        throw NotFoundException('الوصفة الطبية غير موجودة: ${request.prescriptionId}');
+      }
+      if (rx.status != PrescriptionStatus.active &&
+          rx.status != PrescriptionStatus.partially_dispensed) {
+        throw ValidationException(
+            'الوصفة الطبية ليست نشطة (${rx.status.name})');
+      }
+      // Lines with prescriptionItemId must belong to this prescription.
+      for (final line in request.lines) {
+        if (line.prescriptionItemId != null) {
+          final pi = await (db.select(db.prescriptionItems)
+                ..where((p) => p.id.equals(line.prescriptionItemId!)))
+              .getSingleOrNull();
+          if (pi == null || pi.prescriptionId != request.prescriptionId) {
+            throw ValidationException(
+                'عنصر الوصفة ${line.prescriptionItemId} لا ينتمي للوصفة ${request.prescriptionId}');
+          }
+          // Check dispensing capacity.
+          final remaining = pi.quantityBase - pi.dispensedQuantityBase;
+          if (line.quantityBase > remaining) {
+            throw ValidationException(
+                'الكمية المطلوبة (${line.quantityBase}) أكبر من المتبقي '
+                '($remaining) على عنصر الوصفة');
+          }
+        }
+      }
     }
 
     return db.transaction(() async {
@@ -109,11 +170,16 @@ class SaleService {
               invoiceType: InvoiceType.sale,
               saleStatus: request.saleStatus,
               paymentMethod: request.paymentMethod,
-              customerId:
-                  request.customerId != null ? Value(request.customerId!) : const Value(null),
+              customerId: request.customerId != null
+                  ? Value(request.customerId!)
+                  : const Value(null),
               userId: request.userId,
               paidMicros: Value(request.paidMicros),
-              notes: request.notes != null ? Value(request.notes!) : const Value(null),
+              notes:
+                  request.notes != null ? Value(request.notes!) : const Value(null),
+              prescriptionId: request.prescriptionId != null
+                  ? Value(request.prescriptionId!)
+                  : const Value(null),
               createdAt: now,
               updatedAt: now,
             ),
@@ -125,7 +191,12 @@ class SaleService {
             atMillis: now);
 
         for (final slot in allocations) {
-          final slotGross = line.unitPriceMicros * slot.quantityBase;
+          // Use pre-computed partial-sale price when available, otherwise
+          // the standard unit price from the request.
+          final effectiveUnitPrice =
+              line.partialSaleUnitPriceMicros ?? line.unitPriceMicros;
+
+          final slotGross = effectiveUnitPrice * slot.quantityBase;
           final slotDiscount = Money.fromUnits(slotGross)
               .timesRatio(line.discountBasisPoints, 10000)
               .units;
@@ -146,7 +217,7 @@ class SaleService {
                   batchId: slot.batch.id,
                   unitTypeId: line.unitTypeId,
                   quantityBaseSigned: slot.quantityBase,
-                  unitPriceMicros: line.unitPriceMicros,
+                  unitPriceMicros: effectiveUnitPrice,
                   vatRateBasisPoints: Value(line.vatRateBasisPoints),
                   lineDiscountBasisPoints: Value(line.discountBasisPoints),
                   lineSubtotalMicros: Value(slotGross),
@@ -155,6 +226,9 @@ class SaleService {
                   unitCostMicros: Value(slot.batch.unitCostMicros),
                   costTotalMicros: Value(slotCost),
                   profitMicros: Value(slotNet - slotCost),
+                  prescriptionItemId: line.prescriptionItemId != null
+                      ? Value(line.prescriptionItemId!)
+                      : const Value(null),
                   createdAt: now,
                 ),
               );
@@ -199,6 +273,29 @@ class SaleService {
         ),
       );
 
+      // Update prescription item dispensed quantities (Phase 6).
+      if (request.prescriptionId != null) {
+        for (final line in request.lines) {
+          if (line.prescriptionItemId != null) {
+            final pi = await (db.select(db.prescriptionItems)
+                  ..where((p) => p.id.equals(line.prescriptionItemId!)))
+                .getSingle();
+            final newDispensed = pi.dispensedQuantityBase + line.quantityBase;
+            final fullyDispensed = newDispensed >= pi.quantityBase;
+            await (db.update(db.prescriptionItems)
+                  ..where((p) => p.id.equals(line.prescriptionItemId!)))
+                .write(
+              PrescriptionItemsCompanion(
+                dispensedQuantityBase: Value(newDispensed),
+                isDispensed: Value(fullyDispensed),
+              ),
+            );
+          }
+        }
+        // Update prescription header status.
+        await _updatePrescriptionStatus(db, request.prescriptionId!);
+      }
+
       if (request.saleStatus == SaleStatus.completed) {
         await _audit.write(
           db,
@@ -224,10 +321,44 @@ class SaleService {
     });
   }
 
+  /// Recalculates and writes the prescription header status based on its
+  /// items' dispensed quantities.
+  Future<void> _updatePrescriptionStatus(
+      AppDatabase db, String prescriptionId) async {
+    final items = await (db.select(db.prescriptionItems)
+          ..where((p) => p.prescriptionId.equals(prescriptionId)))
+        .get();
+    if (items.isEmpty) return;
+
+    final allDispensed = items.every((i) => i.dispensedQuantityBase >= i.quantityBase);
+    final anyDispensed =
+        items.any((i) => i.dispensedQuantityBase > 0);
+
+    PrescriptionStatus newStatus;
+    if (allDispensed) {
+      newStatus = PrescriptionStatus.dispensed;
+    } else if (anyDispensed) {
+      newStatus = PrescriptionStatus.partially_dispensed;
+    } else {
+      return; // No change — still active.
+    }
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await (db.update(db.prescriptions)
+          ..where((p) => p.id.equals(prescriptionId)))
+        .write(
+      PrescriptionsCompanion(
+        status: Value(newStatus),
+        updatedAt: Value(now),
+      ),
+    );
+  }
+
   static int _sumVat(List<SaleLineRequest> lines) {
     var vat = 0;
     for (final line in lines) {
-      final gross = line.unitPriceMicros * line.quantityBase;
+      final effectivePrice = line.partialSaleUnitPriceMicros ?? line.unitPriceMicros;
+      final gross = effectivePrice * line.quantityBase;
       final discount = Money.fromUnits(gross)
           .timesRatio(line.discountBasisPoints, 10000)
           .units;

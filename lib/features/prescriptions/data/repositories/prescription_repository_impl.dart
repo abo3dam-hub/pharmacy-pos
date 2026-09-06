@@ -68,6 +68,7 @@ class PrescriptionRepositoryImpl implements PrescriptionRepository {
           durationDays: line.durationDays,
           notes: _nullable(line.notes),
           isDispensed: false,
+          dispensedQuantityBase: 0,
           createdAt: now,
         ),
       );
@@ -139,6 +140,7 @@ class PrescriptionRepositoryImpl implements PrescriptionRepository {
       durationDays: row.durationDays,
       notes: row.notes,
       isDispensed: false,
+      dispensedQuantityBase: 0,
       createdAt: now,
     );
   }

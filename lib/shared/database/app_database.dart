@@ -92,7 +92,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -132,6 +132,13 @@ class AppDatabase extends _$AppDatabase {
     }
     if (from < 3) {
       await m.createTable(backups);
+    }
+    if (from < 4) {
+      // Phase 6 cross-phase integration: prescription→invoice linkage.
+      await m.addColumn(salesInvoices, salesInvoices.prescriptionId);
+      await m.addColumn(salesInvoiceItems, salesInvoiceItems.prescriptionItemId);
+      await m.addColumn(
+          prescriptionItems, prescriptionItems.dispensedQuantityBase);
     }
   }
 }

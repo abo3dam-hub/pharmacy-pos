@@ -16,6 +16,11 @@ class PrescriptionItems extends Table {
   IntColumn get durationDays => integer().nullable()();
   TextColumn get notes => text().nullable()();
   BoolColumn get isDispensed => boolean().withDefault(const Constant(false))();
+
+  /// Cumulative base units dispensed across one or more invoices (Phase 6 §12).
+  IntColumn get dispensedQuantityBase =>
+      integer().withDefault(const Constant(0))();
+
   IntColumn get createdAt => integer()();
 
   @override
