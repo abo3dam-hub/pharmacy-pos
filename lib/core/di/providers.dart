@@ -19,6 +19,11 @@ import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/application/users_controller.dart';
 import '../../features/auth/data/daos/user_dao.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
+import '../../features/inventory/application/inventory_controller.dart';
+import '../../features/inventory/application/master_data_controller.dart';
+import '../../features/inventory/domain/repositories/inventory_repository.dart';
+import '../../features/inventory/domain/services/inventory_excel_service.dart';
+import '../../features/inventory/domain/services/inventory_view_builder.dart';
 import '../../shared/database/app_database.dart';
 import 'injection.dart';
 
@@ -63,3 +68,16 @@ final manufacturerDaoProvider =
     Provider<ManufacturerDao>((ref) => getIt<ManufacturerDao>());
 final therapeuticGroupDaoProvider =
     Provider<TherapeuticGroupDao>((ref) => getIt<TherapeuticGroupDao>());
+
+final inventoryRepositoryProvider =
+    Provider<InventoryRepository>((ref) => getIt<InventoryRepository>());
+final inventoryViewBuilderProvider =
+    Provider<InventoryViewBuilder>((ref) => getIt<InventoryViewBuilder>());
+final inventoryExcelServiceProvider =
+    Provider<InventoryExcelService>((ref) => getIt<InventoryExcelService>());
+final inventoryControllerProvider =
+    StateNotifierProvider<InventoryController, InventoryViewState>(
+        (ref) => getIt<InventoryController>());
+final masterDataControllerProvider =
+    StateNotifierProvider<MasterDataController, MasterDataViewState>(
+        (ref) => getIt<MasterDataController>());

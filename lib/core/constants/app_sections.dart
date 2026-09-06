@@ -37,9 +37,14 @@ enum AppSection {
       };
 
   /// Resolves a route path back to its section (unknown → dashboard).
+  /// Nested sub-routes (e.g. `/inventory/batches/:id`) map to their section.
   static AppSection fromPath(String path) {
+    if (path == AppSection.dashboard.path) return AppSection.dashboard;
     for (final section in AppSection.values) {
-      if (section.path == path) return section;
+      if (section == AppSection.dashboard) continue;
+      if (path == section.path || path.startsWith('${section.path}/')) {
+        return section;
+      }
     }
     return AppSection.dashboard;
   }

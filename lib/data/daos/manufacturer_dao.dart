@@ -38,6 +38,18 @@ class ManufacturerDao {
   Future<void> insert(ManufacturerRow row) =>
       _db.into(_db.manufacturers).insert(row);
 
+  Future<void> update(ManufacturerRow row) =>
+      (_db.update(_db.manufacturers)..where((m) => m.id.equals(row.id)))
+          .write(row.toCompanion(true));
+
+  Future<void> setActive(String id, bool active) =>
+      (_db.update(_db.manufacturers)..where((m) => m.id.equals(id))).write(
+        ManufacturersCompanion(
+          isActive: Value(active),
+          updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+        ),
+      );
+
   static String _escapeLike(String value) =>
       value.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');
 

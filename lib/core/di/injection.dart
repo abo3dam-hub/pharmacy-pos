@@ -31,6 +31,24 @@ import '../../features/auth/domain/usecases/login.dart';
 import '../../features/auth/domain/usecases/logout.dart';
 import '../../features/auth/domain/usecases/reactivate_user.dart';
 import '../../features/auth/domain/usecases/update_user.dart';
+import '../../features/inventory/application/inventory_controller.dart';
+import '../../features/inventory/application/master_data_controller.dart';
+import '../../features/inventory/data/repositories/inventory_repository_impl.dart';
+import '../../features/inventory/domain/repositories/inventory_repository.dart';
+import '../../features/inventory/domain/services/inventory_excel_service.dart';
+import '../../features/inventory/domain/services/inventory_view_builder.dart';
+import '../../features/inventory/domain/usecases/batches_use_cases.dart';
+import '../../features/inventory/domain/usecases/bulk_use_cases.dart';
+import '../../features/inventory/domain/usecases/categories_use_cases.dart';
+import '../../features/inventory/domain/usecases/create_item.dart';
+import '../../features/inventory/domain/usecases/excel_use_cases.dart';
+import '../../features/inventory/domain/usecases/groups_use_cases.dart';
+import '../../features/inventory/domain/usecases/list_items.dart';
+import '../../features/inventory/domain/usecases/manufacturers_use_cases.dart';
+import '../../features/inventory/domain/usecases/set_item_active.dart';
+import '../../features/inventory/domain/usecases/stock_use_cases.dart';
+import '../../features/inventory/domain/usecases/units_use_cases.dart';
+import '../../features/inventory/domain/usecases/update_item.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/models/enums.dart';
 
@@ -68,6 +86,126 @@ void setupDependencies() {
       () => TherapeuticGroupDao(db));
 
   _registerAuth(db);
+  _registerInventory(db);
+}
+
+/// Inventory & categories module (§3, §4). The feature is wired over the
+/// shared DAO graph; stock mutations always go through the ledger.
+void _registerInventory(AppDatabase db) {
+  final audit = getIt<AuditService>();
+  final perms = getIt<PermissionService>();
+
+  getIt.registerLazySingleton<InventoryRepository>(
+    () => InventoryRepositoryImpl(
+      db,
+      getIt<ItemDao>(),
+      getIt<CategoryDao>(),
+      getIt<ManufacturerDao>(),
+      getIt<TherapeuticGroupDao>(),
+      getIt<UnitDao>(),
+      getIt<BatchDao>(),
+      getIt<StockMovementDao>(),
+      getIt<StockService>(),
+    ),
+  );
+
+  final repo = getIt<InventoryRepository>();
+  getIt.registerLazySingleton<InventoryViewBuilder>(
+      () => InventoryViewBuilder(repo));
+  getIt.registerLazySingleton<InventoryExcelService>(
+      () => InventoryExcelService(repo));
+  final builder = getIt<InventoryViewBuilder>();
+  final excel = getIt<InventoryExcelService>();
+
+  // Items
+  getIt.registerLazySingleton<ListItemsUseCase>(() => ListItemsUseCase(
+        repo,
+        perms,
+        viewBuilder: builder,
+      ));
+  getIt.registerLazySingleton<CreateItemUseCase>(
+      () => CreateItemUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<UpdateItemUseCase>(
+      () => UpdateItemUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<SetItemActiveUseCase>(
+      () => SetItemActiveUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<BulkUpdateItemsUseCase>(
+      () => BulkUpdateItemsUseCase(repo, perms, audit));
+
+  // Batches & stock
+  getIt.registerLazySingleton<ListBatchesUseCase>(
+      () => ListBatchesUseCase(repo, perms));
+  getIt.registerLazySingleton<AddBatchUseCase>(
+      () => AddBatchUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<VoidBatchUseCase>(
+      () => VoidBatchUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<AdjustStockUseCase>(
+      () => AdjustStockUseCase(repo, perms, audit));
+
+  // Master data
+  getIt.registerLazySingleton<ListCategoriesUseCase>(
+      () => ListCategoriesUseCase(repo, perms));
+  getIt.registerLazySingleton<SaveCategoryUseCase>(
+      () => SaveCategoryUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<SaveSubCategoryUseCase>(
+      () => SaveSubCategoryUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<SetCategoryActiveUseCase>(
+      () => SetCategoryActiveUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<ListManufacturersUseCase>(
+      () => ListManufacturersUseCase(repo, perms));
+  getIt.registerLazySingleton<SaveManufacturerUseCase>(
+      () => SaveManufacturerUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<SetManufacturerActiveUseCase>(
+      () => SetManufacturerActiveUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<AllManufacturersUseCase>(
+      () => AllManufacturersUseCase(repo, perms));
+  getIt.registerLazySingleton<ListTherapeuticGroupsUseCase>(
+      () => ListTherapeuticGroupsUseCase(repo, perms));
+  getIt.registerLazySingleton<SaveTherapeuticGroupUseCase>(
+      () => SaveTherapeuticGroupUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<SetTherapeuticGroupActiveUseCase>(
+      () => SetTherapeuticGroupActiveUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<ListUnitsUseCase>(
+      () => ListUnitsUseCase(repo, perms));
+  getIt.registerLazySingleton<SaveUnitUseCase>(
+      () => SaveUnitUseCase(repo, perms, audit));
+
+  // Excel
+  getIt.registerLazySingleton<ExportItemsUseCase>(
+      () => ExportItemsUseCase(repo, perms, excel, viewBuilder: builder));
+  getIt.registerLazySingleton<ImportItemsUseCase>(
+      () => ImportItemsUseCase(repo, perms, audit));
+
+  // Controllers
+  getIt.registerLazySingleton<InventoryController>(() => InventoryController(
+        getIt<ListItemsUseCase>(),
+        getIt<CreateItemUseCase>(),
+        getIt<UpdateItemUseCase>(),
+        getIt<SetItemActiveUseCase>(),
+        getIt<AddBatchUseCase>(),
+        getIt<VoidBatchUseCase>(),
+        getIt<ListBatchesUseCase>(),
+        getIt<AdjustStockUseCase>(),
+        getIt<BulkUpdateItemsUseCase>(),
+        getIt<ExportItemsUseCase>(),
+        getIt<ImportItemsUseCase>(),
+      ));
+
+  getIt.registerLazySingleton<MasterDataController>(
+      () => MasterDataController(
+            getIt<ListCategoriesUseCase>(),
+            getIt<SaveCategoryUseCase>(),
+            getIt<SaveSubCategoryUseCase>(),
+            getIt<SetCategoryActiveUseCase>(),
+            getIt<SaveManufacturerUseCase>(),
+            getIt<SetManufacturerActiveUseCase>(),
+            getIt<AllManufacturersUseCase>(),
+            getIt<ListTherapeuticGroupsUseCase>(),
+            getIt<SaveTherapeuticGroupUseCase>(),
+            getIt<SetTherapeuticGroupActiveUseCase>(),
+            getIt<ListUnitsUseCase>(),
+            getIt<SaveUnitUseCase>(),
+          ));
 }
 
 /// Auth & user-management graph (§16). AuthController's audit callback writes

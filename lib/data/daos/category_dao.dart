@@ -32,6 +32,30 @@ class CategoryDao {
   Future<void> insertSubCategory(SubCategoryRow row) =>
       _db.into(_db.subCategories).insert(row);
 
+  Future<void> updateCategory(CategoryRow row) =>
+      (_db.update(_db.categories)..where((c) => c.id.equals(row.id)))
+          .write(row.toCompanion(true));
+
+  Future<void> updateSubCategory(SubCategoryRow row) =>
+      (_db.update(_db.subCategories)..where((s) => s.id.equals(row.id)))
+          .write(row.toCompanion(true));
+
+  Future<void> setCategoryActive(String id, bool active) =>
+      (_db.update(_db.categories)..where((c) => c.id.equals(id))).write(
+        CategoriesCompanion(
+          isActive: Value(active),
+          updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+        ),
+      );
+
+  Future<void> setSubCategoryActive(String id, bool active) =>
+      (_db.update(_db.subCategories)..where((s) => s.id.equals(id))).write(
+        SubCategoriesCompanion(
+          isActive: Value(active),
+          updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+        ),
+      );
+
   static String newCategoryId() => newId('cat');
   static String newSubCategoryId() => newId('scat');
 }

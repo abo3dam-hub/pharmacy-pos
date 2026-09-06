@@ -871,6 +871,846 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الرصيد'**
   String get itemStock;
+
+  /// No description provided for @inventoryTabItems.
+  ///
+  /// In ar, this message translates to:
+  /// **'المنتجات'**
+  String get inventoryTabItems;
+
+  /// No description provided for @inventoryTabCategories.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيفات'**
+  String get inventoryTabCategories;
+
+  /// No description provided for @inventoryTabManufacturers.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصنعون'**
+  String get inventoryTabManufacturers;
+
+  /// No description provided for @inventoryTabGroups.
+  ///
+  /// In ar, this message translates to:
+  /// **'المجموعات العلاجية'**
+  String get inventoryTabGroups;
+
+  /// No description provided for @inventoryTabUnits.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدات'**
+  String get inventoryTabUnits;
+
+  /// No description provided for @inventorySearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث بالاسم أو الباركود'**
+  String get inventorySearchHint;
+
+  /// No description provided for @inventoryAddItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة منتج'**
+  String get inventoryAddItem;
+
+  /// No description provided for @inventoryItemAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة منتج جديد'**
+  String get inventoryItemAddTitle;
+
+  /// No description provided for @inventoryItemEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل منتج'**
+  String get inventoryItemEditTitle;
+
+  /// No description provided for @inventoryItemsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد منتجات مطابقة'**
+  String get inventoryItemsEmpty;
+
+  /// No description provided for @inventoryActiveFilter.
+  ///
+  /// In ar, this message translates to:
+  /// **'المفعّلة فقط'**
+  String get inventoryActiveFilter;
+
+  /// No description provided for @inventoryCreatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إنشاء المنتج'**
+  String get inventoryCreatedMessage;
+
+  /// No description provided for @inventoryUpdatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث المنتج'**
+  String get inventoryUpdatedMessage;
+
+  /// No description provided for @inventoryActivatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تفعيل المنتج'**
+  String get inventoryActivatedMessage;
+
+  /// No description provided for @inventoryDeactivatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إيقاف المنتج'**
+  String get inventoryDeactivatedMessage;
+
+  /// No description provided for @inventoryImport.
+  ///
+  /// In ar, this message translates to:
+  /// **'استيراد من إكسل'**
+  String get inventoryImport;
+
+  /// No description provided for @inventoryExport.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصدير إلى إكسل'**
+  String get inventoryExport;
+
+  /// No description provided for @inventoryImportDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتمل الاستيراد: {created} جديدًا، {updated} محدّثًا'**
+  String inventoryImportDone(int created, int updated);
+
+  /// No description provided for @inventoryImportIssues.
+  ///
+  /// In ar, this message translates to:
+  /// **'سقط {skipped} صفًا'**
+  String inventoryImportIssues(int skipped);
+
+  /// No description provided for @inventoryExportDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تصدير الملف'**
+  String get inventoryExportDone;
+
+  /// No description provided for @inventoryImportFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر قراءة الملف'**
+  String get inventoryImportFailed;
+
+  /// No description provided for @itemBarcodePrimary.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود الأساسي'**
+  String get itemBarcodePrimary;
+
+  /// No description provided for @itemScientificName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم العلمي'**
+  String get itemScientificName;
+
+  /// No description provided for @itemActiveIngredient.
+  ///
+  /// In ar, this message translates to:
+  /// **'المادة الفعالة'**
+  String get itemActiveIngredient;
+
+  /// No description provided for @itemTradeNameEn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم التجاري (إنجليزي)'**
+  String get itemTradeNameEn;
+
+  /// No description provided for @itemSubCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف الفرعي'**
+  String get itemSubCategory;
+
+  /// No description provided for @itemManufacturer.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصنع'**
+  String get itemManufacturer;
+
+  /// No description provided for @itemGroup.
+  ///
+  /// In ar, this message translates to:
+  /// **'المجموعة العلاجية'**
+  String get itemGroup;
+
+  /// No description provided for @itemPharmaForm.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشكل الصيدلاني'**
+  String get itemPharmaForm;
+
+  /// No description provided for @itemDose.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة'**
+  String get itemDose;
+
+  /// No description provided for @itemSizeVolume.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحجم/السعة'**
+  String get itemSizeVolume;
+
+  /// No description provided for @itemShelfLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'موقع الرف'**
+  String get itemShelfLocation;
+
+  /// No description provided for @itemSecondaryBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'باركود ثانوي'**
+  String get itemSecondaryBarcode;
+
+  /// No description provided for @itemEquivalentDrug.
+  ///
+  /// In ar, this message translates to:
+  /// **'دواء مكافئ'**
+  String get itemEquivalentDrug;
+
+  /// No description provided for @itemHasExpiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'للتاريخ صلاحية'**
+  String get itemHasExpiry;
+
+  /// No description provided for @itemPrintLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'طباعة باركود تسمية'**
+  String get itemPrintLabel;
+
+  /// No description provided for @itemIsOtc.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلا وصفة طبية'**
+  String get itemIsOtc;
+
+  /// No description provided for @itemIsControlled.
+  ///
+  /// In ar, this message translates to:
+  /// **'عقار خاضع لضبط خاص'**
+  String get itemIsControlled;
+
+  /// No description provided for @itemScaleAlert.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه ميزان الباركود'**
+  String get itemScaleAlert;
+
+  /// No description provided for @itemLockPriceAutoUpdate.
+  ///
+  /// In ar, this message translates to:
+  /// **'قفل التحديث التلقائي للأسعار'**
+  String get itemLockPriceAutoUpdate;
+
+  /// No description provided for @itemRequiresPrescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتطلب وصفة طبية'**
+  String get itemRequiresPrescription;
+
+  /// No description provided for @itemPurchaseDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم الشراء'**
+  String get itemPurchaseDiscount;
+
+  /// No description provided for @itemSellingPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر البيع'**
+  String get itemSellingPrice;
+
+  /// No description provided for @itemSubUnitPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر الوحدة الفرعية'**
+  String get itemSubUnitPrice;
+
+  /// No description provided for @itemWholesalePrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر الجملة'**
+  String get itemWholesalePrice;
+
+  /// No description provided for @itemHalfWholesalePrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر نصف الجملة'**
+  String get itemHalfWholesalePrice;
+
+  /// No description provided for @itemCustomPrice1.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر خاص 1'**
+  String get itemCustomPrice1;
+
+  /// No description provided for @itemCustomPrice2.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر خاص 2'**
+  String get itemCustomPrice2;
+
+  /// No description provided for @itemVatRate.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الضريبة'**
+  String get itemVatRate;
+
+  /// No description provided for @itemMinimumStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى للمخزون'**
+  String get itemMinimumStock;
+
+  /// No description provided for @itemMaximumStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأعلى للمخزون'**
+  String get itemMaximumStock;
+
+  /// No description provided for @itemUsageInstructions.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعليمات الاستخدام'**
+  String get itemUsageInstructions;
+
+  /// No description provided for @itemGeneralNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات عامة'**
+  String get itemGeneralNotes;
+
+  /// No description provided for @itemLicenseNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الترخيص'**
+  String get itemLicenseNumber;
+
+  /// No description provided for @itemUnitsRelation.
+  ///
+  /// In ar, this message translates to:
+  /// **'علاقة الوحدات'**
+  String get itemUnitsRelation;
+
+  /// No description provided for @itemBaseUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدة الأساسية'**
+  String get itemBaseUnit;
+
+  /// No description provided for @itemLargeUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدة الكبيرة'**
+  String get itemLargeUnit;
+
+  /// No description provided for @itemUnitsPerLarge.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الوحدات الصغرى في الكبرى'**
+  String get itemUnitsPerLarge;
+
+  /// No description provided for @itemCurrentStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الحالي'**
+  String get itemCurrentStock;
+
+  /// No description provided for @itemProfitMargin.
+  ///
+  /// In ar, this message translates to:
+  /// **'هامش الربح'**
+  String get itemProfitMargin;
+
+  /// No description provided for @statusNormal.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزون طبيعي'**
+  String get statusNormal;
+
+  /// No description provided for @statusHealthy.
+  ///
+  /// In ar, this message translates to:
+  /// **'سليمة'**
+  String get statusHealthy;
+
+  /// No description provided for @statusNearExpiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'قريب الانتهاء'**
+  String get statusNearExpiry;
+
+  /// No description provided for @statusExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهٍ'**
+  String get statusExpired;
+
+  /// No description provided for @batchesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشغيلات المنتج'**
+  String get batchesTitle;
+
+  /// No description provided for @batchesAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدخال تشغيلة'**
+  String get batchesAdd;
+
+  /// No description provided for @batchesAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدخال تشغيلة جديدة'**
+  String get batchesAddTitle;
+
+  /// No description provided for @batchesVoidTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء التشغيلة'**
+  String get batchesVoidTitle;
+
+  /// No description provided for @batchesVoidConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد إلغاء هذه التشغيلة؟'**
+  String get batchesVoidConfirm;
+
+  /// No description provided for @batchesAddedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إدخال التشغيلة'**
+  String get batchesAddedMessage;
+
+  /// No description provided for @batchesVoidedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إلغاء التشغيلة'**
+  String get batchesVoidedMessage;
+
+  /// No description provided for @batchesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد تشغيلات'**
+  String get batchesEmpty;
+
+  /// No description provided for @batchUnitCost.
+  ///
+  /// In ar, this message translates to:
+  /// **'تكلفة الوحدة'**
+  String get batchUnitCost;
+
+  /// No description provided for @batchReceivedDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الاستلام'**
+  String get batchReceivedDate;
+
+  /// No description provided for @batchBonusQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمية الهدية'**
+  String get batchBonusQty;
+
+  /// No description provided for @batchNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات التشغيلة'**
+  String get batchNotes;
+
+  /// No description provided for @batchRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد المتبقي'**
+  String get batchRemaining;
+
+  /// No description provided for @batchVoided.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغاة'**
+  String get batchVoided;
+
+  /// No description provided for @movementType.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الحركة'**
+  String get movementType;
+
+  /// No description provided for @moveOpening.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتتاحي'**
+  String get moveOpening;
+
+  /// No description provided for @movePurchase.
+  ///
+  /// In ar, this message translates to:
+  /// **'شراء'**
+  String get movePurchase;
+
+  /// No description provided for @moveSale.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيع'**
+  String get moveSale;
+
+  /// No description provided for @moveSaleReturn.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع مبيعات'**
+  String get moveSaleReturn;
+
+  /// No description provided for @movePurchaseReturn.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع شراء'**
+  String get movePurchaseReturn;
+
+  /// No description provided for @moveAdjustment.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضبط مخزون'**
+  String get moveAdjustment;
+
+  /// No description provided for @moveDamaged.
+  ///
+  /// In ar, this message translates to:
+  /// **'تالف'**
+  String get moveDamaged;
+
+  /// No description provided for @moveExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهي الصلاحية'**
+  String get moveExpired;
+
+  /// No description provided for @moveTransfer.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحويل'**
+  String get moveTransfer;
+
+  /// No description provided for @moveCorrection.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصحيح يدوي'**
+  String get moveCorrection;
+
+  /// No description provided for @movementsList.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل الحركات'**
+  String get movementsList;
+
+  /// No description provided for @movementsDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get movementsDate;
+
+  /// No description provided for @movementsDelta.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get movementsDelta;
+
+  /// No description provided for @movementsBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد بعد الحركة'**
+  String get movementsBalance;
+
+  /// No description provided for @adjustStockTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسوية مخزون'**
+  String get adjustStockTitle;
+
+  /// No description provided for @adjustStockDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت التسوية'**
+  String get adjustStockDone;
+
+  /// No description provided for @adjustNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة التسوية'**
+  String get adjustNote;
+
+  /// No description provided for @adjustmentIncrease.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة رصيد'**
+  String get adjustmentIncrease;
+
+  /// No description provided for @adjustmentDecrease.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم رصيد'**
+  String get adjustmentDecrease;
+
+  /// No description provided for @bulkAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجراء جماعي'**
+  String get bulkAction;
+
+  /// No description provided for @bulkTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجراءات جماعية'**
+  String get bulkTitle;
+
+  /// No description provided for @bulkChangeCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير التصنيف'**
+  String get bulkChangeCategory;
+
+  /// No description provided for @bulkChangeShelf.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير موقع الرف'**
+  String get bulkChangeShelf;
+
+  /// No description provided for @bulkAdjustPricePercent.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الأسعار بنسبة'**
+  String get bulkAdjustPricePercent;
+
+  /// No description provided for @bulkPercent.
+  ///
+  /// In ar, this message translates to:
+  /// **'النسبة المئوية'**
+  String get bulkPercent;
+
+  /// No description provided for @bulkSelectedCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديد {count} منتج'**
+  String bulkSelectedCount(int count);
+
+  /// No description provided for @bulkDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتملت العملية على {count} منتج'**
+  String bulkDone(int count);
+
+  /// No description provided for @bulkSelectHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد منتجًا واحدًا على الأقل'**
+  String get bulkSelectHint;
+
+  /// No description provided for @categoriesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيفات'**
+  String get categoriesTitle;
+
+  /// No description provided for @categoriesAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة تصنيف'**
+  String get categoriesAdd;
+
+  /// No description provided for @categoriesAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة تصنيف جديد'**
+  String get categoriesAddTitle;
+
+  /// No description provided for @categoriesEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل تصنيف'**
+  String get categoriesEditTitle;
+
+  /// No description provided for @subCategoriesAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة تصنيف فرعي'**
+  String get subCategoriesAddTitle;
+
+  /// No description provided for @subCategoriesEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل تصنيف فرعي'**
+  String get subCategoriesEditTitle;
+
+  /// No description provided for @addSubCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة تصنيف فرعي'**
+  String get addSubCategory;
+
+  /// No description provided for @categoriesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد تصنيفات'**
+  String get categoriesEmpty;
+
+  /// No description provided for @categoryName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم التصنيف'**
+  String get categoryName;
+
+  /// No description provided for @categoryNameEn.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم التصنيف (إنجليزي)'**
+  String get categoryNameEn;
+
+  /// No description provided for @subCategoryName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم التصنيف الفرعي'**
+  String get subCategoryName;
+
+  /// No description provided for @manufacturerName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المصنع'**
+  String get manufacturerName;
+
+  /// No description provided for @manufacturerCountry.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدولة'**
+  String get manufacturerCountry;
+
+  /// No description provided for @manufacturerWebsite.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع الإلكتروني'**
+  String get manufacturerWebsite;
+
+  /// No description provided for @manufacturersAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مصنع'**
+  String get manufacturersAdd;
+
+  /// No description provided for @manufacturersEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل مصنع'**
+  String get manufacturersEditTitle;
+
+  /// No description provided for @manufacturersEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مصانع'**
+  String get manufacturersEmpty;
+
+  /// No description provided for @groupName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المجموعة'**
+  String get groupName;
+
+  /// No description provided for @groupsAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مجموعة'**
+  String get groupsAdd;
+
+  /// No description provided for @groupsEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل مجموعة'**
+  String get groupsEditTitle;
+
+  /// No description provided for @groupsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مجموعات'**
+  String get groupsEmpty;
+
+  /// No description provided for @unitName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الوحدة'**
+  String get unitName;
+
+  /// No description provided for @unitAbbreviation.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاختصار'**
+  String get unitAbbreviation;
+
+  /// No description provided for @masterDataNameEn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم (إنجليزي)'**
+  String get masterDataNameEn;
+
+  /// No description provided for @unitsAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة وحدة'**
+  String get unitsAdd;
+
+  /// No description provided for @unitsEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل وحدة'**
+  String get unitsEditTitle;
+
+  /// No description provided for @unitsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد وحدات'**
+  String get unitsEmpty;
+
+  /// No description provided for @masterDataSavedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الحفظ بنجاح'**
+  String get masterDataSavedMessage;
+
+  /// No description provided for @inventoryRequiredName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم مطلوب'**
+  String get inventoryRequiredName;
+
+  /// No description provided for @inventorySelectCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر التصنيف'**
+  String get inventorySelectCategory;
+
+  /// No description provided for @inventoryBatches.
+  ///
+  /// In ar, this message translates to:
+  /// **'التشغيلات'**
+  String get inventoryBatches;
+
+  /// No description provided for @inventoryAdjustStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسوية المخزون'**
+  String get inventoryAdjustStock;
+
+  /// No description provided for @inventoryBatchView.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض التشغيلات'**
+  String get inventoryBatchView;
 }
 
 class _AppLocalizationsDelegate

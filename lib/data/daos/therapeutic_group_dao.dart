@@ -22,5 +22,20 @@ class TherapeuticGroupDao {
   Future<void> insert(TherapeuticGroupRow row) =>
       _db.into(_db.therapeuticGroups).insert(row);
 
+  Future<void> update(TherapeuticGroupRow row) =>
+      (_db.update(_db.therapeuticGroups)
+            ..where((g) => g.id.equals(row.id)))
+          .write(row.toCompanion(true));
+
+  Future<void> setActive(String id, bool active) =>
+      (_db.update(_db.therapeuticGroups)
+            ..where((g) => g.id.equals(id)))
+          .write(
+        TherapeuticGroupsCompanion(
+          isActive: Value(active),
+          updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+        ),
+      );
+
   static String newGroupId() => newId('grp');
 }

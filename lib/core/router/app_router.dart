@@ -13,6 +13,8 @@ import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/presentation/pages/access_denied_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/users_page.dart';
+import '../../features/inventory/presentation/pages/batches_page.dart';
+import '../../features/inventory/presentation/pages/inventory_page.dart';
 
 /// Bridges a [Stream] to the [Listenable] interface GoRouter refreshes on.
 class _GoRouterListenable extends ChangeNotifier {
@@ -53,6 +55,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           !authState.permissions.contains(Perm.usersView)) {
         return '/access-denied';
       }
+      if (path.startsWith(AppSection.inventory.path) &&
+          !authState.permissions.contains(Perm.inventoryView)) {
+        return '/access-denied';
+      }
       return null;
     },
     routes: [
@@ -81,6 +87,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             GoRoute(
               path: section.path == '/' ? '/' : section.path,
               builder: (context, _) => _sectionPage(section, context),
+              routes: [
+                if (section == AppSection.inventory)
+                  GoRoute(
+                    path: 'batches/:itemId',
+                    builder: (context, state) => BatchesPage(
+                      itemId: state.pathParameters['itemId']!,
+                    ),
+                  ),
+              ],
             ),
         ],
       ),
@@ -93,6 +108,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 /// page. `/users` is the first built module (§16).
 Widget _sectionPage(AppSection section, BuildContext context) {
   if (section == AppSection.users) return const UsersPage();
+  if (section == AppSection.inventory) return const InventoryPage();
   final l10n = AppLocalizations.of(context);
   return SectionPlaceholder(
     icon: section.icon,

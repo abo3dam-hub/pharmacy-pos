@@ -22,6 +22,10 @@ class UnitDao {
 
   Future<void> insert(UnitRow unit) => _db.into(_db.units).insert(unit);
 
+  Future<void> update(UnitRow unit) =>
+      (_db.update(_db.units)..where((u) => u.id.equals(unit.id)))
+          .write(unit.toCompanion(true));
+
   /// `conversionToBase` for an item's unit, or null when unlinked. The base
   /// unit converts as 1; the large (box) unit converts by `unitsPerLarge`.
   Future<int?> conversionToBase(String itemId, String unitId) async {

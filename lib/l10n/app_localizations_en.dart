@@ -401,4 +401,432 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get itemStock => 'Stock';
+
+  @override
+  String get inventoryTabItems => 'Items';
+
+  @override
+  String get inventoryTabCategories => 'Categories';
+
+  @override
+  String get inventoryTabManufacturers => 'Manufacturers';
+
+  @override
+  String get inventoryTabGroups => 'Therapeutic Groups';
+
+  @override
+  String get inventoryTabUnits => 'Units';
+
+  @override
+  String get inventorySearchHint => 'Search items by name or barcode';
+
+  @override
+  String get inventoryAddItem => 'Add item';
+
+  @override
+  String get inventoryItemAddTitle => 'Add new item';
+
+  @override
+  String get inventoryItemEditTitle => 'Edit item';
+
+  @override
+  String get inventoryItemsEmpty => 'No matching items';
+
+  @override
+  String get inventoryActiveFilter => 'Active only';
+
+  @override
+  String get inventoryCreatedMessage => 'Item created';
+
+  @override
+  String get inventoryUpdatedMessage => 'Item updated';
+
+  @override
+  String get inventoryActivatedMessage => 'Item activated';
+
+  @override
+  String get inventoryDeactivatedMessage => 'Item deactivated';
+
+  @override
+  String get inventoryImport => 'Import from Excel';
+
+  @override
+  String get inventoryExport => 'Export to Excel';
+
+  @override
+  String inventoryImportDone(int created, int updated) {
+    return 'Import finished: $created created, $updated updated';
+  }
+
+  @override
+  String inventoryImportIssues(int skipped) {
+    return 'Skipped $skipped rows';
+  }
+
+  @override
+  String get inventoryExportDone => 'File exported';
+
+  @override
+  String get inventoryImportFailed => 'Could not read the file';
+
+  @override
+  String get itemBarcodePrimary => 'Primary barcode';
+
+  @override
+  String get itemScientificName => 'Scientific name';
+
+  @override
+  String get itemActiveIngredient => 'Active ingredient';
+
+  @override
+  String get itemTradeNameEn => 'Trade name (English)';
+
+  @override
+  String get itemSubCategory => 'Sub-category';
+
+  @override
+  String get itemManufacturer => 'Manufacturer';
+
+  @override
+  String get itemGroup => 'Therapeutic group';
+
+  @override
+  String get itemPharmaForm => 'Pharmaceutical form';
+
+  @override
+  String get itemDose => 'Dose';
+
+  @override
+  String get itemSizeVolume => 'Size / volume';
+
+  @override
+  String get itemShelfLocation => 'Shelf location';
+
+  @override
+  String get itemSecondaryBarcode => 'Secondary barcode';
+
+  @override
+  String get itemEquivalentDrug => 'Equivalent drug';
+
+  @override
+  String get itemHasExpiry => 'Has expiry date';
+
+  @override
+  String get itemPrintLabel => 'Print barcode label';
+
+  @override
+  String get itemIsOtc => 'Over the counter';
+
+  @override
+  String get itemIsControlled => 'Controlled drug';
+
+  @override
+  String get itemScaleAlert => 'Scale barcode alert';
+
+  @override
+  String get itemLockPriceAutoUpdate => 'Lock auto price update';
+
+  @override
+  String get itemRequiresPrescription => 'Requires prescription';
+
+  @override
+  String get itemPurchaseDiscount => 'Purchase discount';
+
+  @override
+  String get itemSellingPrice => 'Selling price';
+
+  @override
+  String get itemSubUnitPrice => 'Sub-unit price';
+
+  @override
+  String get itemWholesalePrice => 'Wholesale price';
+
+  @override
+  String get itemHalfWholesalePrice => 'Half-wholesale price';
+
+  @override
+  String get itemCustomPrice1 => 'Custom price 1';
+
+  @override
+  String get itemCustomPrice2 => 'Custom price 2';
+
+  @override
+  String get itemVatRate => 'VAT rate';
+
+  @override
+  String get itemMinimumStock => 'Minimum stock';
+
+  @override
+  String get itemMaximumStock => 'Maximum stock';
+
+  @override
+  String get itemUsageInstructions => 'Usage instructions';
+
+  @override
+  String get itemGeneralNotes => 'General notes';
+
+  @override
+  String get itemLicenseNumber => 'License number';
+
+  @override
+  String get itemUnitsRelation => 'Unit relation';
+
+  @override
+  String get itemBaseUnit => 'Base unit';
+
+  @override
+  String get itemLargeUnit => 'Large unit';
+
+  @override
+  String get itemUnitsPerLarge => 'Base units per large unit';
+
+  @override
+  String get itemCurrentStock => 'Current stock';
+
+  @override
+  String get itemProfitMargin => 'Profit margin';
+
+  @override
+  String get statusNormal => 'In stock';
+
+  @override
+  String get statusHealthy => 'Healthy';
+
+  @override
+  String get statusNearExpiry => 'Near expiry';
+
+  @override
+  String get statusExpired => 'Expired';
+
+  @override
+  String get batchesTitle => 'Item batches';
+
+  @override
+  String get batchesAdd => 'Add batch';
+
+  @override
+  String get batchesAddTitle => 'Add new batch';
+
+  @override
+  String get batchesVoidTitle => 'Void batch';
+
+  @override
+  String get batchesVoidConfirm => 'Void this batch?';
+
+  @override
+  String get batchesAddedMessage => 'Batch added';
+
+  @override
+  String get batchesVoidedMessage => 'Batch voided';
+
+  @override
+  String get batchesEmpty => 'No batches';
+
+  @override
+  String get batchUnitCost => 'Unit cost';
+
+  @override
+  String get batchReceivedDate => 'Received date';
+
+  @override
+  String get batchBonusQty => 'Bonus quantity';
+
+  @override
+  String get batchNotes => 'Batch notes';
+
+  @override
+  String get batchRemaining => 'Remaining qty';
+
+  @override
+  String get batchVoided => 'Voided';
+
+  @override
+  String get movementType => 'Movement type';
+
+  @override
+  String get moveOpening => 'Opening';
+
+  @override
+  String get movePurchase => 'Purchase';
+
+  @override
+  String get moveSale => 'Sale';
+
+  @override
+  String get moveSaleReturn => 'Sale return';
+
+  @override
+  String get movePurchaseReturn => 'Purchase return';
+
+  @override
+  String get moveAdjustment => 'Stock adjustment';
+
+  @override
+  String get moveDamaged => 'Damaged';
+
+  @override
+  String get moveExpired => 'Expired';
+
+  @override
+  String get moveTransfer => 'Transfer';
+
+  @override
+  String get moveCorrection => 'Manual correction';
+
+  @override
+  String get movementsList => 'Movement history';
+
+  @override
+  String get movementsDate => 'Date';
+
+  @override
+  String get movementsDelta => 'Qty';
+
+  @override
+  String get movementsBalance => 'Balance after';
+
+  @override
+  String get adjustStockTitle => 'Stock adjustment';
+
+  @override
+  String get adjustStockDone => 'Adjustment saved';
+
+  @override
+  String get adjustNote => 'Adjustment note';
+
+  @override
+  String get adjustmentIncrease => 'Add stock';
+
+  @override
+  String get adjustmentDecrease => 'Remove stock';
+
+  @override
+  String get bulkAction => 'Bulk action';
+
+  @override
+  String get bulkTitle => 'Bulk actions';
+
+  @override
+  String get bulkChangeCategory => 'Change category';
+
+  @override
+  String get bulkChangeShelf => 'Change shelf location';
+
+  @override
+  String get bulkAdjustPricePercent => 'Adjust prices by %';
+
+  @override
+  String get bulkPercent => 'Percentage';
+
+  @override
+  String bulkSelectedCount(int count) {
+    return '$count items selected';
+  }
+
+  @override
+  String bulkDone(int count) {
+    return 'Done on $count items';
+  }
+
+  @override
+  String get bulkSelectHint => 'Select at least one item';
+
+  @override
+  String get categoriesTitle => 'Categories';
+
+  @override
+  String get categoriesAdd => 'Add category';
+
+  @override
+  String get categoriesAddTitle => 'Add new category';
+
+  @override
+  String get categoriesEditTitle => 'Edit category';
+
+  @override
+  String get subCategoriesAddTitle => 'Add sub-category';
+
+  @override
+  String get subCategoriesEditTitle => 'Edit sub-category';
+
+  @override
+  String get addSubCategory => 'Add sub-category';
+
+  @override
+  String get categoriesEmpty => 'No categories';
+
+  @override
+  String get categoryName => 'Category name';
+
+  @override
+  String get categoryNameEn => 'Category name (English)';
+
+  @override
+  String get subCategoryName => 'Sub-category name';
+
+  @override
+  String get manufacturerName => 'Manufacturer name';
+
+  @override
+  String get manufacturerCountry => 'Country';
+
+  @override
+  String get manufacturerWebsite => 'Website';
+
+  @override
+  String get manufacturersAdd => 'Add manufacturer';
+
+  @override
+  String get manufacturersEditTitle => 'Edit manufacturer';
+
+  @override
+  String get manufacturersEmpty => 'No manufacturers';
+
+  @override
+  String get groupName => 'Group name';
+
+  @override
+  String get groupsAdd => 'Add group';
+
+  @override
+  String get groupsEditTitle => 'Edit group';
+
+  @override
+  String get groupsEmpty => 'No groups';
+
+  @override
+  String get unitName => 'Unit name';
+
+  @override
+  String get unitAbbreviation => 'Abbreviation';
+
+  @override
+  String get masterDataNameEn => 'Name (English)';
+
+  @override
+  String get unitsAdd => 'Add unit';
+
+  @override
+  String get unitsEditTitle => 'Edit unit';
+
+  @override
+  String get unitsEmpty => 'No units';
+
+  @override
+  String get masterDataSavedMessage => 'Saved successfully';
+
+  @override
+  String get inventoryRequiredName => 'Name is required';
+
+  @override
+  String get inventorySelectCategory => 'Select category';
+
+  @override
+  String get inventoryBatches => 'Batches';
+
+  @override
+  String get inventoryAdjustStock => 'Stock adjustment';
+
+  @override
+  String get inventoryBatchView => 'View batches';
 }

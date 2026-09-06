@@ -103,6 +103,15 @@ class ItemDao {
       (_db.update(_db.items)..where((i) => i.id.equals(item.id)))
           .write(item.toCompanion(true));
 
+  /// Soft-delete toggle (§28) — items are never physically deleted.
+  Future<void> setActive(String id, bool active) =>
+      (_db.update(_db.items)..where((i) => i.id.equals(id))).write(
+        ItemsCompanion(
+          isActive: Value(active),
+          updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
+        ),
+      );
+
   OrderingTerm _order(String? column, bool ascending) {
     final expr = switch (column) {
       'tradeNameEn' => _db.items.tradeNameEn,
