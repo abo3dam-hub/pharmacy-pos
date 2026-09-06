@@ -68,15 +68,19 @@ The pharmacist explicitly configures all of these per product.
 
 ### 4.1 Required Fields
 
-When partial sale is enabled, the product configuration requires:
+When partial sale is disabled, all partial-sale fields are NULL/inactive.
 
-| Field | Type | Default | Validation | Purpose |
-|---|---|---|---|---|
-| `partialSaleEnabled` | BOOLEAN | false | — | Enables partial sale for this product |
-| `sellablePartUnitId` | TEXT (FK → Units) | NULL | Required when `partialSaleEnabled = true` | The smallest sellable part |
-| `partsPerFullProduct` | INTEGER | 1 | Must be > 1 when `partialSaleEnabled = true` | Commercial decomposition: how many sellable parts in one full product |
-| `sellablePartBaseQuantity` | INTEGER | 1 | Must be ≥ 1 when `partialSaleEnabled = true` | Inventory conversion: how many base units in one sellable part |
-| `partialSaleMarkupBasisPoints` | INTEGER | 1000 (10%) | 0–10000 (0%–100%) | Markup applied to partial-base price |
+When partial sale is enabled, ALL of the following are mandatory:
+
+| Field | Type | When Disabled | When Enabled | Validation | Purpose |
+|---|---|---|---|---|---|
+| `partialSaleEnabled` | BOOLEAN | false | true | — | Enables partial sale for this product |
+| `sellablePartUnitId` | TEXT (FK → Units) | NULL | NOT NULL | Must reference a valid unit | The smallest sellable part |
+| `partsPerFullProduct` | INTEGER | NULL or 1 | NOT NULL | Must be > 1 | Commercial decomposition: how many sellable parts in one full product |
+| `sellablePartBaseQuantity` | INTEGER | NULL | NOT NULL | Must be ≥ 1 | Inventory conversion: how many base units in one sellable part |
+| `partialSaleMarkupBasisPoints` | INTEGER | NULL or 1000 | NOT NULL | 0–10000 (0%–100%) | Markup applied to partial-base price |
+
+**Critical**: A product CANNOT have Partial Sale enabled without an explicitly configured `sellablePartBaseQuantity`. There is no implicit default of 1. The pharmacist must explicitly state how many base units one sellable part represents.
 
 ### 4.2 Full Retail Price
 
@@ -299,6 +303,48 @@ The existing `item_units` table defines Box↔Tablet conversion for display and 
 | `item_units` | Display unit conversion (Box ↔ Tablet) | `baseUnitId`, `largeUnitId`, `unitsPerLarge` |
 | Partial-sale config | Retail pricing + inventory for partial sales | `partialSaleEnabled`, `sellablePartUnitId`, `partsPerFullProduct`, `sellablePartBaseQuantity`, `partialSaleMarkupBasisPoints` |
 
+### 10.7 Full-Product Consistency Invariant
+
+When the product's full retail product is represented by the existing `item_units` large unit and the product has a valid `unitsPerLarge`, the following invariant MUST hold:
+
+```
+partsPerFullProduct × sellablePartBaseQuantity = unitsPerLarge
+```
+
+**Example — Valid:**
+
+```
+Product: Panadol
+  item_units: baseUnitId=tablet, largeUnitId=box, unitsPerLarge=100
+  partialSale config:
+    partsPerFullProduct = 10      (10 Strips per Box)
+    sellablePartBaseQuantity = 10  (1 Strip = 10 Tablets)
+
+  Validation: 10 × 10 = 100 = unitsPerLarge ✓
+```
+
+**Example — Invalid (MUST be rejected):**
+
+```
+Product: Panadol
+  item_units: baseUnitId=tablet, largeUnitId=box, unitsPerLarge=100
+  partialSale config:
+    partsPerFullProduct = 10
+    sellablePartBaseQuantity = 8
+
+  Validation: 10 × 8 = 80 ≠ 100 ✗ → REJECT
+```
+
+**Exception**: If the product does NOT use the existing `item_units` large unit as its authoritative full-product conversion, do not force this equality. Instead, identify the actual authoritative full-product base quantity and define the equivalent invariant:
+
+```
+partsPerFullProduct × sellablePartBaseQuantity = base units per full product
+```
+
+The key invariant is: **the number of sellable parts multiplied by the number of base units in each sellable part must equal the number of base units in one complete product.**
+
+**Independence from pricing**: This invariant is purely about inventory consistency. It does NOT affect the pricing formula. Pricing uses `partsPerFullProduct` only. Inventory uses `sellablePartBaseQuantity` only.
+
 ---
 
 ## 11. Prescription Interaction
@@ -397,14 +443,15 @@ Given the same inputs, the formula always produces the same output. No floating-
 
 | Rule | Enforcement |
 |---|---|
+| `partialSaleEnabled = false` → `sellablePartUnitId = NULL`, `sellablePartBaseQuantity = NULL` | Application layer |
+| `partialSaleEnabled = true` → ALL of `sellablePartUnitId`, `partsPerFullProduct`, `sellablePartBaseQuantity`, `partialSaleMarkupBasisPoints` are NOT NULL | Application layer |
 | `partsPerFullProduct > 1` when `partialSaleEnabled = true` | Application layer |
-| `sellablePartUnitId` is NOT NULL when `partialSaleEnabled = true` | Application layer |
 | `sellablePartBaseQuantity ≥ 1` when `partialSaleEnabled = true` | Application layer |
 | `partialSaleMarkupBasisPoints` ∈ [0, 10000] | Application layer |
 | `sellingPriceMicros > 0` for partial-sale products | Application layer |
 | `partsPerFullProduct ≤ 0` rejected | Application layer |
 | `sellablePartBaseQuantity ≤ 0` rejected | Application layer |
-| When `partialSaleEnabled = false`: `sellablePartUnitId = NULL`, `sellablePartBaseQuantity = NULL` or default-safe inactive value | Application layer |
+| **Consistency invariant**: When `item_units.unitsPerLarge` is the authoritative full-product conversion: `partsPerFullProduct × sellablePartBaseQuantity = unitsPerLarge`. If this does not hold, reject the configuration. | Application layer |
 
 ---
 
@@ -462,15 +509,15 @@ The 10% default may be too high. The pharmacist can override the markup per prod
 
 ### 17.2 What Needs to Be Added
 
-| Change | Table | Column | Type | Default |
-|---|---|---|---|---|
-| Add | `items` | `partialSaleEnabled` | BOOLEAN | false |
-| Add | `items` | `sellablePartUnitId` | TEXT NULL | null |
-| Add | `items` | `partsPerFullProduct` | INTEGER | 1 |
-| Add | `items` | `sellablePartBaseQuantity` | INTEGER | 1 |
-| Add | `items` | `partialSaleMarkupBasisPoints` | INTEGER | 1000 |
-| Create | `app_settings` | — | TABLE | — |
-| Bump | `schemaVersion` | — | — | 1 → 2 |
+| Change | Table | Column | Type | When Disabled | When Enabled |
+|---|---|---|---|---|---|
+| Add | `items` | `partialSaleEnabled` | BOOLEAN | false | true |
+| Add | `items` | `sellablePartUnitId` | TEXT NULL | NULL | NOT NULL |
+| Add | `items` | `partsPerFullProduct` | INTEGER NULL | NULL | NOT NULL (> 1) |
+| Add | `items` | `sellablePartBaseQuantity` | INTEGER NULL | NULL | NOT NULL (≥ 1) |
+| Add | `items` | `partialSaleMarkupBasisPoints` | INTEGER NULL | NULL | NOT NULL (0–10000) |
+| Create | `app_settings` | — | TABLE | — | — |
+| Bump | `schemaVersion` | — | — | — | 1 → 2 |
 
 ### 17.3 `subUnitPriceMicros` Decision
 
@@ -565,9 +612,14 @@ All tests from §19 below.
 | PS25 | Changing sellablePartBaseQuantity does NOT change partial-sale price | Unit |
 | PS26 | Changing partsPerFullProduct DOES affect partial-sale price | Unit |
 | PS27 | sellablePartBaseQuantity = 0 is rejected | Unit |
-| PS28 | sellablePartBaseQuantity with partialSaleEnabled = false is ignored | Unit |
+| PS28 | sellablePartBaseQuantity with partialSaleEnabled = false is NULL/ignored | Unit |
 | PS29 | Counterexample: partsPerFullProduct ≠ sellablePartBaseQuantity produces correct results | Unit |
 | PS30 | FEFO deducts exact base quantity (not sellable quantity) | Integration |
+| PS31 | Consistency invariant: 10 × 10 = 100 = unitsPerLarge → valid | Unit |
+| PS32 | Consistency invariant: 10 × 8 ≠ 100 → rejected | Unit |
+| PS33 | Consistency invariant: when item_units has no largeUnit, skip invariant check | Unit |
+| PS34 | Partial-sale disabled → sellablePartBaseQuantity is NULL | Unit |
+| PS35 | Enabling partial sale without sellablePartBaseQuantity is rejected | Unit |
 
 ---
 
@@ -575,12 +627,14 @@ All tests from §19 below.
 
 ### 20.1 Forward-Only Migration
 
-The schema change is forward-only (§29 convention). New columns are appended with defaults. Existing rows get:
+The schema change is forward-only (§29 convention). New columns are appended. Existing rows get:
 - `partialSaleEnabled = false` (no partial sale for existing products)
-- `sellablePartUnitId = null`
-- `partsPerFullProduct = 1`
-- `sellablePartBaseQuantity = 1`
-- `partialSaleMarkupBasisPoints = 1000`
+- `sellablePartUnitId = NULL`
+- `partsPerFullProduct = NULL`
+- `sellablePartBaseQuantity = NULL`
+- `partialSaleMarkupBasisPoints = NULL`
+
+No existing product may accidentally become a Partial Sale product after migration. All partial-sale fields are NULL when `partialSaleEnabled = false`.
 
 ### 20.2 Backward Compatibility
 
@@ -600,13 +654,13 @@ Existing values in `subUnitPriceMicros` are preserved. For products where `parti
 
 ## 22. Phase 6 Readiness Verdict
 
-🟢 **PRICING DESIGN LOCKED — INVENTORY CONVERSION EXPLICITLY DEFINED — READY FOR PHASE 6**
+🟢 **PHASE 6 DESIGN LOCK — FINAL**
 
 ### Verification Checklist
 
 | # | Requirement | Status |
 |---|---|---|
-| 1 | New explicit pharmacist-controlled model documented | ✅ |
+| 1 | New explicit pharmacist-controlled model documented | ✅ (§3, §4) |
 | 2 | Old automatic partial pricing clearly superseded | ✅ (§2) |
 | 3 | Actual repository architecture inspected | ✅ (§17) |
 | 4 | Full Retail Price clearly separated from partial-sale pricing | ✅ (§5) |
@@ -629,3 +683,8 @@ Existing values in `subUnitPriceMicros` are preserved. For products where `parti
 | 21 | Counterexample documented | ✅ (§10.4) |
 | 22 | FEFO flow explicitly traced | ✅ (§10.5) |
 | 23 | Historical transaction safety ensured | ✅ (§13) |
+| 24 | No unsafe DEFAULT 1 for `sellablePartBaseQuantity` | ✅ (§4.1: NULL when disabled, NOT NULL when enabled) |
+| 25 | Full-product consistency invariant documented | ✅ (§10.7) |
+| 26 | Consistency invariant validation rule added | ✅ (§15) |
+| 27 | Migration preserves existing products as non-partial | ✅ (§20.1: NULL defaults) |
+| 28 | Schema design uses nullable columns, not hardcoded defaults | ✅ (§17.2) |

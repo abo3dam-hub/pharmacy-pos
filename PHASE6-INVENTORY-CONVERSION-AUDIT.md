@@ -1,21 +1,33 @@
 # FINAL INVENTORY CONVERSION VALIDATION
 
-> **RESOLVED — CORRECTION DOCUMENTED IN PHASE6-PARTIAL-SALE-DESIGN-LOCK.md**
+> **RESOLVED — ALL CORRECTIONS DOCUMENTED IN PHASE6-PARTIAL-SALE-DESIGN-LOCK.md**
 >
-> The inventory conversion gap identified in this audit has been resolved by adding `sellablePartBaseQuantity` to the Phase 6 design. The authoritative document is now `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md`.
+> The inventory conversion gap identified in this audit has been fully resolved:
+> 1. `sellablePartBaseQuantity` added to Phase 6 design (§4.1, §10.2)
+> 2. No unsafe DEFAULT 1 — NULL when disabled, NOT NULL when enabled (§4.1)
+> 3. Full-product consistency invariant documented (§10.7): `partsPerFullProduct × sellablePartBaseQuantity = unitsPerLarge`
+> 4. Invariant validation rule added (§15)
+> 5. Migration uses NULL defaults, not hardcoded 1 (§20.1)
+>
+> The authoritative document is `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md`.
 
 **Phase 6 — Partial Sale**
 **Date:** 2026-09-06
 **Scope:** Inventory/unit-conversion audit ONLY
-**Status:** Gap identified, correction documented, design updated
+**Status:** ✅ FULLY RESOLVED — DESIGN LOCKED
 
 ---
 
 ## 1. Executive Verdict
 
-**🟡 YELLOW → 🟢 RESOLVED — CORRECTION DOCUMENTED**
+**🟢 RESOLVED — ALL GAPS CLOSED**
 
-The pricing design is correct and locked. The inventory conversion gap was identified: the current architecture cannot convert an intermediate sellable unit (e.g., Strip) to base units (e.g., Tablets). The correction has been documented: add `sellablePartBaseQuantity` to the `items` table. The full design update is in `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md` §4.1, §10.
+The pricing design is correct and locked. The inventory conversion gap has been fully resolved:
+- `sellablePartBaseQuantity` explicitly defined (§4.1, §10.2)
+- No unsafe DEFAULT 1 — columns are NULL when partial sale is disabled
+- Consistency invariant enforced: `partsPerFullProduct × sellablePartBaseQuantity = unitsPerLarge` (§10.7)
+- Pricing and inventory conversion are explicitly separated (§10.4)
+- Historical transaction safety ensured (§13)
 
 ---
 
@@ -364,15 +376,19 @@ To convert 3 Doses to base units (ml), we need: `3 × 5 = 15ml`. But `partsPerFu
 
 > **This correction has been documented in `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md` §4.1, §10.2.**
 
-### 13.1 `sellablePartBaseQuantity` (APPROVED)
+### 13.1 `sellablePartBaseQuantity` (IMPLEMENTED IN DESIGN)
 
 Add one column to `items`:
 
 ```
-sellablePartBaseQuantity INTEGER DEFAULT 1
+sellablePartBaseQuantity INTEGER NULL
 ```
 
 **Meaning**: 1 sellable part = N base units.
+
+**When `partialSaleEnabled = false`**: `sellablePartBaseQuantity = NULL` (no implicit default of 1).
+
+**When `partialSaleEnabled = true`**: `sellablePartBaseQuantity` is NOT NULL, must be ≥ 1.
 
 **Example**:
 - Panadol: `sellablePartBaseQuantity = 10` (1 Strip = 10 Tablets)
@@ -383,7 +399,11 @@ sellablePartBaseQuantity INTEGER DEFAULT 1
 quantityBase = sellablePartQuantity × sellablePartBaseQuantity
 ```
 
-**Validation**: Must be ≥ 1 when `partialSaleEnabled = true`. Must be NULL or default when `partialSaleEnabled = false`.
+**Consistency invariant** (§10.7): When `item_units.unitsPerLarge` is the authoritative full-product conversion:
+```
+partsPerFullProduct × sellablePartBaseQuantity = unitsPerLarge
+```
+If this does not hold, the configuration MUST be rejected.
 
 ### 13.2 Why This Is Minimal
 
@@ -444,8 +464,14 @@ Bottle = 200ml, Dose = 5ml
 
 **PRICING DESIGN: LOCKED / UNCHANGED** ✅
 
-**INVENTORY CONVERSION: 🟢 RESOLVED — `sellablePartBaseQuantity` ADDED TO DESIGN**
+**INVENTORY CONVERSION: 🟢 FULLY RESOLVED**
 
-**PHASE 6: READY FOR IMPLEMENTATION**
+All gaps have been closed:
+1. `sellablePartBaseQuantity` explicitly defined (§4.1, §10.2)
+2. No unsafe DEFAULT 1 — NULL when disabled, NOT NULL when enabled
+3. Consistency invariant enforced: `partsPerFullProduct × sellablePartBaseQuantity = unitsPerLarge` (§10.7)
+4. Pricing and inventory conversion explicitly separated (§10.4)
+5. Historical transaction safety ensured (§13)
+6. Migration uses NULL defaults (§20.1)
 
-The inventory conversion gap has been resolved. The minimum correction (`sellablePartBaseQuantity` column on `items`) has been documented in `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md`. Phase 6 can proceed with this correction included in the schema changes.
+**PHASE 6: 🟢 FINAL DESIGN LOCK — READY FOR IMPLEMENTATION**
