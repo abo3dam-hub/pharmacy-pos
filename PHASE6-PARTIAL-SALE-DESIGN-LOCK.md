@@ -8,11 +8,11 @@
 
 ## 1. Executive Summary
 
-The previous automatic packaging-hierarchy pricing model is **SUPERSEDED**. The new model is simpler, explicit, and pharmacist-controlled. Partial sale is an **optional, per-product configuration**. The pharmacist enables it, defines the smallest sellable part, the number of such parts in one complete product, and a product-specific markup percentage. The system does not infer any of these values.
+The previous automatic packaging-hierarchy pricing model is **SUPERSEDED**. The new model is simpler, explicit, and pharmacist-controlled. Partial sale is an **optional, per-product configuration**. The pharmacist enables it, defines the smallest sellable part, the number of such parts in one complete product, the inventory conversion factor (how many base units one sellable part represents), and a product-specific markup percentage. The system does not infer any of these values.
 
-The actual repository architecture supports this model. Four new columns on the `items` table are the minimum required schema change. No new tables are needed. The existing `item_units` table remains for unit conversion and is NOT repurposed for partial-sale configuration.
+The actual repository architecture supports this model with one addition: a new `sellablePartBaseQuantity` column on the `items` table is required to bridge the gap between sellable-part quantities and base-unit inventory quantities. Five new columns on the `items` table plus one new table (`app_settings`) are the minimum required schema changes. The existing `item_units` table remains for Box↔Tablet conversion and is NOT repurposed for partial-sale configuration.
 
-**Verdict: 🟢 PRICING DESIGN LOCKED — READY FOR PHASE 6**
+**Verdict: 🟢 PRICING DESIGN LOCKED — INVENTORY CONVERSION EXPLICITLY DEFINED — READY FOR PHASE 6**
 
 ---
 
@@ -41,7 +41,8 @@ This model is retired. It is replaced by the explicit pharmacist-controlled mode
 | **Full Product** | The complete product/package sold at its configured retail price | Box = $10.00 |
 | **Sellable Part** | The smallest portion the pharmacist permits the POS to sell separately | Strip, Sachet, Tablet, Ampoule |
 | **Partial Sale** | A sale involving fewer Sellable Parts than one complete Full Product | 3 Strips from a Box of 10 |
-| **Parts Per Full Product** | How many Sellable Parts constitute one Full Product | 10 Strips per Box |
+| **Parts Per Full Product** | How many Sellable Parts constitute one Full Product (commercial decomposition) | 10 Strips per Box |
+| **Sellable Part Base Quantity** | How many inventory base units one Sellable Part represents (inventory conversion) | 1 Strip = 10 Tablets |
 
 ### 3.2 Partial Sale Is Optional Per Product
 
@@ -56,6 +57,7 @@ The system MUST NOT automatically determine:
 - Whether a product supports partial sales
 - What the smallest sellable part is
 - How many parts are in one full product
+- How many base units one sellable part represents
 - What markup to apply
 
 The pharmacist explicitly configures all of these per product.
@@ -68,12 +70,13 @@ The pharmacist explicitly configures all of these per product.
 
 When partial sale is enabled, the product configuration requires:
 
-| Field | Type | Default | Validation |
-|---|---|---|---|
-| `partialSaleEnabled` | BOOLEAN | false | — |
-| `sellablePartUnitId` | TEXT (FK → Units) | NULL | Required when `partialSaleEnabled = true` |
-| `partsPerFullProduct` | INTEGER | 1 | Must be > 1 when `partialSaleEnabled = true` |
-| `partialSaleMarkupBasisPoints` | INTEGER | 1000 (10%) | 0–10000 (0%–100%) |
+| Field | Type | Default | Validation | Purpose |
+|---|---|---|---|---|
+| `partialSaleEnabled` | BOOLEAN | false | — | Enables partial sale for this product |
+| `sellablePartUnitId` | TEXT (FK → Units) | NULL | Required when `partialSaleEnabled = true` | The smallest sellable part |
+| `partsPerFullProduct` | INTEGER | 1 | Must be > 1 when `partialSaleEnabled = true` | Commercial decomposition: how many sellable parts in one full product |
+| `sellablePartBaseQuantity` | INTEGER | 1 | Must be ≥ 1 when `partialSaleEnabled = true` | Inventory conversion: how many base units in one sellable part |
+| `partialSaleMarkupBasisPoints` | INTEGER | 1000 (10%) | 0–10000 (0%–100%) | Markup applied to partial-base price |
 
 ### 4.2 Full Retail Price
 
@@ -87,9 +90,11 @@ The Full Retail Price is `items.sellingPriceMicros`. This is the existing field.
 | Partial Sale Enabled | **Stored** (new column) |
 | Sellable Part | **Stored** (new column, FK → Units) |
 | Parts Per Full Product | **Stored** (new column) |
+| Sellable Part Base Quantity | **Stored** (new column) |
 | Partial Markup | **Stored** (new column, product-specific) |
 | Partial Base Price | **Derived**: `sellingPriceMicros ÷ partsPerFullProduct` |
 | Partial Selling Price | **Derived**: `partialBasePrice × (10000 + markupBasisPoints) ÷ 10000` |
+| Base Quantity for Stock | **Derived**: `sellablePartQuantity × sellablePartBaseQuantity` |
 
 ---
 
@@ -182,11 +187,23 @@ Quantity = 13, Parts Per Full Product = 10
 
 ### 8.4 Decomposition Algorithm
 
+**Pricing decomposition:**
 ```
 completeProducts = quantity ÷ partsPerFullProduct  (integer division)
 remainingParts = quantity % partsPerFullProduct    (modulo)
 
 total = (completeProducts × fullRetailPrice) + (remainingParts × partialSellingPrice)
+```
+
+**Inventory conversion:**
+```
+totalBaseQuantity = quantity × sellablePartBaseQuantity
+```
+
+**Example**: 13 Strips, partsPerFullProduct=10, sellablePartBaseQuantity=10:
+```
+Pricing: 1 Box ($10.00) + 3 Strips (3 × $1.10 = $3.30) = $13.30
+Inventory: 13 × 10 = 130 Tablets deducted
 ```
 
 ---
@@ -209,30 +226,78 @@ The supplier's purchase cost must NOT be used as the Full Retail Price or as the
 
 All stock is tracked in base units (`batches.quantityBase`, `items.currentStockBase`). This is unchanged.
 
-### 10.2 Stock Deduction for Partial Sales
+### 10.2 Sellable Part → Base Unit Conversion
+
+**This is the critical inventory conversion.** The system MUST convert sellable-part quantities to base-unit quantities for stock deduction.
+
+```
+baseQuantity = sellablePartQuantity × sellablePartBaseQuantity
+```
+
+The `sellablePartBaseQuantity` field is the **explicit inventory conversion factor**. It is NOT derived from `item_units.unitsPerLarge` or any other field. The pharmacist configures it per product.
+
+### 10.3 Stock Deduction for Partial Sales
 
 When selling N Sellable Parts:
-- Deduct N base units from stock (via FEFO batch allocation)
-- The `unitTypeId` on the invoice line records which unit was sold
+1. Convert: `baseQuantity = N × sellablePartBaseQuantity`
+2. Deduct `baseQuantity` base units from stock via FEFO batch allocation
+3. The `unitTypeId` on the invoice line records which unit was sold (metadata)
+4. The `quantityBaseSigned` on the invoice line records the actual base units consumed
 
-### 10.3 Unit Conversion
+### 10.4 Inventory Conversion vs Commercial Decomposition
 
-The existing `item_units` table defines base/large unit conversion for inventory purposes. This is independent of the partial-sale configuration.
+These are **two distinct concepts** that MUST NOT be conflated:
 
-**Important**: The `sellablePartUnitId` in partial-sale config may or may not match the `baseUnitId` in `item_units`. The partial-sale config is a selling rule; the unit conversion is an inventory rule. They coexist independently.
+| Concept | Field | Question It Answers | Example |
+|---|---|---|---|
+| **Commercial decomposition** | `partsPerFullProduct` | How many sellable parts make one retail product? | 10 Strips = 1 Box |
+| **Inventory conversion** | `sellablePartBaseQuantity` | How many base inventory units does one sellable part consume? | 1 Strip = 10 Tablets |
 
-### 10.4 Example
+**These values MAY be equal in some products but MUST NOT be assumed identical.**
+
+**Counterexample where they differ:**
+
+```
+Product: Syrup
+  Full product = Bottle (200 ml)
+  Sellable part = Dose (5 ml)
+  Base unit = ml
+
+  partsPerFullProduct = 40       (40 Doses = 1 Bottle)
+  sellablePartBaseQuantity = 5   (1 Dose = 5 ml)
+```
+
+Here `partsPerFullProduct ≠ sellablePartBaseQuantity`. Using the wrong one would produce incorrect stock deductions.
+
+### 10.5 Panadol Example — Complete Trace
 
 ```
 Product: Panadol
   item_units: baseUnitId=tablet, largeUnitId=box, unitsPerLarge=100
-  partialSale: enabled, sellablePart=strip, partsPerFullProduct=10
+  partialSale config:
+    partialSaleEnabled = true
+    sellablePartUnitId = strip
+    partsPerFullProduct = 10
+    sellablePartBaseQuantity = 10
+    partialSaleMarkupBasisPoints = 1000
 
 Selling 3 Strips:
-  Stock deduction: 3 × (strips-per-tablet conversion) base units
-  The POS handles the strip→tablet conversion for stock deduction
-  using the existing BaseUnitConverter
+  Pricing: 3 × $1.10 = $3.30
+  Inventory: 3 × 10 = 30 Tablets deducted from stock via FEFO
+
+Selling 13 Strips:
+  Pricing: 1 Box ($10.00) + 3 Strips (3 × $1.10 = $3.30) = $13.30
+  Inventory: 13 × 10 = 130 Tablets deducted from stock via FEFO
 ```
+
+### 10.6 Unit Conversion Independence
+
+The existing `item_units` table defines Box↔Tablet conversion for display and inventory purposes. This is independent of the partial-sale configuration. The `sellablePartBaseQuantity` may produce a different conversion factor than `item_units.unitsPerLarge`.
+
+| System | Purpose | Fields |
+|---|---|---|
+| `item_units` | Display unit conversion (Box ↔ Tablet) | `baseUnitId`, `largeUnitId`, `unitsPerLarge` |
+| Partial-sale config | Retail pricing + inventory for partial sales | `partialSaleEnabled`, `sellablePartUnitId`, `partsPerFullProduct`, `sellablePartBaseQuantity`, `partialSaleMarkupBasisPoints` |
 
 ---
 
@@ -240,15 +305,24 @@ Selling 3 Strips:
 
 ### 11.1 Prescription-Linked Partial Sales
 
-A prescription may request a quantity of Sellable Parts. The resulting invoice line records:
-- Actual quantity sold (in base units)
+A prescription may request a quantity of Sellable Parts. The system must convert this to base units for inventory:
+
+```
+Prescription: 3 Strips of Panadol
+  dispensed sellable quantity = 3
+  inventory base quantity = 3 × 10 = 30 Tablets
+```
+
+The resulting invoice line records:
+- Actual quantity sold in base units (`quantityBaseSigned = 30`)
+- Sellable part quantity for display/reference
 - Actual unit price used (Partial Selling Price or Full Retail Price)
 - Historical price (frozen at invoice creation)
 - Prescription-item linkage (`prescription_item_id`)
 
 ### 11.2 No Re-Calculation
 
-The partial-sale calculation is NOT repeated when reading an old invoice. The historical `unitPriceMicros` is immutable.
+The partial-sale calculation is NOT repeated when reading an old invoice. The historical `unitPriceMicros` and `quantityBaseSigned` are immutable.
 
 ---
 
@@ -266,11 +340,20 @@ Reversal: 2 × $1.10 = $2.20 (historical price, not today's price)
 
 ### 12.2 Inventory Restoration
 
+Returns restore the correct historical base-unit quantity. The system must NOT depend on current product configuration to reinterpret an old transaction.
+
+```
+Original sale: 3 Strips → 30 Tablets deducted (using sellablePartBaseQuantity=10 at sale time)
+Return: 1 Strip → 10 Tablets restored (using the same historical conversion)
+```
+
+The return reads `quantityBaseSigned` from the original invoice line (e.g., 30 for 3 Strips). To restore per sellable part: `quantityBaseSigned ÷ sellablePartQuantity` = base units per part. Alternatively, the invoice line can store the `sellablePartBaseQuantity` at sale time for guaranteed historical accuracy.
+
 Returns restore stock to the original batch (via `StockService.applyMovement()` with `MovementType.sale_return`).
 
 ### 12.3 Prescription Reversal
 
-If the return is from a prescription-linked sale, decrement `prescription_items.dispensedQuantityBase` by the returned quantity.
+If the return is from a prescription-linked sale, decrement `prescription_items.dispensedQuantityBase` by the returned base-unit quantity.
 
 ---
 
@@ -281,7 +364,9 @@ Once an invoice is finalized:
 - `quantityBaseSigned` — NEVER UPDATED
 - `lineTotalMicros` — NEVER UPDATED
 
-Changing Full Retail Price, Parts Per Full Product, or Partial Markup does NOT affect existing invoices.
+Changing Full Retail Price, Parts Per Full Product, Sellable Part Base Quantity, or Partial Markup does NOT affect existing invoices.
+
+**Historical transaction safety**: The invoice line retains `quantityBaseSigned` (the actual base units consumed). This value is the authoritative record of what was deducted from stock. Future changes to `sellablePartBaseQuantity` cannot corrupt historical inventory or return calculations because the base-unit quantity is already frozen on the invoice line.
 
 ---
 
@@ -314,9 +399,12 @@ Given the same inputs, the formula always produces the same output. No floating-
 |---|---|
 | `partsPerFullProduct > 1` when `partialSaleEnabled = true` | Application layer |
 | `sellablePartUnitId` is NOT NULL when `partialSaleEnabled = true` | Application layer |
+| `sellablePartBaseQuantity ≥ 1` when `partialSaleEnabled = true` | Application layer |
 | `partialSaleMarkupBasisPoints` ∈ [0, 10000] | Application layer |
 | `sellingPriceMicros > 0` for partial-sale products | Application layer |
-| `partsPerFullProduct <= 0` rejected | Application layer |
+| `partsPerFullProduct ≤ 0` rejected | Application layer |
+| `sellablePartBaseQuantity ≤ 0` rejected | Application layer |
+| When `partialSaleEnabled = false`: `sellablePartUnitId = NULL`, `sellablePartBaseQuantity = NULL` or default-safe inactive value | Application layer |
 
 ---
 
@@ -379,6 +467,7 @@ The 10% default may be too high. The pharmacist can override the markup per prod
 | Add | `items` | `partialSaleEnabled` | BOOLEAN | false |
 | Add | `items` | `sellablePartUnitId` | TEXT NULL | null |
 | Add | `items` | `partsPerFullProduct` | INTEGER | 1 |
+| Add | `items` | `sellablePartBaseQuantity` | INTEGER | 1 |
 | Add | `items` | `partialSaleMarkupBasisPoints` | INTEGER | 1000 |
 | Create | `app_settings` | — | TABLE | — |
 | Bump | `schemaVersion` | — | — | 1 → 2 |
@@ -397,8 +486,8 @@ The `item_units` table remains for unit conversion (base ↔ large). It is NOT r
 
 | System | Purpose | Fields |
 |---|---|---|
-| `item_units` | Inventory unit conversion | `baseUnitId`, `largeUnitId`, `unitsPerLarge` |
-| Partial-sale config | Retail partial-sale pricing | `partialSaleEnabled`, `sellablePartUnitId`, `partsPerFullProduct`, `partialSaleMarkupBasisPoints` |
+| `item_units` | Display unit conversion (Box ↔ Tablet) | `baseUnitId`, `largeUnitId`, `unitsPerLarge` |
+| Partial-sale config | Retail pricing + inventory for partial sales | `partialSaleEnabled`, `sellablePartUnitId`, `partsPerFullProduct`, `sellablePartBaseQuantity`, `partialSaleMarkupBasisPoints` |
 
 ---
 
@@ -406,7 +495,7 @@ The `item_units` table remains for unit conversion (base ↔ large). It is NOT r
 
 ### 18.1 Database
 
-1. Add 4 columns to `items` table (see §17.2)
+1. Add 5 columns to `items` table (see §17.2)
 2. Create `app_settings` table (for global default markup)
 3. Bump `schemaVersion` from 1 to 2
 4. Seed `app_settings` with default `partial_sale_markup_basis_points = 1000`
@@ -416,11 +505,15 @@ The `item_units` table remains for unit conversion (base ↔ large). It is NOT r
 1. Create `PartialPriceCalculator` service:
    - `calculate(sellingPriceMicros, partsPerFullProduct, markupBasisPoints)` → `int partialSellingPriceMicros`
    - Uses `Money.divideBy()` and `Money.timesRatio()`
-2. Extend `SaleService` to accept optional `partialSaleDecomposition`:
+2. Create `SellablePartConverter` utility (or inline in POS logic):
+   - `convertToBase(sellablePartQuantity, sellablePartBaseQuantity)` → `int baseQuantity`
+   - Pure integer multiplication: `quantity × sellablePartBaseQuantity`
+3. Extend `SaleService` to accept optional `partialSaleDecomposition`:
    - When quantity > partsPerFullProduct, decompose into full products + remaining parts
    - Full products priced at `sellingPriceMicros`
    - Remaining parts priced at `partialSellingPriceMicros`
-3. Auto-derive `subUnitPriceMicros` when `partialSaleEnabled`, `sellingPriceMicros`, `partsPerFullProduct`, or `markupBasisPoints` changes
+   - Total base quantity = `quantity × sellablePartBaseQuantity`
+4. Auto-derive `subUnitPriceMicros` when `partialSaleEnabled`, `sellingPriceMicros`, `partsPerFullProduct`, or `markupBasisPoints` changes
 
 ### 18.3 UI
 
@@ -435,6 +528,8 @@ All tests from §19 below.
 ---
 
 ## 19. Required Phase 6 Tests
+
+### 19.1 Pricing Tests
 
 | # | Test | Type |
 |---|---|---|
@@ -459,6 +554,21 @@ All tests from §19 below.
 | PS19 | No cumulative markup across conversion levels | Unit |
 | PS20 | Partial price not derived from supplier purchase price | Unit |
 
+### 19.2 Inventory Conversion Tests
+
+| # | Test | Type |
+|---|---|---|
+| PS21 | 1 Strip → sellablePartBaseQuantity × 1 base units | Unit |
+| PS22 | 3 Strips → 3 × sellablePartBaseQuantity base units | Unit |
+| PS23 | 10 Strips → 10 × sellablePartBaseQuantity base units | Unit |
+| PS24 | 13 Strips → 13 × sellablePartBaseQuantity base units (decomposed pricing, unified inventory) | Unit |
+| PS25 | Changing sellablePartBaseQuantity does NOT change partial-sale price | Unit |
+| PS26 | Changing partsPerFullProduct DOES affect partial-sale price | Unit |
+| PS27 | sellablePartBaseQuantity = 0 is rejected | Unit |
+| PS28 | sellablePartBaseQuantity with partialSaleEnabled = false is ignored | Unit |
+| PS29 | Counterexample: partsPerFullProduct ≠ sellablePartBaseQuantity produces correct results | Unit |
+| PS30 | FEFO deducts exact base quantity (not sellable quantity) | Integration |
+
 ---
 
 ## 20. Migration/Schema Considerations
@@ -469,6 +579,7 @@ The schema change is forward-only (§29 convention). New columns are appended wi
 - `partialSaleEnabled = false` (no partial sale for existing products)
 - `sellablePartUnitId = null`
 - `partsPerFullProduct = 1`
+- `sellablePartBaseQuantity = 1`
 - `partialSaleMarkupBasisPoints = 1000`
 
 ### 20.2 Backward Compatibility
@@ -483,13 +594,13 @@ Existing values in `subUnitPriceMicros` are preserved. For products where `parti
 
 ## 21. Final Canonical Business Rule
 
-> **Partial sale is an optional, explicitly configured product-level business rule. The pharmacist enables partial sale and defines the smallest sellable part, the number of such parts contained in one complete product, and the partial-sale markup. The complete product continues to use its normal retail price. Partial-unit pricing is calculated directly from that full retail price, divided by the configured number of sellable parts, with the configured markup applied exactly once. Supplier purchase packaging and purchase cost do not determine the partial retail price.**
+> **Partial sale is an optional, explicitly configured product-level business rule. The pharmacist enables partial sale and defines the smallest sellable part, the number of such parts contained in one complete product, the number of inventory base units each sellable part represents, and the partial-sale markup. The complete product continues to use its normal retail price. Partial-unit pricing is calculated directly from that full retail price, divided by the configured number of sellable parts, with the configured markup applied exactly once. Inventory stock deduction uses the configured sellable-part-to-base-unit conversion factor. Supplier purchase packaging and purchase cost do not determine the partial retail price or the inventory conversion factor.**
 
 ---
 
 ## 22. Phase 6 Readiness Verdict
 
-🟢 **PRICING DESIGN LOCKED — READY FOR PHASE 6**
+🟢 **PRICING DESIGN LOCKED — INVENTORY CONVERSION EXPLICITLY DEFINED — READY FOR PHASE 6**
 
 ### Verification Checklist
 
@@ -507,9 +618,14 @@ Existing values in `subUnitPriceMicros` are preserved. For products where `parti
 | 10 | Historical prices immutable | ✅ (§13) |
 | 11 | Returns addressed | ✅ (§12) |
 | 12 | Prescription linkage addressed | ✅ (§11) |
-| 13 | Inventory interaction addressed | ✅ (§10) |
+| 13 | Inventory interaction addressed with explicit conversion factor | ✅ (§10) |
 | 14 | Rounding addressed | ✅ (§14) |
 | 15 | Invalid configurations addressed | ✅ (§15, §16) |
-| 16 | Required tests documented | ✅ (§19) |
+| 16 | Required tests documented (pricing + inventory conversion) | ✅ (§19) |
 | 17 | All relevant reports consistent | ✅ |
 | 18 | No unresolved business ambiguity | ✅ |
+| 19 | `sellablePartBaseQuantity` explicitly defined | ✅ (§4.1, §10.2) |
+| 20 | Commercial decomposition vs inventory conversion distinguished | ✅ (§10.4) |
+| 21 | Counterexample documented | ✅ (§10.4) |
+| 22 | FEFO flow explicitly traced | ✅ (§10.5) |
+| 23 | Historical transaction safety ensured | ✅ (§13) |

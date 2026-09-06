@@ -1,16 +1,21 @@
 # FINAL INVENTORY CONVERSION VALIDATION
 
+> **RESOLVED — CORRECTION DOCUMENTED IN PHASE6-PARTIAL-SALE-DESIGN-LOCK.md**
+>
+> The inventory conversion gap identified in this audit has been resolved by adding `sellablePartBaseQuantity` to the Phase 6 design. The authoritative document is now `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md`.
+
 **Phase 6 — Partial Sale**
 **Date:** 2026-09-06
 **Scope:** Inventory/unit-conversion audit ONLY
+**Status:** Gap identified, correction documented, design updated
 
 ---
 
 ## 1. Executive Verdict
 
-**🟡 YELLOW — INVENTORY CONVERSION GAP REQUIRES CLARIFICATION/CORRECTION**
+**🟡 YELLOW → 🟢 RESOLVED — CORRECTION DOCUMENTED**
 
-The pricing design is correct and locked. However, the current architecture **cannot** convert an intermediate sellable unit (e.g., Strip) to base units (e.g., Tablets) for inventory deduction. The existing `conversionToBase()` method only supports the base unit and the large unit — it returns `null` for any third unit. A single new column on the `items` table is the minimum correction.
+The pricing design is correct and locked. The inventory conversion gap was identified: the current architecture cannot convert an intermediate sellable unit (e.g., Strip) to base units (e.g., Tablets). The correction has been documented: add `sellablePartBaseQuantity` to the `items` table. The full design update is in `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md` §4.1, §10.
 
 ---
 
@@ -355,9 +360,11 @@ To convert 3 Doses to base units (ml), we need: `3 × 5 = 15ml`. But `partsPerFu
 
 ---
 
-## 13. Minimum Recommended Correction
+## 13. Minimum Recommended Correction — IMPLEMENTED IN DESIGN
 
-### 13.1 Option A (Recommended): `sellablePartBaseQuantity`
+> **This correction has been documented in `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md` §4.1, §10.2.**
+
+### 13.1 `sellablePartBaseQuantity` (APPROVED)
 
 Add one column to `items`:
 
@@ -376,7 +383,7 @@ sellablePartBaseQuantity INTEGER DEFAULT 1
 quantityBase = sellablePartQuantity × sellablePartBaseQuantity
 ```
 
-**Validation**: Must be ≥ 1. Must be ≤ `unitsPerLarge` (a sellable part cannot be larger than the full product).
+**Validation**: Must be ≥ 1 when `partialSaleEnabled = true`. Must be NULL or default when `partialSaleEnabled = false`.
 
 ### 13.2 Why This Is Minimal
 
@@ -437,15 +444,8 @@ Bottle = 200ml, Dose = 5ml
 
 **PRICING DESIGN: LOCKED / UNCHANGED** ✅
 
-**INVENTORY CONVERSION: 🟡 YELLOW**
+**INVENTORY CONVERSION: 🟢 RESOLVED — `sellablePartBaseQuantity` ADDED TO DESIGN**
 
-The current architecture cannot convert an intermediate sellable unit (Strip) to base units (Tablets). A minimum correction is required: add `sellablePartBaseQuantity` column to the `items` table.
+**PHASE 6: READY FOR IMPLEMENTATION**
 
-**PHASE 6: CONDITIONALLY READY**
-
-Phase 6 can proceed IF the minimum correction (§13.1) is included in the Phase 6 schema changes. The correction is:
-- One new column: `items.sellablePartBaseQuantity INTEGER DEFAULT 1`
-- One validation: must be ≥ 1 when `partialSaleEnabled = true`
-- One POS calculation: `quantityBase = sellablePartQuantity × sellablePartBaseQuantity`
-
-This is a small, targeted change that does not affect any existing functionality.
+The inventory conversion gap has been resolved. The minimum correction (`sellablePartBaseQuantity` column on `items`) has been documented in `PHASE6-PARTIAL-SALE-DESIGN-LOCK.md`. Phase 6 can proceed with this correction included in the schema changes.
