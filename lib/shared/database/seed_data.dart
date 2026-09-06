@@ -267,6 +267,15 @@ Future<void> seedDefaults(AppDatabase db) async {
         updatedAt: now,
       ));
 
+  // Default partial-sale markup (10% = 1000 bp) — Phase 6 Design Lock §7.3.
+  await db.into(db.appSettings).insert(
+        AppSettingsCompanion.insert(
+          key: 'partial_sale_markup_basis_points',
+          value: '1000',
+          updatedAt: now,
+        ),
+      );
+
   // Default chart of accounts (sample).
   final defaultAccounts = <AccountsCompanion>[
     AccountsCompanion.insert(

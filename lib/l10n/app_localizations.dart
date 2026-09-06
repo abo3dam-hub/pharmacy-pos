@@ -2768,6 +2768,12 @@ abstract class AppLocalizations {
   /// **'نشطة'**
   String get prescriptionStatusActive;
 
+  /// No description provided for @prescriptionStatusPartiallyDispensed.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرف جزئي'**
+  String get prescriptionStatusPartiallyDispensed;
+
   /// No description provided for @prescriptionStatusDispensed.
   ///
   /// In ar, this message translates to:
@@ -2845,6 +2851,13 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لا يمكن ربط هذه الوصفة بالبيع'**
   String get prescriptionCannotPrepare;
+
+  String get partialSaleSection;
+  String get partialSaleEnabled;
+  String get partialSaleSellablePart;
+  String get partialSalePartsPerFull;
+  String get partialSaleBaseQuantity;
+  String get partialSaleMarkupPercent;
 }
 
 class _AppLocalizationsDelegate

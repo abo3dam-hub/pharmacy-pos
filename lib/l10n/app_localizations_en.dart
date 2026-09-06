@@ -1379,6 +1379,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prescriptionStatusActive => 'Active';
 
   @override
+  String get prescriptionStatusPartiallyDispensed => 'Partially Dispensed';
+
+  @override
   String get prescriptionStatusDispensed => 'Dispensed';
 
   @override
@@ -1420,4 +1423,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get prescriptionCannotPrepare =>
       'This prescription cannot be linked to a sale';
+
+  @override
+  String get partialSaleSection => 'Partial Sale Configuration';
+
+  @override
+  String get partialSaleEnabled => 'Allow Partial Selling';
+
+  @override
+  String get partialSaleSellablePart => 'Sellable Part Unit';
+
+  @override
+  String get partialSalePartsPerFull => 'Parts Per Full Product';
+
+  @override
+  String get partialSaleBaseQuantity => 'Base Units Per Part';
+
+  @override
+  String get partialSaleMarkupPercent => 'Markup %';
 }

@@ -79,6 +79,8 @@ class _PrescriptionDetailPageState
   String _statusLabel(AppLocalizations l10n, PrescriptionStatus status) {
     return switch (status) {
       PrescriptionStatus.active => l10n.prescriptionStatusActive,
+      PrescriptionStatus.partially_dispensed =>
+        l10n.prescriptionStatusPartiallyDispensed,
       PrescriptionStatus.dispensed => l10n.prescriptionStatusDispensed,
       PrescriptionStatus.expired => l10n.prescriptionStatusExpired,
       PrescriptionStatus.cancelled => l10n.prescriptionStatusCancelled,

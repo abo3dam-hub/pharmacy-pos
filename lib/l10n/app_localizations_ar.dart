@@ -1378,6 +1378,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get prescriptionStatusActive => 'نشطة';
 
   @override
+  String get prescriptionStatusPartiallyDispensed => 'صرف جزئي';
+
+  @override
   String get prescriptionStatusDispensed => 'تم صرفها';
 
   @override
@@ -1416,4 +1419,22 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get prescriptionCannotPrepare => 'لا يمكن ربط هذه الوصفة بالبيع';
+
+  @override
+  String get partialSaleSection => 'إعدادات البيع الجزئي';
+
+  @override
+  String get partialSaleEnabled => 'السماح بالبيع الجزئي';
+
+  @override
+  String get partialSaleSellablePart => 'وحدة البيع الجزئي';
+
+  @override
+  String get partialSalePartsPerFull => 'عدد الأجزاء في العبوة الكاملة';
+
+  @override
+  String get partialSaleBaseQuantity => 'عدد الوحدات الأساسية في الجزء';
+
+  @override
+  String get partialSaleMarkupPercent => 'نسبة الزيادة %';
 }

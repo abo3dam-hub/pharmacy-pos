@@ -103,7 +103,7 @@ enum CashboxTransactionType { open, close, deposit, withdraw, sale, expense }
 /// Lost sales lifecycle (§4.28): `open → ordered → resolved | cancelled`.
 enum LostSaleStatus { open, ordered, resolved, cancelled }
 
-enum PrescriptionStatus { active, dispensed, expired, cancelled }
+enum PrescriptionStatus { active, partially_dispensed, dispensed, expired, cancelled }
 
 /// Administrative status of an account / user record (soft delete).
 enum RecordStatus { active, inactive }

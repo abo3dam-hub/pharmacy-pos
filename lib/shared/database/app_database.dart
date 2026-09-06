@@ -10,6 +10,7 @@ import '../models/enum_value_converter.dart';
 
 import 'seed_data.dart';
 import 'tables/accounts.dart';
+import 'tables/app_settings.dart';
 import 'tables/audit_logs.dart';
 import 'tables/backups.dart';
 import 'tables/batches.dart';
@@ -76,6 +77,7 @@ part 'app_database.g.dart';
   AuditLogs,
   LostSales,
   Backups,
+  AppSettings,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
@@ -90,7 +92,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -111,6 +113,24 @@ class AppDatabase extends _$AppDatabase {
   /// receives the concrete old→new steps.
   Future<void> _migrate(Migrator m, int from, int to) async {
     if (from < 2) {
+      // Phase 6: add partial-sale columns to items + create app_settings table.
+      await m.addColumn(items, items.partialSaleEnabled);
+      await m.addColumn(items, items.sellablePartUnitId);
+      await m.addColumn(items, items.partsPerFullProduct);
+      await m.addColumn(items, items.sellablePartBaseQuantity);
+      await m.addColumn(items, items.partialSaleMarkupBasisPoints);
+      await m.createTable(appSettings);
+      // Seed default partial-sale markup (10% = 1000 bp).
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await into(appSettings).insert(
+        AppSettingsCompanion.insert(
+          key: 'partial_sale_markup_basis_points',
+          value: '1000',
+          updatedAt: now,
+        ),
+      );
+    }
+    if (from < 3) {
       await m.createTable(backups);
     }
   }

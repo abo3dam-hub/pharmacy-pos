@@ -451,6 +451,7 @@
   "prescriptionLineNotes": "Line notes",
   "prescriptionStatus": "Status",
   "prescriptionStatusActive": "Active",
+  "prescriptionStatusPartiallyDispensed": "Partially Dispensed",
   "prescriptionStatusDispensed": "Dispensed",
   "prescriptionStatusExpired": "Expired",
   "prescriptionStatusCancelled": "Cancelled",
@@ -469,5 +470,11 @@
   "@customerAccountDisableConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
   "@customerAccountEnableConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
   "@statementRowSaleInvoice": {"placeholders": {"number": {"type": "String"}}},
-  "@statementRowSaleReturn": {"placeholders": {"number": {"type": "String"}}}
+  "@statementRowSaleReturn": {"placeholders": {"number": {"type": "String"}}},
+  "partialSaleSection": "Partial Sale Configuration",
+  "partialSaleEnabled": "Allow Partial Selling",
+  "partialSaleSellablePart": "Sellable Part Unit",
+  "partialSalePartsPerFull": "Parts Per Full Product",
+  "partialSaleBaseQuantity": "Base Units Per Part",
+  "partialSaleMarkupPercent": "Markup %"
 }

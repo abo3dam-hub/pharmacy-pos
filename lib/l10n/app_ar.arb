@@ -451,6 +451,7 @@
   "prescriptionLineNotes": "ملاحظات السطر",
   "prescriptionStatus": "الحالة",
   "prescriptionStatusActive": "نشطة",
+  "prescriptionStatusPartiallyDispensed": "صرف جزئي",
   "prescriptionStatusDispensed": "تم صرفها",
   "prescriptionStatusExpired": "منتهية",
   "prescriptionStatusCancelled": "ملغاة",
@@ -469,5 +470,11 @@
   "@customerAccountDisableConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
   "@customerAccountEnableConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
   "@statementRowSaleInvoice": {"placeholders": {"number": {"type": "String"}}},
-  "@statementRowSaleReturn": {"placeholders": {"number": {"type": "String"}}}
+  "@statementRowSaleReturn": {"placeholders": {"number": {"type": "String"}}},
+  "partialSaleSection": "إعدادات البيع الجزئي",
+  "partialSaleEnabled": "السماح بالبيع الجزئي",
+  "partialSaleSellablePart": "وحدة البيع الجزئي",
+  "partialSalePartsPerFull": "عدد الأجزاء في العبوة الكاملة",
+  "partialSaleBaseQuantity": "عدد الوحدات الأساسية في الجزء",
+  "partialSaleMarkupPercent": "نسبة الزيادة %"
 }

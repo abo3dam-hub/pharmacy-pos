@@ -3301,6 +3301,63 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _partialSaleEnabledMeta =
+      const VerificationMeta('partialSaleEnabled');
+  @override
+  late final GeneratedColumn<bool> partialSaleEnabled = GeneratedColumn<bool>(
+    'partial_sale_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("partial_sale_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _sellablePartUnitIdMeta =
+      const VerificationMeta('sellablePartUnitId');
+  @override
+  late final GeneratedColumn<String> sellablePartUnitId =
+      GeneratedColumn<String>(
+        'sellable_part_unit_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _partsPerFullProductMeta =
+      const VerificationMeta('partsPerFullProduct');
+  @override
+  late final GeneratedColumn<int> partsPerFullProduct = GeneratedColumn<int>(
+    'parts_per_full_product',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sellablePartBaseQuantityMeta =
+      const VerificationMeta('sellablePartBaseQuantity');
+  @override
+  late final GeneratedColumn<int> sellablePartBaseQuantity =
+      GeneratedColumn<int>(
+        'sellable_part_base_quantity',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _partialSaleMarkupBasisPointsMeta =
+      const VerificationMeta('partialSaleMarkupBasisPoints');
+  @override
+  late final GeneratedColumn<int> partialSaleMarkupBasisPoints =
+      GeneratedColumn<int>(
+        'partial_sale_markup_basis_points',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _usageInstructionsMeta = const VerificationMeta(
     'usageInstructions',
   );
@@ -3410,6 +3467,11 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
     minimumStockBase,
     maximumStockBase,
     currentStockBase,
+    partialSaleEnabled,
+    sellablePartUnitId,
+    partsPerFullProduct,
+    sellablePartBaseQuantity,
+    partialSaleMarkupBasisPoints,
     usageInstructions,
     generalNotes,
     licenseNumber,
@@ -3729,6 +3791,51 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
         ),
       );
     }
+    if (data.containsKey('partial_sale_enabled')) {
+      context.handle(
+        _partialSaleEnabledMeta,
+        partialSaleEnabled.isAcceptableOrUnknown(
+          data['partial_sale_enabled']!,
+          _partialSaleEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sellable_part_unit_id')) {
+      context.handle(
+        _sellablePartUnitIdMeta,
+        sellablePartUnitId.isAcceptableOrUnknown(
+          data['sellable_part_unit_id']!,
+          _sellablePartUnitIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('parts_per_full_product')) {
+      context.handle(
+        _partsPerFullProductMeta,
+        partsPerFullProduct.isAcceptableOrUnknown(
+          data['parts_per_full_product']!,
+          _partsPerFullProductMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sellable_part_base_quantity')) {
+      context.handle(
+        _sellablePartBaseQuantityMeta,
+        sellablePartBaseQuantity.isAcceptableOrUnknown(
+          data['sellable_part_base_quantity']!,
+          _sellablePartBaseQuantityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('partial_sale_markup_basis_points')) {
+      context.handle(
+        _partialSaleMarkupBasisPointsMeta,
+        partialSaleMarkupBasisPoints.isAcceptableOrUnknown(
+          data['partial_sale_markup_basis_points']!,
+          _partialSaleMarkupBasisPointsMeta,
+        ),
+      );
+    }
     if (data.containsKey('usage_instructions')) {
       context.handle(
         _usageInstructionsMeta,
@@ -3931,6 +4038,26 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
         DriftSqlType.int,
         data['${effectivePrefix}current_stock_base'],
       )!,
+      partialSaleEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}partial_sale_enabled'],
+      )!,
+      sellablePartUnitId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sellable_part_unit_id'],
+      ),
+      partsPerFullProduct: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}parts_per_full_product'],
+      ),
+      sellablePartBaseQuantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sellable_part_base_quantity'],
+      ),
+      partialSaleMarkupBasisPoints: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}partial_sale_markup_basis_points'],
+      ),
       usageInstructions: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}usage_instructions'],
@@ -4013,6 +4140,26 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
   /// Derived/cache total stock in base units. The authoritative source is the
   /// [stock_movements](StockMovements) ledger (§10); this is re-synced from it.
   final int currentStockBase;
+
+  /// Enables partial selling for this product. When false, all partial-sale
+  /// fields are NULL/inactive.
+  final bool partialSaleEnabled;
+
+  /// FK → Units: the smallest unit the pharmacist permits selling separately.
+  /// NULL when partial sale is disabled.
+  final String? sellablePartUnitId;
+
+  /// Commercial decomposition: how many sellable parts in one full product.
+  /// NULL when partial sale is disabled; must be > 1 when enabled.
+  final int? partsPerFullProduct;
+
+  /// Inventory conversion: how many base units in one sellable part.
+  /// NULL when partial sale is disabled; must be ≥ 1 when enabled.
+  final int? sellablePartBaseQuantity;
+
+  /// Markup applied to partial-base price, in basis points (1000 = 10%).
+  /// NULL when partial sale is disabled.
+  final int? partialSaleMarkupBasisPoints;
   final String? usageInstructions;
   final String? generalNotes;
   final String? licenseNumber;
@@ -4056,6 +4203,11 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     required this.minimumStockBase,
     required this.maximumStockBase,
     required this.currentStockBase,
+    required this.partialSaleEnabled,
+    this.sellablePartUnitId,
+    this.partsPerFullProduct,
+    this.sellablePartBaseQuantity,
+    this.partialSaleMarkupBasisPoints,
     this.usageInstructions,
     this.generalNotes,
     this.licenseNumber,
@@ -4132,6 +4284,23 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     map['minimum_stock_base'] = Variable<int>(minimumStockBase);
     map['maximum_stock_base'] = Variable<int>(maximumStockBase);
     map['current_stock_base'] = Variable<int>(currentStockBase);
+    map['partial_sale_enabled'] = Variable<bool>(partialSaleEnabled);
+    if (!nullToAbsent || sellablePartUnitId != null) {
+      map['sellable_part_unit_id'] = Variable<String>(sellablePartUnitId);
+    }
+    if (!nullToAbsent || partsPerFullProduct != null) {
+      map['parts_per_full_product'] = Variable<int>(partsPerFullProduct);
+    }
+    if (!nullToAbsent || sellablePartBaseQuantity != null) {
+      map['sellable_part_base_quantity'] = Variable<int>(
+        sellablePartBaseQuantity,
+      );
+    }
+    if (!nullToAbsent || partialSaleMarkupBasisPoints != null) {
+      map['partial_sale_markup_basis_points'] = Variable<int>(
+        partialSaleMarkupBasisPoints,
+      );
+    }
     if (!nullToAbsent || usageInstructions != null) {
       map['usage_instructions'] = Variable<String>(usageInstructions);
     }
@@ -4209,6 +4378,20 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       minimumStockBase: Value(minimumStockBase),
       maximumStockBase: Value(maximumStockBase),
       currentStockBase: Value(currentStockBase),
+      partialSaleEnabled: Value(partialSaleEnabled),
+      sellablePartUnitId: sellablePartUnitId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sellablePartUnitId),
+      partsPerFullProduct: partsPerFullProduct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(partsPerFullProduct),
+      sellablePartBaseQuantity: sellablePartBaseQuantity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sellablePartBaseQuantity),
+      partialSaleMarkupBasisPoints:
+          partialSaleMarkupBasisPoints == null && nullToAbsent
+          ? const Value.absent()
+          : Value(partialSaleMarkupBasisPoints),
       usageInstructions: usageInstructions == null && nullToAbsent
           ? const Value.absent()
           : Value(usageInstructions),
@@ -4280,6 +4463,19 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       minimumStockBase: serializer.fromJson<int>(json['minimumStockBase']),
       maximumStockBase: serializer.fromJson<int>(json['maximumStockBase']),
       currentStockBase: serializer.fromJson<int>(json['currentStockBase']),
+      partialSaleEnabled: serializer.fromJson<bool>(json['partialSaleEnabled']),
+      sellablePartUnitId: serializer.fromJson<String?>(
+        json['sellablePartUnitId'],
+      ),
+      partsPerFullProduct: serializer.fromJson<int?>(
+        json['partsPerFullProduct'],
+      ),
+      sellablePartBaseQuantity: serializer.fromJson<int?>(
+        json['sellablePartBaseQuantity'],
+      ),
+      partialSaleMarkupBasisPoints: serializer.fromJson<int?>(
+        json['partialSaleMarkupBasisPoints'],
+      ),
       usageInstructions: serializer.fromJson<String?>(
         json['usageInstructions'],
       ),
@@ -4336,6 +4532,15 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       'minimumStockBase': serializer.toJson<int>(minimumStockBase),
       'maximumStockBase': serializer.toJson<int>(maximumStockBase),
       'currentStockBase': serializer.toJson<int>(currentStockBase),
+      'partialSaleEnabled': serializer.toJson<bool>(partialSaleEnabled),
+      'sellablePartUnitId': serializer.toJson<String?>(sellablePartUnitId),
+      'partsPerFullProduct': serializer.toJson<int?>(partsPerFullProduct),
+      'sellablePartBaseQuantity': serializer.toJson<int?>(
+        sellablePartBaseQuantity,
+      ),
+      'partialSaleMarkupBasisPoints': serializer.toJson<int?>(
+        partialSaleMarkupBasisPoints,
+      ),
       'usageInstructions': serializer.toJson<String?>(usageInstructions),
       'generalNotes': serializer.toJson<String?>(generalNotes),
       'licenseNumber': serializer.toJson<String?>(licenseNumber),
@@ -4382,6 +4587,11 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     int? minimumStockBase,
     int? maximumStockBase,
     int? currentStockBase,
+    bool? partialSaleEnabled,
+    Value<String?> sellablePartUnitId = const Value.absent(),
+    Value<int?> partsPerFullProduct = const Value.absent(),
+    Value<int?> sellablePartBaseQuantity = const Value.absent(),
+    Value<int?> partialSaleMarkupBasisPoints = const Value.absent(),
     Value<String?> usageInstructions = const Value.absent(),
     Value<String?> generalNotes = const Value.absent(),
     Value<String?> licenseNumber = const Value.absent(),
@@ -4446,6 +4656,19 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     minimumStockBase: minimumStockBase ?? this.minimumStockBase,
     maximumStockBase: maximumStockBase ?? this.maximumStockBase,
     currentStockBase: currentStockBase ?? this.currentStockBase,
+    partialSaleEnabled: partialSaleEnabled ?? this.partialSaleEnabled,
+    sellablePartUnitId: sellablePartUnitId.present
+        ? sellablePartUnitId.value
+        : this.sellablePartUnitId,
+    partsPerFullProduct: partsPerFullProduct.present
+        ? partsPerFullProduct.value
+        : this.partsPerFullProduct,
+    sellablePartBaseQuantity: sellablePartBaseQuantity.present
+        ? sellablePartBaseQuantity.value
+        : this.sellablePartBaseQuantity,
+    partialSaleMarkupBasisPoints: partialSaleMarkupBasisPoints.present
+        ? partialSaleMarkupBasisPoints.value
+        : this.partialSaleMarkupBasisPoints,
     usageInstructions: usageInstructions.present
         ? usageInstructions.value
         : this.usageInstructions,
@@ -4557,6 +4780,21 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       currentStockBase: data.currentStockBase.present
           ? data.currentStockBase.value
           : this.currentStockBase,
+      partialSaleEnabled: data.partialSaleEnabled.present
+          ? data.partialSaleEnabled.value
+          : this.partialSaleEnabled,
+      sellablePartUnitId: data.sellablePartUnitId.present
+          ? data.sellablePartUnitId.value
+          : this.sellablePartUnitId,
+      partsPerFullProduct: data.partsPerFullProduct.present
+          ? data.partsPerFullProduct.value
+          : this.partsPerFullProduct,
+      sellablePartBaseQuantity: data.sellablePartBaseQuantity.present
+          ? data.sellablePartBaseQuantity.value
+          : this.sellablePartBaseQuantity,
+      partialSaleMarkupBasisPoints: data.partialSaleMarkupBasisPoints.present
+          ? data.partialSaleMarkupBasisPoints.value
+          : this.partialSaleMarkupBasisPoints,
       usageInstructions: data.usageInstructions.present
           ? data.usageInstructions.value
           : this.usageInstructions,
@@ -4611,6 +4849,13 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           ..write('minimumStockBase: $minimumStockBase, ')
           ..write('maximumStockBase: $maximumStockBase, ')
           ..write('currentStockBase: $currentStockBase, ')
+          ..write('partialSaleEnabled: $partialSaleEnabled, ')
+          ..write('sellablePartUnitId: $sellablePartUnitId, ')
+          ..write('partsPerFullProduct: $partsPerFullProduct, ')
+          ..write('sellablePartBaseQuantity: $sellablePartBaseQuantity, ')
+          ..write(
+            'partialSaleMarkupBasisPoints: $partialSaleMarkupBasisPoints, ',
+          )
           ..write('usageInstructions: $usageInstructions, ')
           ..write('generalNotes: $generalNotes, ')
           ..write('licenseNumber: $licenseNumber, ')
@@ -4659,6 +4904,11 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     minimumStockBase,
     maximumStockBase,
     currentStockBase,
+    partialSaleEnabled,
+    sellablePartUnitId,
+    partsPerFullProduct,
+    sellablePartBaseQuantity,
+    partialSaleMarkupBasisPoints,
     usageInstructions,
     generalNotes,
     licenseNumber,
@@ -4707,6 +4957,12 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           other.minimumStockBase == this.minimumStockBase &&
           other.maximumStockBase == this.maximumStockBase &&
           other.currentStockBase == this.currentStockBase &&
+          other.partialSaleEnabled == this.partialSaleEnabled &&
+          other.sellablePartUnitId == this.sellablePartUnitId &&
+          other.partsPerFullProduct == this.partsPerFullProduct &&
+          other.sellablePartBaseQuantity == this.sellablePartBaseQuantity &&
+          other.partialSaleMarkupBasisPoints ==
+              this.partialSaleMarkupBasisPoints &&
           other.usageInstructions == this.usageInstructions &&
           other.generalNotes == this.generalNotes &&
           other.licenseNumber == this.licenseNumber &&
@@ -4752,6 +5008,11 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
   final Value<int> minimumStockBase;
   final Value<int> maximumStockBase;
   final Value<int> currentStockBase;
+  final Value<bool> partialSaleEnabled;
+  final Value<String?> sellablePartUnitId;
+  final Value<int?> partsPerFullProduct;
+  final Value<int?> sellablePartBaseQuantity;
+  final Value<int?> partialSaleMarkupBasisPoints;
   final Value<String?> usageInstructions;
   final Value<String?> generalNotes;
   final Value<String?> licenseNumber;
@@ -4796,6 +5057,11 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     this.minimumStockBase = const Value.absent(),
     this.maximumStockBase = const Value.absent(),
     this.currentStockBase = const Value.absent(),
+    this.partialSaleEnabled = const Value.absent(),
+    this.sellablePartUnitId = const Value.absent(),
+    this.partsPerFullProduct = const Value.absent(),
+    this.sellablePartBaseQuantity = const Value.absent(),
+    this.partialSaleMarkupBasisPoints = const Value.absent(),
     this.usageInstructions = const Value.absent(),
     this.generalNotes = const Value.absent(),
     this.licenseNumber = const Value.absent(),
@@ -4841,6 +5107,11 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     this.minimumStockBase = const Value.absent(),
     this.maximumStockBase = const Value.absent(),
     this.currentStockBase = const Value.absent(),
+    this.partialSaleEnabled = const Value.absent(),
+    this.sellablePartUnitId = const Value.absent(),
+    this.partsPerFullProduct = const Value.absent(),
+    this.sellablePartBaseQuantity = const Value.absent(),
+    this.partialSaleMarkupBasisPoints = const Value.absent(),
     this.usageInstructions = const Value.absent(),
     this.generalNotes = const Value.absent(),
     this.licenseNumber = const Value.absent(),
@@ -4890,6 +5161,11 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     Expression<int>? minimumStockBase,
     Expression<int>? maximumStockBase,
     Expression<int>? currentStockBase,
+    Expression<bool>? partialSaleEnabled,
+    Expression<String>? sellablePartUnitId,
+    Expression<int>? partsPerFullProduct,
+    Expression<int>? sellablePartBaseQuantity,
+    Expression<int>? partialSaleMarkupBasisPoints,
     Expression<String>? usageInstructions,
     Expression<String>? generalNotes,
     Expression<String>? licenseNumber,
@@ -4947,6 +5223,16 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
       if (minimumStockBase != null) 'minimum_stock_base': minimumStockBase,
       if (maximumStockBase != null) 'maximum_stock_base': maximumStockBase,
       if (currentStockBase != null) 'current_stock_base': currentStockBase,
+      if (partialSaleEnabled != null)
+        'partial_sale_enabled': partialSaleEnabled,
+      if (sellablePartUnitId != null)
+        'sellable_part_unit_id': sellablePartUnitId,
+      if (partsPerFullProduct != null)
+        'parts_per_full_product': partsPerFullProduct,
+      if (sellablePartBaseQuantity != null)
+        'sellable_part_base_quantity': sellablePartBaseQuantity,
+      if (partialSaleMarkupBasisPoints != null)
+        'partial_sale_markup_basis_points': partialSaleMarkupBasisPoints,
       if (usageInstructions != null) 'usage_instructions': usageInstructions,
       if (generalNotes != null) 'general_notes': generalNotes,
       if (licenseNumber != null) 'license_number': licenseNumber,
@@ -4994,6 +5280,11 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     Value<int>? minimumStockBase,
     Value<int>? maximumStockBase,
     Value<int>? currentStockBase,
+    Value<bool>? partialSaleEnabled,
+    Value<String?>? sellablePartUnitId,
+    Value<int?>? partsPerFullProduct,
+    Value<int?>? sellablePartBaseQuantity,
+    Value<int?>? partialSaleMarkupBasisPoints,
     Value<String?>? usageInstructions,
     Value<String?>? generalNotes,
     Value<String?>? licenseNumber,
@@ -5042,6 +5333,13 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
       minimumStockBase: minimumStockBase ?? this.minimumStockBase,
       maximumStockBase: maximumStockBase ?? this.maximumStockBase,
       currentStockBase: currentStockBase ?? this.currentStockBase,
+      partialSaleEnabled: partialSaleEnabled ?? this.partialSaleEnabled,
+      sellablePartUnitId: sellablePartUnitId ?? this.sellablePartUnitId,
+      partsPerFullProduct: partsPerFullProduct ?? this.partsPerFullProduct,
+      sellablePartBaseQuantity:
+          sellablePartBaseQuantity ?? this.sellablePartBaseQuantity,
+      partialSaleMarkupBasisPoints:
+          partialSaleMarkupBasisPoints ?? this.partialSaleMarkupBasisPoints,
       usageInstructions: usageInstructions ?? this.usageInstructions,
       generalNotes: generalNotes ?? this.generalNotes,
       licenseNumber: licenseNumber ?? this.licenseNumber,
@@ -5169,6 +5467,25 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     if (currentStockBase.present) {
       map['current_stock_base'] = Variable<int>(currentStockBase.value);
     }
+    if (partialSaleEnabled.present) {
+      map['partial_sale_enabled'] = Variable<bool>(partialSaleEnabled.value);
+    }
+    if (sellablePartUnitId.present) {
+      map['sellable_part_unit_id'] = Variable<String>(sellablePartUnitId.value);
+    }
+    if (partsPerFullProduct.present) {
+      map['parts_per_full_product'] = Variable<int>(partsPerFullProduct.value);
+    }
+    if (sellablePartBaseQuantity.present) {
+      map['sellable_part_base_quantity'] = Variable<int>(
+        sellablePartBaseQuantity.value,
+      );
+    }
+    if (partialSaleMarkupBasisPoints.present) {
+      map['partial_sale_markup_basis_points'] = Variable<int>(
+        partialSaleMarkupBasisPoints.value,
+      );
+    }
     if (usageInstructions.present) {
       map['usage_instructions'] = Variable<String>(usageInstructions.value);
     }
@@ -5232,6 +5549,13 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
           ..write('minimumStockBase: $minimumStockBase, ')
           ..write('maximumStockBase: $maximumStockBase, ')
           ..write('currentStockBase: $currentStockBase, ')
+          ..write('partialSaleEnabled: $partialSaleEnabled, ')
+          ..write('sellablePartUnitId: $sellablePartUnitId, ')
+          ..write('partsPerFullProduct: $partsPerFullProduct, ')
+          ..write('sellablePartBaseQuantity: $sellablePartBaseQuantity, ')
+          ..write(
+            'partialSaleMarkupBasisPoints: $partialSaleMarkupBasisPoints, ',
+          )
           ..write('usageInstructions: $usageInstructions, ')
           ..write('generalNotes: $generalNotes, ')
           ..write('licenseNumber: $licenseNumber, ')
@@ -24446,6 +24770,318 @@ class BackupsCompanion extends UpdateCompanion<BackupRow> {
   }
 }
 
+class $AppSettingsTable extends AppSettings
+    with TableInfo<$AppSettingsTable, AppSettingRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppSettingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedByMeta = const VerificationMeta(
+    'updatedBy',
+  );
+  @override
+  late final GeneratedColumn<String> updatedBy = GeneratedColumn<String>(
+    'updated_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [key, value, updatedAt, updatedBy];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AppSettingRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('updated_by')) {
+      context.handle(
+        _updatedByMeta,
+        updatedBy.isAcceptableOrUnknown(data['updated_by']!, _updatedByMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  AppSettingRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppSettingRow(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      updatedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by'],
+      ),
+    );
+  }
+
+  @override
+  $AppSettingsTable createAlias(String alias) {
+    return $AppSettingsTable(attachedDatabase, alias);
+  }
+}
+
+class AppSettingRow extends DataClass implements Insertable<AppSettingRow> {
+  final String key;
+  final String value;
+  final int updatedAt;
+  final String? updatedBy;
+  const AppSettingRow({
+    required this.key,
+    required this.value,
+    required this.updatedAt,
+    this.updatedBy,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<String>(value);
+    map['updated_at'] = Variable<int>(updatedAt);
+    if (!nullToAbsent || updatedBy != null) {
+      map['updated_by'] = Variable<String>(updatedBy);
+    }
+    return map;
+  }
+
+  AppSettingsCompanion toCompanion(bool nullToAbsent) {
+    return AppSettingsCompanion(
+      key: Value(key),
+      value: Value(value),
+      updatedAt: Value(updatedAt),
+      updatedBy: updatedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedBy),
+    );
+  }
+
+  factory AppSettingRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppSettingRow(
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String>(json['value']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      updatedBy: serializer.fromJson<String?>(json['updatedBy']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String>(value),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+      'updatedBy': serializer.toJson<String?>(updatedBy),
+    };
+  }
+
+  AppSettingRow copyWith({
+    String? key,
+    String? value,
+    int? updatedAt,
+    Value<String?> updatedBy = const Value.absent(),
+  }) => AppSettingRow(
+    key: key ?? this.key,
+    value: value ?? this.value,
+    updatedAt: updatedAt ?? this.updatedAt,
+    updatedBy: updatedBy.present ? updatedBy.value : this.updatedBy,
+  );
+  AppSettingRow copyWithCompanion(AppSettingsCompanion data) {
+    return AppSettingRow(
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      updatedBy: data.updatedBy.present ? data.updatedBy.value : this.updatedBy,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingRow(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('updatedBy: $updatedBy')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, value, updatedAt, updatedBy);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppSettingRow &&
+          other.key == this.key &&
+          other.value == this.value &&
+          other.updatedAt == this.updatedAt &&
+          other.updatedBy == this.updatedBy);
+}
+
+class AppSettingsCompanion extends UpdateCompanion<AppSettingRow> {
+  final Value<String> key;
+  final Value<String> value;
+  final Value<int> updatedAt;
+  final Value<String?> updatedBy;
+  final Value<int> rowid;
+  const AppSettingsCompanion({
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.updatedBy = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AppSettingsCompanion.insert({
+    required String key,
+    required String value,
+    required int updatedAt,
+    this.updatedBy = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       value = Value(value),
+       updatedAt = Value(updatedAt);
+  static Insertable<AppSettingRow> custom({
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<int>? updatedAt,
+    Expression<String>? updatedBy,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (updatedBy != null) 'updated_by': updatedBy,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AppSettingsCompanion copyWith({
+    Value<String>? key,
+    Value<String>? value,
+    Value<int>? updatedAt,
+    Value<String?>? updatedBy,
+    Value<int>? rowid,
+  }) {
+    return AppSettingsCompanion(
+      key: key ?? this.key,
+      value: value ?? this.value,
+      updatedAt: updatedAt ?? this.updatedAt,
+      updatedBy: updatedBy ?? this.updatedBy,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (updatedBy.present) {
+      map['updated_by'] = Variable<String>(updatedBy.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppSettingsCompanion(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('updatedBy: $updatedBy, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -24493,6 +25129,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AuditLogsTable auditLogs = $AuditLogsTable(this);
   late final $LostSalesTable lostSales = $LostSalesTable(this);
   late final $BackupsTable backups = $BackupsTable(this);
+  late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final Index idxSubCategoriesCategory = Index(
     'idx_sub_categories_category',
     'CREATE INDEX idx_sub_categories_category ON sub_categories (category_id)',
@@ -24794,6 +25431,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     auditLogs,
     lostSales,
     backups,
+    appSettings,
     idxSubCategoriesCategory,
     idxItemUnitsItem,
     idxItemUnitsPerLarge,
@@ -26372,6 +27010,11 @@ typedef $$ItemsTableCreateCompanionBuilder =
       Value<int> minimumStockBase,
       Value<int> maximumStockBase,
       Value<int> currentStockBase,
+      Value<bool> partialSaleEnabled,
+      Value<String?> sellablePartUnitId,
+      Value<int?> partsPerFullProduct,
+      Value<int?> sellablePartBaseQuantity,
+      Value<int?> partialSaleMarkupBasisPoints,
       Value<String?> usageInstructions,
       Value<String?> generalNotes,
       Value<String?> licenseNumber,
@@ -26418,6 +27061,11 @@ typedef $$ItemsTableUpdateCompanionBuilder =
       Value<int> minimumStockBase,
       Value<int> maximumStockBase,
       Value<int> currentStockBase,
+      Value<bool> partialSaleEnabled,
+      Value<String?> sellablePartUnitId,
+      Value<int?> partsPerFullProduct,
+      Value<int?> sellablePartBaseQuantity,
+      Value<int?> partialSaleMarkupBasisPoints,
       Value<String?> usageInstructions,
       Value<String?> generalNotes,
       Value<String?> licenseNumber,
@@ -26612,6 +27260,31 @@ class $$ItemsTableFilterComposer extends Composer<_$AppDatabase, $ItemsTable> {
 
   ColumnFilters<int> get currentStockBase => $composableBuilder(
     column: $table.currentStockBase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get partialSaleEnabled => $composableBuilder(
+    column: $table.partialSaleEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sellablePartUnitId => $composableBuilder(
+    column: $table.sellablePartUnitId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get partsPerFullProduct => $composableBuilder(
+    column: $table.partsPerFullProduct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sellablePartBaseQuantity => $composableBuilder(
+    column: $table.sellablePartBaseQuantity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get partialSaleMarkupBasisPoints => $composableBuilder(
+    column: $table.partialSaleMarkupBasisPoints,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -26835,6 +27508,31 @@ class $$ItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get partialSaleEnabled => $composableBuilder(
+    column: $table.partialSaleEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sellablePartUnitId => $composableBuilder(
+    column: $table.sellablePartUnitId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get partsPerFullProduct => $composableBuilder(
+    column: $table.partsPerFullProduct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sellablePartBaseQuantity => $composableBuilder(
+    column: $table.sellablePartBaseQuantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get partialSaleMarkupBasisPoints => $composableBuilder(
+    column: $table.partialSaleMarkupBasisPoints,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get usageInstructions => $composableBuilder(
     column: $table.usageInstructions,
     builder: (column) => ColumnOrderings(column),
@@ -27045,6 +27743,31 @@ class $$ItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get partialSaleEnabled => $composableBuilder(
+    column: $table.partialSaleEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sellablePartUnitId => $composableBuilder(
+    column: $table.sellablePartUnitId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get partsPerFullProduct => $composableBuilder(
+    column: $table.partsPerFullProduct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sellablePartBaseQuantity => $composableBuilder(
+    column: $table.sellablePartBaseQuantity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get partialSaleMarkupBasisPoints => $composableBuilder(
+    column: $table.partialSaleMarkupBasisPoints,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get usageInstructions => $composableBuilder(
     column: $table.usageInstructions,
     builder: (column) => column,
@@ -27134,6 +27857,11 @@ class $$ItemsTableTableManager
                 Value<int> minimumStockBase = const Value.absent(),
                 Value<int> maximumStockBase = const Value.absent(),
                 Value<int> currentStockBase = const Value.absent(),
+                Value<bool> partialSaleEnabled = const Value.absent(),
+                Value<String?> sellablePartUnitId = const Value.absent(),
+                Value<int?> partsPerFullProduct = const Value.absent(),
+                Value<int?> sellablePartBaseQuantity = const Value.absent(),
+                Value<int?> partialSaleMarkupBasisPoints = const Value.absent(),
                 Value<String?> usageInstructions = const Value.absent(),
                 Value<String?> generalNotes = const Value.absent(),
                 Value<String?> licenseNumber = const Value.absent(),
@@ -27178,6 +27906,11 @@ class $$ItemsTableTableManager
                 minimumStockBase: minimumStockBase,
                 maximumStockBase: maximumStockBase,
                 currentStockBase: currentStockBase,
+                partialSaleEnabled: partialSaleEnabled,
+                sellablePartUnitId: sellablePartUnitId,
+                partsPerFullProduct: partsPerFullProduct,
+                sellablePartBaseQuantity: sellablePartBaseQuantity,
+                partialSaleMarkupBasisPoints: partialSaleMarkupBasisPoints,
                 usageInstructions: usageInstructions,
                 generalNotes: generalNotes,
                 licenseNumber: licenseNumber,
@@ -27224,6 +27957,11 @@ class $$ItemsTableTableManager
                 Value<int> minimumStockBase = const Value.absent(),
                 Value<int> maximumStockBase = const Value.absent(),
                 Value<int> currentStockBase = const Value.absent(),
+                Value<bool> partialSaleEnabled = const Value.absent(),
+                Value<String?> sellablePartUnitId = const Value.absent(),
+                Value<int?> partsPerFullProduct = const Value.absent(),
+                Value<int?> sellablePartBaseQuantity = const Value.absent(),
+                Value<int?> partialSaleMarkupBasisPoints = const Value.absent(),
                 Value<String?> usageInstructions = const Value.absent(),
                 Value<String?> generalNotes = const Value.absent(),
                 Value<String?> licenseNumber = const Value.absent(),
@@ -27268,6 +28006,11 @@ class $$ItemsTableTableManager
                 minimumStockBase: minimumStockBase,
                 maximumStockBase: maximumStockBase,
                 currentStockBase: currentStockBase,
+                partialSaleEnabled: partialSaleEnabled,
+                sellablePartUnitId: sellablePartUnitId,
+                partsPerFullProduct: partsPerFullProduct,
+                sellablePartBaseQuantity: sellablePartBaseQuantity,
+                partialSaleMarkupBasisPoints: partialSaleMarkupBasisPoints,
                 usageInstructions: usageInstructions,
                 generalNotes: generalNotes,
                 licenseNumber: licenseNumber,
@@ -36338,6 +37081,187 @@ typedef $$BackupsTableProcessedTableManager =
       BackupRow,
       PrefetchHooks Function()
     >;
+typedef $$AppSettingsTableCreateCompanionBuilder =
+    AppSettingsCompanion Function({
+      required String key,
+      required String value,
+      required int updatedAt,
+      Value<String?> updatedBy,
+      Value<int> rowid,
+    });
+typedef $$AppSettingsTableUpdateCompanionBuilder =
+    AppSettingsCompanion Function({
+      Value<String> key,
+      Value<String> value,
+      Value<int> updatedAt,
+      Value<String?> updatedBy,
+      Value<int> rowid,
+    });
+
+class $$AppSettingsTableFilterComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedBy => $composableBuilder(
+    column: $table.updatedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AppSettingsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedBy => $composableBuilder(
+    column: $table.updatedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AppSettingsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AppSettingsTable> {
+  $$AppSettingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get updatedBy =>
+      $composableBuilder(column: $table.updatedBy, builder: (column) => column);
+}
+
+class $$AppSettingsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AppSettingsTable,
+          AppSettingRow,
+          $$AppSettingsTableFilterComposer,
+          $$AppSettingsTableOrderingComposer,
+          $$AppSettingsTableAnnotationComposer,
+          $$AppSettingsTableCreateCompanionBuilder,
+          $$AppSettingsTableUpdateCompanionBuilder,
+          (
+            AppSettingRow,
+            BaseReferences<_$AppDatabase, $AppSettingsTable, AppSettingRow>,
+          ),
+          AppSettingRow,
+          PrefetchHooks Function()
+        > {
+  $$AppSettingsTableTableManager(_$AppDatabase db, $AppSettingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AppSettingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AppSettingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppSettingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<String> value = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<String?> updatedBy = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AppSettingsCompanion(
+                key: key,
+                value: value,
+                updatedAt: updatedAt,
+                updatedBy: updatedBy,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String key,
+                required String value,
+                required int updatedAt,
+                Value<String?> updatedBy = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AppSettingsCompanion.insert(
+                key: key,
+                value: value,
+                updatedAt: updatedAt,
+                updatedBy: updatedBy,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AppSettingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AppSettingsTable,
+      AppSettingRow,
+      $$AppSettingsTableFilterComposer,
+      $$AppSettingsTableOrderingComposer,
+      $$AppSettingsTableAnnotationComposer,
+      $$AppSettingsTableCreateCompanionBuilder,
+      $$AppSettingsTableUpdateCompanionBuilder,
+      (
+        AppSettingRow,
+        BaseReferences<_$AppDatabase, $AppSettingsTable, AppSettingRow>,
+      ),
+      AppSettingRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -36406,4 +37330,6 @@ class $AppDatabaseManager {
       $$LostSalesTableTableManager(_db, _db.lostSales);
   $$BackupsTableTableManager get backups =>
       $$BackupsTableTableManager(_db, _db.backups);
+  $$AppSettingsTableTableManager get appSettings =>
+      $$AppSettingsTableTableManager(_db, _db.appSettings);
 }

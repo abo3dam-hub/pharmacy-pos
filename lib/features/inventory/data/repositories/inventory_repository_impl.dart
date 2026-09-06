@@ -159,6 +159,11 @@ class InventoryRepositoryImpl implements InventoryRepository {
       usageInstructions: Value(d.usageInstructions),
       generalNotes: Value(d.generalNotes),
       licenseNumber: Value(d.licenseNumber),
+      partialSaleEnabled: Value(d.partialSaleEnabled),
+      sellablePartUnitId: Value(d.sellablePartUnitId),
+      partsPerFullProduct: Value(d.partsPerFullProduct),
+      sellablePartBaseQuantity: Value(d.sellablePartBaseQuantity),
+      partialSaleMarkupBasisPoints: Value(d.partialSaleMarkupBasisPoints),
       createdAt: at,
       updatedAt: at,
     );
@@ -203,6 +208,11 @@ class InventoryRepositoryImpl implements InventoryRepository {
       usageInstructions: Value(d.usageInstructions),
       generalNotes: Value(d.generalNotes),
       licenseNumber: Value(d.licenseNumber),
+      partialSaleEnabled: Value(d.partialSaleEnabled),
+      sellablePartUnitId: Value(d.sellablePartUnitId),
+      partsPerFullProduct: Value(d.partsPerFullProduct),
+      sellablePartBaseQuantity: Value(d.sellablePartBaseQuantity),
+      partialSaleMarkupBasisPoints: Value(d.partialSaleMarkupBasisPoints),
       updatedAt: Value(at),
     );
   }

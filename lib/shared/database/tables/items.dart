@@ -3,6 +3,7 @@ import 'categories.dart';
 import 'manufacturers.dart';
 import 'sub_categories.dart';
 import 'therapeutic_groups.dart';
+import 'units.dart';
 
 /// Items / medicines master data (§4.7, §5).
 ///
@@ -85,6 +86,29 @@ class Items extends Table {
   /// Derived/cache total stock in base units. The authoritative source is the
   /// [stock_movements](StockMovements) ledger (§10); this is re-synced from it.
   IntColumn get currentStockBase => integer().withDefault(const Constant(0))();
+
+  // ── Partial-sale configuration (Phase 6, Design Lock §4.1) ────────────
+  /// Enables partial selling for this product. When false, all partial-sale
+  /// fields are NULL/inactive.
+  BoolColumn get partialSaleEnabled =>
+      boolean().withDefault(const Constant(false))();
+
+  /// FK → Units: the smallest unit the pharmacist permits selling separately.
+  /// NULL when partial sale is disabled.
+  TextColumn get sellablePartUnitId =>
+      text().nullable().references(Units, #id)();
+
+  /// Commercial decomposition: how many sellable parts in one full product.
+  /// NULL when partial sale is disabled; must be > 1 when enabled.
+  IntColumn get partsPerFullProduct => integer().nullable()();
+
+  /// Inventory conversion: how many base units in one sellable part.
+  /// NULL when partial sale is disabled; must be ≥ 1 when enabled.
+  IntColumn get sellablePartBaseQuantity => integer().nullable()();
+
+  /// Markup applied to partial-base price, in basis points (1000 = 10%).
+  /// NULL when partial sale is disabled.
+  IntColumn get partialSaleMarkupBasisPoints => integer().nullable()();
 
   TextColumn get usageInstructions => text().nullable()();
   TextColumn get generalNotes => text().nullable()();

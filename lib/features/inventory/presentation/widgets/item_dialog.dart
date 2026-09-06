@@ -86,6 +86,11 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   String? _baseUnitId;
   String? _largeUnitId;
   String _unitsPerLarge = '1';
+  bool _partialSaleEnabled = false;
+  String? _sellablePartUnitId;
+  String _partsPerFullProduct = '';
+  String _sellablePartBaseQuantity = '';
+  String _partialSaleMarkupBasisPoints = '';
 
   @override
   void initState() {
@@ -106,6 +111,21 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     _largeUnitId = _initial.units?.largeUnitId;
     _unitsPerLarge =
         '${_initial.units?.unitsPerLarge ?? 1}';
+    _partialSaleEnabled = _initial.partialSaleEnabled;
+    _sellablePartUnitId = _initial.sellablePartUnitId;
+    _partsPerFullProduct =
+        _initial.partsPerFullProduct != null
+            ? '${_initial.partsPerFullProduct}'
+            : '';
+    _sellablePartBaseQuantity =
+        _initial.sellablePartBaseQuantity != null
+            ? '${_initial.sellablePartBaseQuantity}'
+            : '';
+    _partialSaleMarkupBasisPoints =
+        _initial.partialSaleMarkupBasisPoints != null
+            ? (_initial.partialSaleMarkupBasisPoints! / 100).toStringAsFixed(
+                _initial.partialSaleMarkupBasisPoints! % 100 == 0 ? 0 : 2)
+            : '';
 
     String seed(String key, String value) {
       final c = TextEditingController(text: value);
@@ -277,6 +297,21 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
               largeUnitId: _largeUnitId!,
               unitsPerLarge: unitsPerLarge,
             ),
+      partialSaleEnabled: _partialSaleEnabled,
+      sellablePartUnitId: _partialSaleEnabled ? _sellablePartUnitId : null,
+      partsPerFullProduct:
+          _partialSaleEnabled ? int.tryParse(_c('partsPerFullProduct').text) : null,
+      sellablePartBaseQuantity:
+          _partialSaleEnabled ? int.tryParse(_c('sellablePartBaseQuantity').text) : null,
+      partialSaleMarkupBasisPoints:
+          _partialSaleEnabled
+              ? (() {
+                  final v = _c('partialSaleMarkupBasisPoints').text.trim();
+                  if (v.isEmpty) return null;
+                  final d = double.tryParse(v);
+                  return d != null ? (d * 100).round() : null;
+                })()
+              : null,
     );
     Navigator.of(context).pop(ItemFormResult(draft));
   }
@@ -406,6 +441,43 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                         keyboardType: TextInputType.number,
                       ),
                     ),
+                  ],
+                ),
+                _section(l10n.partialSaleSection),
+                Wrap(
+                  spacing: AppSpacing.m,
+                  runSpacing: AppSpacing.m,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    _switch('partialSaleEnabled', l10n.partialSaleEnabled,
+                        _partialSaleEnabled, (v) =>
+                            setState(() => _partialSaleEnabled = v)),
+                    if (_partialSaleEnabled) ...[
+                      _dropdown(
+                        value: _sellablePartUnitId,
+                        label: l10n.partialSaleSellablePart,
+                        items: widget.units,
+                        nameOf: (u) => u.name,
+                        onChanged: (v) =>
+                            setState(() => _sellablePartUnitId = v),
+                        width: 200,
+                      ),
+                      _text(
+                          _c('partsPerFullProduct',
+                              hint: _partsPerFullProduct),
+                          l10n.partialSalePartsPerFull,
+                          180),
+                      _text(
+                          _c('sellablePartBaseQuantity',
+                              hint: _sellablePartBaseQuantity),
+                          l10n.partialSaleBaseQuantity,
+                          180),
+                      _text(
+                          _c('partialSaleMarkupBasisPoints',
+                              hint: _partialSaleMarkupBasisPoints),
+                          l10n.partialSaleMarkupPercent,
+                          180),
+                    ],
                   ],
                 ),
                 _section(l10n.itemCost),

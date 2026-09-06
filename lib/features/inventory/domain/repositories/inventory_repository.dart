@@ -100,6 +100,11 @@ class ItemDraft {
     this.generalNotes,
     this.licenseNumber,
     this.units,
+    this.partialSaleEnabled = false,
+    this.sellablePartUnitId,
+    this.partsPerFullProduct,
+    this.sellablePartBaseQuantity,
+    this.partialSaleMarkupBasisPoints,
   });
 
   final String? primaryBarcode;
@@ -139,6 +144,11 @@ class ItemDraft {
   final String? generalNotes;
   final String? licenseNumber;
   final ItemUnitRelation? units;
+  final bool partialSaleEnabled;
+  final String? sellablePartUnitId;
+  final int? partsPerFullProduct;
+  final int? sellablePartBaseQuantity;
+  final int? partialSaleMarkupBasisPoints;
 
   /// Rebuilds a draft from a persisted row (bulk edits, Excel import).
   factory ItemDraft.fromRow(
@@ -183,6 +193,11 @@ class ItemDraft {
         generalNotes: row.generalNotes,
         licenseNumber: row.licenseNumber,
         units: units,
+        partialSaleEnabled: row.partialSaleEnabled,
+        sellablePartUnitId: row.sellablePartUnitId,
+        partsPerFullProduct: row.partsPerFullProduct,
+        sellablePartBaseQuantity: row.sellablePartBaseQuantity,
+        partialSaleMarkupBasisPoints: row.partialSaleMarkupBasisPoints,
       );
 
   ItemDraft copyWith({
@@ -229,6 +244,11 @@ class ItemDraft {
         generalNotes: generalNotes,
         licenseNumber: licenseNumber,
         units: units,
+        partialSaleEnabled: partialSaleEnabled,
+        sellablePartUnitId: sellablePartUnitId,
+        partsPerFullProduct: partsPerFullProduct,
+        sellablePartBaseQuantity: sellablePartBaseQuantity,
+        partialSaleMarkupBasisPoints: partialSaleMarkupBasisPoints,
       );
 }
 
