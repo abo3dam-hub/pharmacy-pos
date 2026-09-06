@@ -175,6 +175,8 @@ class SalesRepositoryImpl implements SalesRepository {
         customerId: command.customerId,
         userId: command.userId,
         paidMicros: command.paidMicros,
+        cashMicros: command.cashMicros,
+        cardMicros: command.cardMicros,
         notes: command.notes,
         prescriptionId: command.prescriptionId,
       ),
@@ -211,6 +213,19 @@ class SalesRepositoryImpl implements SalesRepository {
       restoredQuantityBase: outcome.returnItem.quantityBaseSigned,
     );
   }
+
+  @override
+  Future<void> voidInvoice(
+    String invoiceId, {
+    required String userId,
+    required String reason,
+  }) =>
+      _saleService.voidInvoice(
+        _db,
+        invoiceId: invoiceId,
+        userId: userId,
+        reason: reason,
+      );
 
   // ── Invoice queries ──────────────────────────────────────────────────
 
@@ -280,10 +295,15 @@ class SalesRepositoryImpl implements SalesRepository {
             PaymentMethod.values.byName(r.read<String>('payment_method')),
         paidMicros: r.read<int>('paid_micros'),
         changeMicros: r.read<int>('change_micros'),
+        cashMicros: r.read<int>('cash_micros'),
+        cardMicros: r.read<int>('card_micros'),
+        creditMicros: r.read<int>('credit_micros'),
         remainingMicros: r.read<int>('remaining_micros'),
         prescriptionId: r.read<String?>('prescription_id'),
         notes: r.read<String?>('notes'),
         voidReason: r.read<String?>('void_reason'),
+        voidedBy: r.read<String?>('voided_by'),
+        voidedAt: r.read<int?>('voided_at'),
         createdAt: r.read<int>('created_at'),
         updatedAt: r.read<int>('updated_at'),
       );
@@ -350,9 +370,14 @@ class SalesRepositoryImpl implements SalesRepository {
       profitMicros: header.profitMicros,
       paidMicros: header.paidMicros,
       changeMicros: header.changeMicros,
+      cashMicros: header.cashMicros,
+      cardMicros: header.cardMicros,
+      creditMicros: header.creditMicros,
       createdAt: header.createdAt,
       notes: header.notes,
       prescriptionId: header.prescriptionId,
+      voidedBy: header.voidedBy,
+      voidedAt: header.voidedAt,
       lines: [
         for (final l in lineRows)
           PosInvoiceLineView(

@@ -16,6 +16,7 @@ import 'tables/backups.dart';
 import 'tables/batches.dart';
 import 'tables/cashbox_transactions.dart';
 import 'tables/categories.dart';
+import 'tables/customer_payments.dart';
 import 'tables/customers.dart';
 import 'tables/expenses.dart';
 import 'tables/item_units.dart';
@@ -56,6 +57,7 @@ part 'app_database.g.dart';
   StockMovements,
   Suppliers,
   Customers,
+  CustomerPayments,
   Prescriptions,
   PrescriptionItems,
   SalesInvoices,
@@ -92,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -139,6 +141,31 @@ class AppDatabase extends _$AppDatabase {
       await m.addColumn(salesInvoiceItems, salesInvoiceItems.prescriptionItemId);
       await m.addColumn(
           prescriptionItems, prescriptionItems.dispensedQuantityBase);
+    }
+    if (from < 5) {
+      // Phase 7.5 financial lifecycle foundation: payment split + void
+      // columns on invoices, and the customer payments ledger table.
+      await m.addColumn(salesInvoices, salesInvoices.cashMicros);
+      await m.addColumn(salesInvoices, salesInvoices.cardMicros);
+      await m.addColumn(salesInvoices, salesInvoices.creditMicros);
+      await m.addColumn(salesInvoices, salesInvoices.voidedBy);
+      await m.addColumn(salesInvoices, salesInvoices.voidedAt);
+      await m.createTable(customerPayments);
+      // Chart of accounts evolves with the financial layer: make sure the
+      // inventory account exists for upgraded databases.
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await into(accounts).insert(
+        AccountsCompanion.insert(
+          id: 'acc_1200',
+          code: '1200',
+          name: 'مخزون البضاعة',
+          accountType: AccountType.asset,
+          isSystem: const Value(true),
+          createdAt: now,
+          updatedAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
     }
   }
 }

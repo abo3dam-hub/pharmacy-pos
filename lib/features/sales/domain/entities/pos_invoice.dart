@@ -72,9 +72,14 @@ class PosInvoiceView {
     required this.profitMicros,
     required this.paidMicros,
     required this.changeMicros,
+    required this.cashMicros,
+    required this.cardMicros,
+    required this.creditMicros,
     required this.createdAt,
     this.notes,
     this.prescriptionId,
+    this.voidedBy,
+    this.voidedAt,
     required this.lines,
   });
 
@@ -94,13 +99,27 @@ class PosInvoiceView {
   final int profitMicros;
   final int paidMicros;
   final int changeMicros;
+  final int cashMicros;
+  final int cardMicros;
+  final int creditMicros;
   final int createdAt;
   final String? notes;
   final String? prescriptionId;
+  final String? voidedBy;
+  final int? voidedAt;
   final List<PosInvoiceLineView> lines;
 
   bool get isReturnable =>
-      saleStatus == SaleStatus.completed && lines.isNotEmpty;
+      (saleStatus == SaleStatus.completed ||
+          saleStatus == SaleStatus.partially_returned) &&
+      lines.isNotEmpty;
+
+  /// A completed, never-returned invoice can be voided (§19); voided and
+  /// draft invoices cannot.
+  bool get isVoidable =>
+      saleStatus == SaleStatus.completed &&
+      lines.isNotEmpty &&
+      lines.every((l) => l.returnQuantityBase == 0);
 }
 
 /// Outcome of a completed POS checkout — the receipt / invoice data.
@@ -143,6 +162,8 @@ class PosCheckoutCommand {
     this.customerId,
     this.prescriptionId,
     this.notes,
+    this.cashMicros,
+    this.cardMicros,
   });
 
   final String invoiceNumber;
@@ -153,6 +174,11 @@ class PosCheckoutCommand {
   final String? customerId;
   final String? prescriptionId;
   final String? notes;
+
+  /// Optional explicit cash/card split of [paidMicros]; delivery backends
+  /// compute the split from [paymentMethod] when both are null.
+  final int? cashMicros;
+  final int? cardMicros;
 }
 
 /// Local alias so the checkout command stays free of data-layer types.

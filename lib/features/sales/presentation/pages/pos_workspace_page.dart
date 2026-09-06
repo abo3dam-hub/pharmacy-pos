@@ -1736,6 +1736,15 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
             icon: const Icon(Icons.swap_horiz),
             label: Text(l10n.posReturnButton),
           ),
+          if (invoice.isVoidable &&
+              ref.read(authControllerProvider).permissions.contains(Perm.salesVoid)) ...[
+            const SizedBox(height: AppSpacing.s),
+            OutlinedButton.icon(
+              onPressed: () => _submitVoid(invoice),
+              icon: const Icon(Icons.cancel_outlined),
+              label: const Text('إلغاء الفاتورة'),
+            ),
+          ],
         ],
       ],
     );
@@ -1756,6 +1765,28 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
         content: Text(ok ? l10n.posReturnSuccess : (notifier.currentState.errorMessage ?? l10n.posInvalidPayment)),
+      ));
+    _reason.clear();
+    notifier.clearError();
+  }
+
+  Future<void> _submitVoid(PosInvoiceView invoice) async {
+    final notifier = widget.notifier;
+    final userId = ref.read(authControllerProvider).user?.id;
+    if (userId == null) return;
+    final ok = await notifier.voidInvoice(
+      invoice: invoice,
+      actingUserId: userId,
+      permissions: ref.read(authControllerProvider).permissions,
+      reason: _reason.text.trim(),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(ok
+            ? 'تم إلغاء الفاتورة'
+            : notifier.currentState.errorMessage ?? 'تعذر إلغاء الفاتورة'),
       ));
     _reason.clear();
     notifier.clearError();

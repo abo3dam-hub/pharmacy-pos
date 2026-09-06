@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pharmacy_pos/domain/services/audit_service.dart';
+import 'package:pharmacy_pos/shared/models/enum_value_converter.dart';
 import 'package:pharmacy_pos/shared/models/enums.dart';
 
 /// Contracts the schema depends on: the persisted values written by the
@@ -30,8 +31,28 @@ void main() {
       expect(PurchaseBonusType.gift.name, 'gift');
       expect(CashboxTransactionType.open.name, 'open');
       expect(CashboxTransactionType.withdraw.name, 'withdraw');
+      expect(CashboxTransactionType.sale.name, 'sale');
+      expect(CashboxTransactionType.expense.name, 'expense');
+      expect(CashboxTransactionType.payment.name, 'payment');
+      expect(CashboxTransactionType.refund.name, 'refund');
+      expect(CashboxTransactionType.adjustment.name, 'adjustment');
       expect(LostSaleStatus.open.name, 'open');
       expect(LostSaleStatus.ordered.name, 'ordered');
+    });
+
+    test('invoice lifecycle + journal reference types (§19, §4.23)', () {
+      expect(SaleStatus.draft.name, 'draft');
+      expect(SaleStatus.completed.name, 'completed');
+      expect(SaleStatus.partially_returned.name, 'partially_returned');
+      expect(SaleStatus.fully_returned.name, 'fully_returned');
+      expect(SaleStatus.voided.name, 'voided');
+      expect(JournalReferenceType.sale.name, 'sale');
+      expect(JournalReferenceType.return_invoice.name, 'return_invoice');
+      expect(
+          journalReferenceTypeValues.toSql(JournalReferenceType.return_invoice), 'return');
+      expect(JournalReferenceType.customer_payment.name, 'customer_payment');
+      expect(journalReferenceTypeValues.toSql(JournalReferenceType.customer_payment),
+          'customer_payment');
     });
 
     test('audit actions map to the plan literals (§4.27)', () {

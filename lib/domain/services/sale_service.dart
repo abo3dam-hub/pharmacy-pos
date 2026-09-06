@@ -7,6 +7,7 @@ import '../../core/util/ids.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/models/enums.dart';
 import 'audit_service.dart';
+import 'financial_posting_service.dart';
 import 'permission_service.dart';
 import 'stock_service.dart';
 
@@ -52,6 +53,8 @@ class SaleRequest {
     this.notes,
     this.saleStatus = SaleStatus.completed,
     this.prescriptionId,
+    this.cashMicros,
+    this.cardMicros,
   });
 
   final String invoiceNumber;
@@ -65,6 +68,12 @@ class SaleRequest {
 
   /// When dispensing from a prescription, the linked prescription (Phase 6).
   final String? prescriptionId;
+
+  /// Optional payment split (cash/card components of [paidMicros]). When both
+  /// are absent the split is derived from [paymentMethod]; when provided they
+  /// must sum to [paidMicros].
+  final int? cashMicros;
+  final int? cardMicros;
 }
 
 class SaleOutcome {
@@ -98,12 +107,15 @@ class SaleService {
   SaleService({
     AuditService? audit,
     PermissionService? permissions,
+    FinancialPostingService? financial,
   })  : _audit = audit ?? const AuditService(),
-        _permissions = permissions ?? const PermissionService();
+        _permissions = permissions ?? const PermissionService(),
+        _financial = financial ?? const FinancialPostingService();
 
   final AuditService _audit;
   final PermissionService _permissions;
   final StockService _stock = const StockService();
+  final FinancialPostingService _financial;
 
   Future<SaleOutcome> recordSale(AppDatabase db, SaleRequest request) async {
     if (request.lines.isEmpty) {
@@ -254,11 +266,65 @@ class SaleService {
 
       vatTotalMicros = _sumVat(request.lines);
       final totalMicros = subtotalMicros - discountTotalMicros + vatTotalMicros;
-      if (request.saleStatus == SaleStatus.completed &&
-          request.paidMicros < totalMicros) {
-        throw InvalidOperationException(
-            'المبلغ المدفوع (${request.paidMicros}) أقل من الإجمالي ($totalMicros)');
+
+      // Resolve the payment split (cash/card components of paidMicros) and
+      // validate settlement rules (Phase 7.5 §11/§12).
+      var cashMicros = request.cashMicros;
+      var cardMicros = request.cardMicros;
+      if (cashMicros == null && cardMicros == null) {
+        final paidByCard = request.paymentMethod == PaymentMethod.card;
+        cashMicros = paidByCard ? 0 : request.paidMicros;
+        cardMicros = paidByCard ? request.paidMicros : 0;
+      } else {
+        cashMicros ??= 0;
+        cardMicros ??= 0;
       }
+      if (cashMicros < 0 || cardMicros < 0) {
+        throw ValidationException('مبالغ الدفع لا يمكن أن تكون سالبة');
+      }
+      if (cashMicros + cardMicros != request.paidMicros) {
+        throw ValidationException(
+            'تقسيم الدفع (نقدي + بطاقة) لا يطابق المبلغ المدفوع '
+            '(${request.paidMicros})');
+      }
+
+      var creditMicros = 0;
+      if (request.saleStatus == SaleStatus.completed) {
+        if (request.paymentMethod == PaymentMethod.credit) {
+          final customer = request.customerId == null
+              ? null
+              : await (db.select(db.customers)
+                    ..where((c) => c.id.equals(request.customerId!)))
+                  .getSingleOrNull();
+          if (customer == null) {
+            throw InvalidOperationException('البيع الآجل يتطلب عميلاً');
+          }
+          if (!customer.hasAccount) {
+            throw ValidationException(
+                'العميل ${customer.name} لا يملك حساباً آجلاً (has_account)');
+          }
+          creditMicros = totalMicros - request.paidMicros;
+          if (creditMicros <= 0) {
+            throw InvalidOperationException(
+                'البيع الآجل يجب أن يترك رصيداً متبقياً ($creditMicros)');
+          }
+          if (customer.creditLimitMicros > 0 &&
+              customer.balanceMicros + creditMicros > customer.creditLimitMicros) {
+            throw ValidationException(
+                'تجاوز سقف الائتمان: الرصيد الحالي '
+                '${customer.balanceMicros} + الآجل $creditMicros > السقف '
+                '${customer.creditLimitMicros}');
+          }
+        } else if (request.paidMicros < totalMicros) {
+          throw InvalidOperationException(
+              'المبلغ المدفوع (${request.paidMicros}) أقل من الإجمالي ($totalMicros)');
+        }
+      }
+
+      final changeMicros =
+          request.paidMicros > totalMicros ? request.paidMicros - totalMicros : 0;
+      final remainingMicros =
+          request.paymentMethod == PaymentMethod.credit ? creditMicros : 0;
 
       await (db.update(db.salesInvoices)..where((i) => i.id.equals(invoiceId)))
           .write(
@@ -269,7 +335,12 @@ class SaleService {
           totalMicros: Value(totalMicros),
           totalCostMicros: Value(totalCostMicros),
           profitMicros: Value(profitMicros),
-          changeMicros: Value(request.paidMicros - totalMicros),
+          paidMicros: Value(request.paidMicros),
+          changeMicros: Value(changeMicros),
+          remainingMicros: Value(remainingMicros),
+          cashMicros: Value(cashMicros),
+          cardMicros: Value(cardMicros),
+          creditMicros: Value(creditMicros),
         ),
       );
 
@@ -297,6 +368,23 @@ class SaleService {
       }
 
       if (request.saleStatus == SaleStatus.completed) {
+        // Financial posting: drawer + double-entry journal (atomic).
+        await _financial.postSale(
+          db,
+          invoiceId: invoiceId,
+          invoiceNumber: request.invoiceNumber,
+          totalMicros: totalMicros,
+          costMicros: totalCostMicros,
+          cashMicros: cashMicros,
+          cardMicros: cardMicros,
+          creditMicros: creditMicros,
+          changeMicros: changeMicros,
+          userId: request.userId,
+          atMillis: now,
+        );
+        if (request.customerId != null) {
+          await _financial.syncCustomerBalance(db, request.customerId!, at: now);
+        }
         await _audit.write(
           db,
           userId: request.userId,
@@ -367,5 +455,150 @@ class SaleService {
           .units;
     }
     return vat;
+  }
+
+  /// Voids a completed, never-returned invoice (§19): the invoice row is kept
+  /// and flagged `voided` (never physically deleted) while stock, drawer,
+  /// journal entries, prescription quantities and the customer balance are
+  /// reversed in one atomic transaction. Requires `sales.void` permission and
+  /// a mandatory reason.
+  Future<SalesInvoiceRow> voidInvoice(
+    AppDatabase db, {
+    required String invoiceId,
+    required String userId,
+    required String reason,
+  }) async {
+    await _permissions.requireUserPermission(db, userId, Perm.salesVoid);
+    if (reason.trim().isEmpty) {
+      throw ValidationException('سبب إلغاء الفاتورة مطلوب');
+    }
+
+    return db.transaction(() async {
+      final now = DateTime.now().millisecondsSinceEpoch;
+
+      final invoice = await (db.select(db.salesInvoices)
+            ..where((i) => i.id.equals(invoiceId)))
+          .getSingleOrNull();
+      if (invoice == null) {
+        throw NotFoundException('الفاتورة غير موجودة: $invoiceId');
+      }
+      if (invoice.saleStatus != SaleStatus.completed) {
+        throw InvalidOperationException(
+            'لا يمكن إلغاء فاتورة بحالة ${invoice.saleStatus.name}');
+      }
+
+      final lines = await (db.select(db.salesInvoiceItems)
+            ..where((i) => i.invoiceId.equals(invoiceId)))
+          .get();
+      if (lines.isEmpty) {
+        throw InvalidOperationException('لا يمكن إلغاء فاتورة بدون بنود');
+      }
+      if (lines.any((l) => l.returnQuantityBase > 0)) {
+        throw InvalidOperationException(
+            'لا يمكن إلغاء فاتورة عليها مرتجع (عائدات جزئية/كلية)');
+      }
+
+      // 1. Restore stock to the same batches the sale consumed.
+      for (final line in lines) {
+        await _stock.applyMovement(
+          db,
+          itemId: line.itemId,
+          batchId: line.batchId,
+          movementType: MovementType.sale_return,
+          quantityBaseSigned: line.quantityBaseSigned,
+          unitCostMicros: line.unitCostMicros,
+          refType: 'sale_void',
+          refId: invoiceId,
+          userId: userId,
+          note: 'إلغاء فاتورة ${invoice.invoiceNumber}',
+          atMillis: now,
+        );
+      }
+
+      // 2. Reverse prescription dispensing (Phase 6).
+      if (invoice.prescriptionId != null) {
+        for (final line in lines.where((l) => l.prescriptionItemId != null)) {
+          await _reversePrescriptionDispensing(db, line);
+        }
+        await _updatePrescriptionStatus(db, invoice.prescriptionId!);
+      }
+
+      // 3. Reversal of drawer + journal and the outstanding AR.
+      final drawerNet = invoice.cashMicros - invoice.changeMicros;
+      await _financial.postVoidReversal(
+        db,
+        invoiceId: invoiceId,
+        invoiceNumber: invoice.invoiceNumber,
+        totalMicros: invoice.totalMicros,
+        costMicros: invoice.totalCostMicros,
+        drawerNetMicros: drawerNet < 0 ? 0 : drawerNet,
+        cardMicros: invoice.cardMicros,
+        creditMicros: invoice.creditMicros,
+        userId: userId,
+        atMillis: now,
+      );
+
+      // 4. Flag the invoice as voided — never delete.
+      await (db.update(db.salesInvoices)..where((i) => i.id.equals(invoiceId)))
+          .write(
+        SalesInvoicesCompanion(
+          saleStatus: Value(SaleStatus.voided),
+          voidReason: Value(reason.trim()),
+          voidedBy: Value(userId),
+          voidedAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+
+      // 5. Re-derive the customer balance (voided invoices drop out of the
+      //    ledger feed).
+      if (invoice.customerId != null) {
+        await _financial.syncCustomerBalance(db, invoice.customerId!, at: now);
+      }
+
+      // 6. Audit the void.
+      await _audit.write(
+        db,
+        userId: userId,
+        action: AuditAction.voidOrder,
+        entityType: 'sales_invoice',
+        entityId: invoiceId,
+        before: {
+          'sale_status': invoice.saleStatus.name,
+          'total_micros': invoice.totalMicros,
+          'paid_micros': invoice.paidMicros,
+        },
+        after: {
+          'sale_status': 'voided',
+          'reason': reason.trim(),
+          'voided_by': userId,
+        },
+      );
+
+      return (await (db.select(db.salesInvoices)
+            ..where((i) => i.id.equals(invoiceId)))
+          .getSingle());
+    });
+  }
+
+  /// Reverses the dispensed quantity of one returned/voided sale line.
+  Future<void> _reversePrescriptionDispensing(
+      AppDatabase db, SalesInvoiceItemRow line) async {
+    if (line.prescriptionItemId == null) return;
+    final pi = await (db.select(db.prescriptionItems)
+          ..where((p) => p.id.equals(line.prescriptionItemId!)))
+        .getSingleOrNull();
+    if (pi == null) return;
+    final newDispensed =
+        (pi.dispensedQuantityBase - line.quantityBaseSigned).clamp(0, pi.quantityBase);
+    final fullyDispensed = newDispensed >= pi.quantityBase;
+    await (db.update(db.prescriptionItems)
+          ..where((p) => p.id.equals(line.prescriptionItemId!)))
+        .write(
+      PrescriptionItemsCompanion(
+        dispensedQuantityBase: Value(newDispensed),
+        isDispensed: Value(fullyDispensed),
+      ),
+    );
   }
 }

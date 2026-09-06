@@ -124,25 +124,33 @@ class CustomerDao {
         ),
       );
 
-  /// The two ledger feeds that make up a customer's derived balance (§25):
-  /// completed (non-voided) sales invoice remaining + completed sale returns
-  /// (signed negative money).
+  /// The ledger feeds that make up a customer's derived balance (§25): paid
+  /// sale-invoice remainders minus completed sale returns (a return first
+  /// offsets outstanding AR — the customer no longer owes it; any excess is a
+  /// real cash refund from the drawer and has no balance effect), and on-account
+  /// customer payments (stored positive = money received, reducing the balance;
+  /// stored negative = money returned to the customer, increasing it). Overpaid
+  /// invoices net to zero because change is returned at checkout.
   static const String _balanceFeedSnippet = """
       c.opening_balance_micros +
-      COALESCE((SELECT SUM(si.total_micros - si.paid_micros)
+      COALESCE((SELECT SUM(MAX(0, si.total_micros - si.paid_micros -
+                        COALESCE((SELECT SUM(-r.total_micros)
+                                  FROM returns r
+                                  WHERE r.original_invoice_id = si.id
+                                    AND r.type = 'sale_return'
+                                    AND r.status = 'completed'), 0)))
                 FROM sales_invoices si
                 WHERE si.customer_id = c.id
-                  AND si.sale_status = 'completed'), 0) +
-      COALESCE((SELECT SUM(r.total_micros)
-                FROM returns r
-                WHERE r.customer_id = c.id
-                  AND r.type = 'sale_return'
-                  AND r.status = 'completed'), 0)""";
+                  AND si.sale_status IN ('completed', 'partially_returned', 'fully_returned')), 0) +
+      COALESCE((SELECT SUM(-cp.amount_micros)
+                FROM customer_payments cp
+                WHERE cp.customer_id = c.id
+                  AND cp.is_voided = 0), 0)""";
 
   /// One page of statement documents for a customer, ordered by date. Debits
-  /// are amounts the customer owes (sales invoice remaining), credits are
-  /// payments and sale returns (money returned). Running balances are computed
-  /// in Dart from [startBalanceMicros].
+  /// are amounts the customer owes (sale invoice remaining), credits are
+  /// customer payments and sale returns (money returned). Running balances are
+  /// computed in Dart from [startBalanceMicros].
   Future<List<CustomerStatementEntry>> statementPage(
     String customerId, {
     required int fromDate,
@@ -155,10 +163,10 @@ class CustomerDao {
           SELECT 'sale_invoice' AS doc_type,
                  si.invoice_number AS ref_no, si.id AS ref_id,
                  si.created_at AS d, si.notes AS note,
-                 si.total_micros AS debit, si.paid_micros AS credit
+                 MAX(0, si.total_micros - si.paid_micros) AS debit, 0 AS credit
           FROM sales_invoices si
           WHERE si.customer_id = ?1
-            AND si.sale_status = 'completed'
+            AND si.sale_status IN ('completed', 'partially_returned', 'fully_returned')
           UNION ALL
           SELECT 'sale_return', r.return_number, r.id,
                  r.created_at, r.reason, 0, -r.total_micros
@@ -166,6 +174,14 @@ class CustomerDao {
           WHERE r.customer_id = ?1
             AND r.type = 'sale_return'
             AND r.status = 'completed'
+          UNION ALL
+          SELECT 'customer_payment', cp.payment_number, cp.id,
+                 cp.created_at, cp.note,
+                 CASE WHEN cp.amount_micros < 0 THEN -cp.amount_micros ELSE 0 END,
+                 CASE WHEN cp.amount_micros > 0 THEN cp.amount_micros ELSE 0 END
+          FROM customer_payments cp
+          WHERE cp.customer_id = ?1
+            AND cp.is_voided = 0
         )
         SELECT doc_type, ref_no, ref_id, d, note, debit, credit
         FROM docs
@@ -207,16 +223,23 @@ class CustomerDao {
       """SELECT c.opening_balance_micros +
              COALESCE((SELECT SUM(debit - credit) FROM (
                 SELECT si.created_at AS d, 'sale_invoice' AS doc_type,
-                       si.total_micros AS debit, si.paid_micros AS credit
+                       MAX(0, si.total_micros - si.paid_micros) AS debit, 0 AS credit
                 FROM sales_invoices si
                 WHERE si.customer_id = ?1
-                  AND si.sale_status = 'completed'
+                  AND si.sale_status IN ('completed', 'partially_returned', 'fully_returned')
                 UNION ALL
                 SELECT r.created_at, 'sale_return', 0, -r.total_micros
                 FROM returns r
                 WHERE r.customer_id = ?1
                   AND r.type = 'sale_return'
                   AND r.status = 'completed'
+                UNION ALL
+                SELECT cp.created_at, 'customer_payment',
+                       CASE WHEN cp.amount_micros < 0 THEN -cp.amount_micros ELSE 0 END,
+                       CASE WHEN cp.amount_micros > 0 THEN cp.amount_micros ELSE 0 END
+                FROM customer_payments cp
+                WHERE cp.customer_id = ?1
+                  AND cp.is_voided = 0
               ) WHERE (d < ?2) OR (d = ?2 AND doc_type < ?3)), 0) AS start
       FROM customers c WHERE c.id = ?1""",
       variables: [
@@ -237,16 +260,23 @@ class CustomerDao {
     final row = await _db.customSelect(
       """WITH docs AS (
           SELECT 'sale_invoice' AS doc_type, si.created_at AS d,
-                 si.total_micros AS debit, si.paid_micros AS credit
+                 MAX(0, si.total_micros - si.paid_micros) AS debit, 0 AS credit
           FROM sales_invoices si
           WHERE si.customer_id = ?1
-            AND si.sale_status = 'completed'
+            AND si.sale_status IN ('completed', 'partially_returned', 'fully_returned')
           UNION ALL
           SELECT 'sale_return', r.created_at, 0, -r.total_micros
           FROM returns r
           WHERE r.customer_id = ?1
             AND r.type = 'sale_return'
             AND r.status = 'completed'
+          UNION ALL
+          SELECT 'customer_payment', cp.created_at,
+                 CASE WHEN cp.amount_micros < 0 THEN -cp.amount_micros ELSE 0 END,
+                 CASE WHEN cp.amount_micros > 0 THEN cp.amount_micros ELSE 0 END
+          FROM customer_payments cp
+          WHERE cp.customer_id = ?1
+            AND cp.is_voided = 0
         )
         SELECT c.opening_balance_micros AS opening,
                (SELECT COALESCE(SUM(debit - credit), 0) FROM docs

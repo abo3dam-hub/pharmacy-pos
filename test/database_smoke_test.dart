@@ -61,7 +61,7 @@ void main() {
 
     test('seeds chart of accounts', () async {
       final accounts = await db.select(db.accounts).get();
-      expect(accounts, hasLength(11));
+      expect(accounts, hasLength(12));
     });
   });
 }

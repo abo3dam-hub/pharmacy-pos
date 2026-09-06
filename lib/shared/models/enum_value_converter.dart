@@ -40,4 +40,5 @@ const journalReferenceTypeValues = EnumValueConverter<JournalReferenceType>({
   JournalReferenceType.opening_balance: 'opening_balance',
   JournalReferenceType.adjustment: 'adjustment',
   JournalReferenceType.manual: 'manual',
+  JournalReferenceType.customer_payment: 'customer_payment',
 });

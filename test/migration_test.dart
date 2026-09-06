@@ -10,12 +10,14 @@ import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 import 'helpers.dart';
 
-/// Mirrors the forward-only `_migrate` contract (§29) for v1→v4 upgrade.
+/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5) for v1→v5
+/// upgrade — implementers must keep this mirror in lockstep with
+/// `AppDatabase._migrate` in `app_database.dart`.
 class _V1Database extends AppDatabase {
   _V1Database(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -50,6 +52,27 @@ class _V1Database extends AppDatabase {
             await m.addColumn(
                 prescriptionItems, prescriptionItems.dispensedQuantityBase);
           }
+          if (from < 5) {
+            await m.addColumn(salesInvoices, salesInvoices.cashMicros);
+            await m.addColumn(salesInvoices, salesInvoices.cardMicros);
+            await m.addColumn(salesInvoices, salesInvoices.creditMicros);
+            await m.addColumn(salesInvoices, salesInvoices.voidedBy);
+            await m.addColumn(salesInvoices, salesInvoices.voidedAt);
+            await m.createTable(customerPayments);
+            final now = DateTime.now().millisecondsSinceEpoch;
+            await into(accounts).insert(
+              AccountsCompanion.insert(
+                id: 'acc_1200',
+                code: '1200',
+                name: 'مخزون البضاعة',
+                accountType: AccountType.asset,
+                isSystem: const Value(true),
+                createdAt: now,
+                updatedAt: now,
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -74,7 +97,7 @@ void main() {
 
     File dbFile() => File('${dir.path}/store.db');
 
-    test('fresh database creates at schema v4 with all columns', () async {
+    test('fresh database creates at schema v5 with all columns', () async {
       ensureSqlite();
       final path = dbFile().path;
 
@@ -83,11 +106,11 @@ void main() {
       final batchId = await insertBatch(db, itemId,
           quantityBase: 7, expiryDays: 90, unitCostMicros: 5000);
 
-      // Verify schema version is 4.
+      // Verify schema version is 5.
       final userVersion =
           await db.customSelect('PRAGMA user_version').getSingle();
-      expect(userVersion.data.values.first, 4,
-          reason: 'fresh DB must be schema v4');
+      expect(userVersion.data.values.first, 5,
+          reason: 'fresh DB must be schema v5');
 
       // Verify partial-sale columns exist on items.
       final item = await (db.select(db.items)
@@ -124,6 +147,23 @@ void main() {
           .getSingle();
       expect(inv.prescriptionId, 'rx_test');
 
+      // Verify Phase 7.5 payment-split columns exist and default to 0, and
+      // the customer payments ledger table was created with its index.
+      final invSplit = await db.customSelect(
+          'SELECT cash_micros, card_micros, credit_micros, '
+          'voided_by, voided_at FROM sales_invoices WHERE id = ?1',
+          variables: [Variable.withString('inv_v4_test')]).getSingle();
+      expect(invSplit.data.values, [0, 0, 0, null, null]);
+      await db.customSelect(
+          "SELECT COUNT(*) AS c FROM customer_payments WHERE 1 = 0").getSingle();
+
+      // Inventory system account seeded by the v5 migration.
+      final acc1200 = await (db.select(db.accounts)
+            ..where((a) => a.code.equals('1200')))
+          .getSingle();
+      expect(acc1200.isSystem, true);
+      expect(acc1200.accountType, AccountType.asset);
+
       // Verify prescription_items.dispensed_quantity_base.
       final batch = await (db.select(db.batches)
             ..where((b) => b.id.equals(batchId)))
@@ -139,19 +179,19 @@ void main() {
       expect(reopenedItem.currentStockBase, 7);
       final reopenedVersion =
           await reopened.customSelect('PRAGMA user_version').getSingle();
-      expect(reopenedVersion.data.values.first, 4);
+      expect(reopenedVersion.data.values.first, 5);
       await reopened.close();
     });
 
-    test('v1 → v4 migration adds all Phase 6 columns without data loss',
+    test('v1 → v5 migration adds all Phase 6 + financial columns without data loss',
         () async {
       ensureSqlite();
       final path = dbFile().path;
 
-      // Create a v4 database with data.
+      // Create a v5 database with data.
       final db = AppDatabase.fromFilePath(path);
       final itemId = await insertItem(db);
-      expect(db.schemaVersion, 4);
+      expect(db.schemaVersion, 5);
 
       // Verify the new columns exist before simulating v1.
       final beforeItem = await (db.select(db.items)
@@ -159,7 +199,8 @@ void main() {
           .getSingle();
       expect(beforeItem.partialSaleEnabled, false);
 
-      // Simulate a v1 database: drop ALL Phase 6 additions and set user_version=1.
+      // Simulate a v1 database: drop ALL Phase 6/7.5 additions and set
+      // user_version=1.
       final raw = sqlite3.sqlite3.open(path);
       // Drop v2 additions (partial-sale columns + app_settings).
       raw.execute('DROP TABLE IF EXISTS app_settings');
@@ -174,19 +215,27 @@ void main() {
           .execute('ALTER TABLE sales_invoice_items DROP COLUMN prescription_item_id');
       raw.execute(
           'ALTER TABLE prescription_items DROP COLUMN dispensed_quantity_base');
+      // Drop v5 additions (payment split + void columns, customer_payments).
+      raw.execute('ALTER TABLE sales_invoices DROP COLUMN cash_micros');
+      raw.execute('ALTER TABLE sales_invoices DROP COLUMN card_micros');
+      raw.execute('ALTER TABLE sales_invoices DROP COLUMN credit_micros');
+      raw.execute('ALTER TABLE sales_invoices DROP COLUMN voided_by');
+      raw.execute('ALTER TABLE sales_invoices DROP COLUMN voided_at');
+      raw.execute('DROP TABLE IF EXISTS customer_payments');
+      raw.execute('DELETE FROM accounts WHERE code = \'1200\'');
       raw.execute('PRAGMA user_version = 1');
       raw.dispose();
       await db.close();
 
-      // Reopen under v4 schema: onUpgrade(1 → 4) creates everything in place.
+      // Reopen under v5 schema: onUpgrade(1 → 5) creates everything in place.
       final upgraded = _V1Database(NativeDatabase(File(path)));
 
-      // Verify user_version is 4 after migration.
+      // Verify user_version is 5 after migration.
       final userVersion = await upgraded
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(userVersion.data.values.first, 4,
-          reason: 'v1 → v4 migration must set user_version to 4');
+      expect(userVersion.data.values.first, 5,
+          reason: 'v1 → v5 migration must set user_version to 5');
 
       // Verify app_settings created.
       final settings = await upgraded.select(upgraded.appSettings).get();
@@ -218,6 +267,26 @@ void main() {
             ..where((i) => i.id.equals('inv_mig_test')))
           .getSingle();
       expect(inv.prescriptionId, 'rx_mig');
+      expect(inv.cashMicros, 0, reason: 'v5 payment-split column defaults to 0');
+
+      // Verify customer_payments table + inventory account back after v5.
+      final pay = await upgraded.into(upgraded.customerPayments).insertReturning(
+            CustomerPaymentsCompanion.insert(
+              id: 'cpay_mig',
+              paymentNumber: 'CP-MIG-1',
+              customerId: 'customer_default',
+              amountMicros: 100,
+              paymentMethod: PaymentMethod.cash,
+              userId: 'user_admin',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      expect(pay.id, 'cpay_mig');
+      final acc1200 = await (upgraded.select(upgraded.accounts)
+            ..where((a) => a.code.equals('1200')))
+          .getSingle();
+      expect(acc1200.isSystem, true, reason: 'v5 seeds the inventory account');
 
       await upgraded.close();
     });

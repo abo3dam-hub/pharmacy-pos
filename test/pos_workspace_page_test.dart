@@ -171,13 +171,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('1 علبة'), findsOneWidget);
-      expect(find.text('١٫٠٠'), findsWidgets);
+      expect(find.text('1.00'), findsWidgets);
 
       await tester.tap(find.byIcon(Icons.add_circle_outline));
       await tester.pumpAndSettle();
 
       expect(find.text('2 علبة'), findsOneWidget);
-      expect(find.text('٢٫٠٠'), findsWidgets);
+      expect(find.text('2.00'), findsWidgets);
 
       await tester.tap(find.text('دفع (F12)'));
       await tester.pumpAndSettle();
@@ -187,7 +187,7 @@ void main() {
         '5',
       );
       await tester.pumpAndSettle();
-      expect(find.text('الباقي: ٣٫٠٠'), findsOneWidget);
+      expect(find.text('الباقي: 3.00'), findsOneWidget);
 
       await tester.tap(find.widgetWithText(FilledButton, 'دفع (F12)').last);
       await tester.pumpAndSettle();
@@ -207,7 +207,7 @@ void main() {
       await tester.tap(find.text('إغلاق'));
       await tester.pumpAndSettle();
       expect(find.text('السلة فارغة — أضف أصنافاً للبيع'), findsOneWidget);
-      expect(find.text('الباقي: ٣٫٠٠'), findsNothing);
+      expect(find.text('الباقي: 3.00'), findsNothing);
     });
 
     testWidgets('empty search shows no-results and the lost-sale action',

@@ -179,32 +179,26 @@ class Money implements Comparable<Money> {
     }
     final step = _tenPower(scale - decimalPlaces);
     final scaled = _roundDiv(_units, step);
-    final major = scaled ~/ _tenPower(decimalPlaces);
-    final minor = (scaled % _tenPower(decimalPlaces)).abs();
+    final factor = _tenPower(decimalPlaces);
+    final magMajor = scaled.abs() ~/ factor;
+    final magMinor = scaled.abs() % factor;
     final minorText = decimalPlaces == 0
         ? ''
-        : minor.toString().padLeft(decimalPlaces, '0');
-    final digits = major.abs().toString().replaceAllMapped(
+        : magMinor.toString().padLeft(decimalPlaces, '0');
+    final digits = magMajor.toString().replaceAllMapped(
         RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
     final isNegative = _units < 0;
     if (minorText.isEmpty) return isNegative ? '-$digits' : digits;
     return isNegative ? '-$digits.$minorText' : '$digits.$minorText';
   }
 
-  /// Formats using Arabic-Indic digit glyphs (0-9 → ٠-٩) plus the Arabic
-  /// decimal separator (٫) and thousands separator (٬), per §23.
+  /// Formats an amount for an Arabic UI string while keeping Western/Latin
+  /// digits (0-9) and the ASCII separators (`,`/`.`), per §23: Arabic-first
+  /// UI + RTL layout, but numbers are always written in Latin digits — the
+  /// Arabic-Indic digit set (٠-٩) is never emitted. Kept as a named hook so
+  /// call sites express intent; it equals [format].
   String formatArabicDigits([int decimalPlaces = 2]) =>
-      _toArabicDigits(format(decimalPlaces));
-
-  static String _toArabicDigits(String input) => input.split('').map((c) {
-        final code = c.codeUnitAt(0);
-        if (code >= 0x30 && code <= 0x39) {
-          return String.fromCharCode(code + 0x0660 - 0x30);
-        }
-        if (c == '.') return '٫';
-        if (c == ',') return '٬';
-        return c;
-      }).join();
+      format(decimalPlaces);
 
   /// Rounds half-up to whole currency units.
   Money roundToWhole() => roundTo(0);

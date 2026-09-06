@@ -39,6 +39,12 @@ class SalesInvoices extends Table {
   IntColumn get paidMicros => integer().withDefault(const Constant(0))();
   IntColumn get changeMicros => integer().withDefault(const Constant(0))();
 
+  /// Payment split (§11, §18): the cash / card / credit components that make
+  /// up [paidMicros] and the outstanding [remainingMicros].
+  IntColumn get cashMicros => integer().withDefault(const Constant(0))();
+  IntColumn get cardMicros => integer().withDefault(const Constant(0))();
+  IntColumn get creditMicros => integer().withDefault(const Constant(0))();
+
   /// Remaining balance (credit customers) = total − paid, §4.14.
   IntColumn get remainingMicros => integer().withDefault(const Constant(0))();
 
@@ -48,6 +54,10 @@ class SalesInvoices extends Table {
 
   TextColumn get notes => text().nullable()();
   TextColumn get voidReason => text().nullable()();
+
+  /// Who voided the invoice and when (invoice lifecycle §4.14 / §19).
+  TextColumn get voidedBy => text().nullable().references(Users, #id)();
+  IntColumn get voidedAt => integer().nullable()();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
 

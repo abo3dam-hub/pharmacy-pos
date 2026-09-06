@@ -34,7 +34,7 @@ enum MovementType {
 /// 'hybrid' | 'return'`.
 enum InvoiceType { sale, hybrid, return_invoice }
 
-enum SaleStatus { draft, completed, voided }
+enum SaleStatus { draft, completed, partially_returned, fully_returned, voided }
 
 enum PaymentMethod { cash, card, mixed, credit }
 
@@ -52,8 +52,8 @@ enum JournalEntryStatus { draft, posted, voided }
 
 /// Journal reference types (§4.23). Stored values (see the converter):
 /// `'sale' | 'purchase' | 'return' | 'expense' | 'cashbox' |
-/// 'opening_balance' | 'adjustment' | 'manual'`; `returnInvoice` persists as
-/// `'return'`.
+/// 'opening_balance' | 'adjustment' | 'manual' | 'customer_payment'`;
+/// `returnInvoice` persists as `'return'`.
 enum JournalReferenceType {
   sale,
   purchase,
@@ -63,6 +63,7 @@ enum JournalReferenceType {
   opening_balance,
   adjustment,
   manual,
+  customer_payment,
 }
 
 /// Sanctioned audit actions (§4.27, §17). The persisted `audit_logs.action`
@@ -97,8 +98,18 @@ enum ExpenseCategory {
 }
 
 /// Cash box operations (§4.21): `'open' | 'close' | 'deposit' | 'withdraw' |
-/// 'sale' | 'expense'`.
-enum CashboxTransactionType { open, close, deposit, withdraw, sale, expense }
+/// 'sale' | 'expense' | 'payment' | 'refund' | 'adjustment'`.
+enum CashboxTransactionType {
+  open,
+  close,
+  deposit,
+  withdraw,
+  sale,
+  expense,
+  payment,
+  refund,
+  adjustment,
+}
 
 /// Lost sales lifecycle (§4.28): `open → ordered → resolved | cancelled`.
 enum LostSaleStatus { open, ordered, resolved, cancelled }

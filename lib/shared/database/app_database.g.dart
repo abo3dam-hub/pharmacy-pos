@@ -9256,6 +9256,839 @@ class CustomersCompanion extends UpdateCompanion<CustomerRow> {
   }
 }
 
+class $CustomerPaymentsTable extends CustomerPayments
+    with TableInfo<$CustomerPaymentsTable, CustomerPaymentRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CustomerPaymentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _paymentNumberMeta = const VerificationMeta(
+    'paymentNumber',
+  );
+  @override
+  late final GeneratedColumn<String> paymentNumber = GeneratedColumn<String>(
+    'payment_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _customerIdMeta = const VerificationMeta(
+    'customerId',
+  );
+  @override
+  late final GeneratedColumn<String> customerId = GeneratedColumn<String>(
+    'customer_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _invoiceIdMeta = const VerificationMeta(
+    'invoiceId',
+  );
+  @override
+  late final GeneratedColumn<String> invoiceId = GeneratedColumn<String>(
+    'invoice_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _amountMicrosMeta = const VerificationMeta(
+    'amountMicros',
+  );
+  @override
+  late final GeneratedColumn<int> amountMicros = GeneratedColumn<int>(
+    'amount_micros',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cashMicrosMeta = const VerificationMeta(
+    'cashMicros',
+  );
+  @override
+  late final GeneratedColumn<int> cashMicros = GeneratedColumn<int>(
+    'cash_micros',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _cardMicrosMeta = const VerificationMeta(
+    'cardMicros',
+  );
+  @override
+  late final GeneratedColumn<int> cardMicros = GeneratedColumn<int>(
+    'card_micros',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<PaymentMethod, String>
+  paymentMethod =
+      GeneratedColumn<String>(
+        'payment_method',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<PaymentMethod>(
+        $CustomerPaymentsTable.$converterpaymentMethod,
+      );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isVoidedMeta = const VerificationMeta(
+    'isVoided',
+  );
+  @override
+  late final GeneratedColumn<bool> isVoided = GeneratedColumn<bool>(
+    'is_voided',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_voided" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _voidReasonMeta = const VerificationMeta(
+    'voidReason',
+  );
+  @override
+  late final GeneratedColumn<String> voidReason = GeneratedColumn<String>(
+    'void_reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    paymentNumber,
+    customerId,
+    invoiceId,
+    amountMicros,
+    cashMicros,
+    cardMicros,
+    paymentMethod,
+    note,
+    isVoided,
+    voidReason,
+    userId,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'customer_payments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CustomerPaymentRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('payment_number')) {
+      context.handle(
+        _paymentNumberMeta,
+        paymentNumber.isAcceptableOrUnknown(
+          data['payment_number']!,
+          _paymentNumberMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_paymentNumberMeta);
+    }
+    if (data.containsKey('customer_id')) {
+      context.handle(
+        _customerIdMeta,
+        customerId.isAcceptableOrUnknown(data['customer_id']!, _customerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_customerIdMeta);
+    }
+    if (data.containsKey('invoice_id')) {
+      context.handle(
+        _invoiceIdMeta,
+        invoiceId.isAcceptableOrUnknown(data['invoice_id']!, _invoiceIdMeta),
+      );
+    }
+    if (data.containsKey('amount_micros')) {
+      context.handle(
+        _amountMicrosMeta,
+        amountMicros.isAcceptableOrUnknown(
+          data['amount_micros']!,
+          _amountMicrosMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMicrosMeta);
+    }
+    if (data.containsKey('cash_micros')) {
+      context.handle(
+        _cashMicrosMeta,
+        cashMicros.isAcceptableOrUnknown(data['cash_micros']!, _cashMicrosMeta),
+      );
+    }
+    if (data.containsKey('card_micros')) {
+      context.handle(
+        _cardMicrosMeta,
+        cardMicros.isAcceptableOrUnknown(data['card_micros']!, _cardMicrosMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('is_voided')) {
+      context.handle(
+        _isVoidedMeta,
+        isVoided.isAcceptableOrUnknown(data['is_voided']!, _isVoidedMeta),
+      );
+    }
+    if (data.containsKey('void_reason')) {
+      context.handle(
+        _voidReasonMeta,
+        voidReason.isAcceptableOrUnknown(data['void_reason']!, _voidReasonMeta),
+      );
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CustomerPaymentRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CustomerPaymentRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      paymentNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payment_number'],
+      )!,
+      customerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}customer_id'],
+      )!,
+      invoiceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}invoice_id'],
+      ),
+      amountMicros: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_micros'],
+      )!,
+      cashMicros: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cash_micros'],
+      )!,
+      cardMicros: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}card_micros'],
+      )!,
+      paymentMethod: $CustomerPaymentsTable.$converterpaymentMethod.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}payment_method'],
+        )!,
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      isVoided: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_voided'],
+      )!,
+      voidReason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}void_reason'],
+      ),
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $CustomerPaymentsTable createAlias(String alias) {
+    return $CustomerPaymentsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<PaymentMethod, String, String>
+  $converterpaymentMethod = const EnumNameConverter<PaymentMethod>(
+    PaymentMethod.values,
+  );
+}
+
+class CustomerPaymentRow extends DataClass
+    implements Insertable<CustomerPaymentRow> {
+  final String id;
+  final String paymentNumber;
+  final String customerId;
+
+  /// Optional invoice this payment is allocated against (§14.13). Nullable so
+  /// open-account settlements are also supported.
+  final String? invoiceId;
+
+  /// Signed: positive = money received, negative = refund issued.
+  final int amountMicros;
+  final int cashMicros;
+  final int cardMicros;
+  final PaymentMethod paymentMethod;
+  final String? note;
+  final bool isVoided;
+  final String? voidReason;
+  final String userId;
+  final int createdAt;
+  final int updatedAt;
+  const CustomerPaymentRow({
+    required this.id,
+    required this.paymentNumber,
+    required this.customerId,
+    this.invoiceId,
+    required this.amountMicros,
+    required this.cashMicros,
+    required this.cardMicros,
+    required this.paymentMethod,
+    this.note,
+    required this.isVoided,
+    this.voidReason,
+    required this.userId,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['payment_number'] = Variable<String>(paymentNumber);
+    map['customer_id'] = Variable<String>(customerId);
+    if (!nullToAbsent || invoiceId != null) {
+      map['invoice_id'] = Variable<String>(invoiceId);
+    }
+    map['amount_micros'] = Variable<int>(amountMicros);
+    map['cash_micros'] = Variable<int>(cashMicros);
+    map['card_micros'] = Variable<int>(cardMicros);
+    {
+      map['payment_method'] = Variable<String>(
+        $CustomerPaymentsTable.$converterpaymentMethod.toSql(paymentMethod),
+      );
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['is_voided'] = Variable<bool>(isVoided);
+    if (!nullToAbsent || voidReason != null) {
+      map['void_reason'] = Variable<String>(voidReason);
+    }
+    map['user_id'] = Variable<String>(userId);
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  CustomerPaymentsCompanion toCompanion(bool nullToAbsent) {
+    return CustomerPaymentsCompanion(
+      id: Value(id),
+      paymentNumber: Value(paymentNumber),
+      customerId: Value(customerId),
+      invoiceId: invoiceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(invoiceId),
+      amountMicros: Value(amountMicros),
+      cashMicros: Value(cashMicros),
+      cardMicros: Value(cardMicros),
+      paymentMethod: Value(paymentMethod),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      isVoided: Value(isVoided),
+      voidReason: voidReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voidReason),
+      userId: Value(userId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory CustomerPaymentRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CustomerPaymentRow(
+      id: serializer.fromJson<String>(json['id']),
+      paymentNumber: serializer.fromJson<String>(json['paymentNumber']),
+      customerId: serializer.fromJson<String>(json['customerId']),
+      invoiceId: serializer.fromJson<String?>(json['invoiceId']),
+      amountMicros: serializer.fromJson<int>(json['amountMicros']),
+      cashMicros: serializer.fromJson<int>(json['cashMicros']),
+      cardMicros: serializer.fromJson<int>(json['cardMicros']),
+      paymentMethod: $CustomerPaymentsTable.$converterpaymentMethod.fromJson(
+        serializer.fromJson<String>(json['paymentMethod']),
+      ),
+      note: serializer.fromJson<String?>(json['note']),
+      isVoided: serializer.fromJson<bool>(json['isVoided']),
+      voidReason: serializer.fromJson<String?>(json['voidReason']),
+      userId: serializer.fromJson<String>(json['userId']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'paymentNumber': serializer.toJson<String>(paymentNumber),
+      'customerId': serializer.toJson<String>(customerId),
+      'invoiceId': serializer.toJson<String?>(invoiceId),
+      'amountMicros': serializer.toJson<int>(amountMicros),
+      'cashMicros': serializer.toJson<int>(cashMicros),
+      'cardMicros': serializer.toJson<int>(cardMicros),
+      'paymentMethod': serializer.toJson<String>(
+        $CustomerPaymentsTable.$converterpaymentMethod.toJson(paymentMethod),
+      ),
+      'note': serializer.toJson<String?>(note),
+      'isVoided': serializer.toJson<bool>(isVoided),
+      'voidReason': serializer.toJson<String?>(voidReason),
+      'userId': serializer.toJson<String>(userId),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  CustomerPaymentRow copyWith({
+    String? id,
+    String? paymentNumber,
+    String? customerId,
+    Value<String?> invoiceId = const Value.absent(),
+    int? amountMicros,
+    int? cashMicros,
+    int? cardMicros,
+    PaymentMethod? paymentMethod,
+    Value<String?> note = const Value.absent(),
+    bool? isVoided,
+    Value<String?> voidReason = const Value.absent(),
+    String? userId,
+    int? createdAt,
+    int? updatedAt,
+  }) => CustomerPaymentRow(
+    id: id ?? this.id,
+    paymentNumber: paymentNumber ?? this.paymentNumber,
+    customerId: customerId ?? this.customerId,
+    invoiceId: invoiceId.present ? invoiceId.value : this.invoiceId,
+    amountMicros: amountMicros ?? this.amountMicros,
+    cashMicros: cashMicros ?? this.cashMicros,
+    cardMicros: cardMicros ?? this.cardMicros,
+    paymentMethod: paymentMethod ?? this.paymentMethod,
+    note: note.present ? note.value : this.note,
+    isVoided: isVoided ?? this.isVoided,
+    voidReason: voidReason.present ? voidReason.value : this.voidReason,
+    userId: userId ?? this.userId,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  CustomerPaymentRow copyWithCompanion(CustomerPaymentsCompanion data) {
+    return CustomerPaymentRow(
+      id: data.id.present ? data.id.value : this.id,
+      paymentNumber: data.paymentNumber.present
+          ? data.paymentNumber.value
+          : this.paymentNumber,
+      customerId: data.customerId.present
+          ? data.customerId.value
+          : this.customerId,
+      invoiceId: data.invoiceId.present ? data.invoiceId.value : this.invoiceId,
+      amountMicros: data.amountMicros.present
+          ? data.amountMicros.value
+          : this.amountMicros,
+      cashMicros: data.cashMicros.present
+          ? data.cashMicros.value
+          : this.cashMicros,
+      cardMicros: data.cardMicros.present
+          ? data.cardMicros.value
+          : this.cardMicros,
+      paymentMethod: data.paymentMethod.present
+          ? data.paymentMethod.value
+          : this.paymentMethod,
+      note: data.note.present ? data.note.value : this.note,
+      isVoided: data.isVoided.present ? data.isVoided.value : this.isVoided,
+      voidReason: data.voidReason.present
+          ? data.voidReason.value
+          : this.voidReason,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomerPaymentRow(')
+          ..write('id: $id, ')
+          ..write('paymentNumber: $paymentNumber, ')
+          ..write('customerId: $customerId, ')
+          ..write('invoiceId: $invoiceId, ')
+          ..write('amountMicros: $amountMicros, ')
+          ..write('cashMicros: $cashMicros, ')
+          ..write('cardMicros: $cardMicros, ')
+          ..write('paymentMethod: $paymentMethod, ')
+          ..write('note: $note, ')
+          ..write('isVoided: $isVoided, ')
+          ..write('voidReason: $voidReason, ')
+          ..write('userId: $userId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    paymentNumber,
+    customerId,
+    invoiceId,
+    amountMicros,
+    cashMicros,
+    cardMicros,
+    paymentMethod,
+    note,
+    isVoided,
+    voidReason,
+    userId,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CustomerPaymentRow &&
+          other.id == this.id &&
+          other.paymentNumber == this.paymentNumber &&
+          other.customerId == this.customerId &&
+          other.invoiceId == this.invoiceId &&
+          other.amountMicros == this.amountMicros &&
+          other.cashMicros == this.cashMicros &&
+          other.cardMicros == this.cardMicros &&
+          other.paymentMethod == this.paymentMethod &&
+          other.note == this.note &&
+          other.isVoided == this.isVoided &&
+          other.voidReason == this.voidReason &&
+          other.userId == this.userId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class CustomerPaymentsCompanion extends UpdateCompanion<CustomerPaymentRow> {
+  final Value<String> id;
+  final Value<String> paymentNumber;
+  final Value<String> customerId;
+  final Value<String?> invoiceId;
+  final Value<int> amountMicros;
+  final Value<int> cashMicros;
+  final Value<int> cardMicros;
+  final Value<PaymentMethod> paymentMethod;
+  final Value<String?> note;
+  final Value<bool> isVoided;
+  final Value<String?> voidReason;
+  final Value<String> userId;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const CustomerPaymentsCompanion({
+    this.id = const Value.absent(),
+    this.paymentNumber = const Value.absent(),
+    this.customerId = const Value.absent(),
+    this.invoiceId = const Value.absent(),
+    this.amountMicros = const Value.absent(),
+    this.cashMicros = const Value.absent(),
+    this.cardMicros = const Value.absent(),
+    this.paymentMethod = const Value.absent(),
+    this.note = const Value.absent(),
+    this.isVoided = const Value.absent(),
+    this.voidReason = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CustomerPaymentsCompanion.insert({
+    required String id,
+    required String paymentNumber,
+    required String customerId,
+    this.invoiceId = const Value.absent(),
+    required int amountMicros,
+    this.cashMicros = const Value.absent(),
+    this.cardMicros = const Value.absent(),
+    required PaymentMethod paymentMethod,
+    this.note = const Value.absent(),
+    this.isVoided = const Value.absent(),
+    this.voidReason = const Value.absent(),
+    required String userId,
+    required int createdAt,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       paymentNumber = Value(paymentNumber),
+       customerId = Value(customerId),
+       amountMicros = Value(amountMicros),
+       paymentMethod = Value(paymentMethod),
+       userId = Value(userId),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<CustomerPaymentRow> custom({
+    Expression<String>? id,
+    Expression<String>? paymentNumber,
+    Expression<String>? customerId,
+    Expression<String>? invoiceId,
+    Expression<int>? amountMicros,
+    Expression<int>? cashMicros,
+    Expression<int>? cardMicros,
+    Expression<String>? paymentMethod,
+    Expression<String>? note,
+    Expression<bool>? isVoided,
+    Expression<String>? voidReason,
+    Expression<String>? userId,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (paymentNumber != null) 'payment_number': paymentNumber,
+      if (customerId != null) 'customer_id': customerId,
+      if (invoiceId != null) 'invoice_id': invoiceId,
+      if (amountMicros != null) 'amount_micros': amountMicros,
+      if (cashMicros != null) 'cash_micros': cashMicros,
+      if (cardMicros != null) 'card_micros': cardMicros,
+      if (paymentMethod != null) 'payment_method': paymentMethod,
+      if (note != null) 'note': note,
+      if (isVoided != null) 'is_voided': isVoided,
+      if (voidReason != null) 'void_reason': voidReason,
+      if (userId != null) 'user_id': userId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CustomerPaymentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? paymentNumber,
+    Value<String>? customerId,
+    Value<String?>? invoiceId,
+    Value<int>? amountMicros,
+    Value<int>? cashMicros,
+    Value<int>? cardMicros,
+    Value<PaymentMethod>? paymentMethod,
+    Value<String?>? note,
+    Value<bool>? isVoided,
+    Value<String?>? voidReason,
+    Value<String>? userId,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return CustomerPaymentsCompanion(
+      id: id ?? this.id,
+      paymentNumber: paymentNumber ?? this.paymentNumber,
+      customerId: customerId ?? this.customerId,
+      invoiceId: invoiceId ?? this.invoiceId,
+      amountMicros: amountMicros ?? this.amountMicros,
+      cashMicros: cashMicros ?? this.cashMicros,
+      cardMicros: cardMicros ?? this.cardMicros,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      note: note ?? this.note,
+      isVoided: isVoided ?? this.isVoided,
+      voidReason: voidReason ?? this.voidReason,
+      userId: userId ?? this.userId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (paymentNumber.present) {
+      map['payment_number'] = Variable<String>(paymentNumber.value);
+    }
+    if (customerId.present) {
+      map['customer_id'] = Variable<String>(customerId.value);
+    }
+    if (invoiceId.present) {
+      map['invoice_id'] = Variable<String>(invoiceId.value);
+    }
+    if (amountMicros.present) {
+      map['amount_micros'] = Variable<int>(amountMicros.value);
+    }
+    if (cashMicros.present) {
+      map['cash_micros'] = Variable<int>(cashMicros.value);
+    }
+    if (cardMicros.present) {
+      map['card_micros'] = Variable<int>(cardMicros.value);
+    }
+    if (paymentMethod.present) {
+      map['payment_method'] = Variable<String>(
+        $CustomerPaymentsTable.$converterpaymentMethod.toSql(
+          paymentMethod.value,
+        ),
+      );
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (isVoided.present) {
+      map['is_voided'] = Variable<bool>(isVoided.value);
+    }
+    if (voidReason.present) {
+      map['void_reason'] = Variable<String>(voidReason.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CustomerPaymentsCompanion(')
+          ..write('id: $id, ')
+          ..write('paymentNumber: $paymentNumber, ')
+          ..write('customerId: $customerId, ')
+          ..write('invoiceId: $invoiceId, ')
+          ..write('amountMicros: $amountMicros, ')
+          ..write('cashMicros: $cashMicros, ')
+          ..write('cardMicros: $cardMicros, ')
+          ..write('paymentMethod: $paymentMethod, ')
+          ..write('note: $note, ')
+          ..write('isVoided: $isVoided, ')
+          ..write('voidReason: $voidReason, ')
+          ..write('userId: $userId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PrescriptionsTable extends Prescriptions
     with TableInfo<$PrescriptionsTable, PrescriptionRow> {
   @override
@@ -11175,6 +12008,42 @@ class $SalesInvoicesTable extends SalesInvoices
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _cashMicrosMeta = const VerificationMeta(
+    'cashMicros',
+  );
+  @override
+  late final GeneratedColumn<int> cashMicros = GeneratedColumn<int>(
+    'cash_micros',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _cardMicrosMeta = const VerificationMeta(
+    'cardMicros',
+  );
+  @override
+  late final GeneratedColumn<int> cardMicros = GeneratedColumn<int>(
+    'card_micros',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _creditMicrosMeta = const VerificationMeta(
+    'creditMicros',
+  );
+  @override
+  late final GeneratedColumn<int> creditMicros = GeneratedColumn<int>(
+    'credit_micros',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _remainingMicrosMeta = const VerificationMeta(
     'remainingMicros',
   );
@@ -11218,6 +12087,28 @@ class $SalesInvoicesTable extends SalesInvoices
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _voidedByMeta = const VerificationMeta(
+    'voidedBy',
+  );
+  @override
+  late final GeneratedColumn<String> voidedBy = GeneratedColumn<String>(
+    'voided_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _voidedAtMeta = const VerificationMeta(
+    'voidedAt',
+  );
+  @override
+  late final GeneratedColumn<int> voidedAt = GeneratedColumn<int>(
+    'voided_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -11258,10 +12149,15 @@ class $SalesInvoicesTable extends SalesInvoices
     paymentMethod,
     paidMicros,
     changeMicros,
+    cashMicros,
+    cardMicros,
+    creditMicros,
     remainingMicros,
     prescriptionId,
     notes,
     voidReason,
+    voidedBy,
+    voidedAt,
     createdAt,
     updatedAt,
   ];
@@ -11385,6 +12281,27 @@ class $SalesInvoicesTable extends SalesInvoices
         ),
       );
     }
+    if (data.containsKey('cash_micros')) {
+      context.handle(
+        _cashMicrosMeta,
+        cashMicros.isAcceptableOrUnknown(data['cash_micros']!, _cashMicrosMeta),
+      );
+    }
+    if (data.containsKey('card_micros')) {
+      context.handle(
+        _cardMicrosMeta,
+        cardMicros.isAcceptableOrUnknown(data['card_micros']!, _cardMicrosMeta),
+      );
+    }
+    if (data.containsKey('credit_micros')) {
+      context.handle(
+        _creditMicrosMeta,
+        creditMicros.isAcceptableOrUnknown(
+          data['credit_micros']!,
+          _creditMicrosMeta,
+        ),
+      );
+    }
     if (data.containsKey('remaining_micros')) {
       context.handle(
         _remainingMicrosMeta,
@@ -11413,6 +12330,18 @@ class $SalesInvoicesTable extends SalesInvoices
       context.handle(
         _voidReasonMeta,
         voidReason.isAcceptableOrUnknown(data['void_reason']!, _voidReasonMeta),
+      );
+    }
+    if (data.containsKey('voided_by')) {
+      context.handle(
+        _voidedByMeta,
+        voidedBy.isAcceptableOrUnknown(data['voided_by']!, _voidedByMeta),
+      );
+    }
+    if (data.containsKey('voided_at')) {
+      context.handle(
+        _voidedAtMeta,
+        voidedAt.isAcceptableOrUnknown(data['voided_at']!, _voidedAtMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -11510,6 +12439,18 @@ class $SalesInvoicesTable extends SalesInvoices
         DriftSqlType.int,
         data['${effectivePrefix}change_micros'],
       )!,
+      cashMicros: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cash_micros'],
+      )!,
+      cardMicros: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}card_micros'],
+      )!,
+      creditMicros: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}credit_micros'],
+      )!,
       remainingMicros: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}remaining_micros'],
@@ -11525,6 +12466,14 @@ class $SalesInvoicesTable extends SalesInvoices
       voidReason: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}void_reason'],
+      ),
+      voidedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}voided_by'],
+      ),
+      voidedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}voided_at'],
       ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
@@ -11574,6 +12523,12 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
   final int paidMicros;
   final int changeMicros;
 
+  /// Payment split (§11, §18): the cash / card / credit components that make
+  /// up [paidMicros] and the outstanding [remainingMicros].
+  final int cashMicros;
+  final int cardMicros;
+  final int creditMicros;
+
   /// Remaining balance (credit customers) = total − paid, §4.14.
   final int remainingMicros;
 
@@ -11581,6 +12536,10 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
   final String? prescriptionId;
   final String? notes;
   final String? voidReason;
+
+  /// Who voided the invoice and when (invoice lifecycle §4.14 / §19).
+  final String? voidedBy;
+  final int? voidedAt;
   final int createdAt;
   final int updatedAt;
   const SalesInvoiceRow({
@@ -11600,10 +12559,15 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
     required this.paymentMethod,
     required this.paidMicros,
     required this.changeMicros,
+    required this.cashMicros,
+    required this.cardMicros,
+    required this.creditMicros,
     required this.remainingMicros,
     this.prescriptionId,
     this.notes,
     this.voidReason,
+    this.voidedBy,
+    this.voidedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -11642,6 +12606,9 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
     }
     map['paid_micros'] = Variable<int>(paidMicros);
     map['change_micros'] = Variable<int>(changeMicros);
+    map['cash_micros'] = Variable<int>(cashMicros);
+    map['card_micros'] = Variable<int>(cardMicros);
+    map['credit_micros'] = Variable<int>(creditMicros);
     map['remaining_micros'] = Variable<int>(remainingMicros);
     if (!nullToAbsent || prescriptionId != null) {
       map['prescription_id'] = Variable<String>(prescriptionId);
@@ -11651,6 +12618,12 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
     }
     if (!nullToAbsent || voidReason != null) {
       map['void_reason'] = Variable<String>(voidReason);
+    }
+    if (!nullToAbsent || voidedBy != null) {
+      map['voided_by'] = Variable<String>(voidedBy);
+    }
+    if (!nullToAbsent || voidedAt != null) {
+      map['voided_at'] = Variable<int>(voidedAt);
     }
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
@@ -11679,6 +12652,9 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
       paymentMethod: Value(paymentMethod),
       paidMicros: Value(paidMicros),
       changeMicros: Value(changeMicros),
+      cashMicros: Value(cashMicros),
+      cardMicros: Value(cardMicros),
+      creditMicros: Value(creditMicros),
       remainingMicros: Value(remainingMicros),
       prescriptionId: prescriptionId == null && nullToAbsent
           ? const Value.absent()
@@ -11689,6 +12665,12 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
       voidReason: voidReason == null && nullToAbsent
           ? const Value.absent()
           : Value(voidReason),
+      voidedBy: voidedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voidedBy),
+      voidedAt: voidedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(voidedAt),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -11724,10 +12706,15 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
       ),
       paidMicros: serializer.fromJson<int>(json['paidMicros']),
       changeMicros: serializer.fromJson<int>(json['changeMicros']),
+      cashMicros: serializer.fromJson<int>(json['cashMicros']),
+      cardMicros: serializer.fromJson<int>(json['cardMicros']),
+      creditMicros: serializer.fromJson<int>(json['creditMicros']),
       remainingMicros: serializer.fromJson<int>(json['remainingMicros']),
       prescriptionId: serializer.fromJson<String?>(json['prescriptionId']),
       notes: serializer.fromJson<String?>(json['notes']),
       voidReason: serializer.fromJson<String?>(json['voidReason']),
+      voidedBy: serializer.fromJson<String?>(json['voidedBy']),
+      voidedAt: serializer.fromJson<int?>(json['voidedAt']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
@@ -11756,10 +12743,15 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
       ),
       'paidMicros': serializer.toJson<int>(paidMicros),
       'changeMicros': serializer.toJson<int>(changeMicros),
+      'cashMicros': serializer.toJson<int>(cashMicros),
+      'cardMicros': serializer.toJson<int>(cardMicros),
+      'creditMicros': serializer.toJson<int>(creditMicros),
       'remainingMicros': serializer.toJson<int>(remainingMicros),
       'prescriptionId': serializer.toJson<String?>(prescriptionId),
       'notes': serializer.toJson<String?>(notes),
       'voidReason': serializer.toJson<String?>(voidReason),
+      'voidedBy': serializer.toJson<String?>(voidedBy),
+      'voidedAt': serializer.toJson<int?>(voidedAt),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
@@ -11782,10 +12774,15 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
     PaymentMethod? paymentMethod,
     int? paidMicros,
     int? changeMicros,
+    int? cashMicros,
+    int? cardMicros,
+    int? creditMicros,
     int? remainingMicros,
     Value<String?> prescriptionId = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     Value<String?> voidReason = const Value.absent(),
+    Value<String?> voidedBy = const Value.absent(),
+    Value<int?> voidedAt = const Value.absent(),
     int? createdAt,
     int? updatedAt,
   }) => SalesInvoiceRow(
@@ -11807,12 +12804,17 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
     paymentMethod: paymentMethod ?? this.paymentMethod,
     paidMicros: paidMicros ?? this.paidMicros,
     changeMicros: changeMicros ?? this.changeMicros,
+    cashMicros: cashMicros ?? this.cashMicros,
+    cardMicros: cardMicros ?? this.cardMicros,
+    creditMicros: creditMicros ?? this.creditMicros,
     remainingMicros: remainingMicros ?? this.remainingMicros,
     prescriptionId: prescriptionId.present
         ? prescriptionId.value
         : this.prescriptionId,
     notes: notes.present ? notes.value : this.notes,
     voidReason: voidReason.present ? voidReason.value : this.voidReason,
+    voidedBy: voidedBy.present ? voidedBy.value : this.voidedBy,
+    voidedAt: voidedAt.present ? voidedAt.value : this.voidedAt,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -11862,6 +12864,15 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
       changeMicros: data.changeMicros.present
           ? data.changeMicros.value
           : this.changeMicros,
+      cashMicros: data.cashMicros.present
+          ? data.cashMicros.value
+          : this.cashMicros,
+      cardMicros: data.cardMicros.present
+          ? data.cardMicros.value
+          : this.cardMicros,
+      creditMicros: data.creditMicros.present
+          ? data.creditMicros.value
+          : this.creditMicros,
       remainingMicros: data.remainingMicros.present
           ? data.remainingMicros.value
           : this.remainingMicros,
@@ -11872,6 +12883,8 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
       voidReason: data.voidReason.present
           ? data.voidReason.value
           : this.voidReason,
+      voidedBy: data.voidedBy.present ? data.voidedBy.value : this.voidedBy,
+      voidedAt: data.voidedAt.present ? data.voidedAt.value : this.voidedAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -11896,10 +12909,15 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
           ..write('paymentMethod: $paymentMethod, ')
           ..write('paidMicros: $paidMicros, ')
           ..write('changeMicros: $changeMicros, ')
+          ..write('cashMicros: $cashMicros, ')
+          ..write('cardMicros: $cardMicros, ')
+          ..write('creditMicros: $creditMicros, ')
           ..write('remainingMicros: $remainingMicros, ')
           ..write('prescriptionId: $prescriptionId, ')
           ..write('notes: $notes, ')
           ..write('voidReason: $voidReason, ')
+          ..write('voidedBy: $voidedBy, ')
+          ..write('voidedAt: $voidedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -11924,10 +12942,15 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
     paymentMethod,
     paidMicros,
     changeMicros,
+    cashMicros,
+    cardMicros,
+    creditMicros,
     remainingMicros,
     prescriptionId,
     notes,
     voidReason,
+    voidedBy,
+    voidedAt,
     createdAt,
     updatedAt,
   ]);
@@ -11951,10 +12974,15 @@ class SalesInvoiceRow extends DataClass implements Insertable<SalesInvoiceRow> {
           other.paymentMethod == this.paymentMethod &&
           other.paidMicros == this.paidMicros &&
           other.changeMicros == this.changeMicros &&
+          other.cashMicros == this.cashMicros &&
+          other.cardMicros == this.cardMicros &&
+          other.creditMicros == this.creditMicros &&
           other.remainingMicros == this.remainingMicros &&
           other.prescriptionId == this.prescriptionId &&
           other.notes == this.notes &&
           other.voidReason == this.voidReason &&
+          other.voidedBy == this.voidedBy &&
+          other.voidedAt == this.voidedAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -11976,10 +13004,15 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
   final Value<PaymentMethod> paymentMethod;
   final Value<int> paidMicros;
   final Value<int> changeMicros;
+  final Value<int> cashMicros;
+  final Value<int> cardMicros;
+  final Value<int> creditMicros;
   final Value<int> remainingMicros;
   final Value<String?> prescriptionId;
   final Value<String?> notes;
   final Value<String?> voidReason;
+  final Value<String?> voidedBy;
+  final Value<int?> voidedAt;
   final Value<int> createdAt;
   final Value<int> updatedAt;
   final Value<int> rowid;
@@ -12000,10 +13033,15 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
     this.paymentMethod = const Value.absent(),
     this.paidMicros = const Value.absent(),
     this.changeMicros = const Value.absent(),
+    this.cashMicros = const Value.absent(),
+    this.cardMicros = const Value.absent(),
+    this.creditMicros = const Value.absent(),
     this.remainingMicros = const Value.absent(),
     this.prescriptionId = const Value.absent(),
     this.notes = const Value.absent(),
     this.voidReason = const Value.absent(),
+    this.voidedBy = const Value.absent(),
+    this.voidedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -12025,10 +13063,15 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
     required PaymentMethod paymentMethod,
     this.paidMicros = const Value.absent(),
     this.changeMicros = const Value.absent(),
+    this.cashMicros = const Value.absent(),
+    this.cardMicros = const Value.absent(),
+    this.creditMicros = const Value.absent(),
     this.remainingMicros = const Value.absent(),
     this.prescriptionId = const Value.absent(),
     this.notes = const Value.absent(),
     this.voidReason = const Value.absent(),
+    this.voidedBy = const Value.absent(),
+    this.voidedAt = const Value.absent(),
     required int createdAt,
     required int updatedAt,
     this.rowid = const Value.absent(),
@@ -12057,10 +13100,15 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
     Expression<String>? paymentMethod,
     Expression<int>? paidMicros,
     Expression<int>? changeMicros,
+    Expression<int>? cashMicros,
+    Expression<int>? cardMicros,
+    Expression<int>? creditMicros,
     Expression<int>? remainingMicros,
     Expression<String>? prescriptionId,
     Expression<String>? notes,
     Expression<String>? voidReason,
+    Expression<String>? voidedBy,
+    Expression<int>? voidedAt,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
     Expression<int>? rowid,
@@ -12083,10 +13131,15 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
       if (paymentMethod != null) 'payment_method': paymentMethod,
       if (paidMicros != null) 'paid_micros': paidMicros,
       if (changeMicros != null) 'change_micros': changeMicros,
+      if (cashMicros != null) 'cash_micros': cashMicros,
+      if (cardMicros != null) 'card_micros': cardMicros,
+      if (creditMicros != null) 'credit_micros': creditMicros,
       if (remainingMicros != null) 'remaining_micros': remainingMicros,
       if (prescriptionId != null) 'prescription_id': prescriptionId,
       if (notes != null) 'notes': notes,
       if (voidReason != null) 'void_reason': voidReason,
+      if (voidedBy != null) 'voided_by': voidedBy,
+      if (voidedAt != null) 'voided_at': voidedAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -12110,10 +13163,15 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
     Value<PaymentMethod>? paymentMethod,
     Value<int>? paidMicros,
     Value<int>? changeMicros,
+    Value<int>? cashMicros,
+    Value<int>? cardMicros,
+    Value<int>? creditMicros,
     Value<int>? remainingMicros,
     Value<String?>? prescriptionId,
     Value<String?>? notes,
     Value<String?>? voidReason,
+    Value<String?>? voidedBy,
+    Value<int?>? voidedAt,
     Value<int>? createdAt,
     Value<int>? updatedAt,
     Value<int>? rowid,
@@ -12135,10 +13193,15 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
       paymentMethod: paymentMethod ?? this.paymentMethod,
       paidMicros: paidMicros ?? this.paidMicros,
       changeMicros: changeMicros ?? this.changeMicros,
+      cashMicros: cashMicros ?? this.cashMicros,
+      cardMicros: cardMicros ?? this.cardMicros,
+      creditMicros: creditMicros ?? this.creditMicros,
       remainingMicros: remainingMicros ?? this.remainingMicros,
       prescriptionId: prescriptionId ?? this.prescriptionId,
       notes: notes ?? this.notes,
       voidReason: voidReason ?? this.voidReason,
+      voidedBy: voidedBy ?? this.voidedBy,
+      voidedAt: voidedAt ?? this.voidedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -12202,6 +13265,15 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
     if (changeMicros.present) {
       map['change_micros'] = Variable<int>(changeMicros.value);
     }
+    if (cashMicros.present) {
+      map['cash_micros'] = Variable<int>(cashMicros.value);
+    }
+    if (cardMicros.present) {
+      map['card_micros'] = Variable<int>(cardMicros.value);
+    }
+    if (creditMicros.present) {
+      map['credit_micros'] = Variable<int>(creditMicros.value);
+    }
     if (remainingMicros.present) {
       map['remaining_micros'] = Variable<int>(remainingMicros.value);
     }
@@ -12213,6 +13285,12 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
     }
     if (voidReason.present) {
       map['void_reason'] = Variable<String>(voidReason.value);
+    }
+    if (voidedBy.present) {
+      map['voided_by'] = Variable<String>(voidedBy.value);
+    }
+    if (voidedAt.present) {
+      map['voided_at'] = Variable<int>(voidedAt.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
@@ -12245,10 +13323,15 @@ class SalesInvoicesCompanion extends UpdateCompanion<SalesInvoiceRow> {
           ..write('paymentMethod: $paymentMethod, ')
           ..write('paidMicros: $paidMicros, ')
           ..write('changeMicros: $changeMicros, ')
+          ..write('cashMicros: $cashMicros, ')
+          ..write('cardMicros: $cardMicros, ')
+          ..write('creditMicros: $creditMicros, ')
           ..write('remainingMicros: $remainingMicros, ')
           ..write('prescriptionId: $prescriptionId, ')
           ..write('notes: $notes, ')
           ..write('voidReason: $voidReason, ')
+          ..write('voidedBy: $voidedBy, ')
+          ..write('voidedAt: $voidedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -25274,6 +26357,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $StockMovementsTable stockMovements = $StockMovementsTable(this);
   late final $SuppliersTable suppliers = $SuppliersTable(this);
   late final $CustomersTable customers = $CustomersTable(this);
+  late final $CustomerPaymentsTable customerPayments = $CustomerPaymentsTable(
+    this,
+  );
   late final $PrescriptionsTable prescriptions = $PrescriptionsTable(this);
   late final $PrescriptionItemsTable prescriptionItems =
       $PrescriptionItemsTable(this);
@@ -25390,6 +26476,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index idxCustomersName = Index(
     'idx_customers_name',
     'CREATE INDEX idx_customers_name ON customers (name)',
+  );
+  late final Index idxCustomerPaymentsCustomer = Index(
+    'idx_customer_payments_customer',
+    'CREATE INDEX idx_customer_payments_customer ON customer_payments (customer_id)',
+  );
+  late final Index idxCustomerPaymentsDate = Index(
+    'idx_customer_payments_date',
+    'CREATE INDEX idx_customer_payments_date ON customer_payments (created_at)',
   );
   late final Index idxPrescriptionsStatus = Index(
     'idx_prescriptions_status',
@@ -25587,6 +26681,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     stockMovements,
     suppliers,
     customers,
+    customerPayments,
     prescriptions,
     prescriptionItems,
     salesInvoices,
@@ -25630,6 +26725,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxStockMovementsType,
     idxSuppliersName,
     idxCustomersName,
+    idxCustomerPaymentsCustomer,
+    idxCustomerPaymentsDate,
     idxPrescriptionsStatus,
     idxPrescriptionItemsPrescription,
     idxPrescriptionItemsItem,
@@ -29895,6 +30992,403 @@ typedef $$CustomersTableProcessedTableManager =
       CustomerRow,
       PrefetchHooks Function()
     >;
+typedef $$CustomerPaymentsTableCreateCompanionBuilder =
+    CustomerPaymentsCompanion Function({
+      required String id,
+      required String paymentNumber,
+      required String customerId,
+      Value<String?> invoiceId,
+      required int amountMicros,
+      Value<int> cashMicros,
+      Value<int> cardMicros,
+      required PaymentMethod paymentMethod,
+      Value<String?> note,
+      Value<bool> isVoided,
+      Value<String?> voidReason,
+      required String userId,
+      required int createdAt,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$CustomerPaymentsTableUpdateCompanionBuilder =
+    CustomerPaymentsCompanion Function({
+      Value<String> id,
+      Value<String> paymentNumber,
+      Value<String> customerId,
+      Value<String?> invoiceId,
+      Value<int> amountMicros,
+      Value<int> cashMicros,
+      Value<int> cardMicros,
+      Value<PaymentMethod> paymentMethod,
+      Value<String?> note,
+      Value<bool> isVoided,
+      Value<String?> voidReason,
+      Value<String> userId,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$CustomerPaymentsTableFilterComposer
+    extends Composer<_$AppDatabase, $CustomerPaymentsTable> {
+  $$CustomerPaymentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get paymentNumber => $composableBuilder(
+    column: $table.paymentNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get customerId => $composableBuilder(
+    column: $table.customerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get invoiceId => $composableBuilder(
+    column: $table.invoiceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountMicros => $composableBuilder(
+    column: $table.amountMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cashMicros => $composableBuilder(
+    column: $table.cashMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cardMicros => $composableBuilder(
+    column: $table.cardMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<PaymentMethod, PaymentMethod, String>
+  get paymentMethod => $composableBuilder(
+    column: $table.paymentMethod,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isVoided => $composableBuilder(
+    column: $table.isVoided,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get voidReason => $composableBuilder(
+    column: $table.voidReason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CustomerPaymentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CustomerPaymentsTable> {
+  $$CustomerPaymentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get paymentNumber => $composableBuilder(
+    column: $table.paymentNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get customerId => $composableBuilder(
+    column: $table.customerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get invoiceId => $composableBuilder(
+    column: $table.invoiceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountMicros => $composableBuilder(
+    column: $table.amountMicros,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cashMicros => $composableBuilder(
+    column: $table.cashMicros,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cardMicros => $composableBuilder(
+    column: $table.cardMicros,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get paymentMethod => $composableBuilder(
+    column: $table.paymentMethod,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isVoided => $composableBuilder(
+    column: $table.isVoided,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get voidReason => $composableBuilder(
+    column: $table.voidReason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CustomerPaymentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CustomerPaymentsTable> {
+  $$CustomerPaymentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get paymentNumber => $composableBuilder(
+    column: $table.paymentNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get customerId => $composableBuilder(
+    column: $table.customerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get invoiceId =>
+      $composableBuilder(column: $table.invoiceId, builder: (column) => column);
+
+  GeneratedColumn<int> get amountMicros => $composableBuilder(
+    column: $table.amountMicros,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cashMicros => $composableBuilder(
+    column: $table.cashMicros,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cardMicros => $composableBuilder(
+    column: $table.cardMicros,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<PaymentMethod, String> get paymentMethod =>
+      $composableBuilder(
+        column: $table.paymentMethod,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<bool> get isVoided =>
+      $composableBuilder(column: $table.isVoided, builder: (column) => column);
+
+  GeneratedColumn<String> get voidReason => $composableBuilder(
+    column: $table.voidReason,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$CustomerPaymentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CustomerPaymentsTable,
+          CustomerPaymentRow,
+          $$CustomerPaymentsTableFilterComposer,
+          $$CustomerPaymentsTableOrderingComposer,
+          $$CustomerPaymentsTableAnnotationComposer,
+          $$CustomerPaymentsTableCreateCompanionBuilder,
+          $$CustomerPaymentsTableUpdateCompanionBuilder,
+          (
+            CustomerPaymentRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CustomerPaymentsTable,
+              CustomerPaymentRow
+            >,
+          ),
+          CustomerPaymentRow,
+          PrefetchHooks Function()
+        > {
+  $$CustomerPaymentsTableTableManager(
+    _$AppDatabase db,
+    $CustomerPaymentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CustomerPaymentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CustomerPaymentsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CustomerPaymentsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> paymentNumber = const Value.absent(),
+                Value<String> customerId = const Value.absent(),
+                Value<String?> invoiceId = const Value.absent(),
+                Value<int> amountMicros = const Value.absent(),
+                Value<int> cashMicros = const Value.absent(),
+                Value<int> cardMicros = const Value.absent(),
+                Value<PaymentMethod> paymentMethod = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<bool> isVoided = const Value.absent(),
+                Value<String?> voidReason = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CustomerPaymentsCompanion(
+                id: id,
+                paymentNumber: paymentNumber,
+                customerId: customerId,
+                invoiceId: invoiceId,
+                amountMicros: amountMicros,
+                cashMicros: cashMicros,
+                cardMicros: cardMicros,
+                paymentMethod: paymentMethod,
+                note: note,
+                isVoided: isVoided,
+                voidReason: voidReason,
+                userId: userId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String paymentNumber,
+                required String customerId,
+                Value<String?> invoiceId = const Value.absent(),
+                required int amountMicros,
+                Value<int> cashMicros = const Value.absent(),
+                Value<int> cardMicros = const Value.absent(),
+                required PaymentMethod paymentMethod,
+                Value<String?> note = const Value.absent(),
+                Value<bool> isVoided = const Value.absent(),
+                Value<String?> voidReason = const Value.absent(),
+                required String userId,
+                required int createdAt,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => CustomerPaymentsCompanion.insert(
+                id: id,
+                paymentNumber: paymentNumber,
+                customerId: customerId,
+                invoiceId: invoiceId,
+                amountMicros: amountMicros,
+                cashMicros: cashMicros,
+                cardMicros: cardMicros,
+                paymentMethod: paymentMethod,
+                note: note,
+                isVoided: isVoided,
+                voidReason: voidReason,
+                userId: userId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CustomerPaymentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CustomerPaymentsTable,
+      CustomerPaymentRow,
+      $$CustomerPaymentsTableFilterComposer,
+      $$CustomerPaymentsTableOrderingComposer,
+      $$CustomerPaymentsTableAnnotationComposer,
+      $$CustomerPaymentsTableCreateCompanionBuilder,
+      $$CustomerPaymentsTableUpdateCompanionBuilder,
+      (
+        CustomerPaymentRow,
+        BaseReferences<
+          _$AppDatabase,
+          $CustomerPaymentsTable,
+          CustomerPaymentRow
+        >,
+      ),
+      CustomerPaymentRow,
+      PrefetchHooks Function()
+    >;
 typedef $$PrescriptionsTableCreateCompanionBuilder =
     PrescriptionsCompanion Function({
       required String id,
@@ -30716,10 +32210,15 @@ typedef $$SalesInvoicesTableCreateCompanionBuilder =
       required PaymentMethod paymentMethod,
       Value<int> paidMicros,
       Value<int> changeMicros,
+      Value<int> cashMicros,
+      Value<int> cardMicros,
+      Value<int> creditMicros,
       Value<int> remainingMicros,
       Value<String?> prescriptionId,
       Value<String?> notes,
       Value<String?> voidReason,
+      Value<String?> voidedBy,
+      Value<int?> voidedAt,
       required int createdAt,
       required int updatedAt,
       Value<int> rowid,
@@ -30742,10 +32241,15 @@ typedef $$SalesInvoicesTableUpdateCompanionBuilder =
       Value<PaymentMethod> paymentMethod,
       Value<int> paidMicros,
       Value<int> changeMicros,
+      Value<int> cashMicros,
+      Value<int> cardMicros,
+      Value<int> creditMicros,
       Value<int> remainingMicros,
       Value<String?> prescriptionId,
       Value<String?> notes,
       Value<String?> voidReason,
+      Value<String?> voidedBy,
+      Value<int?> voidedAt,
       Value<int> createdAt,
       Value<int> updatedAt,
       Value<int> rowid,
@@ -30843,6 +32347,21 @@ class $$SalesInvoicesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get cashMicros => $composableBuilder(
+    column: $table.cashMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cardMicros => $composableBuilder(
+    column: $table.cardMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get creditMicros => $composableBuilder(
+    column: $table.creditMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get remainingMicros => $composableBuilder(
     column: $table.remainingMicros,
     builder: (column) => ColumnFilters(column),
@@ -30860,6 +32379,16 @@ class $$SalesInvoicesTableFilterComposer
 
   ColumnFilters<String> get voidReason => $composableBuilder(
     column: $table.voidReason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get voidedBy => $composableBuilder(
+    column: $table.voidedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get voidedAt => $composableBuilder(
+    column: $table.voidedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30963,6 +32492,21 @@ class $$SalesInvoicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get cashMicros => $composableBuilder(
+    column: $table.cashMicros,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cardMicros => $composableBuilder(
+    column: $table.cardMicros,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get creditMicros => $composableBuilder(
+    column: $table.creditMicros,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get remainingMicros => $composableBuilder(
     column: $table.remainingMicros,
     builder: (column) => ColumnOrderings(column),
@@ -30980,6 +32524,16 @@ class $$SalesInvoicesTableOrderingComposer
 
   ColumnOrderings<String> get voidReason => $composableBuilder(
     column: $table.voidReason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get voidedBy => $composableBuilder(
+    column: $table.voidedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get voidedAt => $composableBuilder(
+    column: $table.voidedAt,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -31082,6 +32636,21 @@ class $$SalesInvoicesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get cashMicros => $composableBuilder(
+    column: $table.cashMicros,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cardMicros => $composableBuilder(
+    column: $table.cardMicros,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get creditMicros => $composableBuilder(
+    column: $table.creditMicros,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get remainingMicros => $composableBuilder(
     column: $table.remainingMicros,
     builder: (column) => column,
@@ -31099,6 +32668,12 @@ class $$SalesInvoicesTableAnnotationComposer
     column: $table.voidReason,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get voidedBy =>
+      $composableBuilder(column: $table.voidedBy, builder: (column) => column);
+
+  GeneratedColumn<int> get voidedAt =>
+      $composableBuilder(column: $table.voidedAt, builder: (column) => column);
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -31154,10 +32729,15 @@ class $$SalesInvoicesTableTableManager
                 Value<PaymentMethod> paymentMethod = const Value.absent(),
                 Value<int> paidMicros = const Value.absent(),
                 Value<int> changeMicros = const Value.absent(),
+                Value<int> cashMicros = const Value.absent(),
+                Value<int> cardMicros = const Value.absent(),
+                Value<int> creditMicros = const Value.absent(),
                 Value<int> remainingMicros = const Value.absent(),
                 Value<String?> prescriptionId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> voidReason = const Value.absent(),
+                Value<String?> voidedBy = const Value.absent(),
+                Value<int?> voidedAt = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -31178,10 +32758,15 @@ class $$SalesInvoicesTableTableManager
                 paymentMethod: paymentMethod,
                 paidMicros: paidMicros,
                 changeMicros: changeMicros,
+                cashMicros: cashMicros,
+                cardMicros: cardMicros,
+                creditMicros: creditMicros,
                 remainingMicros: remainingMicros,
                 prescriptionId: prescriptionId,
                 notes: notes,
                 voidReason: voidReason,
+                voidedBy: voidedBy,
+                voidedAt: voidedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -31204,10 +32789,15 @@ class $$SalesInvoicesTableTableManager
                 required PaymentMethod paymentMethod,
                 Value<int> paidMicros = const Value.absent(),
                 Value<int> changeMicros = const Value.absent(),
+                Value<int> cashMicros = const Value.absent(),
+                Value<int> cardMicros = const Value.absent(),
+                Value<int> creditMicros = const Value.absent(),
                 Value<int> remainingMicros = const Value.absent(),
                 Value<String?> prescriptionId = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<String?> voidReason = const Value.absent(),
+                Value<String?> voidedBy = const Value.absent(),
+                Value<int?> voidedAt = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -31228,10 +32818,15 @@ class $$SalesInvoicesTableTableManager
                 paymentMethod: paymentMethod,
                 paidMicros: paidMicros,
                 changeMicros: changeMicros,
+                cashMicros: cashMicros,
+                cardMicros: cardMicros,
+                creditMicros: creditMicros,
                 remainingMicros: remainingMicros,
                 prescriptionId: prescriptionId,
                 notes: notes,
                 voidReason: voidReason,
+                voidedBy: voidedBy,
+                voidedAt: voidedAt,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -37528,6 +39123,8 @@ class $AppDatabaseManager {
       $$SuppliersTableTableManager(_db, _db.suppliers);
   $$CustomersTableTableManager get customers =>
       $$CustomersTableTableManager(_db, _db.customers);
+  $$CustomerPaymentsTableTableManager get customerPayments =>
+      $$CustomerPaymentsTableTableManager(_db, _db.customerPayments);
   $$PrescriptionsTableTableManager get prescriptions =>
       $$PrescriptionsTableTableManager(_db, _db.prescriptions);
   $$PrescriptionItemsTableTableManager get prescriptionItems =>

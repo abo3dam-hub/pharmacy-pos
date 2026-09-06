@@ -52,6 +52,14 @@ abstract interface class SalesRepository {
   /// Executes the checkout through the sale engine as ONE atomic transaction.
   Future<PosSaleOutcome> checkout(PosCheckoutCommand command);
 
+  /// Voids a completed, never-returned invoice (stock, drawer, journal,
+  /// prescription and customer balance all reversed together).
+  Future<void> voidInvoice(
+    String invoiceId, {
+    required String userId,
+    required String reason,
+  });
+
   /// Returns a sold line through the return engine (stock to original batch,
   /// financial + prescription reversal) — atomic and audited.
   Future<PosReturnOutcome> returnSaleLine(PosReturnCommand command);

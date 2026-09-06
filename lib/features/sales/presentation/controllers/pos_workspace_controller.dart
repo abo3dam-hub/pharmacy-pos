@@ -386,6 +386,18 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
       final rxId = state.activePrescription?.id;
       final invoiceNumber = await _repository.nextInvoiceNumber();
 
+      // Payment split: for cash the received amount (incl. overpayment) is the
+      // cash component; card settles the paid amount on Bank; mixed keeps the
+      // two entered components (drawerNet = cash − change in the engine).
+      final (int?, int?) split = switch (state.paymentMethod) {
+        PosPaymentMethod.cash => (payment.paidMicros, 0),
+        PosPaymentMethod.card => (0, payment.paidMicros),
+        PosPaymentMethod.mixed => (
+            state.cashReceivedMicros,
+            state.cardReceivedMicros,
+          ),
+      };
+
       final outcome = await _repository.checkout(PosCheckoutCommand(
         invoiceNumber: invoiceNumber,
         lines: lines,
@@ -393,6 +405,8 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
         paidMicros: payment.paidMicros,
         userId: actingUserId,
         customerId: state.customer?.id,
+        cashMicros: split.$1,
+        cardMicros: split.$2,
         prescriptionId: rxId,
         notes: rxId != null ? 'صرف من وصفة $rxId' : null,
       ));
@@ -531,7 +545,40 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
     }
   }
 
-  // ── Lost sales ────────────────────────────────────────────────────────
+  /// Voids a completed, never-returned invoice (§19). Requires `sales.void` and
+  /// a reason; the engine reverses stock, drawer, journal, prescription and the
+  /// customer balance atomically.
+  Future<bool> voidInvoice({
+    required PosInvoiceView invoice,
+    required String actingUserId,
+    required Set<String> permissions,
+    required String reason,
+  }) async {
+    if (reason.trim().isEmpty) {
+      state = state.copyWith(errorMessage: 'سبب الإلغاء مطلوب');
+      return false;
+    }
+    try {
+      await _repository.voidInvoice(
+        invoice.id,
+        userId: actingUserId,
+        reason: reason,
+      );
+      state = state.copyWith(
+        returnedLinesNote: 'تم إلغاء الفاتورة ${invoice.invoiceNumber}',
+        selectedReturnInvoice: null,
+        clearError: true,
+      );
+      await searchReturnInvoices(state.searchQuery);
+      return true;
+    } on AppException catch (e) {
+      state = state.copyWith(errorMessage: e.failure.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'فشل إلغاء الفاتورة: $e');
+      return false;
+    }
+  }
 
   Future<bool> captureLostSale({
     required String productName,

@@ -52,8 +52,9 @@ void main() {
       expect(Money.parse('1250.50').format(0), '1,251');
     });
 
-    test('formatArabicDigits renders Arabic-Indic glyphs', () {
-      expect(Money.parse('1234.50').formatArabicDigits(), '١٬٢٣٤٫٥٠');
+    test('formatArabicDigits renders Western/Latin glyphs per §23', () {
+      expect(Money.parse('1234.50').formatArabicDigits(), '1,234.50');
+      expect(Money.parse('1234.50').formatArabicDigits(4), '1,234.5000');
     });
 
     test('roundTo / floorTo', () {

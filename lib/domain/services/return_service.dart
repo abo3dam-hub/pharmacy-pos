@@ -6,6 +6,7 @@ import '../../core/util/ids.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/models/enums.dart';
 import 'audit_service.dart';
+import 'financial_posting_service.dart';
 import 'permission_service.dart';
 import 'stock_service.dart';
 
@@ -44,13 +45,18 @@ class SaleReturnOutcome {
 /// one transaction. Revenue/cost/profit totals are recorded on the return so
 /// the accounting layer can post the reversal (Phase 9).
 class ReturnService {
-  ReturnService({AuditService? audit, PermissionService? permissions})
-      : _audit = audit ?? const AuditService(),
-        _permissions = permissions ?? const PermissionService();
+  ReturnService({
+    AuditService? audit,
+    PermissionService? permissions,
+    FinancialPostingService? financial,
+  })  : _audit = audit ?? const AuditService(),
+        _permissions = permissions ?? const PermissionService(),
+        _financial = financial ?? const FinancialPostingService();
 
   final AuditService _audit;
   final PermissionService _permissions;
   final StockService _stock = const StockService();
+  final FinancialPostingService _financial;
 
   Future<SaleReturnOutcome> recordSaleReturn(
       AppDatabase db, SaleReturnRequest request) async {
@@ -117,6 +123,14 @@ class ReturnService {
       final originalInvoice = await (db.select(db.salesInvoices)
             ..where((i) => i.id.equals(originalLine.invoiceId)))
           .getSingleOrNull();
+      if (originalInvoice == null) {
+        throw NotFoundException(
+            'فاتورة البيع الأصلية غير موجودة: ${originalLine.invoiceId}');
+      }
+      if (originalInvoice.saleStatus == SaleStatus.voided) {
+        throw InvalidOperationException(
+            'لا يمكن إرجاع أصناف من فاتورة ملغاة (${originalInvoice.invoiceNumber})');
+      }
 
       final returnId = newId('ret');
       await db.into(db.returns).insert(
@@ -126,8 +140,8 @@ class ReturnService {
               type: ReturnType.sale_return,
               originalInvoiceId: originalLine.invoiceId,
               originalInvoiceType: 'sale',
-              customerId: originalInvoice?.customerId != null
-                  ? Value(originalInvoice!.customerId!)
+              customerId: originalInvoice.customerId != null
+                  ? Value(originalInvoice.customerId!)
                   : const Value(null),
               userId: request.userId,
               totalMicros: Value(reversalMicros),
@@ -171,6 +185,34 @@ class ReturnService {
         atMillis: now,
       );
 
+      // Financial reversal (§14): the reversed revenue first offsets any
+      // outstanding accounts-receivable on the invoice, the rest is refunded
+      // as cash; inventory/cost is restored via the GL.
+      final reversalAmount = -reversalMicros;
+      final outstanding = (originalInvoice.remainingMicros).clamp(0, reversalAmount);
+      final cashRefundMicros = reversalAmount - outstanding;
+      await _financial.postReturn(
+        db,
+        returnId: returnId,
+        returnNumber: request.returnNumber,
+        invoiceNumber: originalInvoice.invoiceNumber,
+        reversalRevenueMicros: reversalAmount,
+        costMicros: request.quantityBase * unitCost,
+        accountsReceivableOffsetMicros: outstanding,
+        refundCashMicros: cashRefundMicros,
+        userId: request.userId,
+        atMillis: now,
+      );
+
+      // Advance the invoice lifecycle: completed → partially/fully returned.
+      await _advanceInvoiceStatus(db, originalInvoice.id);
+
+      // Re-derive the customer balance (sale invoice remaining + returns net).
+      if (originalInvoice.customerId != null) {
+        await _financial.syncCustomerBalance(
+            db, originalInvoice.customerId!, at: now);
+      }
+
       await _audit.write(
         db,
         userId: request.userId,
@@ -181,6 +223,7 @@ class ReturnService {
           'original_line': request.originalInvoiceItemId,
           'quantity_base': request.quantityBase,
           'reversal_micros': reversalMicros,
+          'invoice_status': originalInvoice.saleStatus.name,
         },
       );
 
@@ -248,6 +291,31 @@ class ReturnService {
         .write(
       PrescriptionsCompanion(
         status: Value(newStatus),
+        updatedAt: Value(now),
+      ),
+    );
+  }
+
+  /// Advances the invoice sale-status after a partial/full return:
+  /// `completed → partially_returned → fully_returned`.
+  Future<void> _advanceInvoiceStatus(AppDatabase db, String invoiceId) async {
+    final lines = await (db.select(db.salesInvoiceItems)
+          ..where((i) => i.invoiceId.equals(invoiceId)))
+        .get();
+    if (lines.isEmpty) return;
+
+    final allReturned =
+        lines.every((l) => l.returnQuantityBase >= l.quantityBaseSigned);
+    final anyReturned = lines.any((l) => l.returnQuantityBase > 0);
+    if (!anyReturned) return;
+
+    final newStatus =
+        allReturned ? SaleStatus.fully_returned : SaleStatus.partially_returned;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await (db.update(db.salesInvoices)..where((i) => i.id.equals(invoiceId)))
+        .write(
+      SalesInvoicesCompanion(
+        saleStatus: Value(newStatus),
         updatedAt: Value(now),
       ),
     );

@@ -165,11 +165,21 @@ class _FakeSalesRepository implements SalesRepository {
       profitMicros: 0,
       paidMicros: command.paidMicros,
       changeMicros: 0,
+      cashMicros: command.cashMicros ?? command.paidMicros,
+      cardMicros: command.cardMicros ?? 0,
+      creditMicros: 0,
       createdAt: DateTime.now().millisecondsSinceEpoch,
       lines: const [],
     );
     return PosSaleOutcome(invoice: inv, lines: const [], movements: 0);
   }
+
+  @override
+  Future<void> voidInvoice(
+    String invoiceId, {
+    required String userId,
+    required String reason,
+  }) async {}
 
   @override
   Future<PosReturnOutcome> returnSaleLine(PosReturnCommand command) async =>

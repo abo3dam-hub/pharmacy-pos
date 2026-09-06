@@ -306,6 +306,15 @@ Future<void> seedDefaults(AppDatabase db) async {
       updatedAt: now,
     ),
     AccountsCompanion.insert(
+      id: 'acc_1200',
+      code: '1200',
+      name: 'مخزون البضاعة',
+      accountType: AccountType.asset,
+      isSystem: const Value(true),
+      createdAt: now,
+      updatedAt: now,
+    ),
+    AccountsCompanion.insert(
       id: 'acc_2000',
       code: '2000',
       name: 'حسابات الدفع',
