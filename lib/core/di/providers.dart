@@ -48,6 +48,9 @@ import '../../features/sales/presentation/controllers/pos_workspace_state.dart';
 import '../../features/suppliers/application/suppliers_controller.dart';
 import '../../features/suppliers/domain/usecases/suppliers_use_cases.dart';
 import '../../features/accounts/domain/repositories/cashbox_repository.dart';
+import '../../features/reports/application/reports_controller.dart';
+import '../../features/reports/data/reports_dao.dart';
+import '../../features/reports/domain/entities/report_models.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/database/settings_dao.dart';
 import 'injection.dart';
@@ -190,3 +193,27 @@ final getAvailableReturnQtyUseCaseProvider =
         (ref) => getIt<GetAvailableReturnQtyUseCase>());
 final purchaseReturnUseCaseProvider =
     Provider<PurchaseReturnUseCase>((ref) => getIt<PurchaseReturnUseCase>());
+
+// Phase 11 — Reports hub controllers (all read-only).
+final reportsDaoProvider = Provider<ReportsDao>((ref) => getIt<ReportsDao>());
+final trialBalanceControllerProvider =
+    StateNotifierProvider<TrialBalanceController,
+        ReportViewState<TrialBalanceReport>>((ref) => getIt<TrialBalanceController>());
+final incomeStatementControllerProvider =
+    StateNotifierProvider<IncomeStatementController,
+        ReportViewState<IncomeStatementReport>>((ref) => getIt<IncomeStatementController>());
+final balanceSheetControllerProvider =
+    StateNotifierProvider<BalanceSheetController,
+        ReportViewState<BalanceSheetReport>>((ref) => getIt<BalanceSheetController>());
+final salesReportControllerProvider =
+    StateNotifierProvider<SalesReportController, ReportViewState<SalesReport>>(
+        (ref) => getIt<SalesReportController>());
+final purchaseReportControllerProvider =
+    StateNotifierProvider<PurchaseReportController, ReportViewState<PurchaseReport>>(
+        (ref) => getIt<PurchaseReportController>());
+final inventoryReportControllerProvider =
+    StateNotifierProvider<InventoryReportController,
+        ReportViewState<InventoryReport>>((ref) => getIt<InventoryReportController>());
+final lostSalesReportControllerProvider =
+    StateNotifierProvider<LostSalesReportController,
+        ReportViewState<LostSalesReport>>((ref) => getIt<LostSalesReportController>());

@@ -4663,6 +4663,648 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'استرداد للعميل'**
   String get csPaymentRefundTitle;
+
+  /// No description provided for @reportExportExcel.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصدير إلى إكسل'**
+  String get reportExportExcel;
+
+  /// No description provided for @reportExportExcelDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تصدير ملف الإكسل'**
+  String get reportExportExcelDone;
+
+  /// No description provided for @reportTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التقارير'**
+  String get reportTitle;
+
+  /// No description provided for @reportAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'طي التقارير'**
+  String get reportAddTitle;
+
+  /// No description provided for @reportTrialBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميزان المراجعة'**
+  String get reportTrialBalance;
+
+  /// No description provided for @reportIncomeStatement.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة الدخل'**
+  String get reportIncomeStatement;
+
+  /// No description provided for @reportBalanceSheet.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية العمومية'**
+  String get reportBalanceSheet;
+
+  /// No description provided for @reportAccountStatement.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف حساب'**
+  String get reportAccountStatement;
+
+  /// No description provided for @reportSales.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبيعات'**
+  String get reportSales;
+
+  /// No description provided for @reportPurchases.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشتريات'**
+  String get reportPurchases;
+
+  /// No description provided for @reportInventory.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون'**
+  String get reportInventory;
+
+  /// No description provided for @reportLostSales.
+  ///
+  /// In ar, this message translates to:
+  /// **'النواقص'**
+  String get reportLostSales;
+
+  /// No description provided for @reportCustomerStatement.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف حساب عميل'**
+  String get reportCustomerStatement;
+
+  /// No description provided for @reportSupplierStatement.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف حساب مورد'**
+  String get reportSupplierStatement;
+
+  /// No description provided for @reportFromDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'من تاريخ'**
+  String get reportFromDate;
+
+  /// No description provided for @reportToDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلى تاريخ'**
+  String get reportToDate;
+
+  /// No description provided for @reportRefresh.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث'**
+  String get reportRefresh;
+
+  /// No description provided for @reportNoPermission.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا تملك صلاحية لعرض هذا التقرير'**
+  String get reportNoPermission;
+
+  /// No description provided for @reportTrialBalanceTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميزان المراجعة'**
+  String get reportTrialBalanceTitle;
+
+  /// No description provided for @reportTrialBalanceAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب'**
+  String get reportTrialBalanceAccount;
+
+  /// No description provided for @reportTrialBalanceOpening.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الافتتاحي'**
+  String get reportTrialBalanceOpening;
+
+  /// No description provided for @reportTrialBalanceDebit.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدين'**
+  String get reportTrialBalanceDebit;
+
+  /// No description provided for @reportTrialBalanceCredit.
+  ///
+  /// In ar, this message translates to:
+  /// **'دائن'**
+  String get reportTrialBalanceCredit;
+
+  /// No description provided for @reportTrialBalanceClosing.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الختامي'**
+  String get reportTrialBalanceClosing;
+
+  /// No description provided for @reportBalanced.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوازن'**
+  String get reportBalanced;
+
+  /// No description provided for @reportNotBalanced.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير متوازن'**
+  String get reportNotBalanced;
+
+  /// No description provided for @reportIncomeSalesRevenue.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيرادات المبيعات'**
+  String get reportIncomeSalesRevenue;
+
+  /// No description provided for @reportIncomeSalesReturns.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجعات المبيعات'**
+  String get reportIncomeSalesReturns;
+
+  /// No description provided for @reportIncomeNetRevenue.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي الإيرادات'**
+  String get reportIncomeNetRevenue;
+
+  /// No description provided for @reportIncomeCogs.
+  ///
+  /// In ar, this message translates to:
+  /// **'تكلفة البضاعة المباعة'**
+  String get reportIncomeCogs;
+
+  /// No description provided for @reportIncomeGrossProfit.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجمل الربح'**
+  String get reportIncomeGrossProfit;
+
+  /// No description provided for @reportIncomeOperatingExpenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصاريف التشغيلية'**
+  String get reportIncomeOperatingExpenses;
+
+  /// No description provided for @reportIncomeNetIncome.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي الربح'**
+  String get reportIncomeNetIncome;
+
+  /// No description provided for @reportIncomeExpenseRow.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروف'**
+  String get reportIncomeExpenseRow;
+
+  /// No description provided for @reportBalanceAssets.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأصول'**
+  String get reportBalanceAssets;
+
+  /// No description provided for @reportBalanceLiabilities.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصوم'**
+  String get reportBalanceLiabilities;
+
+  /// No description provided for @reportBalanceEquity.
+  ///
+  /// In ar, this message translates to:
+  /// **'حقوق الملكية'**
+  String get reportBalanceEquity;
+
+  /// No description provided for @reportBalanceTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي'**
+  String get reportBalanceTotal;
+
+  /// No description provided for @reportBalanceAsset.
+  ///
+  /// In ar, this message translates to:
+  /// **'أصل'**
+  String get reportBalanceAsset;
+
+  /// No description provided for @reportBalanceLiability.
+  ///
+  /// In ar, this message translates to:
+  /// **'التزام'**
+  String get reportBalanceLiability;
+
+  /// No description provided for @reportBalanceEquityItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'بند'**
+  String get reportBalanceEquityItem;
+
+  /// No description provided for @reportBalanceRetainedEarnings.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرباح المحتجزة (الأرباح المتراكمة)'**
+  String get reportBalanceRetainedEarnings;
+
+  /// No description provided for @reportDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get reportDate;
+
+  /// No description provided for @reportSalesCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الفواتير'**
+  String get reportSalesCount;
+
+  /// No description provided for @reportSalesUnits.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدات المباعة'**
+  String get reportSalesUnits;
+
+  /// No description provided for @reportSalesSubtotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي قبل الخصم'**
+  String get reportSalesSubtotal;
+
+  /// No description provided for @reportSalesDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصم'**
+  String get reportSalesDiscount;
+
+  /// No description provided for @reportSalesVat.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضريبة القيمة المضافة'**
+  String get reportSalesVat;
+
+  /// No description provided for @reportSalesTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي المبيعات'**
+  String get reportSalesTotal;
+
+  /// No description provided for @reportSalesNet.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي المبيعات'**
+  String get reportSalesNet;
+
+  /// No description provided for @reportSalesPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدفوع'**
+  String get reportSalesPaid;
+
+  /// No description provided for @reportSalesCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقدي'**
+  String get reportSalesCash;
+
+  /// No description provided for @reportSalesCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقة'**
+  String get reportSalesCard;
+
+  /// No description provided for @reportSalesCredit.
+  ///
+  /// In ar, this message translates to:
+  /// **'آجل'**
+  String get reportSalesCredit;
+
+  /// No description provided for @reportSalesVoided.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملغاة'**
+  String get reportSalesVoided;
+
+  /// No description provided for @reportSalesReturns.
+  ///
+  /// In ar, this message translates to:
+  /// **'المرتجعات'**
+  String get reportSalesReturns;
+
+  /// No description provided for @reportSalesProfit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الربح'**
+  String get reportSalesProfit;
+
+  /// No description provided for @reportCustomer.
+  ///
+  /// In ar, this message translates to:
+  /// **'العميل'**
+  String get reportCustomer;
+
+  /// No description provided for @reportAllCustomers.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل العملاء'**
+  String get reportAllCustomers;
+
+  /// No description provided for @reportUser.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستخدم'**
+  String get reportUser;
+
+  /// No description provided for @reportAllUsers.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل المستخدمين'**
+  String get reportAllUsers;
+
+  /// No description provided for @reportPurchasesCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الفواتير'**
+  String get reportPurchasesCount;
+
+  /// No description provided for @reportPurchasesSubtotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي قبل الخصم'**
+  String get reportPurchasesSubtotal;
+
+  /// No description provided for @reportPurchasesDiscount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخصم'**
+  String get reportPurchasesDiscount;
+
+  /// No description provided for @reportPurchasesTax.
+  ///
+  /// In ar, this message translates to:
+  /// **'الضريبة'**
+  String get reportPurchasesTax;
+
+  /// No description provided for @reportPurchasesShipping.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشحن'**
+  String get reportPurchasesShipping;
+
+  /// No description provided for @reportPurchasesTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي المشتريات'**
+  String get reportPurchasesTotal;
+
+  /// No description provided for @reportPurchasesPaid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدفوع'**
+  String get reportPurchasesPaid;
+
+  /// No description provided for @reportPurchasesRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتبقي'**
+  String get reportPurchasesRemaining;
+
+  /// No description provided for @reportPurchasesNet.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي المشتريات'**
+  String get reportPurchasesNet;
+
+  /// No description provided for @reportPurchasesReturns.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجعات المشتريات'**
+  String get reportPurchasesReturns;
+
+  /// No description provided for @reportSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'المورد'**
+  String get reportSupplier;
+
+  /// No description provided for @reportAllSuppliers.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الموردين'**
+  String get reportAllSuppliers;
+
+  /// No description provided for @reportInventoryCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الأصناف'**
+  String get reportInventoryCount;
+
+  /// No description provided for @reportInventoryTotalStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الكميات'**
+  String get reportInventoryTotalStock;
+
+  /// No description provided for @reportInventoryValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيمة المخزون'**
+  String get reportInventoryValue;
+
+  /// No description provided for @reportInventoryLowStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'أصناف منخفضة'**
+  String get reportInventoryLowStock;
+
+  /// No description provided for @reportInventoryOutOfStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'نافد'**
+  String get reportInventoryOutOfStock;
+
+  /// No description provided for @reportInventoryItemCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود'**
+  String get reportInventoryItemCode;
+
+  /// No description provided for @reportInventoryItemName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصنف'**
+  String get reportInventoryItemName;
+
+  /// No description provided for @reportInventoryCurrentStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون الحالي'**
+  String get reportInventoryCurrentStock;
+
+  /// No description provided for @reportInventoryMin.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى'**
+  String get reportInventoryMin;
+
+  /// No description provided for @reportInventoryMax.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأقصى'**
+  String get reportInventoryMax;
+
+  /// No description provided for @reportInventoryUnitCost.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط التكلفة'**
+  String get reportInventoryUnitCost;
+
+  /// No description provided for @reportInventoryValue2.
+  ///
+  /// In ar, this message translates to:
+  /// **'القيمة'**
+  String get reportInventoryValue2;
+
+  /// No description provided for @reportInventoryMovement.
+  ///
+  /// In ar, this message translates to:
+  /// **'حركة المخزون'**
+  String get reportInventoryMovement;
+
+  /// No description provided for @reportMovementType.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع'**
+  String get reportMovementType;
+
+  /// No description provided for @reportMovementCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الحركات'**
+  String get reportMovementCount;
+
+  /// No description provided for @reportMovementQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get reportMovementQty;
+
+  /// No description provided for @reportMovementTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get reportMovementTotal;
+
+  /// No description provided for @reportLostSalesCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الطلبات'**
+  String get reportLostSalesCount;
+
+  /// No description provided for @reportLostSalesQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المطلوبة'**
+  String get reportLostSalesQty;
+
+  /// No description provided for @reportLostSalesItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصنف'**
+  String get reportLostSalesItem;
+
+  /// No description provided for @reportLostSalesBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود'**
+  String get reportLostSalesBarcode;
+
+  /// No description provided for @reportLostSalesCustomer.
+  ///
+  /// In ar, this message translates to:
+  /// **'العميل'**
+  String get reportLostSalesCustomer;
+
+  /// No description provided for @reportLostSalesStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get reportLostSalesStatus;
+
+  /// No description provided for @reportLostSalesNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة'**
+  String get reportLostSalesNote;
+
+  /// No description provided for @reportLostStatusOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفتوح'**
+  String get reportLostStatusOpen;
+
+  /// No description provided for @reportLostStatusOrdered.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم الطلب'**
+  String get reportLostStatusOrdered;
+
+  /// No description provided for @reportLostStatusResolved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم التوفير'**
+  String get reportLostStatusResolved;
+
+  /// No description provided for @reportLostStatusCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغى'**
+  String get reportLostStatusCancelled;
+
+  /// No description provided for @reportAllStatuses.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الحالات'**
+  String get reportAllStatuses;
+
+  /// No description provided for @reportGeneratedAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقت التوليد'**
+  String get reportGeneratedAt;
+
+  /// No description provided for @reportPeriod.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفترة'**
+  String get reportPeriod;
+
+  /// No description provided for @reportSelectEntity.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر من القائمة'**
+  String get reportSelectEntity;
+
+  /// No description provided for @reportStatementOpening.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الافتتاحي'**
+  String get reportStatementOpening;
+
+  /// No description provided for @reportNoData.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بيانات في هذا النطاق'**
+  String get reportNoData;
 }
 
 class _AppLocalizationsDelegate

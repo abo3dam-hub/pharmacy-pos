@@ -16,7 +16,18 @@ class PdfArabic {
   PdfArabic._();
 
   /// Reshapes a mixed string so Arabic text joins correctly in the PDF.
-  static String shape(String value) => ArabicReshaper.instance.reshape(value);
+  ///
+  /// The `pdf` engine drives its own bidi/ligature composition on top of this
+  /// presentation output. Its composition table only spans the Arabic
+  /// combining pairs, so feeding it a pre-composed lam-alef glyph (U+FEF5..
+  /// U+FEFC) overflows that table and throws during layout. We therefore
+  /// decompose lam-alef back to `ل + ZWNJ + ا`; the zero-width joiner keeps
+  /// the pair visually separated and stops the downstream composer from
+  /// re-joining it. Every other letter keeps the reshaped presentation form.
+  static final RegExp _lamAlef = RegExp('[\uFEF5-\uFEFC]');
+
+  static String shape(String value) => ArabicReshaper.instance.reshape(value)
+      .replaceAllMapped(_lamAlef, (m) => '\u0644\u200C\u0627');
 
   /// RTL for Arabic-first headings, LTR otherwise.
   static pw.TextDirection textDirection(String value) =>

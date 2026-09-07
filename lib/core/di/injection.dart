@@ -88,6 +88,9 @@ import '../../features/suppliers/application/suppliers_controller.dart';
 import '../../features/suppliers/data/repositories/supplier_repository_impl.dart';
 import '../../features/suppliers/domain/repositories/supplier_repository.dart';
 import '../../features/suppliers/domain/usecases/suppliers_use_cases.dart';
+import '../../features/reports/application/reports_controller.dart';
+import '../../features/reports/data/reports_dao.dart';
+import '../../features/reports/domain/services/report_export_service.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/models/enums.dart';
 
@@ -136,6 +139,7 @@ void setupDependencies() {
   _registerPhase8(db);
   _registerPhase9(db);
   _registerPhase10(db);
+  _registerPhase11(db);
 }
 
 /// Phase 7 — POS workspace data layer over the existing transactional engine.
@@ -213,6 +217,29 @@ void _registerPhase9(AppDatabase db) {
         getIt<UpdateExpenseCategoryUseCase>(),
         getIt<SetExpenseCategoryActiveUseCase>(),
       ));
+}
+
+/// Phase 11 — Reports hub: read-only reports (trial balance, income
+/// statement, balance sheet, sales/purchase/inventory/lost-sales) over the
+/// journal and stock ledgers. Nothing here mutates domain data.
+void _registerPhase11(AppDatabase db) {
+  getIt.registerLazySingleton<ReportsDao>(() => ReportsDao(db));
+  getIt.registerLazySingleton<ReportExportService>(
+      () => const ReportExportService());
+  getIt.registerLazySingleton<TrialBalanceController>(
+      () => TrialBalanceController(getIt<ReportsDao>()));
+  getIt.registerLazySingleton<IncomeStatementController>(
+      () => IncomeStatementController(getIt<ReportsDao>()));
+  getIt.registerLazySingleton<BalanceSheetController>(
+      () => BalanceSheetController(getIt<ReportsDao>()));
+  getIt.registerLazySingleton<SalesReportController>(
+      () => SalesReportController(getIt<ReportsDao>()));
+  getIt.registerLazySingleton<PurchaseReportController>(
+      () => PurchaseReportController(getIt<ReportsDao>()));
+  getIt.registerLazySingleton<InventoryReportController>(
+      () => InventoryReportController(getIt<ReportsDao>()));
+  getIt.registerLazySingleton<LostSalesReportController>(
+      () => LostSalesReportController(getIt<ReportsDao>()));
 }
 
 /// Phase 10 — Accounting management: chart of accounts, journal viewer,

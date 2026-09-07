@@ -35,6 +35,7 @@ import '../../features/sales/presentation/pages/pos_workspace_page.dart';
 import '../../features/sales/presentation/pages/z_report_page.dart';
 import '../../features/suppliers/presentation/pages/supplier_statement_page.dart';
 import '../../features/suppliers/presentation/pages/suppliers_page.dart';
+import '../../features/reports/presentation/pages/reports_hub_page.dart';
 
 /// Bridges a [Stream] to the [Listenable] interface GoRouter refreshes on.
 class _GoRouterListenable extends ChangeNotifier {
@@ -105,6 +106,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       if (path.startsWith(AppSection.expenses.path) &&
           !authState.permissions.contains(Perm.expensesView)) {
+        return '/access-denied';
+      }
+      if (path.startsWith(AppSection.reports.path) &&
+          !_hasAnyReportPermission(authState.permissions)) {
         return '/access-denied';
       }
       return null;
@@ -237,6 +242,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return router;
 });
 
+/// True when the current role holds any report-producing permission. The hub
+/// route itself is gated on the union; individual tabs re-check their own.
+bool _hasAnyReportPermission(Set<String> permissions) {
+  const reportPerms = <String>{
+    Perm.reportsViewSales,
+    Perm.reportsViewPurchases,
+    Perm.reportsViewInventory,
+    Perm.reportsViewProfit,
+    Perm.lostSalesView,
+    Perm.accountingView,
+  };
+  return permissions.any(reportPerms.contains);
+}
+
 /// Placeholder modules render `SectionPlaceholder`; real modules return their
 /// page. `/users` is the first built module (§16).
 Widget _sectionPage(AppSection section, BuildContext context) {
@@ -248,6 +267,7 @@ Widget _sectionPage(AppSection section, BuildContext context) {
   if (section == AppSection.customers) return const CustomersPage();
   if (section == AppSection.accounts) return const AccountsHubPage();
   if (section == AppSection.expenses) return const ExpensesPage();
+  if (section == AppSection.reports) return const ReportsHubPage();
   final l10n = AppLocalizations.of(context);
   return SectionPlaceholder(
     icon: section.icon,

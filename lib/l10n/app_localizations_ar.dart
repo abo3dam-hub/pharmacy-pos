@@ -2337,4 +2337,326 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get csPaymentRefundTitle => 'استرداد للعميل';
+
+  @override
+  String get reportExportExcel => 'تصدير إلى إكسل';
+
+  @override
+  String get reportExportExcelDone => 'تم تصدير ملف الإكسل';
+
+  @override
+  String get reportTitle => 'التقارير';
+
+  @override
+  String get reportAddTitle => 'طي التقارير';
+
+  @override
+  String get reportTrialBalance => 'ميزان المراجعة';
+
+  @override
+  String get reportIncomeStatement => 'قائمة الدخل';
+
+  @override
+  String get reportBalanceSheet => 'الميزانية العمومية';
+
+  @override
+  String get reportAccountStatement => 'كشف حساب';
+
+  @override
+  String get reportSales => 'المبيعات';
+
+  @override
+  String get reportPurchases => 'المشتريات';
+
+  @override
+  String get reportInventory => 'المخزون';
+
+  @override
+  String get reportLostSales => 'النواقص';
+
+  @override
+  String get reportCustomerStatement => 'كشف حساب عميل';
+
+  @override
+  String get reportSupplierStatement => 'كشف حساب مورد';
+
+  @override
+  String get reportFromDate => 'من تاريخ';
+
+  @override
+  String get reportToDate => 'إلى تاريخ';
+
+  @override
+  String get reportRefresh => 'تحديث';
+
+  @override
+  String get reportNoPermission => 'لا تملك صلاحية لعرض هذا التقرير';
+
+  @override
+  String get reportTrialBalanceTitle => 'ميزان المراجعة';
+
+  @override
+  String get reportTrialBalanceAccount => 'الحساب';
+
+  @override
+  String get reportTrialBalanceOpening => 'الرصيد الافتتاحي';
+
+  @override
+  String get reportTrialBalanceDebit => 'مدين';
+
+  @override
+  String get reportTrialBalanceCredit => 'دائن';
+
+  @override
+  String get reportTrialBalanceClosing => 'الرصيد الختامي';
+
+  @override
+  String get reportBalanced => 'متوازن';
+
+  @override
+  String get reportNotBalanced => 'غير متوازن';
+
+  @override
+  String get reportIncomeSalesRevenue => 'إيرادات المبيعات';
+
+  @override
+  String get reportIncomeSalesReturns => 'مرتجعات المبيعات';
+
+  @override
+  String get reportIncomeNetRevenue => 'صافي الإيرادات';
+
+  @override
+  String get reportIncomeCogs => 'تكلفة البضاعة المباعة';
+
+  @override
+  String get reportIncomeGrossProfit => 'مجمل الربح';
+
+  @override
+  String get reportIncomeOperatingExpenses => 'المصاريف التشغيلية';
+
+  @override
+  String get reportIncomeNetIncome => 'صافي الربح';
+
+  @override
+  String get reportIncomeExpenseRow => 'مصروف';
+
+  @override
+  String get reportBalanceAssets => 'الأصول';
+
+  @override
+  String get reportBalanceLiabilities => 'الخصوم';
+
+  @override
+  String get reportBalanceEquity => 'حقوق الملكية';
+
+  @override
+  String get reportBalanceTotal => 'الإجمالي';
+
+  @override
+  String get reportBalanceAsset => 'أصل';
+
+  @override
+  String get reportBalanceLiability => 'التزام';
+
+  @override
+  String get reportBalanceEquityItem => 'بند';
+
+  @override
+  String get reportBalanceRetainedEarnings =>
+      'الأرباح المحتجزة (الأرباح المتراكمة)';
+
+  @override
+  String get reportDate => 'التاريخ';
+
+  @override
+  String get reportSalesCount => 'عدد الفواتير';
+
+  @override
+  String get reportSalesUnits => 'الوحدات المباعة';
+
+  @override
+  String get reportSalesSubtotal => 'الإجمالي قبل الخصم';
+
+  @override
+  String get reportSalesDiscount => 'الخصم';
+
+  @override
+  String get reportSalesVat => 'ضريبة القيمة المضافة';
+
+  @override
+  String get reportSalesTotal => 'إجمالي المبيعات';
+
+  @override
+  String get reportSalesNet => 'صافي المبيعات';
+
+  @override
+  String get reportSalesPaid => 'المدفوع';
+
+  @override
+  String get reportSalesCash => 'نقدي';
+
+  @override
+  String get reportSalesCard => 'بطاقة';
+
+  @override
+  String get reportSalesCredit => 'آجل';
+
+  @override
+  String get reportSalesVoided => 'الملغاة';
+
+  @override
+  String get reportSalesReturns => 'المرتجعات';
+
+  @override
+  String get reportSalesProfit => 'الربح';
+
+  @override
+  String get reportCustomer => 'العميل';
+
+  @override
+  String get reportAllCustomers => 'كل العملاء';
+
+  @override
+  String get reportUser => 'المستخدم';
+
+  @override
+  String get reportAllUsers => 'كل المستخدمين';
+
+  @override
+  String get reportPurchasesCount => 'عدد الفواتير';
+
+  @override
+  String get reportPurchasesSubtotal => 'الإجمالي قبل الخصم';
+
+  @override
+  String get reportPurchasesDiscount => 'الخصم';
+
+  @override
+  String get reportPurchasesTax => 'الضريبة';
+
+  @override
+  String get reportPurchasesShipping => 'الشحن';
+
+  @override
+  String get reportPurchasesTotal => 'إجمالي المشتريات';
+
+  @override
+  String get reportPurchasesPaid => 'المدفوع';
+
+  @override
+  String get reportPurchasesRemaining => 'المتبقي';
+
+  @override
+  String get reportPurchasesNet => 'صافي المشتريات';
+
+  @override
+  String get reportPurchasesReturns => 'مرتجعات المشتريات';
+
+  @override
+  String get reportSupplier => 'المورد';
+
+  @override
+  String get reportAllSuppliers => 'كل الموردين';
+
+  @override
+  String get reportInventoryCount => 'عدد الأصناف';
+
+  @override
+  String get reportInventoryTotalStock => 'إجمالي الكميات';
+
+  @override
+  String get reportInventoryValue => 'قيمة المخزون';
+
+  @override
+  String get reportInventoryLowStock => 'أصناف منخفضة';
+
+  @override
+  String get reportInventoryOutOfStock => 'نافد';
+
+  @override
+  String get reportInventoryItemCode => 'الباركود';
+
+  @override
+  String get reportInventoryItemName => 'الصنف';
+
+  @override
+  String get reportInventoryCurrentStock => 'المخزون الحالي';
+
+  @override
+  String get reportInventoryMin => 'الحد الأدنى';
+
+  @override
+  String get reportInventoryMax => 'الحد الأقصى';
+
+  @override
+  String get reportInventoryUnitCost => 'متوسط التكلفة';
+
+  @override
+  String get reportInventoryValue2 => 'القيمة';
+
+  @override
+  String get reportInventoryMovement => 'حركة المخزون';
+
+  @override
+  String get reportMovementType => 'النوع';
+
+  @override
+  String get reportMovementCount => 'عدد الحركات';
+
+  @override
+  String get reportMovementQty => 'الكمية';
+
+  @override
+  String get reportMovementTotal => 'المبلغ';
+
+  @override
+  String get reportLostSalesCount => 'عدد الطلبات';
+
+  @override
+  String get reportLostSalesQty => 'الكمية المطلوبة';
+
+  @override
+  String get reportLostSalesItem => 'الصنف';
+
+  @override
+  String get reportLostSalesBarcode => 'الباركود';
+
+  @override
+  String get reportLostSalesCustomer => 'العميل';
+
+  @override
+  String get reportLostSalesStatus => 'الحالة';
+
+  @override
+  String get reportLostSalesNote => 'ملاحظة';
+
+  @override
+  String get reportLostStatusOpen => 'مفتوح';
+
+  @override
+  String get reportLostStatusOrdered => 'تم الطلب';
+
+  @override
+  String get reportLostStatusResolved => 'تم التوفير';
+
+  @override
+  String get reportLostStatusCancelled => 'ملغى';
+
+  @override
+  String get reportAllStatuses => 'كل الحالات';
+
+  @override
+  String get reportGeneratedAt => 'وقت التوليد';
+
+  @override
+  String get reportPeriod => 'الفترة';
+
+  @override
+  String get reportSelectEntity => 'اختر من القائمة';
+
+  @override
+  String get reportStatementOpening => 'الرصيد الافتتاحي';
+
+  @override
+  String get reportNoData => 'لا توجد بيانات في هذا النطاق';
 }

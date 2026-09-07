@@ -194,4 +194,26 @@ class CustomersController extends StateNotifier<CustomersViewState> {
       return state.error;
     }
   }
+
+  /// Fetches the full-range statement (all rows, no pagination) for export
+  /// without disturbing the on-screen statement state.
+  Future<CustomerStatementPage? > statementForExport(
+    String customerId, {
+    required int fromDate,
+    required int toDate,
+    String? actingRoleId,
+  }) async {
+    try {
+      return await _statement(
+        customerId,
+        fromDate: fromDate,
+        toDate: toDate,
+        page: 1,
+        pageSize: 100000,
+        actingRoleId: actingRoleId,
+      );
+    } on AppException {
+      return null;
+    }
+  }
 }

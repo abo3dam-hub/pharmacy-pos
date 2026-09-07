@@ -16,6 +16,7 @@ class StatementLine {
     required this.debitMicros,
     required this.creditMicros,
     required this.refType,
+    this.runningBalanceMicros,
   });
 
   final String entryId;
@@ -25,6 +26,10 @@ class StatementLine {
   final int debitMicros;
   final int creditMicros;
   final JournalReferenceType refType;
+
+  /// Running account balance after this line (Phase 11). Null until the
+  /// reporting controller fills it from the opening balance.
+  final int? runningBalanceMicros;
 }
 
 /// Chart of Accounts + Journal + Statement DAO (§4.22, §4.23).
@@ -240,4 +245,47 @@ class AccountingDao {
       );
     }).toList();
   }
+
+  /// Signed balance of [accountId] immediately before [from] (null = the
+  /// seeded opening). Formula matches the posting engine:
+  /// `opening = openingBalanceMicros + normalSign * (Σ debit − Σ credit)`
+  /// over entries strictly before `from`.
+  Future<int> accountOpeningBalanceMicros(
+    String accountId, {
+    DateTime? from,
+  }) async {
+    final fromMillis = from?.millisecondsSinceEpoch ?? 0;
+    final row = await _db.customSelect(
+      '''
+      SELECT
+        a.opening_balance_micros AS opening_base,
+        a.account_type AS account_type,
+        COALESCE(SUM(CASE WHEN j.entry_date < ? THEN l.debit_micros ELSE 0 END), 0) AS pre_debit,
+        COALESCE(SUM(CASE WHEN j.entry_date < ? THEN l.credit_micros ELSE 0 END), 0) AS pre_credit
+      FROM accounts a
+      LEFT JOIN journal_entry_lines l ON l.account_id = a.id
+      LEFT JOIN journal_entries j ON j.id = l.journal_entry_id
+      WHERE a.id = ?
+      GROUP BY a.id
+      ''',
+      variables: [
+        Variable<int>(fromMillis),
+        Variable<int>(fromMillis),
+        Variable.withString(accountId),
+      ],
+    ).getSingle();
+    final type = _accountType(row.read<String>('account_type'));
+    final sign = switch (type) {
+      AccountType.asset || AccountType.expense => 1,
+      AccountType.liability ||
+      AccountType.equity ||
+      AccountType.revenue =>
+        -1,
+    };
+    return row.read<int>('opening_base') +
+        sign * (row.read<int>('pre_debit') - row.read<int>('pre_credit'));
+  }
+
+  static AccountType _accountType(String value) =>
+      AccountType.values.firstWhere((t) => t.name == value);
 }

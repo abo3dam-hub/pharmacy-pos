@@ -2345,4 +2345,327 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get csPaymentRefundTitle => 'Refund to Customer';
+
+  @override
+  String get reportExportExcel => 'Export to Excel';
+
+  @override
+  String get reportExportExcelDone => 'Excel file exported';
+
+  @override
+  String get reportTitle => 'Reports';
+
+  @override
+  String get reportAddTitle => 'Add Report';
+
+  @override
+  String get reportTrialBalance => 'Trial Balance';
+
+  @override
+  String get reportIncomeStatement => 'Income Statement';
+
+  @override
+  String get reportBalanceSheet => 'Balance Sheet';
+
+  @override
+  String get reportAccountStatement => 'Account Statement';
+
+  @override
+  String get reportSales => 'Sales';
+
+  @override
+  String get reportPurchases => 'Purchases';
+
+  @override
+  String get reportInventory => 'Inventory';
+
+  @override
+  String get reportLostSales => 'Lost Sales';
+
+  @override
+  String get reportCustomerStatement => 'Customer Statement';
+
+  @override
+  String get reportSupplierStatement => 'Supplier Statement';
+
+  @override
+  String get reportFromDate => 'From date';
+
+  @override
+  String get reportToDate => 'To date';
+
+  @override
+  String get reportRefresh => 'Refresh';
+
+  @override
+  String get reportNoPermission =>
+      'You do not have permission to view this report';
+
+  @override
+  String get reportTrialBalanceTitle => 'Trial Balance';
+
+  @override
+  String get reportTrialBalanceAccount => 'Account';
+
+  @override
+  String get reportTrialBalanceOpening => 'Opening Balance';
+
+  @override
+  String get reportTrialBalanceDebit => 'Debit';
+
+  @override
+  String get reportTrialBalanceCredit => 'Credit';
+
+  @override
+  String get reportTrialBalanceClosing => 'Closing Balance';
+
+  @override
+  String get reportBalanced => 'Balanced';
+
+  @override
+  String get reportNotBalanced => 'Not balanced';
+
+  @override
+  String get reportIncomeSalesRevenue => 'Sales Revenue';
+
+  @override
+  String get reportIncomeSalesReturns => 'Sales Returns';
+
+  @override
+  String get reportIncomeNetRevenue => 'Net Revenue';
+
+  @override
+  String get reportIncomeCogs => 'Cost of Goods Sold';
+
+  @override
+  String get reportIncomeGrossProfit => 'Gross Profit';
+
+  @override
+  String get reportIncomeOperatingExpenses => 'Operating Expenses';
+
+  @override
+  String get reportIncomeNetIncome => 'Net Income';
+
+  @override
+  String get reportIncomeExpenseRow => 'Expense';
+
+  @override
+  String get reportBalanceAssets => 'Assets';
+
+  @override
+  String get reportBalanceLiabilities => 'Liabilities';
+
+  @override
+  String get reportBalanceEquity => 'Equity';
+
+  @override
+  String get reportBalanceTotal => 'Total';
+
+  @override
+  String get reportBalanceAsset => 'Asset';
+
+  @override
+  String get reportBalanceLiability => 'Liability';
+
+  @override
+  String get reportBalanceEquityItem => 'Item';
+
+  @override
+  String get reportBalanceRetainedEarnings =>
+      'Retained Earnings (Accumulated Profit)';
+
+  @override
+  String get reportDate => 'Date';
+
+  @override
+  String get reportSalesCount => 'Invoices';
+
+  @override
+  String get reportSalesUnits => 'Units Sold';
+
+  @override
+  String get reportSalesSubtotal => 'Subtotal';
+
+  @override
+  String get reportSalesDiscount => 'Discount';
+
+  @override
+  String get reportSalesVat => 'VAT';
+
+  @override
+  String get reportSalesTotal => 'Total Sales';
+
+  @override
+  String get reportSalesNet => 'Net Sales';
+
+  @override
+  String get reportSalesPaid => 'Paid';
+
+  @override
+  String get reportSalesCash => 'Cash';
+
+  @override
+  String get reportSalesCard => 'Card';
+
+  @override
+  String get reportSalesCredit => 'Credit';
+
+  @override
+  String get reportSalesVoided => 'Voided';
+
+  @override
+  String get reportSalesReturns => 'Returns';
+
+  @override
+  String get reportSalesProfit => 'Profit';
+
+  @override
+  String get reportCustomer => 'Customer';
+
+  @override
+  String get reportAllCustomers => 'All customers';
+
+  @override
+  String get reportUser => 'User';
+
+  @override
+  String get reportAllUsers => 'All users';
+
+  @override
+  String get reportPurchasesCount => 'Invoices';
+
+  @override
+  String get reportPurchasesSubtotal => 'Subtotal';
+
+  @override
+  String get reportPurchasesDiscount => 'Discount';
+
+  @override
+  String get reportPurchasesTax => 'Tax';
+
+  @override
+  String get reportPurchasesShipping => 'Shipping';
+
+  @override
+  String get reportPurchasesTotal => 'Total Purchases';
+
+  @override
+  String get reportPurchasesPaid => 'Paid';
+
+  @override
+  String get reportPurchasesRemaining => 'Remaining';
+
+  @override
+  String get reportPurchasesNet => 'Net Purchases';
+
+  @override
+  String get reportPurchasesReturns => 'Purchase Returns';
+
+  @override
+  String get reportSupplier => 'Supplier';
+
+  @override
+  String get reportAllSuppliers => 'All suppliers';
+
+  @override
+  String get reportInventoryCount => 'Items';
+
+  @override
+  String get reportInventoryTotalStock => 'Total Stock';
+
+  @override
+  String get reportInventoryValue => 'Stock Value';
+
+  @override
+  String get reportInventoryLowStock => 'Low Stock';
+
+  @override
+  String get reportInventoryOutOfStock => 'Out of Stock';
+
+  @override
+  String get reportInventoryItemCode => 'Barcode';
+
+  @override
+  String get reportInventoryItemName => 'Item';
+
+  @override
+  String get reportInventoryCurrentStock => 'Current Stock';
+
+  @override
+  String get reportInventoryMin => 'Min';
+
+  @override
+  String get reportInventoryMax => 'Max';
+
+  @override
+  String get reportInventoryUnitCost => 'Avg. Cost';
+
+  @override
+  String get reportInventoryValue2 => 'Value';
+
+  @override
+  String get reportInventoryMovement => 'Inventory Movements';
+
+  @override
+  String get reportMovementType => 'Type';
+
+  @override
+  String get reportMovementCount => 'Movements';
+
+  @override
+  String get reportMovementQty => 'Quantity';
+
+  @override
+  String get reportMovementTotal => 'Total';
+
+  @override
+  String get reportLostSalesCount => 'Requests';
+
+  @override
+  String get reportLostSalesQty => 'Requested Qty';
+
+  @override
+  String get reportLostSalesItem => 'Item';
+
+  @override
+  String get reportLostSalesBarcode => 'Barcode';
+
+  @override
+  String get reportLostSalesCustomer => 'Customer';
+
+  @override
+  String get reportLostSalesStatus => 'Status';
+
+  @override
+  String get reportLostSalesNote => 'Note';
+
+  @override
+  String get reportLostStatusOpen => 'Open';
+
+  @override
+  String get reportLostStatusOrdered => 'Ordered';
+
+  @override
+  String get reportLostStatusResolved => 'Resolved';
+
+  @override
+  String get reportLostStatusCancelled => 'Cancelled';
+
+  @override
+  String get reportAllStatuses => 'All statuses';
+
+  @override
+  String get reportGeneratedAt => 'Generated at';
+
+  @override
+  String get reportPeriod => 'Period';
+
+  @override
+  String get reportSelectEntity => 'Select from list';
+
+  @override
+  String get reportStatementOpening => 'Opening Balance';
+
+  @override
+  String get reportNoData => 'No data in this range';
 }

@@ -10,6 +10,9 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_data_table.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../data/daos/supplier_dao.dart';
+import '../../../../features/reports/domain/services/report_export_service.dart';
+import '../../../../features/reports/domain/services/statement_export.dart';
+import '../../../../features/reports/presentation/widgets/report_actions.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../application/suppliers_controller.dart';
 
@@ -116,6 +119,35 @@ class _SupplierStatementPageState extends ConsumerState<SupplierStatementView> {
     };
   }
 
+  Future<void> _export({required bool asPdf}) async {
+    final l10n = AppLocalizations.of(context);
+    final full = await ref
+        .read(suppliersControllerProvider.notifier)
+        .statementForExport(
+          widget.supplierId,
+          fromDate: _toMillis(_from),
+          toDate: _toMillis(_to),
+          actingRoleId: _actingRoleId,
+        );
+    if (full == null || !mounted) return;
+    final request = StatementExport.supplier(
+      title: '${full.supplierName} - ${l10n.supplierStatementTitle}',
+      subtitle: '${_fmtDate(_toMillis(_from))} - ${_fmtDate(_toMillis(_to))}',
+      generatedAtMillis: DateTime.now().millisecondsSinceEpoch,
+      rows: full.entries,
+      openingMicros: full.totals.openingMicros,
+      debitTotalMicros: full.totals.debitTotalMicros,
+      creditTotalMicros: full.totals.creditTotalMicros,
+      closingMicros: full.totals.closingMicros,
+    );
+    const service = ReportExportService();
+    if (asPdf) {
+      await printReportPdf(context, service, request);
+    } else {
+      await saveReportExcel(context, service, request);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -173,6 +205,12 @@ class _SupplierStatementPageState extends ConsumerState<SupplierStatementView> {
                       label: Text(
                         '${l10n.supplierStatementDateTo} ${_fmtDate(_toMillis(_to))}',
                       ),
+                    ),
+                    const SizedBox(width: AppSpacing.s),
+                    ReportExportBar(
+                      enabled: statement != null && statement.entries.isNotEmpty,
+                      onPrint: () => _export(asPdf: true),
+                      onSaveExcel: () => _export(asPdf: false),
                     ),
                   ],
                 ),

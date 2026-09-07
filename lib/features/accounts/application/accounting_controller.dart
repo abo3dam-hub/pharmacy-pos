@@ -334,6 +334,7 @@ class AccountStatementViewState {
     this.lines = const [],
     this.from,
     this.to,
+    this.openingBalanceMicros = 0,
     this.busy = false,
     this.error,
   });
@@ -344,6 +345,9 @@ class AccountStatementViewState {
   final List<StatementLine> lines;
   final DateTime? from;
   final DateTime? to;
+
+  /// Signed balance before the statement range (Phase 11).
+  final int openingBalanceMicros;
   final bool busy;
   final Failure? error;
 
@@ -351,8 +355,12 @@ class AccountStatementViewState {
       lines.fold(0, (sum, l) => sum + l.debitMicros);
   int get totalCreditMicros =>
       lines.fold(0, (sum, l) => sum + l.creditMicros);
-  int get closingBalanceMicros =>
-      totalDebitMicros - totalCreditMicros;
+
+  /// Statement net movement (debits − credits).
+  int get netMovementMicros => totalDebitMicros - totalCreditMicros;
+
+  /// Closing balance = opening + net movement (Phase 11).
+  int get closingBalanceMicros => openingBalanceMicros + netMovementMicros;
 
   AccountStatementViewState copyWith({
     AccountStatementViewStatus? status,
@@ -361,6 +369,7 @@ class AccountStatementViewState {
     List<StatementLine>? lines,
     DateTime? from,
     DateTime? to,
+    int? openingBalanceMicros,
     bool? busy,
     Failure? Function()? error,
   }) {
@@ -371,6 +380,7 @@ class AccountStatementViewState {
       lines: lines ?? this.lines,
       from: from ?? this.from,
       to: to ?? this.to,
+      openingBalanceMicros: openingBalanceMicros ?? this.openingBalanceMicros,
       busy: busy ?? this.busy,
       error: error != null ? error() : this.error,
     );
@@ -390,15 +400,35 @@ class AccountStatementController
         error: () => null);
     try {
       final account = await _dao.getAccount(accountId);
-      final lines = await _dao.accountStatement(
+      final rawLines = await _dao.accountStatement(
         accountId,
         from: state.from,
         to: state.to,
       );
+      final opening = await _dao.accountOpeningBalanceMicros(
+        accountId,
+        from: state.from,
+      );
+      var running = opening;
+      final lines = <StatementLine>[];
+      for (final line in rawLines) {
+        running += line.debitMicros - line.creditMicros;
+        lines.add(StatementLine(
+          entryId: line.entryId,
+          entryNumber: line.entryNumber,
+          entryDate: line.entryDate,
+          description: line.description,
+          debitMicros: line.debitMicros,
+          creditMicros: line.creditMicros,
+          refType: line.refType,
+          runningBalanceMicros: running,
+        ));
+      }
       state = state.copyWith(
         status: AccountStatementViewStatus.ready,
         accountName: account?.name,
         lines: lines,
+        openingBalanceMicros: opening,
         error: () => null,
       );
       return null;

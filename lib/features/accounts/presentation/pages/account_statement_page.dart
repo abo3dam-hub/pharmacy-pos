@@ -8,6 +8,9 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_data_table.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/models/enums.dart';
+import '../../../../features/reports/domain/services/report_export_service.dart';
+import '../../../../features/reports/domain/services/statement_export.dart';
+import '../../../../features/reports/presentation/widgets/report_actions.dart';
 import '../../application/accounting_controller.dart';
 
 /// Account Statement page (كشف حساب): select account, view statement lines.
@@ -59,6 +62,31 @@ class _AccountStatementPageState extends ConsumerState<AccountStatementPage> {
     await _loadStatement();
   }
 
+  Future<void> _export({required bool asPdf}) async {
+    final state = ref.read(accountStatementControllerProvider);
+    if (state.status != AccountStatementViewStatus.ready ||
+        state.lines.isEmpty) {
+      return;
+    }
+    final l10n = AppLocalizations.of(context);
+    final request = StatementExport.account(
+      title: '${state.accountName ?? state.accountId} - ${l10n.accountStatementTitle}',
+      subtitle: '${_fmtDate(_from?.millisecondsSinceEpoch ?? 0)} - '
+          '${_fmtDate(_to?.millisecondsSinceEpoch ?? DateTime.now().millisecondsSinceEpoch)}',
+      generatedAtMillis: DateTime.now().millisecondsSinceEpoch,
+      lines: state.lines,
+      openingBalanceMicros: state.openingBalanceMicros,
+      totalDebitMicros: state.totalDebitMicros,
+      totalCreditMicros: state.totalCreditMicros,
+    );
+    const service = ReportExportService();
+    if (asPdf) {
+      await printReportPdf(context, service, request);
+    } else {
+      await saveReportExcel(context, service, request);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -73,6 +101,16 @@ class _AccountStatementPageState extends ConsumerState<AccountStatementPage> {
             tooltip: l10n.commonRetry,
             onPressed: _loadStatement,
             icon: const Icon(Icons.refresh),
+          ),
+          IconButton(
+            tooltip: l10n.commonPrint,
+            onPressed: () => _export(asPdf: true),
+            icon: const Icon(Icons.print_outlined),
+          ),
+          IconButton(
+            tooltip: l10n.reportExportExcel,
+            onPressed: () => _export(asPdf: false),
+            icon: const Icon(Icons.download_outlined),
           ),
         ],
       ),
@@ -165,6 +203,7 @@ class _AccountStatementPageState extends ConsumerState<AccountStatementPage> {
                         DataColumn(label: Text(l10n.journalColDescription)),
                         DataColumn(label: Text(l10n.journalColDebit)),
                         DataColumn(label: Text(l10n.journalColCredit)),
+                        DataColumn(label: Text(l10n.statementBalance)),
                       ],
                       rows: [
                         for (final line in statementState.lines)
@@ -190,6 +229,12 @@ class _AccountStatementPageState extends ConsumerState<AccountStatementPage> {
                                   : '-',
                               style: context.appTypography.numeric,
                             )),
+                            DataCell(Text(
+                              Money.fromUnits(
+                                      line.runningBalanceMicros ?? 0)
+                                  .formatArabicDigits(),
+                              style: context.appTypography.numeric,
+                            )),
                           ]),
                       ],
                     ),
@@ -202,6 +247,19 @@ class _AccountStatementPageState extends ConsumerState<AccountStatementPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(l10n.statementOpening,
+                                    style: context.appTypography.body),
+                                Text(
+                                  Money.fromUnits(
+                                          statementState.openingBalanceMicros)
+                                      .formatArabicDigits(),
+                                  style: context.appTypography.numeric,
+                                ),
+                              ],
+                            ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
