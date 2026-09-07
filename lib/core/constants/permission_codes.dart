@@ -54,6 +54,10 @@ final class Perm {
   static const String cashboxOperate = 'cashbox.operate';
   static const String expensesView = 'expenses.view';
   static const String expensesCreate = 'expenses.create';
+  static const String expensesEdit = 'expenses.edit';
+  static const String expensesVoid = 'expenses.void';
+  static const String expenseCategoriesView = 'expenses.categories.view';
+  static const String expenseCategoriesManage = 'expenses.categories.manage';
   static const String accountingView = 'accounting.view';
   static const String accountingPost = 'accounting.post';
 
@@ -127,6 +131,10 @@ final List<({String code, String name})> kSeedPermissions = [
   (code: Perm.cashboxOperate, name: 'التعامل مع الصندوق'),
   (code: Perm.expensesView, name: 'عرض المصروفات'),
   (code: Perm.expensesCreate, name: 'تسجيل مصروف'),
+  (code: Perm.expensesEdit, name: 'تعديل مصروف'),
+  (code: Perm.expensesVoid, name: 'إلغاء مصروف'),
+  (code: Perm.expenseCategoriesView, name: 'عرض فئات المصروفات'),
+  (code: Perm.expenseCategoriesManage, name: 'إدارة فئات المصروفات'),
   (code: Perm.accountingView, name: 'عرض القيود'),
   (code: Perm.accountingPost, name: 'ترحيل قيود'),
   (code: Perm.lostSalesView, name: 'عرض النواقص'),

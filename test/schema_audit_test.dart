@@ -34,6 +34,7 @@ void main() {
     'returns',
     'return_items',
     'expenses',
+    'expense_categories',
     'cashbox_transactions',
     'accounts',
     'journal_entries',

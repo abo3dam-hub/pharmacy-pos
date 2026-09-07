@@ -16,6 +16,7 @@ import '../../features/auth/presentation/pages/users_page.dart';
 import '../../features/accounts/presentation/pages/cashbox_page.dart';
 import '../../features/customers/presentation/pages/customer_statement_page.dart';
 import '../../features/customers/presentation/pages/customers_page.dart';
+import '../../features/expenses/presentation/pages/expenses_page.dart';
 import '../../features/inventory/presentation/pages/batches_page.dart';
 import '../../features/inventory/presentation/pages/inventory_page.dart';
 import '../../features/prescriptions/presentation/pages/prescription_detail_page.dart';
@@ -94,6 +95,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       if (path.startsWith(AppSection.accounts.path) &&
           !authState.permissions.contains(Perm.cashboxView)) {
+        return '/access-denied';
+      }
+      if (path.startsWith(AppSection.expenses.path) &&
+          !authState.permissions.contains(Perm.expensesView)) {
         return '/access-denied';
       }
       return null;
@@ -208,6 +213,7 @@ Widget _sectionPage(AppSection section, BuildContext context) {
   if (section == AppSection.purchases) return const PurchasesPage();
   if (section == AppSection.customers) return const CustomersPage();
   if (section == AppSection.accounts) return const CashboxPage();
+  if (section == AppSection.expenses) return const ExpensesPage();
   final l10n = AppLocalizations.of(context);
   return SectionPlaceholder(
     icon: section.icon,

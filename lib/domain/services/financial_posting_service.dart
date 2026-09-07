@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../core/constants/account_codes.dart';
 import '../../core/constants/permission_codes.dart';
 import '../../core/errors/exceptions.dart';
 import '../../core/util/ids.dart';
@@ -9,25 +10,7 @@ import '../../shared/models/enums.dart';
 import 'audit_service.dart';
 import 'permission_service.dart';
 
-/// System chart-of-account codes (§4.22) addressed by the posting engine. The
-/// engine maps business events to these seeded codes; UI code never addresses
-/// accounts directly.
-class SystemAccountCode {
-  const SystemAccountCode._();
-
-  static const String cash = '1000';
-  static const String bank = '1001';
-  static const String accountsReceivable = '1100';
-  static const String inventory = '1200';
-  static const String accountsPayable = '2000';
-  static const String capital = '3000';
-  static const String salesRevenue = '4000';
-  static const String salesReturns = '4001';
-  static const String costOfGoodsSold = '5000';
-  static const String operatingExpenses = '5100';
-  static const String rent = '5101';
-  static const String salaries = '5102';
-}
+export '../../core/constants/account_codes.dart';
 
 /// One balanced journal line draft (one of debit/credit, never both).
 class JournalLineDraft {
@@ -475,16 +458,26 @@ class FinancialPostingService {
 
   // ── Expense & cash-box workflows (own their transaction) ───────────────
 
-  /// Books the expense row + drawer outflow + GL posting (§19, §30).
-  Future<ExpenseRow> recordExpense(
+  /// Books the expense row + drawer/bank settlement + GL posting (§19, §30).
+  ///
+  /// Phase 9 primitive: `categoryCode` is a stable `expense_categories.code`
+  /// (the legacy enum names `rent`/`utilities`/… are the seeded codes, so the
+  /// enum-based [recordExpense] delegate keeps its historical GL mapping). The
+  /// journal account comes from the category master (`5100` operating expenses
+  /// fallback when the mapped account is missing from the chart). Cash
+  /// settlements move the drawer (type `expense`, outflow) and credit Cash;
+  /// card settlements credit Bank and never touch the drawer.
+  Future<ExpenseRow> recordExpenseByCode(
     AppDatabase db, {
-    required ExpenseCategory category,
+    required String categoryCode,
     required String description,
     required int amountMicros,
     required String userId,
     int? expenseDate,
     String? supplierId,
     String? notes,
+    String? receiptPath,
+    ExpensePaymentMethod paymentMethod = ExpensePaymentMethod.cash,
   }) async {
     await _permissions.requireUserPermission(db, userId, Perm.expensesCreate);
     if (amountMicros <= 0) {
@@ -493,34 +486,42 @@ class FinancialPostingService {
     if (description.trim().isEmpty) {
       throw ValidationException('وصف المصروف مطلوب');
     }
+    final accountCode = await _expenseAccountCodeFor(db, categoryCode);
     return db.transaction(() async {
       final now = expenseDate ?? DateTime.now().millisecondsSinceEpoch;
       final expenseId = newId('exp');
+      final number = await _nextExpenseNumber(db, now);
       await db.into(db.expenses).insert(
             ExpensesCompanion.insert(
               id: expenseId,
               amountMicros: amountMicros,
-              category: category,
+              category: categoryCode,
               description: description.trim(),
               expenseDate: now,
               supplierId:
                   supplierId != null ? Value(supplierId) : const Value(null),
               userId: userId,
               notes: notes != null ? Value(notes) : const Value(null),
+              receiptPath:
+                  receiptPath != null ? Value(receiptPath) : const Value(null),
+              paymentMethod: Value(paymentMethod.name),
+              expenseNumber: Value(number),
               createdAt: now,
               updatedAt: now,
             ),
           );
-      await postCashboxRow(
-        db,
-        type: CashboxTransactionType.expense,
-        amountMicros: -amountMicros,
-        refType: 'expense',
-        refId: expenseId,
-        userId: userId,
-        note: 'مصروف: $description',
-        atMillis: now,
-      );
+      if (paymentMethod == ExpensePaymentMethod.cash) {
+        await postCashboxRow(
+          db,
+          type: CashboxTransactionType.expense,
+          amountMicros: -amountMicros,
+          refType: 'expense',
+          refId: expenseId,
+          userId: userId,
+          note: 'مصروف: $description',
+          atMillis: now,
+        );
+      }
       await postJournalEntry(
         db,
         refType: JournalReferenceType.expense,
@@ -529,10 +530,12 @@ class FinancialPostingService {
         description: 'مصروف: $description',
         lines: [
           JournalLineDraft(
-              accountCode: _expenseAccountCode(category),
-              debitMicros: amountMicros),
+              accountCode: accountCode, debitMicros: amountMicros),
           JournalLineDraft(
-              accountCode: SystemAccountCode.cash, creditMicros: amountMicros),
+              accountCode: paymentMethod == ExpensePaymentMethod.card
+                  ? SystemAccountCode.bank
+                  : SystemAccountCode.cash,
+              creditMicros: amountMicros),
         ],
         createdBy: userId,
       );
@@ -542,7 +545,13 @@ class FinancialPostingService {
         action: AuditAction.create,
         entityType: 'expense',
         entityId: expenseId,
-        after: {'amount_micros': amountMicros, 'category': category.name},
+        after: {
+          'expense_number': number,
+          'amount_micros': amountMicros,
+          'category_code': categoryCode,
+          'account_code': accountCode,
+          'payment_method': paymentMethod.name,
+        },
       );
       return (await (db.select(db.expenses)
             ..where((e) => e.id.equals(expenseId)))
@@ -550,11 +559,154 @@ class FinancialPostingService {
     });
   }
 
-  String _expenseAccountCode(ExpenseCategory category) => switch (category) {
-        ExpenseCategory.rent => SystemAccountCode.rent,
-        ExpenseCategory.salaries => SystemAccountCode.salaries,
+  /// Enum-based convenience alias kept for Phase 7.5 compatibility: the
+  /// persisted enum names *are* the seeded category codes, so delegation is
+  /// exact (rent→5101, salaries→5102, other→5100) and existing caller tests
+  /// keep their contract.
+  Future<ExpenseRow> recordExpense(
+    AppDatabase db, {
+    required ExpenseCategory category,
+    required String description,
+    required int amountMicros,
+    required String userId,
+    int? expenseDate,
+    String? supplierId,
+    String? notes,
+  }) {
+    return recordExpenseByCode(
+      db,
+      categoryCode: category.name,
+      description: description,
+      amountMicros: amountMicros,
+      userId: userId,
+      expenseDate: expenseDate,
+      supplierId: supplierId,
+      notes: notes,
+    );
+  }
+
+  /// Cancels a booked expense (§19 Phase 9): reverses the drawer row (cash
+  /// payments flow back in as a positive `expense` row, satisfying the
+  /// "exactly once" contract enforced by the `is_voided` guard), posts the
+  /// mirror journal (Dr Cash/Bank, Cr the expense account) and flags the row.
+  /// Requires `expenses.void` and a reason; the audit action is the stored
+  /// `'void'`.
+  Future<ExpenseRow> cancelExpense(
+    AppDatabase db, {
+    required String expenseId,
+    required String reason,
+    required String userId,
+  }) async {
+    await _permissions.requireUserPermission(db, userId, Perm.expensesVoid);
+    if (reason.trim().isEmpty) {
+      throw ValidationException('سبب إلغاء المصروف مطلوب');
+    }
+    final expense = await (db.select(db.expenses)
+          ..where((e) => e.id.equals(expenseId)))
+        .getSingleOrNull();
+    if (expense == null) {
+      throw NotFoundException('المصروف غير موجود: $expenseId');
+    }
+    if (expense.isVoided) {
+      throw InvalidOperationException('المصروف ملغي بالفعل — لا يمكن إلغاؤه مرتين');
+    }
+    final method = _expenseMethod(expense.paymentMethod);
+    final accountCode = await _expenseAccountCodeFor(db, expense.category);
+    return db.transaction(() async {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      if (method == ExpensePaymentMethod.cash) {
+        await postCashboxRow(
+          db,
+          type: CashboxTransactionType.expense,
+          amountMicros: expense.amountMicros,
+          refType: 'expense',
+          refId: expenseId,
+          userId: userId,
+          note: 'إلغاء مصروف: ${expense.description}',
+          atMillis: now,
+        );
+      }
+      await postJournalEntry(
+        db,
+        refType: JournalReferenceType.expense,
+        refId: expenseId,
+        entryDate: now,
+        description: 'إلغاء مصروف: ${expense.description}',
+        lines: [
+          JournalLineDraft(
+              accountCode: method == ExpensePaymentMethod.card
+                  ? SystemAccountCode.bank
+                  : SystemAccountCode.cash,
+              debitMicros: expense.amountMicros),
+          JournalLineDraft(
+              accountCode: accountCode, creditMicros: expense.amountMicros),
+        ],
+        createdBy: userId,
+      );
+      await (db.update(db.expenses)..where((e) => e.id.equals(expenseId)))
+          .write(const ExpensesCompanion(isVoided: Value(true)));
+      await _audit.write(
+        db,
+        userId: userId,
+        action: AuditAction.voidOrder,
+        entityType: 'expense',
+        entityId: expenseId,
+        before: {'is_voided': false},
+        after: {
+          'is_voided': true,
+          'reason': reason.trim(),
+          'reversed_amount_micros': expense.amountMicros,
+          'payment_method': method.name,
+        },
+        note: 'إلغاء مصروف: ${expense.description}',
+      );
+      return (await (db.select(db.expenses)
+            ..where((e) => e.id.equals(expenseId)))
+            .getSingle());
+    });
+  }
+
+  /// Resolves the GL expense account for a category code: the master table is
+  /// the source of truth; pre-v7 databases (and the enum convenience alias)
+  /// carry only the legacy category names, so a missing master row falls back
+  /// to the historical §19 mapping (`rent`→5101, `salaries`→5102, other→5100).
+  /// If the mapped account is missing from the chart, operating expenses (5100)
+  /// absorbs the line.
+  Future<String> _expenseAccountCodeFor(AppDatabase db, String code) async {
+    String accountCode;
+    final category = await (db.select(db.expenseCategories)
+          ..where((c) => c.code.equals(code)))
+        .getSingleOrNull();
+    if (category != null) {
+      accountCode = category.accountCode;
+    } else {
+      accountCode = switch (code) {
+        'rent' => SystemAccountCode.rent,
+        'salaries' => SystemAccountCode.salaries,
         _ => SystemAccountCode.operatingExpenses,
       };
+    }
+    final chart = await (db.select(db.accounts)
+          ..where((a) => a.code.equals(accountCode)))
+        .get();
+    if (chart.isEmpty) return SystemAccountCode.operatingExpenses;
+    return accountCode;
+  }
+
+  /// Printable expense reference `EXP-<seq>` where seq follows the table
+  /// rowid (never reused: expenses are only ever voided, never deleted).
+  Future<String> _nextExpenseNumber(AppDatabase db, int dateMillis) async {
+    final row = await db
+        .customSelect(
+            'SELECT COALESCE(MAX(rowid), 0) + 1 AS n FROM expenses')
+        .getSingle();
+    final seq = row.read<int>('n');
+    final year = DateTime.fromMillisecondsSinceEpoch(dateMillis).year;
+    return 'EXP-$year-${seq.toString().padLeft(4, '0')}';
+  }
+
+  static ExpensePaymentMethod _expenseMethod(String? value) =>
+      value == 'card' ? ExpensePaymentMethod.card : ExpensePaymentMethod.cash;
 
   /// Authorized drawer adjustment (±): requires `cashbox.operate` and a reason.
   /// The balancing GL side lands on Capital until a dedicated cash-difference

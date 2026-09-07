@@ -1,6 +1,7 @@
 import 'package:bcrypt/bcrypt.dart';
 import 'package:drift/drift.dart';
 
+import '../../core/constants/account_codes.dart';
 import '../../core/constants/permission_codes.dart';
 import '../models/enums.dart';
 import 'app_database.dart';
@@ -171,6 +172,10 @@ Future<void> seedDefaults(AppDatabase db) async {
     Perm.cashboxOperate,
     Perm.expensesView,
     Perm.expensesCreate,
+    Perm.expensesEdit,
+    Perm.expensesVoid,
+    Perm.expenseCategoriesView,
+    Perm.expenseCategoriesManage,
   };
   await db.batch((batch) {
     batch.insertAll(
@@ -237,6 +242,7 @@ Future<void> seedDefaults(AppDatabase db) async {
     Perm.reportsViewProfit,
     Perm.cashboxView,
     Perm.expensesView,
+    Perm.expenseCategoriesView,
   };
   await db.batch((batch) {
     batch.insertAll(
@@ -389,5 +395,182 @@ Future<void> seedDefaults(AppDatabase db) async {
   ];
   await db.batch((batch) {
     batch.insertAll(db.accounts, defaultAccounts);
+  });
+
+  // Phase 9 expense categories master (idempotent; the engine resolves the GL
+  // account for each expense against this table).
+  await seedExpenseCategories(db);
+}
+
+/// Phase 9 expense categories master (idempotent — `insertOrIgnore`). Codes
+/// match the legacy `ExpenseCategory` enum names so `expenses.category` keeps
+/// its meaning after the v7 upgrade; GL mapping follows §19 (`rent`→5101,
+/// `salaries`→5102, everything else→5100 operating expenses).
+Future<void> seedExpenseCategories(AppDatabase db) async {
+  final now = DateTime.now().millisecondsSinceEpoch;
+  await db.batch((batch) {
+    batch.insertAll(db.expenseCategories, [
+      ExpenseCategoriesCompanion.insert(
+        id: 'expcat_rent',
+        code: 'rent',
+        name: 'إيجار',
+        nameEn: const Value('Rent'),
+        accountCode: SystemAccountCode.rent,
+        isActive: const Value(true),
+        isSystem: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      ),
+      ExpenseCategoriesCompanion.insert(
+        id: 'expcat_utilities',
+        code: 'utilities',
+        name: 'مرافق',
+        nameEn: const Value('Utilities'),
+        accountCode: SystemAccountCode.operatingExpenses,
+        isActive: const Value(true),
+        isSystem: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      ),
+      ExpenseCategoriesCompanion.insert(
+        id: 'expcat_salaries',
+        code: 'salaries',
+        name: 'رواتب',
+        nameEn: const Value('Salaries'),
+        accountCode: SystemAccountCode.salaries,
+        isActive: const Value(true),
+        isSystem: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      ),
+      ExpenseCategoriesCompanion.insert(
+        id: 'expcat_maintenance',
+        code: 'maintenance',
+        name: 'صيانة',
+        nameEn: const Value('Maintenance'),
+        accountCode: SystemAccountCode.operatingExpenses,
+        isActive: const Value(true),
+        isSystem: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      ),
+      ExpenseCategoriesCompanion.insert(
+        id: 'expcat_transportation',
+        code: 'transportation',
+        name: 'نقل',
+        nameEn: const Value('Transportation'),
+        accountCode: SystemAccountCode.operatingExpenses,
+        isActive: const Value(true),
+        isSystem: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      ),
+      ExpenseCategoriesCompanion.insert(
+        id: 'expcat_taxes',
+        code: 'taxes',
+        name: 'ضرائب',
+        nameEn: const Value('Taxes'),
+        accountCode: SystemAccountCode.operatingExpenses,
+        isActive: const Value(true),
+        isSystem: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      ),
+      ExpenseCategoriesCompanion.insert(
+        id: 'expcat_marketing',
+        code: 'marketing',
+        name: 'تسويق',
+        nameEn: const Value('Marketing'),
+        accountCode: SystemAccountCode.operatingExpenses,
+        isActive: const Value(true),
+        isSystem: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      ),
+      ExpenseCategoriesCompanion.insert(
+        id: 'expcat_other',
+        code: 'other',
+        name: 'أخرى',
+        nameEn: const Value('Other'),
+        accountCode: SystemAccountCode.operatingExpenses,
+        isActive: const Value(true),
+        isSystem: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ], mode: InsertMode.insertOrIgnore);
+  });
+}
+
+/// Phase 9 expense RBAC — idempotently creates the `expenses.edit`,
+/// `expenses.void`, `expenses.categories.view` and
+/// `expenses.categories.manage` permissions and grants them to admin
+/// (all), pharmacist (edit/void/categories) and viewer (categories view).
+/// Used by the v6→v7 upgrade so already-installed stores get the new rights;
+/// fresh databases cover these through the kSeedPermissions loop above.
+Future<void> ensureExpensePermissions(AppDatabase db) async {
+  final now = DateTime.now().millisecondsSinceEpoch;
+  final newCodes = <String, String>{
+    Perm.expensesEdit: 'تعديل مصروف',
+    Perm.expensesVoid: 'إلغاء مصروف',
+    Perm.expenseCategoriesView: 'عرض فئات المصروفات',
+    Perm.expenseCategoriesManage: 'إدارة فئات المصروفات',
+  };
+  await db.batch((batch) {
+    for (final e in newCodes.entries) {
+      batch.insert(db.permissions, PermissionsCompanion.insert(
+            id: 'perm_${e.key.replaceAll('.', '_')}',
+            code: e.key,
+            name: e.key,
+            nameAr: e.value,
+            createdAt: now,
+          ),
+          mode: InsertMode.insertOrIgnore);
+    }
+    // Admin → all four.
+    for (final e in newCodes.entries) {
+      batch.insert(
+        db.rolePermissions,
+        RolePermissionsCompanion.insert(
+          id: 'rp_admin_${e.key.replaceAll('.', '_')}',
+          roleId: 'role_admin',
+          permissionId: 'perm_${e.key.replaceAll('.', '_')}',
+          granted: const Value(true),
+          createdAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+    // Pharmacist → edit/void + category view/manage.
+    for (final e in {
+      Perm.expensesEdit,
+      Perm.expensesVoid,
+      Perm.expenseCategoriesView,
+      Perm.expenseCategoriesManage,
+    }) {
+      batch.insert(
+        db.rolePermissions,
+        RolePermissionsCompanion.insert(
+          id: 'rp_pharmacist_${e.replaceAll('.', '_')}',
+          roleId: 'role_pharmacist',
+          permissionId: 'perm_${e.replaceAll('.', '_')}',
+          granted: const Value(true),
+          createdAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+    // Viewer → category view only.
+    batch.insert(
+      db.rolePermissions,
+      RolePermissionsCompanion.insert(
+        id: 'rp_viewer_expenses_categories_view',
+        roleId: 'role_viewer',
+        permissionId: 'perm_expenses_categories_view',
+        granted: const Value(true),
+        createdAt: now,
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
   });
 }

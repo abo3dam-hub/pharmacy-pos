@@ -97,6 +97,12 @@ enum ExpenseCategory {
   other,
 }
 
+/// Expense settlement methods (Phase 9). Persisted by name into
+/// `expenses.payment_method` as `'cash' | 'card'`; `cash` moves the drawer
+/// (type `expense`), `card` is paid from Bank with no drawer row. Mixed /
+/// credit settlements are not supported for expenses.
+enum ExpensePaymentMethod { cash, card }
+
 /// Cash box operations (§4.21): `'open' | 'close' | 'deposit' | 'withdraw' |
 /// 'sale' | 'expense' | 'payment' | 'refund' | 'adjustment'`.
 enum CashboxTransactionType {

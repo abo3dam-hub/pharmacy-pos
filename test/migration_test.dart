@@ -10,14 +10,14 @@ import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 import 'helpers.dart';
 
-/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5) for v1→v6
+/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5/9) for v1→v7
 /// upgrade — implementers must keep this mirror in lockstep with
 /// `AppDatabase._migrate` in `app_database.dart`.
 class _V1Database extends AppDatabase {
   _V1Database(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -82,6 +82,17 @@ class _V1Database extends AppDatabase {
               await m.createTable(lostSales);
             }
           }
+          if (from < 7) {
+            await m.createTable(expenseCategories);
+            await m.addColumn(expenses, expenses.paymentMethod);
+            await m.addColumn(expenses, expenses.expenseNumber);
+            await customStatement(
+                'UPDATE expenses SET expense_number = '
+                "'EXP-' || printf('%05d', rowid) "
+                "WHERE expense_number IS NULL OR expense_number = ''");
+            await seedExpenseCategories(this);
+            await ensureExpensePermissions(this);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -106,7 +117,7 @@ void main() {
 
     File dbFile() => File('${dir.path}/store.db');
 
-    test('fresh database creates at schema v6 with all columns', () async {
+    test('fresh database creates at schema v7 with all columns', () async {
       ensureSqlite();
       final path = dbFile().path;
 
@@ -115,11 +126,39 @@ void main() {
       final batchId = await insertBatch(db, itemId,
           quantityBase: 7, expiryDays: 90, unitCostMicros: 5000);
 
-      // Verify schema version is 5.
+      // Verify schema version is 7.
       final userVersion =
           await db.customSelect('PRAGMA user_version').getSingle();
-      expect(userVersion.data.values.first, 6,
-          reason: 'fresh DB must be schema v6');
+      expect(userVersion.data.values.first, 7,
+          reason: 'fresh DB must be schema v7');
+
+      // Verify v7 Phase 9 additions: category master seeded + expenses columns.
+      final categories = await db.select(db.expenseCategories).get();
+      expect(categories, hasLength(8),
+          reason: 'seedExpenseCategories runs on fresh create');
+      expect(categories.map((c) => c.code), contains('rent'));
+      expect(categories.map((c) => c.code), contains('salaries'));
+      final rent =
+          categories.firstWhere((c) => c.code == 'rent');
+      expect(rent.accountCode, '5101');
+      final now9 = DateTime.now().millisecondsSinceEpoch;
+      final exp = await db.into(db.expenses).insertReturning(
+            ExpensesCompanion.insert(
+              id: 'exp_v7_fresh',
+              amountMicros: 10000,
+              category: 'rent',
+              description: 'إيجار يوليو',
+              expenseDate: now9,
+              userId: 'user_admin',
+              createdAt: now9,
+              updatedAt: now9,
+            ),
+          );
+      expect(exp.paymentMethod, 'cash',
+          reason: 'expenses.payment_method defaults to cash');
+      expect(exp.expenseNumber, '',
+          reason: 'new rows get their printable number from the engine; the '
+              'v7 migration only back-fills pre-existing rows');
 
       // Verify partial-sale columns exist on items.
       final item = await (db.select(db.items)
@@ -202,19 +241,33 @@ void main() {
       expect(reopenedItem.currentStockBase, 7);
       final reopenedVersion =
           await reopened.customSelect('PRAGMA user_version').getSingle();
-      expect(reopenedVersion.data.values.first, 6);
+      expect(reopenedVersion.data.values.first, 7);
       await reopened.close();
     });
 
-    test('v1 → v6 migration adds all Phase 6 + financial columns without data loss',
+    test('v1 → v7 migration adds all Phase 6/7.5/9 columns without data loss',
         () async {
       ensureSqlite();
       final path = dbFile().path;
 
-      // Create a v5 database with data.
+      // Create a v5 database with data (fresh createAll seeds v7 + an expense
+      // row that must survive the simulated downgrade).
       final db = AppDatabase.fromFilePath(path);
       final itemId = await insertItem(db);
-      expect(db.schemaVersion, 6);
+      expect(db.schemaVersion, 7);
+      final preNow = DateTime.now().millisecondsSinceEpoch;
+      await db.into(db.expenses).insert(
+            ExpensesCompanion.insert(
+              id: 'exp_mig_legacy',
+              amountMicros: 25000,
+              category: 'rent',
+              description: 'إيجار قديم',
+              expenseDate: preNow,
+              userId: 'user_admin',
+              createdAt: preNow,
+              updatedAt: preNow,
+            ),
+          );
 
       // Verify the new columns exist before simulating v1.
       final beforeItem = await (db.select(db.items)
@@ -246,19 +299,26 @@ void main() {
       raw.execute('ALTER TABLE sales_invoices DROP COLUMN voided_at');
       raw.execute('DROP TABLE IF EXISTS customer_payments');
       raw.execute('DELETE FROM accounts WHERE code = \'1200\'');
+      // Drop v6 gap-closure table.
+      raw.execute('DROP TABLE IF EXISTS lost_sales');
+      // Drop v7 Phase 9 additions (category master + expenses columns), while
+      // keeping the pre-existing expense row in place.
+      raw.execute('DROP TABLE IF EXISTS expense_categories');
+      raw.execute('ALTER TABLE expenses DROP COLUMN payment_method');
+      raw.execute('ALTER TABLE expenses DROP COLUMN expense_number');
       raw.execute('PRAGMA user_version = 1');
       raw.dispose();
       await db.close();
 
-      // Reopen under v5 schema: onUpgrade(1 → 5) creates everything in place.
+      // Reopen under the working schema: onUpgrade(1 → 7) recreates everything.
       final upgraded = _V1Database(NativeDatabase(File(path)));
 
-      // Verify user_version is 5 after migration.
+      // Verify user_version is 7 after migration.
       final userVersion = await upgraded
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(userVersion.data.values.first, 6,
-          reason: 'v1 → v6 migration must set user_version to 6');
+      expect(userVersion.data.values.first, 7,
+          reason: 'v1 → v7 migration must set user_version to 7');
 
       // Verify app_settings created.
       final settings = await upgraded.select(upgraded.appSettings).get();
@@ -326,6 +386,21 @@ void main() {
             ),
           );
       expect(ls.id, 'ls_mig', reason: 'lost_sales table created on upgrade');
+
+      // v7 Phase 9: category master re-seeded + expense columns re-added with
+      // the legacy row preserved and its printable number back-filled.
+      final cats = await upgraded.select(upgraded.expenseCategories).get();
+      expect(cats, hasLength(8), reason: 'v7 seeds the category master');
+      final legacyExp = await (upgraded.select(upgraded.expenses)
+            ..where((e) => e.id.equals('exp_mig_legacy')))
+          .getSingle();
+      expect(legacyExp.category, 'rent',
+          reason: 'legacy expense row survives the upgrade');
+      expect(legacyExp.amountMicros, 25000);
+      expect(legacyExp.paymentMethod, 'cash',
+          reason: 're-added default on the upgraded column');
+      expect(legacyExp.expenseNumber, 'EXP-00001',
+          reason: 'existing rows are back-filled with printable numbers');
 
       await upgraded.close();
     });

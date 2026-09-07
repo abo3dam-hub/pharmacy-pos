@@ -1911,4 +1911,211 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cashboxReasonRequired => 'السبب مطلوب';
+
+  @override
+  String get navExpenses => 'المصروفات';
+
+  @override
+  String get expensesTitle => 'المصروفات';
+
+  @override
+  String get expensesAdd => 'تسجيل مصروف';
+
+  @override
+  String get expensesAddTitle => 'تسجيل مصروف جديد';
+
+  @override
+  String get expensesEmpty => 'لا توجد مصروفات مسجلة';
+
+  @override
+  String get expensesTotalCount => 'عدد السجلات';
+
+  @override
+  String get expensesPageTotal => 'إجمالي هذه الصفحة';
+
+  @override
+  String get expensesSearchHint => 'بحث بالوصف أو رقم المصروف';
+
+  @override
+  String get expensesFilterAllCategories => 'كل الفئات';
+
+  @override
+  String get expensesFilterAllPayments => 'كل طرق الدفع';
+
+  @override
+  String get expensesFilterAllStatus => 'كل الحالات';
+
+  @override
+  String get expensesFilterActiveOnly => 'النشطة فقط';
+
+  @override
+  String get expensesFilterVoidedOnly => 'الملغاة فقط';
+
+  @override
+  String get expensesStatusActive => 'نشط';
+
+  @override
+  String get expensesStatusVoided => 'ملغى';
+
+  @override
+  String get expensesReadOnly => 'عرض فقط — لا تملك صلاحية لإدارة المصروفات';
+
+  @override
+  String get expensesColNumber => 'الرقم';
+
+  @override
+  String get expensesColDate => 'التاريخ';
+
+  @override
+  String get expensesColDescription => 'الوصف';
+
+  @override
+  String get expensesColCategory => 'الفئة';
+
+  @override
+  String get expensesColPayment => 'الدفع';
+
+  @override
+  String get expensesColAmount => 'المبلغ';
+
+  @override
+  String get expensesColOperator => 'المستخدم';
+
+  @override
+  String get expensesColStatus => 'الحالة';
+
+  @override
+  String get expensesCash => 'نقدي';
+
+  @override
+  String get expensesCard => 'بطاقة';
+
+  @override
+  String get expensesShowReceipt => 'عرض الإيصال';
+
+  @override
+  String get expensesAttachReceipt => 'إرفاق إيصال';
+
+  @override
+  String get expensesCancelAction => 'إلغاء المصروف';
+
+  @override
+  String get expenseAmount => 'المبلغ';
+
+  @override
+  String get expenseAmountRequired => 'أدخل المبلغ';
+
+  @override
+  String get expenseAmountInvalid => 'المبلغ يجب أن يكون أكبر من صفر';
+
+  @override
+  String get expenseDescription => 'الوصف';
+
+  @override
+  String get expenseDescriptionRequired => 'أدخل وصف المصروف';
+
+  @override
+  String get expenseCategory => 'فئة المصروف';
+
+  @override
+  String get expenseCategoryRequired => 'اختر فئة المصروف';
+
+  @override
+  String get expenseSupplier => 'المورد (اختياري)';
+
+  @override
+  String get expenseNoSupplier => 'بدون مورد';
+
+  @override
+  String get expensePaymentNote =>
+      'يُسجَّل الدفع هنا ويُعكس نقدًا أو بطاقة عند الإلغاء';
+
+  @override
+  String get expenseDate => 'تاريخ المصروف';
+
+  @override
+  String get expenseNotesOptional => 'ملاحظات (اختياري)';
+
+  @override
+  String get expenseReceiptUnreadable =>
+      'تعذر عرض الملف — قد يكون تالفاً أو بصيغة غير مدعومة';
+
+  @override
+  String get expenseEditDescription => 'تعديل المصروف';
+
+  @override
+  String get expenseAmountImmutableHint =>
+      'لا يمكن تعديل المبلغ أو الفئة أو طريقة الدفع بعد القيد';
+
+  @override
+  String get expenseCancelTitle => 'إلغاء المصروف';
+
+  @override
+  String get expenseCancelReason => 'سبب الإلغاء';
+
+  @override
+  String get expenseCancelReasonRequired => 'أدخل سبب الإلغاء';
+
+  @override
+  String expenseCancelConfirmMessage(String number) {
+    return 'سيتم عكس مصروف $number نقديًا ودفترًا بالكامل. لا يمكن التراجع عن هذا الإجراء.';
+  }
+
+  @override
+  String get expenseCategoryEditTitle => 'تعديل الفئة';
+
+  @override
+  String get expenseCategoryAddTitle => 'فئة مصروف جديدة';
+
+  @override
+  String get expenseCategoryCode => 'كود الفئة';
+
+  @override
+  String get expenseCategoryCodeHint => 'مثال: utilities, transport…';
+
+  @override
+  String get expenseCategoryName => 'اسم الفئة';
+
+  @override
+  String get expenseCategoryNameEn => 'الاسم بالإنجليزية (اختياري)';
+
+  @override
+  String get expenseCategoryAccount => 'الحساب (بالدليل مثل 5100)';
+
+  @override
+  String get expenseCategorySystemBlock =>
+      'الفئات النظامية لا يمكن تعديلها أو تعطيلها';
+
+  @override
+  String get expenseCategoriesTitle => 'فئات المصروفات';
+
+  @override
+  String get expenseNoCategories => 'لا توجد فئات مصروفات';
+
+  @override
+  String get expenseCategoryAdd => 'فئة جديدة';
+
+  @override
+  String get expenseCreatedMessage => 'تم تسجيل المصروف';
+
+  @override
+  String get expenseUpdatedMessage => 'تم تحديث المصروف';
+
+  @override
+  String get expenseCancelledMessage => 'تم عكس المصروف';
+
+  @override
+  String get expenseReceiptAttached => 'تم إرفاق الإيصال';
+
+  @override
+  String get expenseCategoryCreatedMessage => 'تم إنشاء الفئة';
+
+  @override
+  String get expenseCategoryUpdatedMessage => 'تم تحديث الفئة';
+
+  @override
+  String get expenseCategoryActivated => 'تم تفعيل الفئة';
+
+  @override
+  String get expenseCategoryDeactivated => 'تم تعطيل الفئة';
 }

@@ -18,6 +18,7 @@ import 'tables/cashbox_transactions.dart';
 import 'tables/categories.dart';
 import 'tables/customer_payments.dart';
 import 'tables/customers.dart';
+import 'tables/expense_categories.dart';
 import 'tables/expenses.dart';
 import 'tables/item_units.dart';
 import 'tables/items.dart';
@@ -68,6 +69,7 @@ part 'app_database.g.dart';
   Returns,
   ReturnItems,
   Expenses,
+  ExpenseCategories,
   CashboxTransactions,
   Accounts,
   JournalEntries,
@@ -94,7 +96,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -178,6 +180,23 @@ class AppDatabase extends _$AppDatabase {
       if (absent.read<int>('c') == 0) {
         await m.createTable(lostSales);
       }
+    }
+    if (from < 7) {
+      // Phase 9 expenses: category master + financial columns. `expenses`
+      // already stores `category` as TEXT (enum name), so switching the column
+      // to a plain code keeps every historical row intact; the code is the
+      // seeded `expense_categories.code`. New columns carry defaults so
+      // existing rows upgrade in place, then printable numbers are back-filled
+      // and the expense RBAC permissions + role grants are ensured idempotently.
+      await m.createTable(expenseCategories);
+      await m.addColumn(expenses, expenses.paymentMethod);
+      await m.addColumn(expenses, expenses.expenseNumber);
+      await customStatement(
+          'UPDATE expenses SET expense_number = '
+          "'EXP-' || printf('%05d', rowid) "
+          "WHERE expense_number IS NULL OR expense_number = ''");
+      await seedExpenseCategories(this);
+      await ensureExpensePermissions(this);
     }
   }
 }

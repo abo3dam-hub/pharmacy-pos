@@ -1917,4 +1917,211 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cashboxReasonRequired => 'Reason is required';
+
+  @override
+  String get navExpenses => 'Expenses';
+
+  @override
+  String get expensesTitle => 'Expenses';
+
+  @override
+  String get expensesAdd => 'Record expense';
+
+  @override
+  String get expensesAddTitle => 'Record a new expense';
+
+  @override
+  String get expensesEmpty => 'No expenses recorded yet';
+
+  @override
+  String get expensesTotalCount => 'Total records';
+
+  @override
+  String get expensesPageTotal => 'This page total';
+
+  @override
+  String get expensesSearchHint => 'Search by description or expense number';
+
+  @override
+  String get expensesFilterAllCategories => 'All categories';
+
+  @override
+  String get expensesFilterAllPayments => 'All payment methods';
+
+  @override
+  String get expensesFilterAllStatus => 'All statuses';
+
+  @override
+  String get expensesFilterActiveOnly => 'Active only';
+
+  @override
+  String get expensesFilterVoidedOnly => 'Voided only';
+
+  @override
+  String get expensesStatusActive => 'Active';
+
+  @override
+  String get expensesStatusVoided => 'Voided';
+
+  @override
+  String get expensesReadOnly => 'Read-only — you do not manage expenses';
+
+  @override
+  String get expensesColNumber => 'Reference';
+
+  @override
+  String get expensesColDate => 'Date';
+
+  @override
+  String get expensesColDescription => 'Description';
+
+  @override
+  String get expensesColCategory => 'Category';
+
+  @override
+  String get expensesColPayment => 'Payment';
+
+  @override
+  String get expensesColAmount => 'Amount';
+
+  @override
+  String get expensesColOperator => 'Operator';
+
+  @override
+  String get expensesColStatus => 'Status';
+
+  @override
+  String get expensesCash => 'Cash';
+
+  @override
+  String get expensesCard => 'Card';
+
+  @override
+  String get expensesShowReceipt => 'View receipt';
+
+  @override
+  String get expensesAttachReceipt => 'Attach receipt';
+
+  @override
+  String get expensesCancelAction => 'Void expense';
+
+  @override
+  String get expenseAmount => 'Amount';
+
+  @override
+  String get expenseAmountRequired => 'Enter an amount';
+
+  @override
+  String get expenseAmountInvalid => 'Amount must be greater than zero';
+
+  @override
+  String get expenseDescription => 'Description';
+
+  @override
+  String get expenseDescriptionRequired => 'Enter an expense description';
+
+  @override
+  String get expenseCategory => 'Expense category';
+
+  @override
+  String get expenseCategoryRequired => 'Choose an expense category';
+
+  @override
+  String get expenseSupplier => 'Supplier (optional)';
+
+  @override
+  String get expenseNoSupplier => 'No supplier';
+
+  @override
+  String get expensePaymentNote =>
+      'Payment is booked here and reversed cash/card on void';
+
+  @override
+  String get expenseDate => 'Expense date';
+
+  @override
+  String get expenseNotesOptional => 'Notes (optional)';
+
+  @override
+  String get expenseReceiptUnreadable =>
+      'Cannot open file — it may be corrupt or unsupported';
+
+  @override
+  String get expenseEditDescription => 'Edit expense';
+
+  @override
+  String get expenseAmountImmutableHint =>
+      'Amount, category and payment method are frozen after posting';
+
+  @override
+  String get expenseCancelTitle => 'Void expense';
+
+  @override
+  String get expenseCancelReason => 'Void reason';
+
+  @override
+  String get expenseCancelReasonRequired => 'Enter a void reason';
+
+  @override
+  String expenseCancelConfirmMessage(String number) {
+    return 'Expense $number will be fully reversed in cash and in the ledger. This cannot be undone.';
+  }
+
+  @override
+  String get expenseCategoryEditTitle => 'Edit category';
+
+  @override
+  String get expenseCategoryAddTitle => 'New expense category';
+
+  @override
+  String get expenseCategoryCode => 'Category code';
+
+  @override
+  String get expenseCategoryCodeHint => 'e.g. utilities, transport…';
+
+  @override
+  String get expenseCategoryName => 'Category name';
+
+  @override
+  String get expenseCategoryNameEn => 'Name (English, optional)';
+
+  @override
+  String get expenseCategoryAccount => 'Account (chart, e.g. 5100)';
+
+  @override
+  String get expenseCategorySystemBlock =>
+      'System categories cannot be edited or disabled';
+
+  @override
+  String get expenseCategoriesTitle => 'Expense categories';
+
+  @override
+  String get expenseNoCategories => 'No expense categories';
+
+  @override
+  String get expenseCategoryAdd => 'New category';
+
+  @override
+  String get expenseCreatedMessage => 'Expense recorded';
+
+  @override
+  String get expenseUpdatedMessage => 'Expense updated';
+
+  @override
+  String get expenseCancelledMessage => 'Expense voided';
+
+  @override
+  String get expenseReceiptAttached => 'Receipt attached';
+
+  @override
+  String get expenseCategoryCreatedMessage => 'Category created';
+
+  @override
+  String get expenseCategoryUpdatedMessage => 'Category updated';
+
+  @override
+  String get expenseCategoryActivated => 'Category activated';
+
+  @override
+  String get expenseCategoryDeactivated => 'Category deactivated';
 }

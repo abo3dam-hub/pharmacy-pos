@@ -15,6 +15,7 @@ import '../../domain/services/audit_service.dart';
 import '../../domain/services/base_unit_converter.dart';
 import '../../domain/services/bonus_calculator.dart';
 import '../../domain/services/cashbox_service.dart';
+import '../../domain/services/financial_posting_service.dart';
 import '../../domain/services/permission_service.dart';
 import '../../domain/services/purchase_service.dart';
 import '../../domain/services/return_service.dart';
@@ -45,6 +46,11 @@ import '../../features/customers/application/customers_controller.dart';
 import '../../features/customers/data/repositories/customer_repository_impl.dart';
 import '../../features/customers/domain/repositories/customer_repository.dart';
 import '../../features/customers/domain/usecases/customers_use_cases.dart';
+import '../../features/expenses/application/expense_controller.dart';
+import '../../features/expenses/data/expense_repository_impl.dart';
+import '../../features/expenses/domain/repositories/expense_repository.dart';
+import '../../features/expenses/domain/services/receipt_storage.dart';
+import '../../features/expenses/domain/usecases/expenses_use_cases.dart';
 import '../../features/inventory/application/inventory_controller.dart';
 import '../../features/inventory/application/master_data_controller.dart';
 import '../../features/inventory/data/repositories/inventory_repository_impl.dart';
@@ -124,6 +130,7 @@ void setupDependencies() {
   _registerPhase5(db);
   _registerPhase7(db);
   _registerPhase8(db);
+  _registerPhase9(db);
 }
 
 /// Phase 7 — POS workspace data layer over the existing transactional engine.
@@ -147,6 +154,60 @@ void _registerPhase8(AppDatabase db) {
       () => CashboxRepositoryImpl(db, getIt<CashboxService>()));
   getIt.registerLazySingleton<CashboxController>(
       () => CashboxController(getIt<CashboxRepository>()));
+}
+
+/// Phase 9 — Expenses (المصروفات): categorized, receipt-scanned, paginated
+/// expense journal with a reverse (cancel) workflow over the financial engine.
+void _registerPhase9(AppDatabase db) {
+  getIt.registerLazySingleton<FinancialPostingService>(
+      () => const FinancialPostingService());
+  getIt.registerLazySingleton<ReceiptStorage>(() => LocalReceiptStorage());
+  getIt.registerLazySingleton<ExpenseRepository>(
+      () => ExpenseRepositoryImpl(
+        db,
+        getIt<ReceiptStorage>(),
+        getIt<FinancialPostingService>(),
+      ));
+  getIt.registerLazySingleton<ListExpensesUseCase>(
+      () => ListExpensesUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>()));
+  getIt.registerLazySingleton<ListExpenseCategoriesUseCase>(
+      () => ListExpenseCategoriesUseCase(
+          getIt<ExpenseRepository>(), getIt<PermissionService>()));
+  getIt.registerLazySingleton<CreateExpenseUseCase>(
+      () => CreateExpenseUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>()));
+  getIt.registerLazySingleton<UpdateExpenseUseCase>(
+      () => UpdateExpenseUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>(),
+          getIt<AuditService>()));
+  getIt.registerLazySingleton<CancelExpenseUseCase>(
+      () => CancelExpenseUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>()));
+  getIt.registerLazySingleton<AttachReceiptUseCase>(
+      () => AttachReceiptUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>(),
+          getIt<AuditService>()));
+  getIt.registerLazySingleton<RemoveReceiptUseCase>(
+      () => RemoveReceiptUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>(),
+          getIt<AuditService>()));
+  getIt.registerLazySingleton<CreateExpenseCategoryUseCase>(
+      () => CreateExpenseCategoryUseCase(getIt<ExpenseRepository>(),
+          getIt<PermissionService>(), getIt<AuditService>()));
+  getIt.registerLazySingleton<UpdateExpenseCategoryUseCase>(
+      () => UpdateExpenseCategoryUseCase(getIt<ExpenseRepository>(),
+          getIt<PermissionService>(), getIt<AuditService>()));
+  getIt.registerLazySingleton<SetExpenseCategoryActiveUseCase>(
+      () => SetExpenseCategoryActiveUseCase(getIt<ExpenseRepository>(),
+          getIt<PermissionService>(), getIt<AuditService>()));
+  getIt.registerLazySingleton<ExpenseController>(
+      () => ExpenseController(
+        getIt<ListExpensesUseCase>(),
+        getIt<ListExpenseCategoriesUseCase>(),
+        getIt<CreateExpenseUseCase>(),
+        getIt<UpdateExpenseUseCase>(),
+        getIt<CancelExpenseUseCase>(),
+        getIt<AttachReceiptUseCase>(),
+        getIt<RemoveReceiptUseCase>(),
+        getIt<CreateExpenseCategoryUseCase>(),
+        getIt<UpdateExpenseCategoryUseCase>(),
+        getIt<SetExpenseCategoryActiveUseCase>(),
+      ));
 }
 
 /// Phase 5 — Customers & Prescriptions graph (customer master, derived

@@ -14,6 +14,7 @@ enum AppSection {
   customers(Icons.people_outline),
   suppliers(Icons.local_shipping_outlined),
   accounts(Icons.account_balance_wallet_outlined),
+  expenses(Icons.receipt_long_outlined),
   reports(Icons.bar_chart),
   settings(Icons.settings_outlined),
   users(Icons.manage_accounts_outlined);
@@ -31,6 +32,7 @@ enum AppSection {
         AppSection.customers => '/customers',
         AppSection.suppliers => '/suppliers',
         AppSection.accounts => '/accounts',
+        AppSection.expenses => '/expenses',
         AppSection.reports => '/reports',
         AppSection.settings => '/settings',
         AppSection.users => '/users',
@@ -57,6 +59,7 @@ enum AppSection {
         AppSection.customers => l10n.navCustomers,
         AppSection.suppliers => l10n.navSuppliers,
         AppSection.accounts => l10n.navAccounts,
+        AppSection.expenses => l10n.navExpenses,
         AppSection.reports => l10n.navReports,
         AppSection.settings => l10n.navSettings,
         AppSection.users => l10n.navUsers,

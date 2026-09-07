@@ -18907,15 +18907,17 @@ class $ExpensesTable extends Expenses
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
   @override
-  late final GeneratedColumnWithTypeConverter<ExpenseCategory, String>
-  category = GeneratedColumn<String>(
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
     'category',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
-  ).withConverter<ExpenseCategory>($ExpensesTable.$convertercategory);
+  );
   static const VerificationMeta _descriptionMeta = const VerificationMeta(
     'description',
   );
@@ -18978,6 +18980,30 @@ class $ExpensesTable extends Expenses
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _paymentMethodMeta = const VerificationMeta(
+    'paymentMethod',
+  );
+  @override
+  late final GeneratedColumn<String> paymentMethod = GeneratedColumn<String>(
+    'payment_method',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('cash'),
+  );
+  static const VerificationMeta _expenseNumberMeta = const VerificationMeta(
+    'expenseNumber',
+  );
+  @override
+  late final GeneratedColumn<String> expenseNumber = GeneratedColumn<String>(
+    'expense_number',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _isVoidedMeta = const VerificationMeta(
     'isVoided',
   );
@@ -19026,6 +19052,8 @@ class $ExpensesTable extends Expenses
     userId,
     receiptPath,
     notes,
+    paymentMethod,
+    expenseNumber,
     isVoided,
     createdAt,
     updatedAt,
@@ -19057,6 +19085,14 @@ class $ExpensesTable extends Expenses
       );
     } else if (isInserting) {
       context.missing(_amountMicrosMeta);
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryMeta);
     }
     if (data.containsKey('description')) {
       context.handle(
@@ -19109,6 +19145,24 @@ class $ExpensesTable extends Expenses
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('payment_method')) {
+      context.handle(
+        _paymentMethodMeta,
+        paymentMethod.isAcceptableOrUnknown(
+          data['payment_method']!,
+          _paymentMethodMeta,
+        ),
+      );
+    }
+    if (data.containsKey('expense_number')) {
+      context.handle(
+        _expenseNumberMeta,
+        expenseNumber.isAcceptableOrUnknown(
+          data['expense_number']!,
+          _expenseNumberMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_voided')) {
       context.handle(
         _isVoidedMeta,
@@ -19148,12 +19202,10 @@ class $ExpensesTable extends Expenses
         DriftSqlType.int,
         data['${effectivePrefix}amount_micros'],
       )!,
-      category: $ExpensesTable.$convertercategory.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}category'],
-        )!,
-      ),
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
       description: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}description'],
@@ -19178,6 +19230,14 @@ class $ExpensesTable extends Expenses
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      paymentMethod: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payment_method'],
+      )!,
+      expenseNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}expense_number'],
+      )!,
       isVoided: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_voided'],
@@ -19197,23 +19257,20 @@ class $ExpensesTable extends Expenses
   $ExpensesTable createAlias(String alias) {
     return $ExpensesTable(attachedDatabase, alias);
   }
-
-  static JsonTypeConverter2<ExpenseCategory, String, String>
-  $convertercategory = const EnumNameConverter<ExpenseCategory>(
-    ExpenseCategory.values,
-  );
 }
 
 class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
   final String id;
   final int amountMicros;
-  final ExpenseCategory category;
+  final String category;
   final String description;
   final int expenseDate;
   final String? supplierId;
   final String userId;
   final String? receiptPath;
   final String? notes;
+  final String paymentMethod;
+  final String expenseNumber;
   final bool isVoided;
   final int createdAt;
   final int updatedAt;
@@ -19227,6 +19284,8 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
     required this.userId,
     this.receiptPath,
     this.notes,
+    required this.paymentMethod,
+    required this.expenseNumber,
     required this.isVoided,
     required this.createdAt,
     required this.updatedAt,
@@ -19236,11 +19295,7 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['amount_micros'] = Variable<int>(amountMicros);
-    {
-      map['category'] = Variable<String>(
-        $ExpensesTable.$convertercategory.toSql(category),
-      );
-    }
+    map['category'] = Variable<String>(category);
     map['description'] = Variable<String>(description);
     map['expense_date'] = Variable<int>(expenseDate);
     if (!nullToAbsent || supplierId != null) {
@@ -19253,6 +19308,8 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    map['payment_method'] = Variable<String>(paymentMethod);
+    map['expense_number'] = Variable<String>(expenseNumber);
     map['is_voided'] = Variable<bool>(isVoided);
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
@@ -19276,6 +19333,8 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      paymentMethod: Value(paymentMethod),
+      expenseNumber: Value(expenseNumber),
       isVoided: Value(isVoided),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -19290,15 +19349,15 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
     return ExpenseRow(
       id: serializer.fromJson<String>(json['id']),
       amountMicros: serializer.fromJson<int>(json['amountMicros']),
-      category: $ExpensesTable.$convertercategory.fromJson(
-        serializer.fromJson<String>(json['category']),
-      ),
+      category: serializer.fromJson<String>(json['category']),
       description: serializer.fromJson<String>(json['description']),
       expenseDate: serializer.fromJson<int>(json['expenseDate']),
       supplierId: serializer.fromJson<String?>(json['supplierId']),
       userId: serializer.fromJson<String>(json['userId']),
       receiptPath: serializer.fromJson<String?>(json['receiptPath']),
       notes: serializer.fromJson<String?>(json['notes']),
+      paymentMethod: serializer.fromJson<String>(json['paymentMethod']),
+      expenseNumber: serializer.fromJson<String>(json['expenseNumber']),
       isVoided: serializer.fromJson<bool>(json['isVoided']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
@@ -19310,15 +19369,15 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'amountMicros': serializer.toJson<int>(amountMicros),
-      'category': serializer.toJson<String>(
-        $ExpensesTable.$convertercategory.toJson(category),
-      ),
+      'category': serializer.toJson<String>(category),
       'description': serializer.toJson<String>(description),
       'expenseDate': serializer.toJson<int>(expenseDate),
       'supplierId': serializer.toJson<String?>(supplierId),
       'userId': serializer.toJson<String>(userId),
       'receiptPath': serializer.toJson<String?>(receiptPath),
       'notes': serializer.toJson<String?>(notes),
+      'paymentMethod': serializer.toJson<String>(paymentMethod),
+      'expenseNumber': serializer.toJson<String>(expenseNumber),
       'isVoided': serializer.toJson<bool>(isVoided),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
@@ -19328,13 +19387,15 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
   ExpenseRow copyWith({
     String? id,
     int? amountMicros,
-    ExpenseCategory? category,
+    String? category,
     String? description,
     int? expenseDate,
     Value<String?> supplierId = const Value.absent(),
     String? userId,
     Value<String?> receiptPath = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    String? paymentMethod,
+    String? expenseNumber,
     bool? isVoided,
     int? createdAt,
     int? updatedAt,
@@ -19348,6 +19409,8 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
     userId: userId ?? this.userId,
     receiptPath: receiptPath.present ? receiptPath.value : this.receiptPath,
     notes: notes.present ? notes.value : this.notes,
+    paymentMethod: paymentMethod ?? this.paymentMethod,
+    expenseNumber: expenseNumber ?? this.expenseNumber,
     isVoided: isVoided ?? this.isVoided,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -19373,6 +19436,12 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
           ? data.receiptPath.value
           : this.receiptPath,
       notes: data.notes.present ? data.notes.value : this.notes,
+      paymentMethod: data.paymentMethod.present
+          ? data.paymentMethod.value
+          : this.paymentMethod,
+      expenseNumber: data.expenseNumber.present
+          ? data.expenseNumber.value
+          : this.expenseNumber,
       isVoided: data.isVoided.present ? data.isVoided.value : this.isVoided,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -19391,6 +19460,8 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
           ..write('userId: $userId, ')
           ..write('receiptPath: $receiptPath, ')
           ..write('notes: $notes, ')
+          ..write('paymentMethod: $paymentMethod, ')
+          ..write('expenseNumber: $expenseNumber, ')
           ..write('isVoided: $isVoided, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -19409,6 +19480,8 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
     userId,
     receiptPath,
     notes,
+    paymentMethod,
+    expenseNumber,
     isVoided,
     createdAt,
     updatedAt,
@@ -19426,6 +19499,8 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
           other.userId == this.userId &&
           other.receiptPath == this.receiptPath &&
           other.notes == this.notes &&
+          other.paymentMethod == this.paymentMethod &&
+          other.expenseNumber == this.expenseNumber &&
           other.isVoided == this.isVoided &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -19434,13 +19509,15 @@ class ExpenseRow extends DataClass implements Insertable<ExpenseRow> {
 class ExpensesCompanion extends UpdateCompanion<ExpenseRow> {
   final Value<String> id;
   final Value<int> amountMicros;
-  final Value<ExpenseCategory> category;
+  final Value<String> category;
   final Value<String> description;
   final Value<int> expenseDate;
   final Value<String?> supplierId;
   final Value<String> userId;
   final Value<String?> receiptPath;
   final Value<String?> notes;
+  final Value<String> paymentMethod;
+  final Value<String> expenseNumber;
   final Value<bool> isVoided;
   final Value<int> createdAt;
   final Value<int> updatedAt;
@@ -19455,6 +19532,8 @@ class ExpensesCompanion extends UpdateCompanion<ExpenseRow> {
     this.userId = const Value.absent(),
     this.receiptPath = const Value.absent(),
     this.notes = const Value.absent(),
+    this.paymentMethod = const Value.absent(),
+    this.expenseNumber = const Value.absent(),
     this.isVoided = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -19463,13 +19542,15 @@ class ExpensesCompanion extends UpdateCompanion<ExpenseRow> {
   ExpensesCompanion.insert({
     required String id,
     required int amountMicros,
-    required ExpenseCategory category,
+    required String category,
     required String description,
     required int expenseDate,
     this.supplierId = const Value.absent(),
     required String userId,
     this.receiptPath = const Value.absent(),
     this.notes = const Value.absent(),
+    this.paymentMethod = const Value.absent(),
+    this.expenseNumber = const Value.absent(),
     this.isVoided = const Value.absent(),
     required int createdAt,
     required int updatedAt,
@@ -19492,6 +19573,8 @@ class ExpensesCompanion extends UpdateCompanion<ExpenseRow> {
     Expression<String>? userId,
     Expression<String>? receiptPath,
     Expression<String>? notes,
+    Expression<String>? paymentMethod,
+    Expression<String>? expenseNumber,
     Expression<bool>? isVoided,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
@@ -19507,6 +19590,8 @@ class ExpensesCompanion extends UpdateCompanion<ExpenseRow> {
       if (userId != null) 'user_id': userId,
       if (receiptPath != null) 'receipt_path': receiptPath,
       if (notes != null) 'notes': notes,
+      if (paymentMethod != null) 'payment_method': paymentMethod,
+      if (expenseNumber != null) 'expense_number': expenseNumber,
       if (isVoided != null) 'is_voided': isVoided,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -19517,13 +19602,15 @@ class ExpensesCompanion extends UpdateCompanion<ExpenseRow> {
   ExpensesCompanion copyWith({
     Value<String>? id,
     Value<int>? amountMicros,
-    Value<ExpenseCategory>? category,
+    Value<String>? category,
     Value<String>? description,
     Value<int>? expenseDate,
     Value<String?>? supplierId,
     Value<String>? userId,
     Value<String?>? receiptPath,
     Value<String?>? notes,
+    Value<String>? paymentMethod,
+    Value<String>? expenseNumber,
     Value<bool>? isVoided,
     Value<int>? createdAt,
     Value<int>? updatedAt,
@@ -19539,6 +19626,8 @@ class ExpensesCompanion extends UpdateCompanion<ExpenseRow> {
       userId: userId ?? this.userId,
       receiptPath: receiptPath ?? this.receiptPath,
       notes: notes ?? this.notes,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      expenseNumber: expenseNumber ?? this.expenseNumber,
       isVoided: isVoided ?? this.isVoided,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -19556,9 +19645,7 @@ class ExpensesCompanion extends UpdateCompanion<ExpenseRow> {
       map['amount_micros'] = Variable<int>(amountMicros.value);
     }
     if (category.present) {
-      map['category'] = Variable<String>(
-        $ExpensesTable.$convertercategory.toSql(category.value),
-      );
+      map['category'] = Variable<String>(category.value);
     }
     if (description.present) {
       map['description'] = Variable<String>(description.value);
@@ -19577,6 +19664,12 @@ class ExpensesCompanion extends UpdateCompanion<ExpenseRow> {
     }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
+    }
+    if (paymentMethod.present) {
+      map['payment_method'] = Variable<String>(paymentMethod.value);
+    }
+    if (expenseNumber.present) {
+      map['expense_number'] = Variable<String>(expenseNumber.value);
     }
     if (isVoided.present) {
       map['is_voided'] = Variable<bool>(isVoided.value);
@@ -19605,7 +19698,573 @@ class ExpensesCompanion extends UpdateCompanion<ExpenseRow> {
           ..write('userId: $userId, ')
           ..write('receiptPath: $receiptPath, ')
           ..write('notes: $notes, ')
+          ..write('paymentMethod: $paymentMethod, ')
+          ..write('expenseNumber: $expenseNumber, ')
           ..write('isVoided: $isVoided, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ExpenseCategoriesTable extends ExpenseCategories
+    with TableInfo<$ExpenseCategoriesTable, ExpenseCategoryRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExpenseCategoriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _codeMeta = const VerificationMeta('code');
+  @override
+  late final GeneratedColumn<String> code = GeneratedColumn<String>(
+    'code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameEnMeta = const VerificationMeta('nameEn');
+  @override
+  late final GeneratedColumn<String> nameEn = GeneratedColumn<String>(
+    'name_en',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _accountCodeMeta = const VerificationMeta(
+    'accountCode',
+  );
+  @override
+  late final GeneratedColumn<String> accountCode = GeneratedColumn<String>(
+    'account_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _isSystemMeta = const VerificationMeta(
+    'isSystem',
+  );
+  @override
+  late final GeneratedColumn<bool> isSystem = GeneratedColumn<bool>(
+    'is_system',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_system" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    code,
+    name,
+    nameEn,
+    accountCode,
+    isActive,
+    isSystem,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'expense_categories';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ExpenseCategoryRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('code')) {
+      context.handle(
+        _codeMeta,
+        code.isAcceptableOrUnknown(data['code']!, _codeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_codeMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('name_en')) {
+      context.handle(
+        _nameEnMeta,
+        nameEn.isAcceptableOrUnknown(data['name_en']!, _nameEnMeta),
+      );
+    }
+    if (data.containsKey('account_code')) {
+      context.handle(
+        _accountCodeMeta,
+        accountCode.isAcceptableOrUnknown(
+          data['account_code']!,
+          _accountCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_accountCodeMeta);
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('is_system')) {
+      context.handle(
+        _isSystemMeta,
+        isSystem.isAcceptableOrUnknown(data['is_system']!, _isSystemMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ExpenseCategoryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ExpenseCategoryRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      code: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      nameEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_en'],
+      ),
+      accountCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_code'],
+      )!,
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      isSystem: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_system'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ExpenseCategoriesTable createAlias(String alias) {
+    return $ExpenseCategoriesTable(attachedDatabase, alias);
+  }
+}
+
+class ExpenseCategoryRow extends DataClass
+    implements Insertable<ExpenseCategoryRow> {
+  final String id;
+  final String code;
+  final String name;
+  final String? nameEn;
+  final String accountCode;
+  final bool isActive;
+  final bool isSystem;
+  final int createdAt;
+  final int updatedAt;
+  const ExpenseCategoryRow({
+    required this.id,
+    required this.code,
+    required this.name,
+    this.nameEn,
+    required this.accountCode,
+    required this.isActive,
+    required this.isSystem,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['code'] = Variable<String>(code);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || nameEn != null) {
+      map['name_en'] = Variable<String>(nameEn);
+    }
+    map['account_code'] = Variable<String>(accountCode);
+    map['is_active'] = Variable<bool>(isActive);
+    map['is_system'] = Variable<bool>(isSystem);
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  ExpenseCategoriesCompanion toCompanion(bool nullToAbsent) {
+    return ExpenseCategoriesCompanion(
+      id: Value(id),
+      code: Value(code),
+      name: Value(name),
+      nameEn: nameEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nameEn),
+      accountCode: Value(accountCode),
+      isActive: Value(isActive),
+      isSystem: Value(isSystem),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ExpenseCategoryRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ExpenseCategoryRow(
+      id: serializer.fromJson<String>(json['id']),
+      code: serializer.fromJson<String>(json['code']),
+      name: serializer.fromJson<String>(json['name']),
+      nameEn: serializer.fromJson<String?>(json['nameEn']),
+      accountCode: serializer.fromJson<String>(json['accountCode']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      isSystem: serializer.fromJson<bool>(json['isSystem']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'code': serializer.toJson<String>(code),
+      'name': serializer.toJson<String>(name),
+      'nameEn': serializer.toJson<String?>(nameEn),
+      'accountCode': serializer.toJson<String>(accountCode),
+      'isActive': serializer.toJson<bool>(isActive),
+      'isSystem': serializer.toJson<bool>(isSystem),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  ExpenseCategoryRow copyWith({
+    String? id,
+    String? code,
+    String? name,
+    Value<String?> nameEn = const Value.absent(),
+    String? accountCode,
+    bool? isActive,
+    bool? isSystem,
+    int? createdAt,
+    int? updatedAt,
+  }) => ExpenseCategoryRow(
+    id: id ?? this.id,
+    code: code ?? this.code,
+    name: name ?? this.name,
+    nameEn: nameEn.present ? nameEn.value : this.nameEn,
+    accountCode: accountCode ?? this.accountCode,
+    isActive: isActive ?? this.isActive,
+    isSystem: isSystem ?? this.isSystem,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ExpenseCategoryRow copyWithCompanion(ExpenseCategoriesCompanion data) {
+    return ExpenseCategoryRow(
+      id: data.id.present ? data.id.value : this.id,
+      code: data.code.present ? data.code.value : this.code,
+      name: data.name.present ? data.name.value : this.name,
+      nameEn: data.nameEn.present ? data.nameEn.value : this.nameEn,
+      accountCode: data.accountCode.present
+          ? data.accountCode.value
+          : this.accountCode,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      isSystem: data.isSystem.present ? data.isSystem.value : this.isSystem,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExpenseCategoryRow(')
+          ..write('id: $id, ')
+          ..write('code: $code, ')
+          ..write('name: $name, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('accountCode: $accountCode, ')
+          ..write('isActive: $isActive, ')
+          ..write('isSystem: $isSystem, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    code,
+    name,
+    nameEn,
+    accountCode,
+    isActive,
+    isSystem,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ExpenseCategoryRow &&
+          other.id == this.id &&
+          other.code == this.code &&
+          other.name == this.name &&
+          other.nameEn == this.nameEn &&
+          other.accountCode == this.accountCode &&
+          other.isActive == this.isActive &&
+          other.isSystem == this.isSystem &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ExpenseCategoriesCompanion extends UpdateCompanion<ExpenseCategoryRow> {
+  final Value<String> id;
+  final Value<String> code;
+  final Value<String> name;
+  final Value<String?> nameEn;
+  final Value<String> accountCode;
+  final Value<bool> isActive;
+  final Value<bool> isSystem;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const ExpenseCategoriesCompanion({
+    this.id = const Value.absent(),
+    this.code = const Value.absent(),
+    this.name = const Value.absent(),
+    this.nameEn = const Value.absent(),
+    this.accountCode = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.isSystem = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ExpenseCategoriesCompanion.insert({
+    required String id,
+    required String code,
+    required String name,
+    this.nameEn = const Value.absent(),
+    required String accountCode,
+    this.isActive = const Value.absent(),
+    this.isSystem = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       code = Value(code),
+       name = Value(name),
+       accountCode = Value(accountCode),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<ExpenseCategoryRow> custom({
+    Expression<String>? id,
+    Expression<String>? code,
+    Expression<String>? name,
+    Expression<String>? nameEn,
+    Expression<String>? accountCode,
+    Expression<bool>? isActive,
+    Expression<bool>? isSystem,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (code != null) 'code': code,
+      if (name != null) 'name': name,
+      if (nameEn != null) 'name_en': nameEn,
+      if (accountCode != null) 'account_code': accountCode,
+      if (isActive != null) 'is_active': isActive,
+      if (isSystem != null) 'is_system': isSystem,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ExpenseCategoriesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? code,
+    Value<String>? name,
+    Value<String?>? nameEn,
+    Value<String>? accountCode,
+    Value<bool>? isActive,
+    Value<bool>? isSystem,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ExpenseCategoriesCompanion(
+      id: id ?? this.id,
+      code: code ?? this.code,
+      name: name ?? this.name,
+      nameEn: nameEn ?? this.nameEn,
+      accountCode: accountCode ?? this.accountCode,
+      isActive: isActive ?? this.isActive,
+      isSystem: isSystem ?? this.isSystem,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (code.present) {
+      map['code'] = Variable<String>(code.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (nameEn.present) {
+      map['name_en'] = Variable<String>(nameEn.value);
+    }
+    if (accountCode.present) {
+      map['account_code'] = Variable<String>(accountCode.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (isSystem.present) {
+      map['is_system'] = Variable<bool>(isSystem.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExpenseCategoriesCompanion(')
+          ..write('id: $id, ')
+          ..write('code: $code, ')
+          ..write('name: $name, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('accountCode: $accountCode, ')
+          ..write('isActive: $isActive, ')
+          ..write('isSystem: $isSystem, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -26377,6 +27036,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ReturnsTable returns = $ReturnsTable(this);
   late final $ReturnItemsTable returnItems = $ReturnItemsTable(this);
   late final $ExpensesTable expenses = $ExpensesTable(this);
+  late final $ExpenseCategoriesTable expenseCategories =
+      $ExpenseCategoriesTable(this);
   late final $CashboxTransactionsTable cashboxTransactions =
       $CashboxTransactionsTable(this);
   late final $AccountsTable accounts = $AccountsTable(this);
@@ -26593,6 +27254,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_expenses_category',
     'CREATE INDEX idx_expenses_category ON expenses (category)',
   );
+  late final Index idxExpenseCategoriesCode = Index(
+    'idx_expense_categories_code',
+    'CREATE INDEX idx_expense_categories_code ON expense_categories (code)',
+  );
   late final Index idxCashboxType = Index(
     'idx_cashbox_type',
     'CREATE INDEX idx_cashbox_type ON cashbox_transactions (type)',
@@ -26692,6 +27357,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     returns,
     returnItems,
     expenses,
+    expenseCategories,
     cashboxTransactions,
     accounts,
     journalEntries,
@@ -26754,6 +27420,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxReturnItemsItem,
     idxExpensesDate,
     idxExpensesCategory,
+    idxExpenseCategoriesCode,
     idxCashboxType,
     idxCashboxCreated,
     idxAccountsType,
@@ -35402,13 +36069,15 @@ typedef $$ExpensesTableCreateCompanionBuilder =
     ExpensesCompanion Function({
       required String id,
       required int amountMicros,
-      required ExpenseCategory category,
+      required String category,
       required String description,
       required int expenseDate,
       Value<String?> supplierId,
       required String userId,
       Value<String?> receiptPath,
       Value<String?> notes,
+      Value<String> paymentMethod,
+      Value<String> expenseNumber,
       Value<bool> isVoided,
       required int createdAt,
       required int updatedAt,
@@ -35418,13 +36087,15 @@ typedef $$ExpensesTableUpdateCompanionBuilder =
     ExpensesCompanion Function({
       Value<String> id,
       Value<int> amountMicros,
-      Value<ExpenseCategory> category,
+      Value<String> category,
       Value<String> description,
       Value<int> expenseDate,
       Value<String?> supplierId,
       Value<String> userId,
       Value<String?> receiptPath,
       Value<String?> notes,
+      Value<String> paymentMethod,
+      Value<String> expenseNumber,
       Value<bool> isVoided,
       Value<int> createdAt,
       Value<int> updatedAt,
@@ -35450,10 +36121,9 @@ class $$ExpensesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<ExpenseCategory, ExpenseCategory, String>
-  get category => $composableBuilder(
+  ColumnFilters<String> get category => $composableBuilder(
     column: $table.category,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
+    builder: (column) => ColumnFilters(column),
   );
 
   ColumnFilters<String> get description => $composableBuilder(
@@ -35483,6 +36153,16 @@ class $$ExpensesTableFilterComposer
 
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get paymentMethod => $composableBuilder(
+    column: $table.paymentMethod,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get expenseNumber => $composableBuilder(
+    column: $table.expenseNumber,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -35556,6 +36236,16 @@ class $$ExpensesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get paymentMethod => $composableBuilder(
+    column: $table.paymentMethod,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get expenseNumber => $composableBuilder(
+    column: $table.expenseNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isVoided => $composableBuilder(
     column: $table.isVoided,
     builder: (column) => ColumnOrderings(column),
@@ -35589,7 +36279,7 @@ class $$ExpensesTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumnWithTypeConverter<ExpenseCategory, String> get category =>
+  GeneratedColumn<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
 
   GeneratedColumn<String> get description => $composableBuilder(
@@ -35617,6 +36307,16 @@ class $$ExpensesTableAnnotationComposer
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get paymentMethod => $composableBuilder(
+    column: $table.paymentMethod,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get expenseNumber => $composableBuilder(
+    column: $table.expenseNumber,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get isVoided =>
       $composableBuilder(column: $table.isVoided, builder: (column) => column);
@@ -35661,13 +36361,15 @@ class $$ExpensesTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<int> amountMicros = const Value.absent(),
-                Value<ExpenseCategory> category = const Value.absent(),
+                Value<String> category = const Value.absent(),
                 Value<String> description = const Value.absent(),
                 Value<int> expenseDate = const Value.absent(),
                 Value<String?> supplierId = const Value.absent(),
                 Value<String> userId = const Value.absent(),
                 Value<String?> receiptPath = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String> paymentMethod = const Value.absent(),
+                Value<String> expenseNumber = const Value.absent(),
                 Value<bool> isVoided = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
@@ -35682,6 +36384,8 @@ class $$ExpensesTableTableManager
                 userId: userId,
                 receiptPath: receiptPath,
                 notes: notes,
+                paymentMethod: paymentMethod,
+                expenseNumber: expenseNumber,
                 isVoided: isVoided,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -35691,13 +36395,15 @@ class $$ExpensesTableTableManager
               ({
                 required String id,
                 required int amountMicros,
-                required ExpenseCategory category,
+                required String category,
                 required String description,
                 required int expenseDate,
                 Value<String?> supplierId = const Value.absent(),
                 required String userId,
                 Value<String?> receiptPath = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<String> paymentMethod = const Value.absent(),
+                Value<String> expenseNumber = const Value.absent(),
                 Value<bool> isVoided = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
@@ -35712,6 +36418,8 @@ class $$ExpensesTableTableManager
                 userId: userId,
                 receiptPath: receiptPath,
                 notes: notes,
+                paymentMethod: paymentMethod,
+                expenseNumber: expenseNumber,
                 isVoided: isVoided,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -35737,6 +36445,297 @@ typedef $$ExpensesTableProcessedTableManager =
       $$ExpensesTableUpdateCompanionBuilder,
       (ExpenseRow, BaseReferences<_$AppDatabase, $ExpensesTable, ExpenseRow>),
       ExpenseRow,
+      PrefetchHooks Function()
+    >;
+typedef $$ExpenseCategoriesTableCreateCompanionBuilder =
+    ExpenseCategoriesCompanion Function({
+      required String id,
+      required String code,
+      required String name,
+      Value<String?> nameEn,
+      required String accountCode,
+      Value<bool> isActive,
+      Value<bool> isSystem,
+      required int createdAt,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ExpenseCategoriesTableUpdateCompanionBuilder =
+    ExpenseCategoriesCompanion Function({
+      Value<String> id,
+      Value<String> code,
+      Value<String> name,
+      Value<String?> nameEn,
+      Value<String> accountCode,
+      Value<bool> isActive,
+      Value<bool> isSystem,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$ExpenseCategoriesTableFilterComposer
+    extends Composer<_$AppDatabase, $ExpenseCategoriesTable> {
+  $$ExpenseCategoriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountCode => $composableBuilder(
+    column: $table.accountCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isSystem => $composableBuilder(
+    column: $table.isSystem,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ExpenseCategoriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ExpenseCategoriesTable> {
+  $$ExpenseCategoriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get code => $composableBuilder(
+    column: $table.code,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountCode => $composableBuilder(
+    column: $table.accountCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isSystem => $composableBuilder(
+    column: $table.isSystem,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ExpenseCategoriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ExpenseCategoriesTable> {
+  $$ExpenseCategoriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get code =>
+      $composableBuilder(column: $table.code, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get nameEn =>
+      $composableBuilder(column: $table.nameEn, builder: (column) => column);
+
+  GeneratedColumn<String> get accountCode => $composableBuilder(
+    column: $table.accountCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<bool> get isSystem =>
+      $composableBuilder(column: $table.isSystem, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$ExpenseCategoriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ExpenseCategoriesTable,
+          ExpenseCategoryRow,
+          $$ExpenseCategoriesTableFilterComposer,
+          $$ExpenseCategoriesTableOrderingComposer,
+          $$ExpenseCategoriesTableAnnotationComposer,
+          $$ExpenseCategoriesTableCreateCompanionBuilder,
+          $$ExpenseCategoriesTableUpdateCompanionBuilder,
+          (
+            ExpenseCategoryRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ExpenseCategoriesTable,
+              ExpenseCategoryRow
+            >,
+          ),
+          ExpenseCategoryRow,
+          PrefetchHooks Function()
+        > {
+  $$ExpenseCategoriesTableTableManager(
+    _$AppDatabase db,
+    $ExpenseCategoriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExpenseCategoriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExpenseCategoriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExpenseCategoriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> code = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> nameEn = const Value.absent(),
+                Value<String> accountCode = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<bool> isSystem = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ExpenseCategoriesCompanion(
+                id: id,
+                code: code,
+                name: name,
+                nameEn: nameEn,
+                accountCode: accountCode,
+                isActive: isActive,
+                isSystem: isSystem,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String code,
+                required String name,
+                Value<String?> nameEn = const Value.absent(),
+                required String accountCode,
+                Value<bool> isActive = const Value.absent(),
+                Value<bool> isSystem = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ExpenseCategoriesCompanion.insert(
+                id: id,
+                code: code,
+                name: name,
+                nameEn: nameEn,
+                accountCode: accountCode,
+                isActive: isActive,
+                isSystem: isSystem,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ExpenseCategoriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ExpenseCategoriesTable,
+      ExpenseCategoryRow,
+      $$ExpenseCategoriesTableFilterComposer,
+      $$ExpenseCategoriesTableOrderingComposer,
+      $$ExpenseCategoriesTableAnnotationComposer,
+      $$ExpenseCategoriesTableCreateCompanionBuilder,
+      $$ExpenseCategoriesTableUpdateCompanionBuilder,
+      (
+        ExpenseCategoryRow,
+        BaseReferences<
+          _$AppDatabase,
+          $ExpenseCategoriesTable,
+          ExpenseCategoryRow
+        >,
+      ),
+      ExpenseCategoryRow,
       PrefetchHooks Function()
     >;
 typedef $$CashboxTransactionsTableCreateCompanionBuilder =
@@ -39145,6 +40144,8 @@ class $AppDatabaseManager {
       $$ReturnItemsTableTableManager(_db, _db.returnItems);
   $$ExpensesTableTableManager get expenses =>
       $$ExpensesTableTableManager(_db, _db.expenses);
+  $$ExpenseCategoriesTableTableManager get expenseCategories =>
+      $$ExpenseCategoriesTableTableManager(_db, _db.expenseCategories);
   $$CashboxTransactionsTableTableManager get cashboxTransactions =>
       $$CashboxTransactionsTableTableManager(_db, _db.cashboxTransactions);
   $$AccountsTableTableManager get accounts =>

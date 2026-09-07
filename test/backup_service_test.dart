@@ -85,7 +85,7 @@ void main() {
     final verification = await service.verifyRestore(backupPath,
         expectedChecksum: checksum);
     expect(verification.ok, isTrue, reason: 'PRAGMA integrity_check == ok');
-    expect(verification.schemaVersion, 6,
+    expect(verification.schemaVersion, 7,
         reason: 'fresh DB is created at the current schema version');
     expect(verification.latestChecksumMatches, isTrue);
 

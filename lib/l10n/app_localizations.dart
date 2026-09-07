@@ -3823,6 +3823,408 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'السبب مطلوب'**
   String get cashboxReasonRequired;
+
+  /// No description provided for @navExpenses.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروفات'**
+  String get navExpenses;
+
+  /// No description provided for @expensesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المصروفات'**
+  String get expensesTitle;
+
+  /// No description provided for @expensesAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل مصروف'**
+  String get expensesAdd;
+
+  /// No description provided for @expensesAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل مصروف جديد'**
+  String get expensesAddTitle;
+
+  /// No description provided for @expensesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مصروفات مسجلة'**
+  String get expensesEmpty;
+
+  /// No description provided for @expensesTotalCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد السجلات'**
+  String get expensesTotalCount;
+
+  /// No description provided for @expensesPageTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي هذه الصفحة'**
+  String get expensesPageTotal;
+
+  /// No description provided for @expensesSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث بالوصف أو رقم المصروف'**
+  String get expensesSearchHint;
+
+  /// No description provided for @expensesFilterAllCategories.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الفئات'**
+  String get expensesFilterAllCategories;
+
+  /// No description provided for @expensesFilterAllPayments.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل طرق الدفع'**
+  String get expensesFilterAllPayments;
+
+  /// No description provided for @expensesFilterAllStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الحالات'**
+  String get expensesFilterAllStatus;
+
+  /// No description provided for @expensesFilterActiveOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'النشطة فقط'**
+  String get expensesFilterActiveOnly;
+
+  /// No description provided for @expensesFilterVoidedOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملغاة فقط'**
+  String get expensesFilterVoidedOnly;
+
+  /// No description provided for @expensesStatusActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'نشط'**
+  String get expensesStatusActive;
+
+  /// No description provided for @expensesStatusVoided.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغى'**
+  String get expensesStatusVoided;
+
+  /// No description provided for @expensesReadOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض فقط — لا تملك صلاحية لإدارة المصروفات'**
+  String get expensesReadOnly;
+
+  /// No description provided for @expensesColNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرقم'**
+  String get expensesColNumber;
+
+  /// No description provided for @expensesColDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get expensesColDate;
+
+  /// No description provided for @expensesColDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصف'**
+  String get expensesColDescription;
+
+  /// No description provided for @expensesColCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة'**
+  String get expensesColCategory;
+
+  /// No description provided for @expensesColPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدفع'**
+  String get expensesColPayment;
+
+  /// No description provided for @expensesColAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get expensesColAmount;
+
+  /// No description provided for @expensesColOperator.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستخدم'**
+  String get expensesColOperator;
+
+  /// No description provided for @expensesColStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get expensesColStatus;
+
+  /// No description provided for @expensesCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقدي'**
+  String get expensesCash;
+
+  /// No description provided for @expensesCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقة'**
+  String get expensesCard;
+
+  /// No description provided for @expensesShowReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الإيصال'**
+  String get expensesShowReceipt;
+
+  /// No description provided for @expensesAttachReceipt.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرفاق إيصال'**
+  String get expensesAttachReceipt;
+
+  /// No description provided for @expensesCancelAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء المصروف'**
+  String get expensesCancelAction;
+
+  /// No description provided for @expenseAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get expenseAmount;
+
+  /// No description provided for @expenseAmountRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل المبلغ'**
+  String get expenseAmountRequired;
+
+  /// No description provided for @expenseAmountInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ يجب أن يكون أكبر من صفر'**
+  String get expenseAmountInvalid;
+
+  /// No description provided for @expenseDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصف'**
+  String get expenseDescription;
+
+  /// No description provided for @expenseDescriptionRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل وصف المصروف'**
+  String get expenseDescriptionRequired;
+
+  /// No description provided for @expenseCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'فئة المصروف'**
+  String get expenseCategory;
+
+  /// No description provided for @expenseCategoryRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر فئة المصروف'**
+  String get expenseCategoryRequired;
+
+  /// No description provided for @expenseSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'المورد (اختياري)'**
+  String get expenseSupplier;
+
+  /// No description provided for @expenseNoSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون مورد'**
+  String get expenseNoSupplier;
+
+  /// No description provided for @expensePaymentNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'يُسجَّل الدفع هنا ويُعكس نقدًا أو بطاقة عند الإلغاء'**
+  String get expensePaymentNote;
+
+  /// No description provided for @expenseDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ المصروف'**
+  String get expenseDate;
+
+  /// No description provided for @expenseNotesOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات (اختياري)'**
+  String get expenseNotesOptional;
+
+  /// No description provided for @expenseReceiptUnreadable.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر عرض الملف — قد يكون تالفاً أو بصيغة غير مدعومة'**
+  String get expenseReceiptUnreadable;
+
+  /// No description provided for @expenseEditDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل المصروف'**
+  String get expenseEditDescription;
+
+  /// No description provided for @expenseAmountImmutableHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن تعديل المبلغ أو الفئة أو طريقة الدفع بعد القيد'**
+  String get expenseAmountImmutableHint;
+
+  /// No description provided for @expenseCancelTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء المصروف'**
+  String get expenseCancelTitle;
+
+  /// No description provided for @expenseCancelReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب الإلغاء'**
+  String get expenseCancelReason;
+
+  /// No description provided for @expenseCancelReasonRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل سبب الإلغاء'**
+  String get expenseCancelReasonRequired;
+
+  /// Cancel/void an expense — confirmation message
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم عكس مصروف {number} نقديًا ودفترًا بالكامل. لا يمكن التراجع عن هذا الإجراء.'**
+  String expenseCancelConfirmMessage(String number);
+
+  /// No description provided for @expenseCategoryEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الفئة'**
+  String get expenseCategoryEditTitle;
+
+  /// No description provided for @expenseCategoryAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'فئة مصروف جديدة'**
+  String get expenseCategoryAddTitle;
+
+  /// No description provided for @expenseCategoryCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الفئة'**
+  String get expenseCategoryCode;
+
+  /// No description provided for @expenseCategoryCodeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: utilities, transport…'**
+  String get expenseCategoryCodeHint;
+
+  /// No description provided for @expenseCategoryName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الفئة'**
+  String get expenseCategoryName;
+
+  /// No description provided for @expenseCategoryNameEn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم بالإنجليزية (اختياري)'**
+  String get expenseCategoryNameEn;
+
+  /// No description provided for @expenseCategoryAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب (بالدليل مثل 5100)'**
+  String get expenseCategoryAccount;
+
+  /// No description provided for @expenseCategorySystemBlock.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئات النظامية لا يمكن تعديلها أو تعطيلها'**
+  String get expenseCategorySystemBlock;
+
+  /// No description provided for @expenseCategoriesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'فئات المصروفات'**
+  String get expenseCategoriesTitle;
+
+  /// No description provided for @expenseNoCategories.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد فئات مصروفات'**
+  String get expenseNoCategories;
+
+  /// No description provided for @expenseCategoryAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'فئة جديدة'**
+  String get expenseCategoryAdd;
+
+  /// No description provided for @expenseCreatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تسجيل المصروف'**
+  String get expenseCreatedMessage;
+
+  /// No description provided for @expenseUpdatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث المصروف'**
+  String get expenseUpdatedMessage;
+
+  /// No description provided for @expenseCancelledMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم عكس المصروف'**
+  String get expenseCancelledMessage;
+
+  /// No description provided for @expenseReceiptAttached.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إرفاق الإيصال'**
+  String get expenseReceiptAttached;
+
+  /// No description provided for @expenseCategoryCreatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إنشاء الفئة'**
+  String get expenseCategoryCreatedMessage;
+
+  /// No description provided for @expenseCategoryUpdatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث الفئة'**
+  String get expenseCategoryUpdatedMessage;
+
+  /// No description provided for @expenseCategoryActivated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تفعيل الفئة'**
+  String get expenseCategoryActivated;
+
+  /// No description provided for @expenseCategoryDeactivated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تعطيل الفئة'**
+  String get expenseCategoryDeactivated;
 }
 
 class _AppLocalizationsDelegate

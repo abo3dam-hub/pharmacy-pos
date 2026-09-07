@@ -27,6 +27,8 @@ import '../../features/auth/data/daos/user_dao.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/customers/application/customers_controller.dart';
 import '../../features/customers/domain/usecases/customers_use_cases.dart';
+import '../../features/expenses/application/expense_controller.dart';
+import '../../features/expenses/domain/repositories/expense_repository.dart';
 import '../../features/inventory/application/inventory_controller.dart';
 import '../../features/inventory/application/master_data_controller.dart';
 import '../../features/inventory/domain/repositories/inventory_repository.dart';
@@ -83,6 +85,11 @@ final cashboxRepositoryProvider =
 final cashboxControllerProvider =
     StateNotifierProvider<CashboxController, CashboxViewState>(
         (ref) => getIt<CashboxController>());
+final expenseRepositoryProvider =
+    Provider<ExpenseRepository>((ref) => getIt<ExpenseRepository>());
+final expenseControllerProvider =
+    StateNotifierProvider<ExpenseController, ExpenseViewState>(
+        (ref) => getIt<ExpenseController>());
 
 final itemDaoProvider = Provider<ItemDao>((ref) => getIt<ItemDao>());
 final unitDaoProvider = Provider<UnitDao>((ref) => getIt<UnitDao>());
