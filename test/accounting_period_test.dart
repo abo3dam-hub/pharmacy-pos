@@ -8,7 +8,7 @@ import 'helpers.dart';
 /// Phase 10 Step 8 — Accounting period close feature: create/list/close with
 /// the forward-only closing rule (must close the newest open period first).
 void main() {
-  const service = AccountingPeriodService();
+  final service = AccountingPeriodService();
   late AppDatabase db;
 
   setUp(() {
@@ -25,6 +25,7 @@ void main() {
       name: '2026-01',
       startDate: DateTime(2026, 1, 1).millisecondsSinceEpoch,
       endDate: DateTime(2026, 1, 31).millisecondsSinceEpoch,
+      userId: 'user_admin',
     );
 
     final periods = await list();
@@ -41,6 +42,7 @@ void main() {
         name: 'bad',
         startDate: DateTime(2026, 2, 10).millisecondsSinceEpoch,
         endDate: DateTime(2026, 2, 10).millisecondsSinceEpoch,
+        userId: 'user_admin',
       ),
       throwsA(isA<ValidationException>()),
     );
@@ -52,12 +54,14 @@ void main() {
       name: '2026-01',
       startDate: DateTime(2026, 1, 1).millisecondsSinceEpoch,
       endDate: DateTime(2026, 1, 31).millisecondsSinceEpoch,
+      userId: 'user_admin',
     );
     final newer = await service.createPeriod(
       db,
       name: '2026-02',
       startDate: DateTime(2026, 2, 1).millisecondsSinceEpoch,
       endDate: DateTime(2026, 2, 28).millisecondsSinceEpoch,
+      userId: 'user_admin',
     );
 
     // Cannot close the older while the newer is still open.

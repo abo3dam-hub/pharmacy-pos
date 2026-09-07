@@ -59,10 +59,13 @@ class _PeriodsPageState extends ConsumerState<PeriodsPage> {
     );
     if (result == null) return;
     try {
+      final userId = ref.read(authControllerProvider).user?.id;
+      if (userId == null) return;
       await ref.read(periodsControllerProvider.notifier).create(
             name: result.name,
             startDate: result.startDate,
             endDate: result.endDate,
+            userId: userId,
           );
       _showSuccess(l10n.periodCreatedMessage);
       await _load();

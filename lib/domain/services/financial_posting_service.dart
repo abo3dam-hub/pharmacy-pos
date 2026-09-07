@@ -109,26 +109,20 @@ class FinancialPostingService {
     String? reversalOfEntryId,
   }) async {
     // Double-posting protection: for event-linked journals (sale/return/
-    // expense/customer_payment/adjustment), refuse to post the same
-    // refType+refId more than once for the ORIGINAL posting. Reversal entries
-    // (isReversal=true) are exempt — they are corrective entries for the same
-    // source event. Manual and opening-balance journals are also exempt.
-    if (refType != JournalReferenceType.manual &&
-        refType != JournalReferenceType.opening_balance &&
-        refId != null &&
-        !isReversal) {
-      final existing = await (db.select(db.journalEntries)
-            ..where((je) =>
-                je.refType.equalsValue(refType) &
-                je.refId.equals(refId) &
-                je.isReversal.equals(false)))
-          .get();
-      if (existing.isNotEmpty) {
-        throw InvalidOperationException(
-            'تم ترحيل قيد لهذا الحدث بالفعل — لا يمكن الترحيل مرتين '
-            '(النوع: $refType، المرجع: $refId)');
-      }
-    }
+    // expense/customer_payment/adjustment/cashbox), refuse to post the same
+    // refType+refId twice for the SAME kind of event. An original posting
+    // (isReversal=false) is blocked when an original for the reference already
+    // exists; a reversal (isReversal=true) is blocked when a reversal already
+    // exists — while the legitimate pair (one original + one reversal) stays
+    // allowed. Manual and opening-balance journals are exempt. Public posting
+    // entry-points also call this before any side effect so a rejected event
+    // never leaks drawer rows.
+    await _assertNoDuplicate(db, refType, refId, isReversal);
+
+    // Central closed-period enforcement (Phase 10.1): reject any posting whose
+    // entry date falls inside a closed accounting period. Resolved here, in the
+    // posting layer, so every financial path is protected — not just the UI.
+    await _enforcePeriodOpen(db, entryDate);
 
     if (lines.isEmpty) {
       throw ValidationException('قيد محاسبي بدون بنود');
@@ -217,6 +211,70 @@ class FinancialPostingService {
     }
   }
 
+  /// Central closed-period enforcement (Phase 10.1). Every posting resolves its
+  /// accounting period from [entryDate]; a closed matching period rejects the
+  /// posting. If no period covers the date, the existing project policy applies
+  /// (post freely — no period is auto-created). Periods are date-granular:
+  /// a period stored as start-of-day/end-of-day spans through the end of its
+  /// last day (`endDate + 1 day`), matching how the UI stores period bounds.
+  /// Reversals are new entries dated "now", so their own (open) period governs;
+  /// historical entries are never mutated.
+  Future<void> _enforcePeriodOpen(AppDatabase db, int entryDate) async {
+    const dayMs = 24 * 60 * 60 * 1000;
+    final candidates = (await db.select(db.accountingPeriods).get())
+        .where((p) => entryDate >= p.startDate && entryDate < p.endDate + dayMs)
+        .toList()
+      ..sort((a, b) => b.startDate.compareTo(a.startDate));
+    if (candidates.isEmpty) {
+      return;
+    }
+    if (candidates.first.isClosed) {
+      throw InvalidOperationException(
+          'الفترة المالية "${candidates.first.name}" مقفلة — لا يمكن '
+          'ترحيل قيد بتاريخ ${_fmtEntryDate(entryDate)}. افتح فترة جديدة أو '
+          'صحّح تاريخ القيد.');
+    }
+  }
+
+  static String _fmtEntryDate(int millis) {
+    final d = DateTime.fromMillisecondsSinceEpoch(millis);
+    final hh = d.hour.toString().padLeft(2, '0');
+    final mm = d.minute.toString().padLeft(2, '0');
+    return '${d.year}-${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')} $hh:$mm';
+  }
+
+  /// Double-posting protection, refactored so every public posting entry-point
+  /// can refuse a duplicate event *before* writing any side effect (drawer rows,
+  /// stock…) — not only when the journal row is about to be inserted. Manual and
+  /// opening-balance journals are exempt.
+  Future<void> _assertNoDuplicate(
+    AppDatabase db,
+    JournalReferenceType refType,
+    String? refId,
+    bool isReversal,
+  ) async {
+    if (refType == JournalReferenceType.manual ||
+        refType == JournalReferenceType.opening_balance ||
+        refId == null) {
+      return;
+    }
+    final existing = await (db.select(db.journalEntries)
+          ..where((je) =>
+              je.refType.equalsValue(refType) & je.refId.equals(refId)))
+        .get();
+    if (isReversal
+        ? existing.any((e) => e.isReversal)
+        : existing.any((e) => !e.isReversal)) {
+      throw InvalidOperationException(
+          isReversal
+              ? 'تم تسجيل قيد مرتجع/استرجاع لهذا الحدث بالفعل — '
+                  'لا يمكن الترحيل مرتين (النوع: $refType، المرجع: $refId)'
+              : 'تم ترحيل قيد لهذا الحدث بالفعل — لا يمكن الترحيل مرتين '
+                  '(النوع: $refType، المرجع: $refId)');
+    }
+  }
+
   // ── Business postings (called inside caller transactions) ─────────────
 
   /// Sale posting (§11): cash/card/credit settlement + COGS/inventory.
@@ -238,6 +296,8 @@ class FinancialPostingService {
       throw ValidationException(
           'تجاوز المبلغ المرتجع النقد المستلم (شبكة الصندوق سالبة)');
     }
+    // Refuse a repeated invoice before touching the drawer.
+    await _assertNoDuplicate(db, JournalReferenceType.sale, invoiceId, false);
     if (drawerNet > 0) {
       await postCashboxRow(
         db,
@@ -300,6 +360,9 @@ class FinancialPostingService {
       throw ValidationException(
           'تسوية المرتجع غير متوازنة: الإرجاع النقدي + الحسابات لا يغطي المبلغ');
     }
+    // Refuse a repeated return before touching the drawer.
+    await _assertNoDuplicate(
+        db, JournalReferenceType.return_invoice, returnId, false);
     if (refundCashMicros > 0) {
       await postCashboxRow(
         db,
@@ -350,6 +413,9 @@ class FinancialPostingService {
     required String userId,
     required int atMillis,
   }) async {
+    // Refuse a repeated payment event before touching the drawer.
+    await _assertNoDuplicate(
+        db, JournalReferenceType.customer_payment, paymentId, false);
     if (cashMicros > 0) {
       await postCashboxRow(
         db,
@@ -384,6 +450,12 @@ class FinancialPostingService {
   }
 
   /// Customer refund: Dr AR, Cr Cash/Bank (reduces their credit balance).
+  ///
+  /// Phase 10.1: a refund is a distinct financial event with explicit reversal
+  /// semantics — it keeps its own unique `paymentId` reference, is flagged
+  /// `isReversal: true` and links back to the most recent original payment
+  /// journal ([reversalOfEntryId]) so traceability and the double-posting guard
+  /// both hold. Never mutates the original entry.
   Future<void> postCustomerRefund(
     AppDatabase db, {
     required String paymentId,
@@ -393,7 +465,11 @@ class FinancialPostingService {
     required int cardMicros,
     required String userId,
     required int atMillis,
+    String? reversalOfEntryId,
   }) async {
+    // Refuse a repeated refund event before touching the drawer.
+    await _assertNoDuplicate(
+        db, JournalReferenceType.customer_payment, paymentId, true);
     if (cashMicros > 0) {
       await postCashboxRow(
         db,
@@ -412,6 +488,8 @@ class FinancialPostingService {
       refId: paymentId,
       entryDate: atMillis,
       description: 'استرداد مبلغ عميل $paymentNumber',
+      isReversal: true,
+      reversalOfEntryId: reversalOfEntryId,
       lines: [
         JournalLineDraft(
             accountCode: SystemAccountCode.accountsReceivable,
@@ -442,6 +520,8 @@ class FinancialPostingService {
     required String userId,
     required int atMillis,
   }) async {
+    // Refuse a repeated void before pulling money back out of the drawer.
+    await _assertNoDuplicate(db, JournalReferenceType.sale, invoiceId, true);
     if (drawerNetMicros > 0) {
       await postCashboxRow(
         db,
@@ -778,7 +858,7 @@ class FinancialPostingService {
       await postJournalEntry(
         db,
         refType: JournalReferenceType.adjustment,
-        refId: 'cash-adjust-$now',
+        refId: 'cash-adjust-${newId('adj')}',
         entryDate: now,
         description: 'تسوية الصندوق: ${reason.trim()}',
         lines: [

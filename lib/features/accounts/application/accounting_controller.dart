@@ -478,6 +478,7 @@ class PeriodsController extends StateNotifier<PeriodsViewState> {
     required String name,
     required int startDate,
     required int endDate,
+    required String userId,
   }) async {
     state = state.copyWith(busy: true, error: () => null);
     try {
@@ -486,6 +487,7 @@ class PeriodsController extends StateNotifier<PeriodsViewState> {
         name: name,
         startDate: startDate,
         endDate: endDate,
+        userId: userId,
       );
       state = state.copyWith(busy: false);
       return null;

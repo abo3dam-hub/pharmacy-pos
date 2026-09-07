@@ -220,7 +220,7 @@ void _registerPhase9(AppDatabase db) {
 void _registerPhase10(AppDatabase db) {
   getIt.registerLazySingleton<AccountingDao>(() => AccountingDao(db));
   getIt.registerLazySingleton<AccountingPeriodService>(
-      () => const AccountingPeriodService());
+      () => AccountingPeriodService());
   getIt.registerLazySingleton<CustomerPaymentService>(
       () => CustomerPaymentService());
   getIt.registerLazySingleton<AccountsController>(

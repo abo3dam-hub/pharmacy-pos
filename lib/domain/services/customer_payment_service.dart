@@ -169,6 +169,27 @@ class CustomerPaymentService {
           );
 
       if (isRefund) {
+        // Phase 10.1: link the refund back to the customer's most recent
+        // original payment journal (explicit reversal-of relationship). The
+        // refund stays a distinct event with its own reference.
+        String? reversalEntryId;
+        final originalPayment = await (db.select(db.customerPayments)
+              ..where((p) =>
+                  p.customerId.equals(customerId) &
+                  p.amountMicros.isBiggerThanValue(0))
+              ..orderBy([(o) => OrderingTerm.desc(o.createdAt)])
+              ..limit(1))
+            .getSingleOrNull();
+        if (originalPayment != null) {
+          final originalEntry = await (db.select(db.journalEntries)
+                ..where((je) =>
+                    je.refType.equalsValue(
+                        JournalReferenceType.customer_payment) &
+                    je.refId.equals(originalPayment.id) &
+                    je.isReversal.equals(false)))
+              .getSingleOrNull();
+          reversalEntryId = originalEntry?.id;
+        }
         await _financial.postCustomerRefund(
           db,
           paymentId: paymentId,
@@ -178,6 +199,7 @@ class CustomerPaymentService {
           cardMicros: cardMicros,
           userId: userId,
           atMillis: now,
+          reversalOfEntryId: reversalEntryId,
         );
       } else {
         await _financial.postCustomerPayment(
