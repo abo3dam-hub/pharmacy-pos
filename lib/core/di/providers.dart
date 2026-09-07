@@ -14,11 +14,13 @@ import '../../data/daos/unit_dao.dart';
 import '../../domain/services/audit_service.dart';
 import '../../domain/services/base_unit_converter.dart';
 import '../../domain/services/bonus_calculator.dart';
+import '../../domain/services/cashbox_service.dart';
 import '../../domain/services/permission_service.dart';
 import '../../domain/services/purchase_service.dart';
 import '../../domain/services/return_service.dart';
 import '../../domain/services/sale_service.dart';
 import '../../domain/services/stock_service.dart';
+import '../../features/accounts/application/cashbox_controller.dart';
 import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/application/users_controller.dart';
 import '../../features/auth/data/daos/user_dao.dart';
@@ -40,6 +42,7 @@ import '../../features/sales/presentation/controllers/pos_workspace_controller.d
 import '../../features/sales/presentation/controllers/pos_workspace_state.dart';
 import '../../features/suppliers/application/suppliers_controller.dart';
 import '../../features/suppliers/domain/usecases/suppliers_use_cases.dart';
+import '../../features/accounts/domain/repositories/cashbox_repository.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/database/settings_dao.dart';
 import 'injection.dart';
@@ -73,6 +76,13 @@ final purchaseServiceProvider =
     Provider<PurchaseService>((ref) => getIt<PurchaseService>());
 final returnServiceProvider =
     Provider<ReturnService>((ref) => getIt<ReturnService>());
+final cashboxServiceProvider =
+    Provider<CashboxService>((ref) => getIt<CashboxService>());
+final cashboxRepositoryProvider =
+    Provider<CashboxRepository>((ref) => getIt<CashboxRepository>());
+final cashboxControllerProvider =
+    StateNotifierProvider<CashboxController, CashboxViewState>(
+        (ref) => getIt<CashboxController>());
 
 final itemDaoProvider = Provider<ItemDao>((ref) => getIt<ItemDao>());
 final unitDaoProvider = Provider<UnitDao>((ref) => getIt<UnitDao>());

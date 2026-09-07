@@ -14,11 +14,15 @@ import '../../data/daos/unit_dao.dart';
 import '../../domain/services/audit_service.dart';
 import '../../domain/services/base_unit_converter.dart';
 import '../../domain/services/bonus_calculator.dart';
+import '../../domain/services/cashbox_service.dart';
 import '../../domain/services/permission_service.dart';
 import '../../domain/services/purchase_service.dart';
 import '../../domain/services/return_service.dart';
 import '../../domain/services/sale_service.dart';
 import '../../domain/services/stock_service.dart';
+import '../../features/accounts/application/cashbox_controller.dart';
+import '../../features/accounts/data/cashbox_repository_impl.dart';
+import '../../features/accounts/domain/repositories/cashbox_repository.dart';
 import '../../features/auth/application/auth_controller.dart';
 import '../../features/sales/data/z_report_dao.dart';
 import '../../shared/database/settings_dao.dart';
@@ -119,6 +123,7 @@ void setupDependencies() {
   _registerPhase4(db);
   _registerPhase5(db);
   _registerPhase7(db);
+  _registerPhase8(db);
 }
 
 /// Phase 7 — POS workspace data layer over the existing transactional engine.
@@ -133,6 +138,15 @@ void _registerPhase7(AppDatabase db) {
         getIt<SaleService>(),
         getIt<ReturnService>(),
       ));
+}
+
+/// Phase 8 — Cash Box (الصندوق) workflow over the existing financial engine.
+void _registerPhase8(AppDatabase db) {
+  getIt.registerLazySingleton<CashboxService>(() => const CashboxService());
+  getIt.registerLazySingleton<CashboxRepository>(
+      () => CashboxRepositoryImpl(db, getIt<CashboxService>()));
+  getIt.registerLazySingleton<CashboxController>(
+      () => CashboxController(getIt<CashboxRepository>()));
 }
 
 /// Phase 5 — Customers & Prescriptions graph (customer master, derived

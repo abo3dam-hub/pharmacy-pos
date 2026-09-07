@@ -369,6 +369,11 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
       state = state.copyWith(errorMessage: 'سلة البيع فارغة');
       return null;
     }
+    if (state.paymentMethod == PosPaymentMethod.credit &&
+        state.customer == null) {
+      state = state.copyWith(errorMessage: 'البيع الآجل يتطلب تحديد عميل');
+      return null;
+    }
     try {
       final totals = _totalsBuilder.totals(state.cart);
       final payment = _paymentCalculator.calculate(
@@ -388,11 +393,16 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
 
       // Payment split: for cash the received amount (incl. overpayment) is the
       // cash component; card settles the paid amount on Bank; mixed keeps the
-      // two entered components (drawerNet = cash − change in the engine).
+      // two entered components (drawerNet = cash − change in the engine);
+      // credit forwards the down-payment components (the rest opens the A/R).
       final (int?, int?) split = switch (state.paymentMethod) {
         PosPaymentMethod.cash => (payment.paidMicros, 0),
         PosPaymentMethod.card => (0, payment.paidMicros),
         PosPaymentMethod.mixed => (
+            state.cashReceivedMicros,
+            state.cardReceivedMicros,
+          ),
+        PosPaymentMethod.credit => (
             state.cashReceivedMicros,
             state.cardReceivedMicros,
           ),

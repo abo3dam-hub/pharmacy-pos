@@ -511,6 +511,57 @@ void main() {
       expect(r.remainingMicros, 40000);
     });
 
+    test('credit with a partial down payment: paid, remaining, no change',
+        () {
+      final r = pc.calculate(
+        totalMicros: 100000,
+        method: PosPaymentMethod.credit,
+        cashReceivedMicros: 20000,
+        cardAmountMicros: 0,
+      );
+      expect(r.isValid, isTrue);
+      expect(r.paidMicros, 20000);
+      expect(r.remainingMicros, 80000);
+      expect(r.changeMicros, 0);
+      expect(r.fullyPaid, isFalse);
+    });
+
+    test('credit with cash + card down payment', () {
+      final r = pc.calculate(
+        totalMicros: 100000,
+        method: PosPaymentMethod.credit,
+        cashReceivedMicros: 10000,
+        cardAmountMicros: 30000,
+      );
+      expect(r.isValid, isTrue);
+      expect(r.paidMicros, 40000);
+      expect(r.remainingMicros, 60000);
+    });
+
+    test('credit covering the full total is invalid (must leave a balance)',
+        () {
+      final r = pc.calculate(
+        totalMicros: 100000,
+        method: PosPaymentMethod.credit,
+        cashReceivedMicros: 100000,
+        cardAmountMicros: 0,
+      );
+      expect(r.isValid, isFalse);
+      expect(r.error, isNotNull);
+    });
+
+    test('credit with no down payment is valid, fully on account', () {
+      final r = pc.calculate(
+        totalMicros: 100000,
+        method: PosPaymentMethod.credit,
+        cashReceivedMicros: 0,
+        cardAmountMicros: 0,
+      );
+      expect(r.isValid, isTrue);
+      expect(r.remainingMicros, 100000);
+      expect(r.fullyPaid, isFalse);
+    });
+
     test('negative total throws', () {
       expect(
         () => pc.calculate(
@@ -775,6 +826,61 @@ void main() {
       expect(ctrl.currentState.cart, isEmpty);
       expect(fake.lastCheckout, isNotNull);
       expect(fake.lastCheckout!.invoiceNumber, 'SI-TEST');
+    });
+
+    test('credit checkout without a customer → error, cart untouched',
+        () async {
+      final fake = _FakeSalesRepository();
+      final ctrl = _controller(fake);
+      await ctrl.addToCart(_makeOtcItem(), quantity: 5);
+      ctrl.openPayment();
+      ctrl.updatePaymentInputs(
+        method: PosPaymentMethod.credit,
+        cashReceivedMicros: 100000,
+        cardReceivedMicros: 0,
+      );
+      final outcome = await ctrl.checkout(
+        actingUserId: 'user_admin',
+        permissions: {Perm.sell},
+      );
+      expect(outcome, isNull);
+      expect(ctrl.currentState.errorMessage, contains('يتطلب تحديد عميل'));
+      expect(ctrl.currentState.cart, hasLength(1));
+      expect(fake.lastCheckout, isNull);
+    });
+
+    test('credit checkout with a customer forwards down-payment components',
+        () async {
+      final fake = _FakeSalesRepository();
+      final ctrl = _controller(fake);
+      await ctrl.addToCart(_makeOtcItem(), quantity: 5); // total 275000
+      await ctrl.selectCustomer(const PosCustomer(
+        id: 'cus_credit',
+        name: 'عميل آجل',
+        hasAccount: true,
+        isActive: true,
+        balanceMicros: 0,
+        creditLimitMicros: 2000000,
+      ));
+      ctrl.openPayment();
+      ctrl.updatePaymentInputs(
+        method: PosPaymentMethod.credit,
+        cashReceivedMicros: 100000,
+        cardReceivedMicros: 25000,
+      );
+      final outcome = await ctrl.checkout(
+        actingUserId: 'user_admin',
+        permissions: {Perm.sell},
+      );
+      expect(outcome, isNotNull);
+      expect(ctrl.currentState.cart, isEmpty);
+      expect(fake.lastCheckout, isNotNull);
+      expect(fake.lastCheckout!.paymentMethod, PosPaymentMethod.credit);
+      expect(fake.lastCheckout!.customerId, 'cus_credit');
+      // The down-payment split is forwarded; the remainder opens the A/R.
+      expect(fake.lastCheckout!.cashMicros, 100000);
+      expect(fake.lastCheckout!.cardMicros, 25000);
+      expect(fake.lastCheckout!.paidMicros, 125000);
     });
 
     test('holdBill: cart moved to heldBills, cart cleared', () async {

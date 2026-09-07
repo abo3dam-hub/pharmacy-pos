@@ -76,6 +76,7 @@ class SalesRepositoryImpl implements SalesRepository {
           hasAccount: c.hasAccount,
           isActive: c.isActive,
           balanceMicros: c.balanceMicros,
+          creditLimitMicros: c.creditLimitMicros,
         ),
     ];
   }
@@ -149,6 +150,7 @@ class SalesRepositoryImpl implements SalesRepository {
         PosPaymentMethod.cash => PaymentMethod.cash,
         PosPaymentMethod.card => PaymentMethod.card,
         PosPaymentMethod.mixed => PaymentMethod.mixed,
+        PosPaymentMethod.credit => PaymentMethod.credit,
       };
 
   @override

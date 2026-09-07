@@ -1,10 +1,10 @@
 import '../../../../core/errors/exceptions.dart';
 
 /// POS payment methods surfaced by the workspace (§5 payment panel). The
-/// business engine additionally accepts the `credit` enum value, but settled
-/// sales require `paidMicros >= totalMicros` (approved Phase 6 rule), so the
-/// POS workspace exposes immediate-settlement methods only.
-enum PosPaymentMethod { cash, card, mixed }
+/// business engine accepts the `credit` enum value and enforces the account
+/// credit-limit rule (§11): the workspace exposes it since Phase 8 credit
+/// sales, gated on a selected account customer in the payment sheet.
+enum PosPaymentMethod { cash, card, mixed, credit }
 
 /// Validated payment inputs + computed change/remaining, all integer micro-units.
 class PosPaymentResult {
@@ -28,14 +28,18 @@ class PosPaymentResult {
       error == null && paidMicros >= totalMicros && remainingMicros == 0;
 }
 
-/// Validates a cash/card/mixed payment against the invoice total (§11).
+/// Validates a cash/card/mixed/credit payment against the invoice total (§11).
 ///
 /// Rules:
 ///  * no negative amounts anywhere;
 ///  * cash: received must cover the total (overpayment → change);
 ///  * card: amount must equal the total exactly;
 ///  * mixed: both components must be present (≥ 0) and their sum must cover
-///    the total; change = sum − total.
+///    the total; change = sum − total;
+///  * credit: the customer pays a down payment (cash + card ≤ total) and the
+///    *remaining* becomes the open receivable. Requires a receivables customer
+///    (checked by the sale engine) — the entered components must leave a
+///    positive balance, change is always 0.
 class PaymentCalculator {
   const PaymentCalculator();
 
@@ -54,6 +58,7 @@ class PaymentCalculator {
 
     final int paidMicros;
     int? changeMicros;
+    int? remainingMicros;
     String? error;
 
     switch (method) {
@@ -81,9 +86,19 @@ class PaymentCalculator {
         } else {
           changeMicros = paidMicros - totalMicros;
         }
+      case PosPaymentMethod.credit:
+        paidMicros = cashReceivedMicros + cardAmountMicros;
+        final due = totalMicros - paidMicros;
+        remainingMicros = due;
+        if (due <= 0) {
+          error = 'البيع الآجل يجب أن يترك مبلغاً مستحقاً على العميل '
+              '(دفعة قدرها الإجمالي تُدفع عند الاستلام فقط)';
+        } else {
+          changeMicros = 0;
+        }
     }
 
-    final remainingMicros = error == null ? 0 : (totalMicros - paidMicros) > 0
+    remainingMicros ??= error == null ? 0 : (totalMicros - paidMicros) > 0
         ? totalMicros - paidMicros
         : 0;
 

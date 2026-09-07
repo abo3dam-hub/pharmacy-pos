@@ -1052,7 +1052,11 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
       cashReceivedMicros: _cashMicros ?? 0,
       cardAmountMicros: _cardMicros ?? 0,
     );
-    final canSubmit = payment.isValid && payment.fullyPaid;
+    final isCredit = _method == PosPaymentMethod.credit;
+    final customer = widget.state.customer;
+    final creditBlockedWithoutCustomer = isCredit && customer == null;
+    final canSubmit = payment.isValid &&
+        (isCredit ? customer != null : payment.fullyPaid);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -1080,21 +1084,26 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
             ),
           const SizedBox(height: AppSpacing.m),
           SegmentedButton<PosPaymentMethod>(
-            segments: const [
-              ButtonSegment(
+            segments: [
+              const ButtonSegment(
                 value: PosPaymentMethod.cash,
                 label: Text('نقدي'),
                 icon: Icon(Icons.payments_outlined),
               ),
-              ButtonSegment(
+              const ButtonSegment(
                 value: PosPaymentMethod.card,
                 label: Text('بطاقة'),
                 icon: Icon(Icons.credit_card),
               ),
-              ButtonSegment(
+              const ButtonSegment(
                 value: PosPaymentMethod.mixed,
                 label: Text('مختلط'),
                 icon: Icon(Icons.account_balance_wallet_outlined),
+              ),
+              ButtonSegment(
+                value: PosPaymentMethod.credit,
+                label: Text(l10n.posCreditLabel),
+                icon: const Icon(Icons.credit_score),
               ),
             ],
             selected: {_method},
@@ -1105,36 +1114,71 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
           ),
           const SizedBox(height: AppSpacing.m),
           if (_method == PosPaymentMethod.cash ||
-              _method == PosPaymentMethod.mixed)
+              _method == PosPaymentMethod.mixed ||
+              isCredit)
             TextField(
               controller: _cash,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: l10n.posCashReceived,
+                labelText: isCredit
+                    ? l10n.posCreditDownCash
+                    : l10n.posCashReceived,
                 border: const OutlineInputBorder(),
                 isDense: true,
               ),
               onChanged: (_) => _reload(),
             ),
           if (_method == PosPaymentMethod.card ||
-              _method == PosPaymentMethod.mixed) ...[
+              _method == PosPaymentMethod.mixed ||
+              isCredit) ...[
             const SizedBox(height: AppSpacing.s),
             TextField(
               controller: _card,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
-                labelText: l10n.posCardAmount,
+                labelText: isCredit ? l10n.posCreditDownCard : l10n.posCardAmount,
                 border: const OutlineInputBorder(),
                 isDense: true,
               ),
               onChanged: (_) => _reload(),
             ),
           ],
+          if (isCredit) ...[
+            const SizedBox(height: AppSpacing.m),
+            if (creditBlockedWithoutCustomer)
+              Text(
+                l10n.posCreditCustomerRequired,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                textAlign: TextAlign.center,
+              )
+            else ...[
+              Text(
+                '${l10n.posCreditRemaining}: '
+                '${Money.fromUnits(payment.remainingMicros).formatArabicDigits()}',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.s),
+              Text(
+                '${l10n.posCreditOutstanding}: '
+                '${Money.fromUnits(customer!.balanceMicros).formatArabicDigits()}'
+                '${customer.availableCreditMicros != null ? ' · ${l10n.posCreditAvailable}: ${Money.fromUnits(customer.availableCreditMicros!).formatArabicDigits()}' : ''}'
+                '${customer.availableCreditMicros != null ? ' · ' : ''}'
+                '${customer.creditLimitMicros <= 0 ? l10n.posCreditUnlimited : '${l10n.posCreditLimit}: ${Money.fromUnits(customer.creditLimitMicros).formatArabicDigits()}'}',
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
           if (!canSubmit) ...[
             const SizedBox(height: AppSpacing.m),
             Text(
-              _error ?? (payment.error ?? l10n.posInvalidPayment),
+              _error ??
+                  (creditBlockedWithoutCustomer
+                      ? l10n.posCreditCustomerRequired
+                      : (payment.error ?? l10n.posInvalidPayment)),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
             ),

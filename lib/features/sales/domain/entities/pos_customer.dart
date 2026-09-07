@@ -8,6 +8,7 @@ class PosCustomer {
     required this.hasAccount,
     required this.isActive,
     required this.balanceMicros,
+    this.creditLimitMicros = 0,
   });
 
   final String id;
@@ -16,6 +17,13 @@ class PosCustomer {
   final bool hasAccount;
   final bool isActive;
   final int balanceMicros;
+
+  /// Account credit ceiling in micros; 0 = unlimited (§4.11, §11).
+  final int creditLimitMicros;
+
+  /// Available credit headroom (limit − current balance) when a limit is set.
+  int? get availableCreditMicros =>
+      creditLimitMicros <= 0 ? null : creditLimitMicros - balanceMicros;
 }
 
 /// One undispensed/partially dispensed prescription for the customer.

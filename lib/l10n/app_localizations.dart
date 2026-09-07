@@ -3433,6 +3433,396 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'متاح'**
   String get posAvailableStock;
+
+  /// No description provided for @posCreditLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'آجل'**
+  String get posCreditLabel;
+
+  /// No description provided for @posCreditDownCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعة نقدية'**
+  String get posCreditDownCash;
+
+  /// No description provided for @posCreditDownCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعة بطاقة'**
+  String get posCreditDownCard;
+
+  /// No description provided for @posCreditRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستحق على العميل'**
+  String get posCreditRemaining;
+
+  /// No description provided for @posCreditOutstanding.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الحالي'**
+  String get posCreditOutstanding;
+
+  /// No description provided for @posCreditAvailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتاح قبل السقف'**
+  String get posCreditAvailable;
+
+  /// No description provided for @posCreditLimit.
+  ///
+  /// In ar, this message translates to:
+  /// **'السقف الائتماني'**
+  String get posCreditLimit;
+
+  /// No description provided for @posCreditUnlimited.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون سقف'**
+  String get posCreditUnlimited;
+
+  /// No description provided for @posCreditCustomerRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيع الآجل يتطلب تحديد عميل له حساب آجل'**
+  String get posCreditCustomerRequired;
+
+  /// No description provided for @cashboxTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصندوق'**
+  String get cashboxTitle;
+
+  /// No description provided for @cashboxReadOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'وضع العرض فقط — تحتاج صلاحية «التعامل مع الصندوق» لإجراء العمليات'**
+  String get cashboxReadOnly;
+
+  /// No description provided for @cashboxActionOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح الصندوق'**
+  String get cashboxActionOpen;
+
+  /// No description provided for @cashboxActionClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق الصندوق'**
+  String get cashboxActionClose;
+
+  /// No description provided for @cashboxActionDeposit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيداع نقدي'**
+  String get cashboxActionDeposit;
+
+  /// No description provided for @cashboxActionWithdraw.
+  ///
+  /// In ar, this message translates to:
+  /// **'سحب نقدي'**
+  String get cashboxActionWithdraw;
+
+  /// No description provided for @cashboxActionAdjust.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسوية الصندوق'**
+  String get cashboxActionAdjust;
+
+  /// No description provided for @cashboxSessionOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجلسة مفتوحة'**
+  String get cashboxSessionOpen;
+
+  /// No description provided for @cashboxSessionClosed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجلسة مقفلة'**
+  String get cashboxSessionClosed;
+
+  /// No description provided for @cashboxOpenedBy.
+  ///
+  /// In ar, this message translates to:
+  /// **'فُتح بواسطة'**
+  String get cashboxOpenedBy;
+
+  /// No description provided for @cashboxOpenedAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'فُتح في'**
+  String get cashboxOpenedAt;
+
+  /// No description provided for @cashboxClosedBy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُغلق بواسطة'**
+  String get cashboxClosedBy;
+
+  /// No description provided for @cashboxClosedAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُغلق في'**
+  String get cashboxClosedAt;
+
+  /// No description provided for @cashboxRunning.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الجاري'**
+  String get cashboxRunning;
+
+  /// No description provided for @cashboxExpected.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد المتوقع'**
+  String get cashboxExpected;
+
+  /// No description provided for @cashboxDeclared.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد المعلن'**
+  String get cashboxDeclared;
+
+  /// No description provided for @cashboxSurplus.
+  ///
+  /// In ar, this message translates to:
+  /// **'زيادة'**
+  String get cashboxSurplus;
+
+  /// No description provided for @cashboxShortage.
+  ///
+  /// In ar, this message translates to:
+  /// **'عجز'**
+  String get cashboxShortage;
+
+  /// No description provided for @cashboxMovementsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل الحركة'**
+  String get cashboxMovementsTitle;
+
+  /// No description provided for @cashboxTypeOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتتاح'**
+  String get cashboxTypeOpen;
+
+  /// No description provided for @cashboxTypeClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get cashboxTypeClose;
+
+  /// No description provided for @cashboxTypeSale.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبيعات نقدية'**
+  String get cashboxTypeSale;
+
+  /// No description provided for @cashboxTypeRefund.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبالغ مستردة'**
+  String get cashboxTypeRefund;
+
+  /// No description provided for @cashboxTypePayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقبوضات عملاء'**
+  String get cashboxTypePayment;
+
+  /// No description provided for @cashboxTypeDeposit.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيداعات'**
+  String get cashboxTypeDeposit;
+
+  /// No description provided for @cashboxTypeWithdraw.
+  ///
+  /// In ar, this message translates to:
+  /// **'سحوبات'**
+  String get cashboxTypeWithdraw;
+
+  /// No description provided for @cashboxTypeExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروفات'**
+  String get cashboxTypeExpense;
+
+  /// No description provided for @cashboxTypeAdjustment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسويات'**
+  String get cashboxTypeAdjustment;
+
+  /// No description provided for @cashboxInflows.
+  ///
+  /// In ar, this message translates to:
+  /// **'المقبوضات'**
+  String get cashboxInflows;
+
+  /// No description provided for @cashboxOutflows.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدفوعات'**
+  String get cashboxOutflows;
+
+  /// No description provided for @cashboxNetMoves.
+  ///
+  /// In ar, this message translates to:
+  /// **'صافي الحركة'**
+  String get cashboxNetMoves;
+
+  /// No description provided for @cashboxHistoryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل حركة الصندوق'**
+  String get cashboxHistoryTitle;
+
+  /// No description provided for @cashboxHistoryEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد حركات مسجلة'**
+  String get cashboxHistoryEmpty;
+
+  /// No description provided for @cashboxFilterAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الأنواع'**
+  String get cashboxFilterAll;
+
+  /// No description provided for @cashboxColTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت'**
+  String get cashboxColTime;
+
+  /// No description provided for @cashboxColType.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع'**
+  String get cashboxColType;
+
+  /// No description provided for @cashboxColAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get cashboxColAmount;
+
+  /// No description provided for @cashboxColRemaining.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد'**
+  String get cashboxColRemaining;
+
+  /// No description provided for @cashboxColOperator.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموظف'**
+  String get cashboxColOperator;
+
+  /// No description provided for @cashboxColNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة'**
+  String get cashboxColNote;
+
+  /// No description provided for @cashboxNotOpened.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصندوق غير مفتوح'**
+  String get cashboxNotOpened;
+
+  /// No description provided for @cashboxNotOpenedHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الصندوق لبدء نوبة العمل وتسجيل الحركات'**
+  String get cashboxNotOpenedHint;
+
+  /// No description provided for @cashboxNotOpenedReadOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصندوق غير مفتوح — راجع مدير الصيدلية لفتحه'**
+  String get cashboxNotOpenedReadOnly;
+
+  /// No description provided for @cashboxOpeningLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الافتتاحي'**
+  String get cashboxOpeningLabel;
+
+  /// No description provided for @cashboxNoteOptional.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة (اختياري)'**
+  String get cashboxNoteOptional;
+
+  /// No description provided for @cashboxDeclaredLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد النقدي المعدود عند الإغلاق'**
+  String get cashboxDeclaredLabel;
+
+  /// No description provided for @cashboxReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'السبب'**
+  String get cashboxReason;
+
+  /// No description provided for @cashboxAmountLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get cashboxAmountLabel;
+
+  /// No description provided for @cashboxAdjustHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ الموجب إيداع، والسالب سحب'**
+  String get cashboxAdjustHint;
+
+  /// No description provided for @cashboxOpeningRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل الرصيد الافتتاحي'**
+  String get cashboxOpeningRequired;
+
+  /// No description provided for @cashboxOpeningInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيمة افتتاح غير صالحة'**
+  String get cashboxOpeningInvalid;
+
+  /// No description provided for @cashboxClosingRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل الرصيد المعدود عند الإغلاق'**
+  String get cashboxClosingRequired;
+
+  /// No description provided for @cashboxClosingInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيمة إغلاق غير صالحة'**
+  String get cashboxClosingInvalid;
+
+  /// No description provided for @cashboxMoveRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل المبلغ'**
+  String get cashboxMoveRequired;
+
+  /// No description provided for @cashboxMoveInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ يجب أن يكون أكبر من صفر'**
+  String get cashboxMoveInvalid;
+
+  /// No description provided for @cashboxReasonRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'السبب مطلوب'**
+  String get cashboxReasonRequired;
 }
 
 class _AppLocalizationsDelegate

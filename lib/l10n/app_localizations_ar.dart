@@ -1712,4 +1712,203 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get posAvailableStock => 'متاح';
+
+  @override
+  String get posCreditLabel => 'آجل';
+
+  @override
+  String get posCreditDownCash => 'دفعة نقدية';
+
+  @override
+  String get posCreditDownCard => 'دفعة بطاقة';
+
+  @override
+  String get posCreditRemaining => 'مستحق على العميل';
+
+  @override
+  String get posCreditOutstanding => 'الرصيد الحالي';
+
+  @override
+  String get posCreditAvailable => 'المتاح قبل السقف';
+
+  @override
+  String get posCreditLimit => 'السقف الائتماني';
+
+  @override
+  String get posCreditUnlimited => 'بدون سقف';
+
+  @override
+  String get posCreditCustomerRequired =>
+      'البيع الآجل يتطلب تحديد عميل له حساب آجل';
+
+  @override
+  String get cashboxTitle => 'الصندوق';
+
+  @override
+  String get cashboxReadOnly =>
+      'وضع العرض فقط — تحتاج صلاحية «التعامل مع الصندوق» لإجراء العمليات';
+
+  @override
+  String get cashboxActionOpen => 'فتح الصندوق';
+
+  @override
+  String get cashboxActionClose => 'إغلاق الصندوق';
+
+  @override
+  String get cashboxActionDeposit => 'إيداع نقدي';
+
+  @override
+  String get cashboxActionWithdraw => 'سحب نقدي';
+
+  @override
+  String get cashboxActionAdjust => 'تسوية الصندوق';
+
+  @override
+  String get cashboxSessionOpen => 'الجلسة مفتوحة';
+
+  @override
+  String get cashboxSessionClosed => 'الجلسة مقفلة';
+
+  @override
+  String get cashboxOpenedBy => 'فُتح بواسطة';
+
+  @override
+  String get cashboxOpenedAt => 'فُتح في';
+
+  @override
+  String get cashboxClosedBy => 'أُغلق بواسطة';
+
+  @override
+  String get cashboxClosedAt => 'أُغلق في';
+
+  @override
+  String get cashboxRunning => 'الرصيد الجاري';
+
+  @override
+  String get cashboxExpected => 'الرصيد المتوقع';
+
+  @override
+  String get cashboxDeclared => 'الرصيد المعلن';
+
+  @override
+  String get cashboxSurplus => 'زيادة';
+
+  @override
+  String get cashboxShortage => 'عجز';
+
+  @override
+  String get cashboxMovementsTitle => 'تفاصيل الحركة';
+
+  @override
+  String get cashboxTypeOpen => 'افتتاح';
+
+  @override
+  String get cashboxTypeClose => 'إغلاق';
+
+  @override
+  String get cashboxTypeSale => 'مبيعات نقدية';
+
+  @override
+  String get cashboxTypeRefund => 'مبالغ مستردة';
+
+  @override
+  String get cashboxTypePayment => 'مقبوضات عملاء';
+
+  @override
+  String get cashboxTypeDeposit => 'إيداعات';
+
+  @override
+  String get cashboxTypeWithdraw => 'سحوبات';
+
+  @override
+  String get cashboxTypeExpense => 'مصروفات';
+
+  @override
+  String get cashboxTypeAdjustment => 'تسويات';
+
+  @override
+  String get cashboxInflows => 'المقبوضات';
+
+  @override
+  String get cashboxOutflows => 'المدفوعات';
+
+  @override
+  String get cashboxNetMoves => 'صافي الحركة';
+
+  @override
+  String get cashboxHistoryTitle => 'سجل حركة الصندوق';
+
+  @override
+  String get cashboxHistoryEmpty => 'لا توجد حركات مسجلة';
+
+  @override
+  String get cashboxFilterAll => 'كل الأنواع';
+
+  @override
+  String get cashboxColTime => 'الوقت';
+
+  @override
+  String get cashboxColType => 'النوع';
+
+  @override
+  String get cashboxColAmount => 'المبلغ';
+
+  @override
+  String get cashboxColRemaining => 'الرصيد';
+
+  @override
+  String get cashboxColOperator => 'الموظف';
+
+  @override
+  String get cashboxColNote => 'ملاحظة';
+
+  @override
+  String get cashboxNotOpened => 'الصندوق غير مفتوح';
+
+  @override
+  String get cashboxNotOpenedHint =>
+      'افتح الصندوق لبدء نوبة العمل وتسجيل الحركات';
+
+  @override
+  String get cashboxNotOpenedReadOnly =>
+      'الصندوق غير مفتوح — راجع مدير الصيدلية لفتحه';
+
+  @override
+  String get cashboxOpeningLabel => 'الرصيد الافتتاحي';
+
+  @override
+  String get cashboxNoteOptional => 'ملاحظة (اختياري)';
+
+  @override
+  String get cashboxDeclaredLabel => 'الرصيد النقدي المعدود عند الإغلاق';
+
+  @override
+  String get cashboxReason => 'السبب';
+
+  @override
+  String get cashboxAmountLabel => 'المبلغ';
+
+  @override
+  String get cashboxAdjustHint => 'المبلغ الموجب إيداع، والسالب سحب';
+
+  @override
+  String get cashboxOpeningRequired => 'أدخل الرصيد الافتتاحي';
+
+  @override
+  String get cashboxOpeningInvalid => 'قيمة افتتاح غير صالحة';
+
+  @override
+  String get cashboxClosingRequired => 'أدخل الرصيد المعدود عند الإغلاق';
+
+  @override
+  String get cashboxClosingInvalid => 'قيمة إغلاق غير صالحة';
+
+  @override
+  String get cashboxMoveRequired => 'أدخل المبلغ';
+
+  @override
+  String get cashboxMoveInvalid => 'المبلغ يجب أن يكون أكبر من صفر';
+
+  @override
+  String get cashboxReasonRequired => 'السبب مطلوب';
 }

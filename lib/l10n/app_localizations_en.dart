@@ -1717,4 +1717,204 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get posAvailableStock => 'Available';
+
+  @override
+  String get posCreditLabel => 'Credit';
+
+  @override
+  String get posCreditDownCash => 'Cash down payment';
+
+  @override
+  String get posCreditDownCard => 'Card down payment';
+
+  @override
+  String get posCreditRemaining => 'Due from customer';
+
+  @override
+  String get posCreditOutstanding => 'Current balance';
+
+  @override
+  String get posCreditAvailable => 'Available before limit';
+
+  @override
+  String get posCreditLimit => 'Credit limit';
+
+  @override
+  String get posCreditUnlimited => 'Unlimited';
+
+  @override
+  String get posCreditCustomerRequired =>
+      'Credit sale requires selecting a customer with an account';
+
+  @override
+  String get cashboxTitle => 'Cash Box';
+
+  @override
+  String get cashboxReadOnly =>
+      'Read-only - you need the \'Operate Cash Box\' permission to run operations';
+
+  @override
+  String get cashboxActionOpen => 'Open Cash Box';
+
+  @override
+  String get cashboxActionClose => 'Close Cash Box';
+
+  @override
+  String get cashboxActionDeposit => 'Cash Deposit';
+
+  @override
+  String get cashboxActionWithdraw => 'Cash Withdrawal';
+
+  @override
+  String get cashboxActionAdjust => 'Adjust Drawer';
+
+  @override
+  String get cashboxSessionOpen => 'Session open';
+
+  @override
+  String get cashboxSessionClosed => 'Session closed';
+
+  @override
+  String get cashboxOpenedBy => 'Opened by';
+
+  @override
+  String get cashboxOpenedAt => 'Opened at';
+
+  @override
+  String get cashboxClosedBy => 'Closed by';
+
+  @override
+  String get cashboxClosedAt => 'Closed at';
+
+  @override
+  String get cashboxRunning => 'Running balance';
+
+  @override
+  String get cashboxExpected => 'Expected';
+
+  @override
+  String get cashboxDeclared => 'Declared';
+
+  @override
+  String get cashboxSurplus => 'Surplus';
+
+  @override
+  String get cashboxShortage => 'Shortage';
+
+  @override
+  String get cashboxMovementsTitle => 'Drawer Movements';
+
+  @override
+  String get cashboxTypeOpen => 'Opening';
+
+  @override
+  String get cashboxTypeClose => 'Closing';
+
+  @override
+  String get cashboxTypeSale => 'Cash sales';
+
+  @override
+  String get cashboxTypeRefund => 'Refunds';
+
+  @override
+  String get cashboxTypePayment => 'Customer collections';
+
+  @override
+  String get cashboxTypeDeposit => 'Deposits';
+
+  @override
+  String get cashboxTypeWithdraw => 'Withdrawals';
+
+  @override
+  String get cashboxTypeExpense => 'Expenses';
+
+  @override
+  String get cashboxTypeAdjustment => 'Adjustments';
+
+  @override
+  String get cashboxInflows => 'Inflows';
+
+  @override
+  String get cashboxOutflows => 'Outflows';
+
+  @override
+  String get cashboxNetMoves => 'Net moves';
+
+  @override
+  String get cashboxHistoryTitle => 'Cash Box Ledger';
+
+  @override
+  String get cashboxHistoryEmpty => 'No cash-box movements';
+
+  @override
+  String get cashboxFilterAll => 'All types';
+
+  @override
+  String get cashboxColTime => 'Time';
+
+  @override
+  String get cashboxColType => 'Type';
+
+  @override
+  String get cashboxColAmount => 'Amount';
+
+  @override
+  String get cashboxColRemaining => 'Balance';
+
+  @override
+  String get cashboxColOperator => 'Operator';
+
+  @override
+  String get cashboxColNote => 'Note';
+
+  @override
+  String get cashboxNotOpened => 'Cash box not opened';
+
+  @override
+  String get cashboxNotOpenedHint =>
+      'Open the cash box to start a shift and record movements';
+
+  @override
+  String get cashboxNotOpenedReadOnly =>
+      'Cash box not opened — ask the pharmacy manager to open it';
+
+  @override
+  String get cashboxOpeningLabel => 'Opening balance';
+
+  @override
+  String get cashboxNoteOptional => 'Note (optional)';
+
+  @override
+  String get cashboxDeclaredLabel => 'Counted cash on closing';
+
+  @override
+  String get cashboxReason => 'Reason';
+
+  @override
+  String get cashboxAmountLabel => 'Amount';
+
+  @override
+  String get cashboxAdjustHint =>
+      'Positive adds to the drawer, negative removes';
+
+  @override
+  String get cashboxOpeningRequired => 'Enter the opening balance';
+
+  @override
+  String get cashboxOpeningInvalid => 'Invalid opening amount';
+
+  @override
+  String get cashboxClosingRequired => 'Enter the counted cash on closing';
+
+  @override
+  String get cashboxClosingInvalid => 'Invalid closing amount';
+
+  @override
+  String get cashboxMoveRequired => 'Enter an amount';
+
+  @override
+  String get cashboxMoveInvalid => 'Amount must be greater than zero';
+
+  @override
+  String get cashboxReasonRequired => 'Reason is required';
 }
