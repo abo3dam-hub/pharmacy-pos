@@ -21,9 +21,13 @@ import '../../domain/services/purchase_service.dart';
 import '../../domain/services/return_service.dart';
 import '../../domain/services/sale_service.dart';
 import '../../domain/services/stock_service.dart';
+import '../../features/accounts/application/accounting_controller.dart';
 import '../../features/accounts/application/cashbox_controller.dart';
+import '../../features/accounts/data/accounting_dao.dart';
 import '../../features/accounts/data/cashbox_repository_impl.dart';
 import '../../features/accounts/domain/repositories/cashbox_repository.dart';
+import '../../domain/services/accounting_period_service.dart';
+import '../../domain/services/customer_payment_service.dart';
 import '../../features/auth/application/auth_controller.dart';
 import '../../features/sales/data/z_report_dao.dart';
 import '../../shared/database/settings_dao.dart';
@@ -131,6 +135,7 @@ void setupDependencies() {
   _registerPhase7(db);
   _registerPhase8(db);
   _registerPhase9(db);
+  _registerPhase10(db);
 }
 
 /// Phase 7 — POS workspace data layer over the existing transactional engine.
@@ -208,6 +213,26 @@ void _registerPhase9(AppDatabase db) {
         getIt<UpdateExpenseCategoryUseCase>(),
         getIt<SetExpenseCategoryActiveUseCase>(),
       ));
+}
+
+/// Phase 10 — Accounting management: chart of accounts, journal viewer,
+/// account statement, and period close.
+void _registerPhase10(AppDatabase db) {
+  getIt.registerLazySingleton<AccountingDao>(() => AccountingDao(db));
+  getIt.registerLazySingleton<AccountingPeriodService>(
+      () => const AccountingPeriodService());
+  getIt.registerLazySingleton<CustomerPaymentService>(
+      () => CustomerPaymentService());
+  getIt.registerLazySingleton<AccountsController>(
+      () => AccountsController(getIt<AccountingDao>()));
+  getIt.registerLazySingleton<JournalController>(
+      () => JournalController(getIt<AccountingDao>()));
+  getIt.registerLazySingleton<JournalDetailController>(
+      () => JournalDetailController(getIt<AccountingDao>()));
+  getIt.registerLazySingleton<AccountStatementController>(
+      () => AccountStatementController(getIt<AccountingDao>()));
+  getIt.registerLazySingleton<PeriodsController>(
+      () => PeriodsController(db, getIt<AccountingPeriodService>()));
 }
 
 /// Phase 5 — Customers & Prescriptions graph (customer master, derived

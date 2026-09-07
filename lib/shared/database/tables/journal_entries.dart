@@ -22,6 +22,10 @@ class JournalEntries extends Table {
   IntColumn get totalCreditMicros => integer().withDefault(const Constant(0))();
   BoolColumn get isPosted =>
       boolean().withDefault(const Constant(true))();
+  BoolColumn get isReversal =>
+      boolean().withDefault(const Constant(false))();
+  TextColumn get reversalOfEntryId => text().nullable()
+      .references(JournalEntries, #id)();
   TextColumn get createdBy => text().references(Users, #id)();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();

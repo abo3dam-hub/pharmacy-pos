@@ -8,6 +8,7 @@ import '../../../../data/daos/purchase_dao.dart';
 import '../../../../data/daos/supplier_dao.dart';
 import '../../../../domain/services/audit_service.dart';
 import '../../../../domain/services/bonus_calculator.dart';
+import '../../../../domain/services/financial_posting_service.dart';
 import '../../../../domain/services/stock_service.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../../../shared/models/enums.dart';
@@ -33,8 +34,9 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
     this._suppliers,
     this._bonus,
     this._stock,
-    this._audit,
-  );
+    this._audit, {
+    FinancialPostingService? financial,
+  })  : _financial = financial ?? const FinancialPostingService();
 
   final AppDatabase _db;
   final PurchaseDao _dao;
@@ -42,6 +44,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
   final BonusCalculator _bonus;
   final StockService _stock;
   final AuditService _audit;
+  final FinancialPostingService _financial;
 
   @override
   AppDatabase get database => _db;
@@ -456,6 +459,25 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       );
       await _suppliers.syncBalance(invoice.supplierId, at: now);
 
+      // Purchase accounting (Phase 10): Dr Inventory, Cr Cash/Bank/AP per the
+      // invoice settlement. Skip if already posted (double-posting guard).
+      final settledInvoice = await (_db.select(_db.purchaseInvoices)
+            ..where((i) => i.id.equals(invoiceId)))
+          .getSingle();
+      final inventoryValue = settledInvoice.totalMicros;
+      await _financial.postPurchase(
+        _db,
+        invoiceId: invoiceId,
+        invoiceNumber: settledInvoice.invoiceNumber,
+        inventoryMicros: inventoryValue,
+        paidCashMicros: settledInvoice.paidMicros,
+        paidCardMicros: 0,
+        amountPayableMicros:
+            inventoryValue - settledInvoice.paidMicros,
+        userId: actingUserId,
+        atMillis: now,
+      );
+
       await _audit.write(
         _db,
         userId: actingUserId,
@@ -604,6 +626,21 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
             ),
           );
       await _suppliers.syncBalance(invoice.supplierId, at: now);
+
+      // Purchase return accounting (Phase 10): Dr AP/Cash, Cr Inventory.
+      final absTotal = totalMicros.abs();
+      await _financial.postPurchaseReturn(
+        _db,
+        returnId: returnId,
+        returnNumber: request.returnNumber.trim(),
+        invoiceNumber: invoice.invoiceNumber,
+        inventoryMicros: absTotal,
+        refundCashMicros: 0,
+        refundCardMicros: 0,
+        apOffsetMicros: absTotal,
+        userId: request.userId,
+        atMillis: now,
+      );
 
       await _audit.write(
         _db,

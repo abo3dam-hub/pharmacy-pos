@@ -2118,4 +2118,223 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get expenseCategoryDeactivated => 'تم تعطيل الفئة';
+
+  @override
+  String get navCashbox => 'الصندوق';
+
+  @override
+  String get navChartAccounts => 'دليل الحسابات';
+
+  @override
+  String get navJournal => 'دفتر اليومية';
+
+  @override
+  String get navAccountStatement => 'كشف حساب';
+
+  @override
+  String get navPeriodClose => 'إقفال الفترة';
+
+  @override
+  String get chartAccountsTitle => 'دليل الحسابات';
+
+  @override
+  String get journalTitle => 'دفتر اليومية';
+
+  @override
+  String get accountStatementTitle => 'كشف حساب';
+
+  @override
+  String get periodCloseTitle => 'إقفال الفترة';
+
+  @override
+  String get accountsAddTitle => 'إضافة حساب';
+
+  @override
+  String get accountsEditTitle => 'تعديل حساب';
+
+  @override
+  String get accountsColCode => 'الرمز';
+
+  @override
+  String get accountsColName => 'الاسم';
+
+  @override
+  String get accountsColType => 'النوع';
+
+  @override
+  String get accountsColBalance => 'الرصيد';
+
+  @override
+  String get accountsColStatus => 'الحالة';
+
+  @override
+  String get accountsNameEn => 'الاسم بالإنجليزية';
+
+  @override
+  String get accountsOpeningBalance => 'الرصيد الافتتاحي';
+
+  @override
+  String get accountsNotes => 'ملاحظات';
+
+  @override
+  String get accountsNoData => 'لا توجد بيانات';
+
+  @override
+  String get accountsCodeRequired => 'أدخل رمز الحساب';
+
+  @override
+  String get accountsNameRequired => 'أدخل اسم الحساب';
+
+  @override
+  String get accountsFilterAll => 'الكل';
+
+  @override
+  String get accountTypeAsset => 'أصول';
+
+  @override
+  String get accountTypeLiability => 'خصوم';
+
+  @override
+  String get accountTypeEquity => 'حقوق ملكية';
+
+  @override
+  String get accountTypeRevenue => 'إيرادات';
+
+  @override
+  String get accountTypeExpense => 'مصروفات';
+
+  @override
+  String get journalColEntryNumber => 'رقم القيد';
+
+  @override
+  String get journalColDate => 'التاريخ';
+
+  @override
+  String get journalColDescription => 'الوصف';
+
+  @override
+  String get journalColRefType => 'المرجع';
+
+  @override
+  String get journalColDebit => 'مدين';
+
+  @override
+  String get journalColCredit => 'دائن';
+
+  @override
+  String get journalFilterRefType => 'نوع المرجع';
+
+  @override
+  String get journalReversalBadge => 'قيد عكسي';
+
+  @override
+  String get journalDetailTitle => 'تفاصيل القيد';
+
+  @override
+  String get journalDetailLines => 'بنود القيد';
+
+  @override
+  String get accountStatementFromDate => 'من تاريخ';
+
+  @override
+  String get accountStatementToDate => 'إلى تاريخ';
+
+  @override
+  String get accountStatementClosingBalance => 'الرصيد الختامي';
+
+  @override
+  String get accountStatementSelectAccount => 'اختر حساباً لعرض كشف الحساب';
+
+  @override
+  String get periodName => 'اسم الفترة';
+
+  @override
+  String get periodStartDate => 'تاريخ البدء';
+
+  @override
+  String get periodEndDate => 'تاريخ الانتهاء';
+
+  @override
+  String get periodStatus => 'الحالة';
+
+  @override
+  String get periodOpen => 'مفتوحة';
+
+  @override
+  String get periodClosed => 'مقفلة';
+
+  @override
+  String get periodCreate => 'فترة جديدة';
+
+  @override
+  String get periodNameRequired => 'أدخل اسم الفترة';
+
+  @override
+  String get periodCreatedMessage => 'تم إنشاء الفترة';
+
+  @override
+  String get periodClosedMessage => 'تم إقفال الفترة';
+
+  @override
+  String get periodCloseConfirmMessage => 'هل أنت متأكد من إقفال الفترة؟';
+
+  @override
+  String get periodCloseReason => 'سبب الإقفال';
+
+  @override
+  String get refTypeSale => 'بيع';
+
+  @override
+  String get refTypePurchase => 'شراء';
+
+  @override
+  String get refTypeReturn => 'مرتجع';
+
+  @override
+  String get refTypeExpense => 'مصروف';
+
+  @override
+  String get refTypeCashbox => 'صندوق';
+
+  @override
+  String get refTypeOpeningBalance => 'رصيد افتتاحي';
+
+  @override
+  String get refTypeAdjustment => 'تسوية';
+
+  @override
+  String get refTypeManual => 'يدوي';
+
+  @override
+  String get refTypeCustomerPayment => 'دفعة عميل';
+
+  @override
+  String get csRecordPayment => 'تسجيل دفعة';
+
+  @override
+  String get csPaymentTitle => 'استلام دفعة من العميل';
+
+  @override
+  String get csPaymentAmount => 'المبلغ';
+
+  @override
+  String get csPaymentCash => 'نقدي';
+
+  @override
+  String get csPaymentCard => 'بطاقة';
+
+  @override
+  String get csPaymentNote => 'ملاحظة';
+
+  @override
+  String get csPaymentAmountError => 'أدخل مبلغاً موجباً';
+
+  @override
+  String get csPaymentSplitError => 'النقدي + البطاقة يجب أن يساوي المبلغ';
+
+  @override
+  String get csPaymentSaved => 'تم تسجيل الدفعة';
+
+  @override
+  String get csPaymentRefundTitle => 'استرداد للعميل';
 }

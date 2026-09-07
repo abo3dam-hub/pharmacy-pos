@@ -10,14 +10,14 @@ import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 import 'helpers.dart';
 
-/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5/9) for v1→v7
-/// upgrade — implementers must keep this mirror in lockstep with
+/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5/9/10) for
+/// v1→v8 upgrade — implementers must keep this mirror in lockstep with
 /// `AppDatabase._migrate` in `app_database.dart`.
 class _V1Database extends AppDatabase {
   _V1Database(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -93,6 +93,45 @@ class _V1Database extends AppDatabase {
             await seedExpenseCategories(this);
             await ensureExpensePermissions(this);
           }
+          if (from < 8) {
+            await m.addColumn(journalEntries, journalEntries.isReversal);
+            await m.addColumn(
+                journalEntries, journalEntries.reversalOfEntryId);
+            await m.createTable(accountingPeriods);
+            final now = DateTime.now().millisecondsSinceEpoch;
+            await into(accounts).insert(
+              AccountsCompanion.insert(
+                id: 'acc_1099',
+                code: '1099',
+                name: 'فرق الصندوق',
+                nameEn: const Value('Cash Over/Short'),
+                accountType: AccountType.expense,
+                isSystem: const Value(true),
+                createdAt: now,
+                updatedAt: now,
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+            await into(accounts).insert(
+              AccountsCompanion.insert(
+                id: 'acc_4002',
+                code: '4002',
+                name: 'مرتجعات المشتريات',
+                nameEn: const Value('Purchase Returns'),
+                accountType: AccountType.liability,
+                isSystem: const Value(true),
+                createdAt: now,
+                updatedAt: now,
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+            final pCount = await customSelect(
+              "SELECT COUNT(*) AS c FROM permissions WHERE code = 'accounting.view'",
+            ).getSingle();
+            if (pCount.read<int>('c') < 1) {
+              await ensureAccountingPermissions(this);
+            }
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -117,7 +156,7 @@ void main() {
 
     File dbFile() => File('${dir.path}/store.db');
 
-    test('fresh database creates at schema v7 with all columns', () async {
+    test('fresh database creates at schema v8 with all columns', () async {
       ensureSqlite();
       final path = dbFile().path;
 
@@ -126,11 +165,11 @@ void main() {
       final batchId = await insertBatch(db, itemId,
           quantityBase: 7, expiryDays: 90, unitCostMicros: 5000);
 
-      // Verify schema version is 7.
+      // Verify schema version is 8.
       final userVersion =
           await db.customSelect('PRAGMA user_version').getSingle();
-      expect(userVersion.data.values.first, 7,
-          reason: 'fresh DB must be schema v7');
+      expect(userVersion.data.values.first, 8,
+          reason: 'fresh DB must be schema v8');
 
       // Verify v7 Phase 9 additions: category master seeded + expenses columns.
       final categories = await db.select(db.expenseCategories).get();
@@ -241,20 +280,36 @@ void main() {
       expect(reopenedItem.currentStockBase, 7);
       final reopenedVersion =
           await reopened.customSelect('PRAGMA user_version').getSingle();
-      expect(reopenedVersion.data.values.first, 7);
+      expect(reopenedVersion.data.values.first, 8);
+
+      // Verify v8 Phase 10 additions: reversing columns on journal_entries,
+      // accounting_periods table, and new system accounts.
+      final acc1099 = await (reopened.select(reopened.accounts)
+            ..where((a) => a.code.equals('1099')))
+          .getSingleOrNull();
+      expect(acc1099, isNotNull,
+          reason: 'cash over/short account seeded on fresh install');
+      final acc4002 = await (reopened.select(reopened.accounts)
+            ..where((a) => a.code.equals('4002')))
+          .getSingleOrNull();
+      expect(acc4002, isNotNull,
+          reason: 'purchase returns account seeded on fresh install');
+      await reopened
+          .select(reopened.accountingPeriods)
+          .get(); // table exists without error
       await reopened.close();
     });
 
-    test('v1 → v7 migration adds all Phase 6/7.5/9 columns without data loss',
+    test('v1 → v8 migration adds all Phase 6/7.5/9/10 columns without data loss',
         () async {
       ensureSqlite();
       final path = dbFile().path;
 
-      // Create a v5 database with data (fresh createAll seeds v7 + an expense
+      // Create a v8 database with data (fresh createAll seeds v8 + an expense
       // row that must survive the simulated downgrade).
       final db = AppDatabase.fromFilePath(path);
       final itemId = await insertItem(db);
-      expect(db.schemaVersion, 7);
+      expect(db.schemaVersion, 8);
       final preNow = DateTime.now().millisecondsSinceEpoch;
       await db.into(db.expenses).insert(
             ExpensesCompanion.insert(
@@ -306,19 +361,25 @@ void main() {
       raw.execute('DROP TABLE IF EXISTS expense_categories');
       raw.execute('ALTER TABLE expenses DROP COLUMN payment_method');
       raw.execute('ALTER TABLE expenses DROP COLUMN expense_number');
+      // Drop v8 Phase 10 additions.
+      raw.execute('ALTER TABLE journal_entries DROP COLUMN is_reversal');
+      raw.execute('ALTER TABLE journal_entries DROP COLUMN reversal_of_entry_id');
+      raw.execute('DROP TABLE IF EXISTS accounting_periods');
+      raw.execute('DELETE FROM accounts WHERE code = \'1099\'');
+      raw.execute('DELETE FROM accounts WHERE code = \'4002\'');
       raw.execute('PRAGMA user_version = 1');
       raw.dispose();
       await db.close();
 
-      // Reopen under the working schema: onUpgrade(1 → 7) recreates everything.
+      // Reopen under the working schema: onUpgrade(1 → 8) recreates everything.
       final upgraded = _V1Database(NativeDatabase(File(path)));
 
-      // Verify user_version is 7 after migration.
+      // Verify user_version is 8 after migration.
       final userVersion = await upgraded
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(userVersion.data.values.first, 7,
-          reason: 'v1 → v7 migration must set user_version to 7');
+      expect(userVersion.data.values.first, 8,
+          reason: 'v1 → v8 migration must set user_version to 8');
 
       // Verify app_settings created.
       final settings = await upgraded.select(upgraded.appSettings).get();
@@ -401,6 +462,44 @@ void main() {
           reason: 're-added default on the upgraded column');
       expect(legacyExp.expenseNumber, 'EXP-00001',
           reason: 'existing rows are back-filled with printable numbers');
+
+      // v8 Phase 10: journal reversal columns, accounting periods table, and
+      // new system accounts after upgrade.
+      final upgradedAcc1099 = await (upgraded.select(upgraded.accounts)
+            ..where((a) => a.code.equals('1099')))
+          .getSingleOrNull();
+      expect(upgradedAcc1099, isNotNull,
+          reason: 'cash over/short account added on v8 upgrade');
+      final upgradedAcc4002 = await (upgraded.select(upgraded.accounts)
+            ..where((a) => a.code.equals('4002')))
+          .getSingleOrNull();
+      expect(upgradedAcc4002, isNotNull,
+          reason: 'purchase returns account added on v8 upgrade');
+      final periodsRows = await upgraded
+          .select(upgraded.accountingPeriods)
+          .get();
+      expect(periodsRows, isEmpty,
+          reason: 'accounting periods table exists after upgrade');
+      // Reversal column persists correctly.
+      await upgraded.into(upgraded.journalEntries).insert(
+            JournalEntriesCompanion.insert(
+              id: 'je_v8_mig',
+              entryNumber: 'JE-V8-MIG',
+              refType: JournalReferenceType.manual,
+              entryDate: now,
+              description: 'قيد اختبار v8',
+              isPosted: const Value(true),
+              isReversal: const Value(false),
+              createdAt: now,
+              updatedAt: now,
+              createdBy: 'user_admin',
+            ),
+          );
+      final je = await (upgraded.select(upgraded.journalEntries)
+            ..where((e) => e.id.equals('je_v8_mig')))
+          .getSingle();
+      expect(je.isReversal, false,
+          reason: 'journal reversal column added on v8 upgrade');
 
       await upgraded.close();
     });

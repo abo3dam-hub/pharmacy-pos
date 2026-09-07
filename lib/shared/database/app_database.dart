@@ -9,6 +9,7 @@ import '../models/enums.dart';
 import '../models/enum_value_converter.dart';
 
 import 'seed_data.dart';
+import 'tables/accounting_periods.dart';
 import 'tables/accounts.dart';
 import 'tables/app_settings.dart';
 import 'tables/audit_logs.dart';
@@ -82,6 +83,7 @@ part 'app_database.g.dart';
   LostSales,
   Backups,
   AppSettings,
+  AccountingPeriods,
 ])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
@@ -96,7 +98,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -197,6 +199,52 @@ class AppDatabase extends _$AppDatabase {
           "WHERE expense_number IS NULL OR expense_number = ''");
       await seedExpenseCategories(this);
       await ensureExpensePermissions(this);
+    }
+    if (from < 8) {
+      // Phase 10 accounting management: journal reversal columns, accounting
+      // periods table (period close protection), and new system accounts
+      // (cash over/short + purchase returns). Reversal columns are additive;
+      // periods table is new; new accounts are seeded idempotently for both
+      // fresh installs and upgraded databases.
+      await m.addColumn(journalEntries, journalEntries.isReversal);
+      await m.addColumn(
+          journalEntries, journalEntries.reversalOfEntryId);
+      await m.createTable(accountingPeriods);
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await into(accounts).insert(
+        AccountsCompanion.insert(
+          id: 'acc_1099',
+          code: '1099',
+          name: 'فرق الصندوق',
+          nameEn: const Value('Cash Over/Short'),
+          accountType: AccountType.expense,
+          isSystem: const Value(true),
+          createdAt: now,
+          updatedAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+      await into(accounts).insert(
+        AccountsCompanion.insert(
+          id: 'acc_4002',
+          code: '4002',
+          name: 'مرتجعات المشتريات',
+          nameEn: const Value('Purchase Returns'),
+          accountType: AccountType.liability,
+          isSystem: const Value(true),
+          createdAt: now,
+          updatedAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+      // Ensure accountant-friendly permissions for role_admin are already
+      // present (accounting.view/post are in kSeedPermissions; admin gets all).
+      final pCount = await customSelect(
+        "SELECT COUNT(*) AS c FROM permissions WHERE code = 'accounting.view'",
+      ).getSingle();
+      if (pCount.read<int>('c') < 1) {
+        await ensureAccountingPermissions(this);
+      }
     }
   }
 }

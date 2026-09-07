@@ -12,6 +12,7 @@ import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../data/daos/customer_dao.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../application/customers_controller.dart';
+import '../widgets/customer_payment_dialog.dart';
 
 /// Customer statement (كشف حساب العميل) — one customer's sales-ledger documents
 /// in a date range with keyset pagination and a summary footer. Routed at
@@ -102,6 +103,18 @@ class _CustomerStatementPageState
     };
   }
 
+  Future<void> _recordPayment({required bool isRefund}) async {
+    final saved = await showCustomerPaymentDialog(
+      context,
+      customerId: widget.customerId,
+      isRefund: isRefund,
+    );
+    if (saved && mounted) {
+      setState(() => _page = 1);
+      await _load();
+    }
+  }
+
   String _fmtDate(int millis) {
     final d = DateTime.fromMillisecondsSinceEpoch(millis);
     String two(int n) => n.toString().padLeft(2, '0');
@@ -176,6 +189,12 @@ class _CustomerStatementPageState
                         '${l10n.customerStatementDateTo} '
                         '${_fmtDate(_toMillis(_to))}',
                       ),
+                    ),
+                    const SizedBox(width: AppSpacing.s),
+                    FilledButton.icon(
+                      onPressed: () => _recordPayment(isRefund: false),
+                      icon: const Icon(Icons.payments_outlined),
+                      label: Text(l10n.csRecordPayment),
                     ),
                   ],
                 ),

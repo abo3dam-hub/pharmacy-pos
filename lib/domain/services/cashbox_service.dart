@@ -83,6 +83,25 @@ class CashboxService {
               createdAt: now,
             ),
           );
+      // Phase 10 reconciliation: mirror the opening float into the GL so the
+      // cash-box ledger (SUM of drawer moves) reconciles to the GL Cash
+      // account. Dr Cash, Cr Capital — the float funds the drawer.
+      await _financial.postJournalEntry(
+        db,
+        refType: JournalReferenceType.opening_balance,
+        refId: 'cbx-open-$id',
+        entryDate: now,
+        description: 'فتح الصندوق برصيد افتتاحي',
+        lines: [
+          JournalLineDraft(
+              accountCode: SystemAccountCode.cash,
+              debitMicros: openingMicros),
+          JournalLineDraft(
+              accountCode: SystemAccountCode.capital,
+              creditMicros: openingMicros),
+        ],
+        createdBy: userId,
+      );
       final row = await (db.select(db.cashboxTransactions)
             ..where((t) => t.id.equals(id)))
           .getSingle();
@@ -225,22 +244,26 @@ class CashboxService {
           ? 'الصندوق لم يُفتح بعد — افتح الصندوق أولاً'
           : 'الصندوق مقفل — افتح جلسة جديدة أولاً');
     }
-    final signed = type == CashboxTransactionType.withdraw
-        ? -amountMicros
-        : amountMicros;
     return db.transaction(() async {
       final now = DateTime.now().millisecondsSinceEpoch;
-      await _financial.postCashboxRow(
-        db,
-        type: type,
-        amountMicros: signed,
-        refType: 'cashbox',
-        refId: type == CashboxTransactionType.deposit ? 'deposit' : 'withdraw',
-        userId: userId,
-        note: reason.trim(),
-        atMillis: now,
-      );
-      final row = await _latestRow(db);
+      final CashboxTransactionRow row;
+      if (type == CashboxTransactionType.deposit) {
+        row = await _financial.postCashboxDeposit(
+          db,
+          amountMicros: amountMicros,
+          reason: reason,
+          userId: userId,
+          atMillis: now,
+        );
+      } else {
+        row = await _financial.postCashboxWithdrawal(
+          db,
+          amountMicros: amountMicros,
+          reason: reason,
+          userId: userId,
+          atMillis: now,
+        );
+      }
       await _audit.write(
         db,
         userId: userId,
@@ -249,7 +272,9 @@ class CashboxService {
         entityId: row.id,
         after: {
           'operation': type.name,
-          'amount_micros': signed,
+          'amount_micros': type == CashboxTransactionType.withdraw
+              ? -amountMicros
+              : amountMicros,
           'reason': reason.trim(),
         },
       );
@@ -279,17 +304,6 @@ class CashboxService {
       reason: reason,
       userId: userId,
     );
-  }
-
-  Future<CashboxTransactionRow> _latestRow(AppDatabase db) async {
-    final row = await (db.select(db.cashboxTransactions)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
-          ..limit(1))
-        .getSingleOrNull();
-    if (row == null) {
-      throw StateError('تعذر العثور على حركة الصندوق المسجلة');
-    }
-    return row;
   }
 
   /// Historic running cash sum of the ledger (ربطاً بالمحرك المالي): the

@@ -4225,6 +4225,444 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تم تعطيل الفئة'**
   String get expenseCategoryDeactivated;
+
+  /// No description provided for @navCashbox.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصندوق'**
+  String get navCashbox;
+
+  /// No description provided for @navChartAccounts.
+  ///
+  /// In ar, this message translates to:
+  /// **'دليل الحسابات'**
+  String get navChartAccounts;
+
+  /// No description provided for @navJournal.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفتر اليومية'**
+  String get navJournal;
+
+  /// No description provided for @navAccountStatement.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف حساب'**
+  String get navAccountStatement;
+
+  /// No description provided for @navPeriodClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'إقفال الفترة'**
+  String get navPeriodClose;
+
+  /// No description provided for @chartAccountsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'دليل الحسابات'**
+  String get chartAccountsTitle;
+
+  /// No description provided for @journalTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفتر اليومية'**
+  String get journalTitle;
+
+  /// No description provided for @accountStatementTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف حساب'**
+  String get accountStatementTitle;
+
+  /// No description provided for @periodCloseTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إقفال الفترة'**
+  String get periodCloseTitle;
+
+  /// No description provided for @accountsAddTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة حساب'**
+  String get accountsAddTitle;
+
+  /// No description provided for @accountsEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل حساب'**
+  String get accountsEditTitle;
+
+  /// No description provided for @accountsColCode.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرمز'**
+  String get accountsColCode;
+
+  /// No description provided for @accountsColName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم'**
+  String get accountsColName;
+
+  /// No description provided for @accountsColType.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع'**
+  String get accountsColType;
+
+  /// No description provided for @accountsColBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد'**
+  String get accountsColBalance;
+
+  /// No description provided for @accountsColStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get accountsColStatus;
+
+  /// No description provided for @accountsNameEn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم بالإنجليزية'**
+  String get accountsNameEn;
+
+  /// No description provided for @accountsOpeningBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الافتتاحي'**
+  String get accountsOpeningBalance;
+
+  /// No description provided for @accountsNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات'**
+  String get accountsNotes;
+
+  /// No description provided for @accountsNoData.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد بيانات'**
+  String get accountsNoData;
+
+  /// No description provided for @accountsCodeRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل رمز الحساب'**
+  String get accountsCodeRequired;
+
+  /// No description provided for @accountsNameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل اسم الحساب'**
+  String get accountsNameRequired;
+
+  /// No description provided for @accountsFilterAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get accountsFilterAll;
+
+  /// No description provided for @accountTypeAsset.
+  ///
+  /// In ar, this message translates to:
+  /// **'أصول'**
+  String get accountTypeAsset;
+
+  /// No description provided for @accountTypeLiability.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصوم'**
+  String get accountTypeLiability;
+
+  /// No description provided for @accountTypeEquity.
+  ///
+  /// In ar, this message translates to:
+  /// **'حقوق ملكية'**
+  String get accountTypeEquity;
+
+  /// No description provided for @accountTypeRevenue.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيرادات'**
+  String get accountTypeRevenue;
+
+  /// No description provided for @accountTypeExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروفات'**
+  String get accountTypeExpense;
+
+  /// No description provided for @journalColEntryNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم القيد'**
+  String get journalColEntryNumber;
+
+  /// No description provided for @journalColDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get journalColDate;
+
+  /// No description provided for @journalColDescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصف'**
+  String get journalColDescription;
+
+  /// No description provided for @journalColRefType.
+  ///
+  /// In ar, this message translates to:
+  /// **'المرجع'**
+  String get journalColRefType;
+
+  /// No description provided for @journalColDebit.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدين'**
+  String get journalColDebit;
+
+  /// No description provided for @journalColCredit.
+  ///
+  /// In ar, this message translates to:
+  /// **'دائن'**
+  String get journalColCredit;
+
+  /// No description provided for @journalFilterRefType.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع المرجع'**
+  String get journalFilterRefType;
+
+  /// No description provided for @journalReversalBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيد عكسي'**
+  String get journalReversalBadge;
+
+  /// No description provided for @journalDetailTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل القيد'**
+  String get journalDetailTitle;
+
+  /// No description provided for @journalDetailLines.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنود القيد'**
+  String get journalDetailLines;
+
+  /// No description provided for @accountStatementFromDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'من تاريخ'**
+  String get accountStatementFromDate;
+
+  /// No description provided for @accountStatementToDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلى تاريخ'**
+  String get accountStatementToDate;
+
+  /// No description provided for @accountStatementClosingBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الختامي'**
+  String get accountStatementClosingBalance;
+
+  /// No description provided for @accountStatementSelectAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر حساباً لعرض كشف الحساب'**
+  String get accountStatementSelectAccount;
+
+  /// No description provided for @periodName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الفترة'**
+  String get periodName;
+
+  /// No description provided for @periodStartDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ البدء'**
+  String get periodStartDate;
+
+  /// No description provided for @periodEndDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء'**
+  String get periodEndDate;
+
+  /// No description provided for @periodStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get periodStatus;
+
+  /// No description provided for @periodOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفتوحة'**
+  String get periodOpen;
+
+  /// No description provided for @periodClosed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقفلة'**
+  String get periodClosed;
+
+  /// No description provided for @periodCreate.
+  ///
+  /// In ar, this message translates to:
+  /// **'فترة جديدة'**
+  String get periodCreate;
+
+  /// No description provided for @periodNameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل اسم الفترة'**
+  String get periodNameRequired;
+
+  /// No description provided for @periodCreatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إنشاء الفترة'**
+  String get periodCreatedMessage;
+
+  /// No description provided for @periodClosedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إقفال الفترة'**
+  String get periodClosedMessage;
+
+  /// No description provided for @periodCloseConfirmMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل أنت متأكد من إقفال الفترة؟'**
+  String get periodCloseConfirmMessage;
+
+  /// No description provided for @periodCloseReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب الإقفال'**
+  String get periodCloseReason;
+
+  /// No description provided for @refTypeSale.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيع'**
+  String get refTypeSale;
+
+  /// No description provided for @refTypePurchase.
+  ///
+  /// In ar, this message translates to:
+  /// **'شراء'**
+  String get refTypePurchase;
+
+  /// No description provided for @refTypeReturn.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع'**
+  String get refTypeReturn;
+
+  /// No description provided for @refTypeExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروف'**
+  String get refTypeExpense;
+
+  /// No description provided for @refTypeCashbox.
+  ///
+  /// In ar, this message translates to:
+  /// **'صندوق'**
+  String get refTypeCashbox;
+
+  /// No description provided for @refTypeOpeningBalance.
+  ///
+  /// In ar, this message translates to:
+  /// **'رصيد افتتاحي'**
+  String get refTypeOpeningBalance;
+
+  /// No description provided for @refTypeAdjustment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسوية'**
+  String get refTypeAdjustment;
+
+  /// No description provided for @refTypeManual.
+  ///
+  /// In ar, this message translates to:
+  /// **'يدوي'**
+  String get refTypeManual;
+
+  /// No description provided for @refTypeCustomerPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعة عميل'**
+  String get refTypeCustomerPayment;
+
+  /// No description provided for @csRecordPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل دفعة'**
+  String get csRecordPayment;
+
+  /// No description provided for @csPaymentTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'استلام دفعة من العميل'**
+  String get csPaymentTitle;
+
+  /// No description provided for @csPaymentAmount.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get csPaymentAmount;
+
+  /// No description provided for @csPaymentCash.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقدي'**
+  String get csPaymentCash;
+
+  /// No description provided for @csPaymentCard.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقة'**
+  String get csPaymentCard;
+
+  /// No description provided for @csPaymentNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة'**
+  String get csPaymentNote;
+
+  /// No description provided for @csPaymentAmountError.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل مبلغاً موجباً'**
+  String get csPaymentAmountError;
+
+  /// No description provided for @csPaymentSplitError.
+  ///
+  /// In ar, this message translates to:
+  /// **'النقدي + البطاقة يجب أن يساوي المبلغ'**
+  String get csPaymentSplitError;
+
+  /// No description provided for @csPaymentSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تسجيل الدفعة'**
+  String get csPaymentSaved;
+
+  /// No description provided for @csPaymentRefundTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'استرداد للعميل'**
+  String get csPaymentRefundTitle;
 }
 
 class _AppLocalizationsDelegate

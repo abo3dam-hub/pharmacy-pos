@@ -43,7 +43,6 @@ class FinancialPostingService {
     PermissionService? permissions,
   })  : _audit = audit ?? const AuditService(),
         _permissions = permissions ?? const PermissionService();
-
   final AuditService _audit;
   final PermissionService _permissions;
 
@@ -106,7 +105,31 @@ class FinancialPostingService {
     required String description,
     required List<JournalLineDraft> lines,
     required String createdBy,
+    bool isReversal = false,
+    String? reversalOfEntryId,
   }) async {
+    // Double-posting protection: for event-linked journals (sale/return/
+    // expense/customer_payment/adjustment), refuse to post the same
+    // refType+refId more than once for the ORIGINAL posting. Reversal entries
+    // (isReversal=true) are exempt — they are corrective entries for the same
+    // source event. Manual and opening-balance journals are also exempt.
+    if (refType != JournalReferenceType.manual &&
+        refType != JournalReferenceType.opening_balance &&
+        refId != null &&
+        !isReversal) {
+      final existing = await (db.select(db.journalEntries)
+            ..where((je) =>
+                je.refType.equalsValue(refType) &
+                je.refId.equals(refId) &
+                je.isReversal.equals(false)))
+          .get();
+      if (existing.isNotEmpty) {
+        throw InvalidOperationException(
+            'تم ترحيل قيد لهذا الحدث بالفعل — لا يمكن الترحيل مرتين '
+            '(النوع: $refType، المرجع: $refId)');
+      }
+    }
+
     if (lines.isEmpty) {
       throw ValidationException('قيد محاسبي بدون بنود');
     }
@@ -153,6 +176,10 @@ class FinancialPostingService {
             totalDebitMicros: Value(totalDebitMicros),
             totalCreditMicros: Value(totalCreditMicros),
             isPosted: const Value(true),
+            isReversal: Value(isReversal),
+            reversalOfEntryId: reversalOfEntryId != null
+                ? Value(reversalOfEntryId)
+                : const Value(null),
             createdBy: createdBy,
             createdAt: entryDate,
             updatedAt: entryDate,
@@ -401,7 +428,8 @@ class FinancialPostingService {
   }
 
   /// Void reversal (§19): reverses the original sale journal + stock and pulls
-  /// the money back out of the drawer.
+  /// the money back out of the drawer. Creates a reversal journal linked to the
+  /// original sale entry to preserve the correction relationship (§14).
   Future<void> postVoidReversal(
     AppDatabase db, {
     required String invoiceId,
@@ -426,12 +454,23 @@ class FinancialPostingService {
         atMillis: atMillis,
       );
     }
+    // Find the original sale journal for the reversal link.
+    final original = await (db.select(db.journalEntries)
+          ..where((je) =>
+              je.refType.equalsValue(JournalReferenceType.sale) &
+              je.refId.equals(invoiceId) &
+              je.isReversal.equals(false))
+          ..orderBy([(o) => OrderingTerm.asc(o.createdAt)])
+          ..limit(1))
+        .getSingleOrNull();
     await postJournalEntry(
       db,
       refType: JournalReferenceType.sale,
       refId: invoiceId,
       entryDate: atMillis,
       description: 'إلغاء فاتورة بيع $invoiceNumber',
+      isReversal: true,
+      reversalOfEntryId: original?.id,
       lines: [
         JournalLineDraft(
             accountCode: SystemAccountCode.salesRevenue, debitMicros: totalMicros),
@@ -632,6 +671,7 @@ class FinancialPostingService {
         refId: expenseId,
         entryDate: now,
         description: 'إلغاء مصروف: ${expense.description}',
+        isReversal: true,
         lines: [
           JournalLineDraft(
               accountCode: method == ExpensePaymentMethod.card
@@ -709,8 +749,8 @@ class FinancialPostingService {
       value == 'card' ? ExpensePaymentMethod.card : ExpensePaymentMethod.cash;
 
   /// Authorized drawer adjustment (±): requires `cashbox.operate` and a reason.
-  /// The balancing GL side lands on Capital until a dedicated cash-difference
-  /// account is added with the accounting UI (documented limitation).
+  /// The balancing GL side lands on the dedicated cash over/short expense
+  /// account (1099) — the historical Capital stand-in is resolved (§18 audit).
   Future<CashboxTransactionRow> adjustCash(
     AppDatabase db, {
     required int amountMicros,
@@ -738,6 +778,7 @@ class FinancialPostingService {
       await postJournalEntry(
         db,
         refType: JournalReferenceType.adjustment,
+        refId: 'cash-adjust-$now',
         entryDate: now,
         description: 'تسوية الصندوق: ${reason.trim()}',
         lines: [
@@ -746,11 +787,11 @@ class FinancialPostingService {
                 accountCode: SystemAccountCode.cash, debitMicros: amountMicros),
           if (amountMicros > 0)
             JournalLineDraft(
-                accountCode: SystemAccountCode.capital,
+                accountCode: SystemAccountCode.cashOverShort,
                 creditMicros: amountMicros),
           if (amountMicros < 0)
             JournalLineDraft(
-                accountCode: SystemAccountCode.capital,
+                accountCode: SystemAccountCode.cashOverShort,
                 debitMicros: -amountMicros),
           if (amountMicros < 0)
             JournalLineDraft(
@@ -778,10 +819,202 @@ class FinancialPostingService {
     });
   }
 
-  // ── Customer balance sync helper (used by sale/return/void) ────────────
+  /// Customer balance sync helper (used by sale/return/void) ────────────
 
   Future<void> syncCustomerBalance(AppDatabase db, String customerId,
       {required int at}) {
     return CustomerDao(db).syncBalance(customerId, at: at);
+  }
+
+  // ── Purchase accounting (Phase 10) ─────────────────────────────────────
+
+  /// Purchase posting: Dr Inventory, Cr Cash/Bank/AR per the settlement.
+  /// Called from the purchase `receive` workflow inside its own transaction.
+  Future<void> postPurchase(
+    AppDatabase db, {
+    required String invoiceId,
+    required String invoiceNumber,
+    required int inventoryMicros,
+    required int paidCashMicros,
+    required int paidCardMicros,
+    required int amountPayableMicros,
+    required String userId,
+    required int atMillis,
+  }) async {
+    if (paidCashMicros + paidCardMicros + amountPayableMicros !=
+        inventoryMicros) {
+      throw ValidationException(
+          'تسوية الشراء غير متوازنة: المدفوع + الآجل لا يغطي إجمالي الشراء');
+    }
+    await postJournalEntry(
+      db,
+      refType: JournalReferenceType.purchase,
+      refId: invoiceId,
+      entryDate: atMillis,
+      description: 'فاتورة شراء $invoiceNumber',
+      lines: [
+        JournalLineDraft(
+            accountCode: SystemAccountCode.inventory,
+            debitMicros: inventoryMicros),
+        if (paidCashMicros > 0)
+          JournalLineDraft(
+              accountCode: SystemAccountCode.cash,
+              creditMicros: paidCashMicros),
+        if (paidCardMicros > 0)
+          JournalLineDraft(
+              accountCode: SystemAccountCode.bank,
+              creditMicros: paidCardMicros),
+        if (amountPayableMicros > 0)
+          JournalLineDraft(
+              accountCode: SystemAccountCode.accountsPayable,
+              creditMicros: amountPayableMicros),
+      ],
+      createdBy: userId,
+    );
+  }
+
+  /// Purchase return: Dr AP/Cash/Bank, Cr Inventory. Called from the purchase
+  /// return workflow inside its own transaction.
+  Future<void> postPurchaseReturn(
+    AppDatabase db, {
+    required String returnId,
+    required String returnNumber,
+    required String invoiceNumber,
+    required int inventoryMicros,
+    required int refundCashMicros,
+    required int refundCardMicros,
+    required int apOffsetMicros,
+    required String userId,
+    required int atMillis,
+  }) async {
+    if (refundCashMicros + refundCardMicros + apOffsetMicros !=
+        inventoryMicros) {
+      throw ValidationException(
+          'تسوية مرتجع الشراء غير متوازنة: المسترد + الدائن لا يغطي إجمالي الإرجاع');
+    }
+    await postJournalEntry(
+      db,
+      refType: JournalReferenceType.return_invoice,
+      refId: returnId,
+      entryDate: atMillis,
+      description: 'مرتجع مشتريات $returnNumber على فاتورة $invoiceNumber',
+      lines: [
+        if (apOffsetMicros > 0)
+          JournalLineDraft(
+              accountCode: SystemAccountCode.accountsPayable,
+              debitMicros: apOffsetMicros),
+        if (refundCashMicros > 0)
+          JournalLineDraft(
+              accountCode: SystemAccountCode.cash,
+              debitMicros: refundCashMicros),
+        if (refundCardMicros > 0)
+          JournalLineDraft(
+              accountCode: SystemAccountCode.bank,
+              debitMicros: refundCardMicros),
+        JournalLineDraft(
+            accountCode: SystemAccountCode.inventory,
+            creditMicros: inventoryMicros),
+      ],
+      createdBy: userId,
+    );
+  }
+
+  /// Cashbox manual deposit: Dr Cash (drawer) with a matching Cash-in/Cash-out
+  /// offset. Deposits increase the drawer and mirror in the GL.
+  Future<CashboxTransactionRow> postCashboxDeposit(
+    AppDatabase db, {
+    required int amountMicros,
+    required String reason,
+    required String userId,
+    required int atMillis,
+  }) =>
+      _postCashboxManual(
+        db,
+        type: CashboxTransactionType.deposit,
+        amountMicros: amountMicros,
+        reason: reason,
+        userId: userId,
+        atMillis: atMillis,
+        journalLines: [
+          JournalLineDraft(
+              accountCode: SystemAccountCode.cash,
+              debitMicros: amountMicros),
+          JournalLineDraft(
+              accountCode: SystemAccountCode.cashOverShort,
+              creditMicros: amountMicros),
+        ],
+        description: 'إيداع في الصندوق: $reason',
+        refType: JournalReferenceType.cashbox,
+      );
+
+  /// Cashbox manual withdrawal: Cr Cash (drawer), offset against
+  /// cash over/short (a cash-outgoing movement into the safe/bank).
+  Future<CashboxTransactionRow> postCashboxWithdrawal(
+    AppDatabase db, {
+    required int amountMicros,
+    required String reason,
+    required String userId,
+    required int atMillis,
+  }) =>
+      _postCashboxManual(
+        db,
+        type: CashboxTransactionType.withdraw,
+        amountMicros: amountMicros,
+        reason: reason,
+        userId: userId,
+        atMillis: atMillis,
+        journalLines: [
+          JournalLineDraft(
+              accountCode: SystemAccountCode.cashOverShort,
+              debitMicros: amountMicros),
+          JournalLineDraft(
+              accountCode: SystemAccountCode.cash,
+              creditMicros: amountMicros),
+        ],
+        description: 'سحب من الصندوق: $reason',
+        refType: JournalReferenceType.cashbox,
+      );
+
+  Future<CashboxTransactionRow> _postCashboxManual(
+    AppDatabase db, {
+    required CashboxTransactionType type,
+    required int amountMicros,
+    required String reason,
+    required String userId,
+    required int atMillis,
+    required List<JournalLineDraft> journalLines,
+    required String description,
+    required JournalReferenceType refType,
+  }) async {
+    final signed = type == CashboxTransactionType.withdraw
+        ? -amountMicros
+        : amountMicros;
+    final refId = '${type.name}-$atMillis-${newId('cbx')}';
+    return db.transaction(() async {
+      await postCashboxRow(
+        db,
+        type: type,
+        amountMicros: signed,
+        refType: 'cashbox',
+        refId: refId,
+        userId: userId,
+        note: reason.trim(),
+        atMillis: atMillis,
+      );
+      await postJournalEntry(
+        db,
+        refType: refType,
+        refId: refId,
+        entryDate: atMillis,
+        description: description,
+        lines: journalLines,
+        createdBy: userId,
+      );
+      final row = await (db.select(db.cashboxTransactions)
+            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+            ..limit(1))
+          .getSingle();
+      return row;
+    });
   }
 }

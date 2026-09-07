@@ -21725,6 +21725,33 @@ class $JournalEntriesTable extends JournalEntries
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _isReversalMeta = const VerificationMeta(
+    'isReversal',
+  );
+  @override
+  late final GeneratedColumn<bool> isReversal = GeneratedColumn<bool>(
+    'is_reversal',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_reversal" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _reversalOfEntryIdMeta = const VerificationMeta(
+    'reversalOfEntryId',
+  );
+  @override
+  late final GeneratedColumn<String> reversalOfEntryId =
+      GeneratedColumn<String>(
+        'reversal_of_entry_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _createdByMeta = const VerificationMeta(
     'createdBy',
   );
@@ -21769,6 +21796,8 @@ class $JournalEntriesTable extends JournalEntries
     totalDebitMicros,
     totalCreditMicros,
     isPosted,
+    isReversal,
+    reversalOfEntryId,
     createdBy,
     createdAt,
     updatedAt,
@@ -21850,6 +21879,21 @@ class $JournalEntriesTable extends JournalEntries
         isPosted.isAcceptableOrUnknown(data['is_posted']!, _isPostedMeta),
       );
     }
+    if (data.containsKey('is_reversal')) {
+      context.handle(
+        _isReversalMeta,
+        isReversal.isAcceptableOrUnknown(data['is_reversal']!, _isReversalMeta),
+      );
+    }
+    if (data.containsKey('reversal_of_entry_id')) {
+      context.handle(
+        _reversalOfEntryIdMeta,
+        reversalOfEntryId.isAcceptableOrUnknown(
+          data['reversal_of_entry_id']!,
+          _reversalOfEntryIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_by')) {
       context.handle(
         _createdByMeta,
@@ -21921,6 +21965,14 @@ class $JournalEntriesTable extends JournalEntries
         DriftSqlType.bool,
         data['${effectivePrefix}is_posted'],
       )!,
+      isReversal: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_reversal'],
+      )!,
+      reversalOfEntryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reversal_of_entry_id'],
+      ),
       createdBy: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}created_by'],
@@ -21958,6 +22010,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
   final int totalDebitMicros;
   final int totalCreditMicros;
   final bool isPosted;
+  final bool isReversal;
+  final String? reversalOfEntryId;
   final String createdBy;
   final int createdAt;
   final int updatedAt;
@@ -21971,6 +22025,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
     required this.totalDebitMicros,
     required this.totalCreditMicros,
     required this.isPosted,
+    required this.isReversal,
+    this.reversalOfEntryId,
     required this.createdBy,
     required this.createdAt,
     required this.updatedAt,
@@ -21993,6 +22049,10 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
     map['total_debit_micros'] = Variable<int>(totalDebitMicros);
     map['total_credit_micros'] = Variable<int>(totalCreditMicros);
     map['is_posted'] = Variable<bool>(isPosted);
+    map['is_reversal'] = Variable<bool>(isReversal);
+    if (!nullToAbsent || reversalOfEntryId != null) {
+      map['reversal_of_entry_id'] = Variable<String>(reversalOfEntryId);
+    }
     map['created_by'] = Variable<String>(createdBy);
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
@@ -22012,6 +22072,10 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       totalDebitMicros: Value(totalDebitMicros),
       totalCreditMicros: Value(totalCreditMicros),
       isPosted: Value(isPosted),
+      isReversal: Value(isReversal),
+      reversalOfEntryId: reversalOfEntryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reversalOfEntryId),
       createdBy: Value(createdBy),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -22033,6 +22097,10 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       totalDebitMicros: serializer.fromJson<int>(json['totalDebitMicros']),
       totalCreditMicros: serializer.fromJson<int>(json['totalCreditMicros']),
       isPosted: serializer.fromJson<bool>(json['isPosted']),
+      isReversal: serializer.fromJson<bool>(json['isReversal']),
+      reversalOfEntryId: serializer.fromJson<String?>(
+        json['reversalOfEntryId'],
+      ),
       createdBy: serializer.fromJson<String>(json['createdBy']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
@@ -22051,6 +22119,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
       'totalDebitMicros': serializer.toJson<int>(totalDebitMicros),
       'totalCreditMicros': serializer.toJson<int>(totalCreditMicros),
       'isPosted': serializer.toJson<bool>(isPosted),
+      'isReversal': serializer.toJson<bool>(isReversal),
+      'reversalOfEntryId': serializer.toJson<String?>(reversalOfEntryId),
       'createdBy': serializer.toJson<String>(createdBy),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
@@ -22067,6 +22137,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
     int? totalDebitMicros,
     int? totalCreditMicros,
     bool? isPosted,
+    bool? isReversal,
+    Value<String?> reversalOfEntryId = const Value.absent(),
     String? createdBy,
     int? createdAt,
     int? updatedAt,
@@ -22080,6 +22152,10 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
     totalDebitMicros: totalDebitMicros ?? this.totalDebitMicros,
     totalCreditMicros: totalCreditMicros ?? this.totalCreditMicros,
     isPosted: isPosted ?? this.isPosted,
+    isReversal: isReversal ?? this.isReversal,
+    reversalOfEntryId: reversalOfEntryId.present
+        ? reversalOfEntryId.value
+        : this.reversalOfEntryId,
     createdBy: createdBy ?? this.createdBy,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -22103,6 +22179,12 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
           ? data.totalCreditMicros.value
           : this.totalCreditMicros,
       isPosted: data.isPosted.present ? data.isPosted.value : this.isPosted,
+      isReversal: data.isReversal.present
+          ? data.isReversal.value
+          : this.isReversal,
+      reversalOfEntryId: data.reversalOfEntryId.present
+          ? data.reversalOfEntryId.value
+          : this.reversalOfEntryId,
       createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -22121,6 +22203,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
           ..write('totalDebitMicros: $totalDebitMicros, ')
           ..write('totalCreditMicros: $totalCreditMicros, ')
           ..write('isPosted: $isPosted, ')
+          ..write('isReversal: $isReversal, ')
+          ..write('reversalOfEntryId: $reversalOfEntryId, ')
           ..write('createdBy: $createdBy, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -22139,6 +22223,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
     totalDebitMicros,
     totalCreditMicros,
     isPosted,
+    isReversal,
+    reversalOfEntryId,
     createdBy,
     createdAt,
     updatedAt,
@@ -22156,6 +22242,8 @@ class JournalEntryRow extends DataClass implements Insertable<JournalEntryRow> {
           other.totalDebitMicros == this.totalDebitMicros &&
           other.totalCreditMicros == this.totalCreditMicros &&
           other.isPosted == this.isPosted &&
+          other.isReversal == this.isReversal &&
+          other.reversalOfEntryId == this.reversalOfEntryId &&
           other.createdBy == this.createdBy &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -22171,6 +22259,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
   final Value<int> totalDebitMicros;
   final Value<int> totalCreditMicros;
   final Value<bool> isPosted;
+  final Value<bool> isReversal;
+  final Value<String?> reversalOfEntryId;
   final Value<String> createdBy;
   final Value<int> createdAt;
   final Value<int> updatedAt;
@@ -22185,6 +22275,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     this.totalDebitMicros = const Value.absent(),
     this.totalCreditMicros = const Value.absent(),
     this.isPosted = const Value.absent(),
+    this.isReversal = const Value.absent(),
+    this.reversalOfEntryId = const Value.absent(),
     this.createdBy = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -22200,6 +22292,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     this.totalDebitMicros = const Value.absent(),
     this.totalCreditMicros = const Value.absent(),
     this.isPosted = const Value.absent(),
+    this.isReversal = const Value.absent(),
+    this.reversalOfEntryId = const Value.absent(),
     required String createdBy,
     required int createdAt,
     required int updatedAt,
@@ -22222,6 +22316,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     Expression<int>? totalDebitMicros,
     Expression<int>? totalCreditMicros,
     Expression<bool>? isPosted,
+    Expression<bool>? isReversal,
+    Expression<String>? reversalOfEntryId,
     Expression<String>? createdBy,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
@@ -22237,6 +22333,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
       if (totalDebitMicros != null) 'total_debit_micros': totalDebitMicros,
       if (totalCreditMicros != null) 'total_credit_micros': totalCreditMicros,
       if (isPosted != null) 'is_posted': isPosted,
+      if (isReversal != null) 'is_reversal': isReversal,
+      if (reversalOfEntryId != null) 'reversal_of_entry_id': reversalOfEntryId,
       if (createdBy != null) 'created_by': createdBy,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -22254,6 +22352,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     Value<int>? totalDebitMicros,
     Value<int>? totalCreditMicros,
     Value<bool>? isPosted,
+    Value<bool>? isReversal,
+    Value<String?>? reversalOfEntryId,
     Value<String>? createdBy,
     Value<int>? createdAt,
     Value<int>? updatedAt,
@@ -22269,6 +22369,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
       totalDebitMicros: totalDebitMicros ?? this.totalDebitMicros,
       totalCreditMicros: totalCreditMicros ?? this.totalCreditMicros,
       isPosted: isPosted ?? this.isPosted,
+      isReversal: isReversal ?? this.isReversal,
+      reversalOfEntryId: reversalOfEntryId ?? this.reversalOfEntryId,
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -22308,6 +22410,12 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
     if (isPosted.present) {
       map['is_posted'] = Variable<bool>(isPosted.value);
     }
+    if (isReversal.present) {
+      map['is_reversal'] = Variable<bool>(isReversal.value);
+    }
+    if (reversalOfEntryId.present) {
+      map['reversal_of_entry_id'] = Variable<String>(reversalOfEntryId.value);
+    }
     if (createdBy.present) {
       map['created_by'] = Variable<String>(createdBy.value);
     }
@@ -22335,6 +22443,8 @@ class JournalEntriesCompanion extends UpdateCompanion<JournalEntryRow> {
           ..write('totalDebitMicros: $totalDebitMicros, ')
           ..write('totalCreditMicros: $totalCreditMicros, ')
           ..write('isPosted: $isPosted, ')
+          ..write('isReversal: $isReversal, ')
+          ..write('reversalOfEntryId: $reversalOfEntryId, ')
           ..write('createdBy: $createdBy, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -27001,6 +27111,622 @@ class AppSettingsCompanion extends UpdateCompanion<AppSettingRow> {
   }
 }
 
+class $AccountingPeriodsTable extends AccountingPeriods
+    with TableInfo<$AccountingPeriodsTable, AccountingPeriodRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AccountingPeriodsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startDateMeta = const VerificationMeta(
+    'startDate',
+  );
+  @override
+  late final GeneratedColumn<int> startDate = GeneratedColumn<int>(
+    'start_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endDateMeta = const VerificationMeta(
+    'endDate',
+  );
+  @override
+  late final GeneratedColumn<int> endDate = GeneratedColumn<int>(
+    'end_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isClosedMeta = const VerificationMeta(
+    'isClosed',
+  );
+  @override
+  late final GeneratedColumn<bool> isClosed = GeneratedColumn<bool>(
+    'is_closed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_closed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _closedByMeta = const VerificationMeta(
+    'closedBy',
+  );
+  @override
+  late final GeneratedColumn<String> closedBy = GeneratedColumn<String>(
+    'closed_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _closedAtMeta = const VerificationMeta(
+    'closedAt',
+  );
+  @override
+  late final GeneratedColumn<int> closedAt = GeneratedColumn<int>(
+    'closed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _closeReasonMeta = const VerificationMeta(
+    'closeReason',
+  );
+  @override
+  late final GeneratedColumn<String> closeReason = GeneratedColumn<String>(
+    'close_reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    startDate,
+    endDate,
+    isClosed,
+    closedBy,
+    closedAt,
+    closeReason,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'accounting_periods';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AccountingPeriodRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('start_date')) {
+      context.handle(
+        _startDateMeta,
+        startDate.isAcceptableOrUnknown(data['start_date']!, _startDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startDateMeta);
+    }
+    if (data.containsKey('end_date')) {
+      context.handle(
+        _endDateMeta,
+        endDate.isAcceptableOrUnknown(data['end_date']!, _endDateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endDateMeta);
+    }
+    if (data.containsKey('is_closed')) {
+      context.handle(
+        _isClosedMeta,
+        isClosed.isAcceptableOrUnknown(data['is_closed']!, _isClosedMeta),
+      );
+    }
+    if (data.containsKey('closed_by')) {
+      context.handle(
+        _closedByMeta,
+        closedBy.isAcceptableOrUnknown(data['closed_by']!, _closedByMeta),
+      );
+    }
+    if (data.containsKey('closed_at')) {
+      context.handle(
+        _closedAtMeta,
+        closedAt.isAcceptableOrUnknown(data['closed_at']!, _closedAtMeta),
+      );
+    }
+    if (data.containsKey('close_reason')) {
+      context.handle(
+        _closeReasonMeta,
+        closeReason.isAcceptableOrUnknown(
+          data['close_reason']!,
+          _closeReasonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AccountingPeriodRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AccountingPeriodRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      startDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_date'],
+      )!,
+      endDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}end_date'],
+      )!,
+      isClosed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_closed'],
+      )!,
+      closedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}closed_by'],
+      ),
+      closedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}closed_at'],
+      ),
+      closeReason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}close_reason'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $AccountingPeriodsTable createAlias(String alias) {
+    return $AccountingPeriodsTable(attachedDatabase, alias);
+  }
+}
+
+class AccountingPeriodRow extends DataClass
+    implements Insertable<AccountingPeriodRow> {
+  final String id;
+  final String name;
+  final int startDate;
+  final int endDate;
+  final bool isClosed;
+  final String? closedBy;
+  final int? closedAt;
+  final String? closeReason;
+  final int createdAt;
+  final int updatedAt;
+  const AccountingPeriodRow({
+    required this.id,
+    required this.name,
+    required this.startDate,
+    required this.endDate,
+    required this.isClosed,
+    this.closedBy,
+    this.closedAt,
+    this.closeReason,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    map['start_date'] = Variable<int>(startDate);
+    map['end_date'] = Variable<int>(endDate);
+    map['is_closed'] = Variable<bool>(isClosed);
+    if (!nullToAbsent || closedBy != null) {
+      map['closed_by'] = Variable<String>(closedBy);
+    }
+    if (!nullToAbsent || closedAt != null) {
+      map['closed_at'] = Variable<int>(closedAt);
+    }
+    if (!nullToAbsent || closeReason != null) {
+      map['close_reason'] = Variable<String>(closeReason);
+    }
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  AccountingPeriodsCompanion toCompanion(bool nullToAbsent) {
+    return AccountingPeriodsCompanion(
+      id: Value(id),
+      name: Value(name),
+      startDate: Value(startDate),
+      endDate: Value(endDate),
+      isClosed: Value(isClosed),
+      closedBy: closedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedBy),
+      closedAt: closedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedAt),
+      closeReason: closeReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closeReason),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory AccountingPeriodRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AccountingPeriodRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      startDate: serializer.fromJson<int>(json['startDate']),
+      endDate: serializer.fromJson<int>(json['endDate']),
+      isClosed: serializer.fromJson<bool>(json['isClosed']),
+      closedBy: serializer.fromJson<String?>(json['closedBy']),
+      closedAt: serializer.fromJson<int?>(json['closedAt']),
+      closeReason: serializer.fromJson<String?>(json['closeReason']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'startDate': serializer.toJson<int>(startDate),
+      'endDate': serializer.toJson<int>(endDate),
+      'isClosed': serializer.toJson<bool>(isClosed),
+      'closedBy': serializer.toJson<String?>(closedBy),
+      'closedAt': serializer.toJson<int?>(closedAt),
+      'closeReason': serializer.toJson<String?>(closeReason),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  AccountingPeriodRow copyWith({
+    String? id,
+    String? name,
+    int? startDate,
+    int? endDate,
+    bool? isClosed,
+    Value<String?> closedBy = const Value.absent(),
+    Value<int?> closedAt = const Value.absent(),
+    Value<String?> closeReason = const Value.absent(),
+    int? createdAt,
+    int? updatedAt,
+  }) => AccountingPeriodRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    startDate: startDate ?? this.startDate,
+    endDate: endDate ?? this.endDate,
+    isClosed: isClosed ?? this.isClosed,
+    closedBy: closedBy.present ? closedBy.value : this.closedBy,
+    closedAt: closedAt.present ? closedAt.value : this.closedAt,
+    closeReason: closeReason.present ? closeReason.value : this.closeReason,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  AccountingPeriodRow copyWithCompanion(AccountingPeriodsCompanion data) {
+    return AccountingPeriodRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      isClosed: data.isClosed.present ? data.isClosed.value : this.isClosed,
+      closedBy: data.closedBy.present ? data.closedBy.value : this.closedBy,
+      closedAt: data.closedAt.present ? data.closedAt.value : this.closedAt,
+      closeReason: data.closeReason.present
+          ? data.closeReason.value
+          : this.closeReason,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AccountingPeriodRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('isClosed: $isClosed, ')
+          ..write('closedBy: $closedBy, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('closeReason: $closeReason, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    startDate,
+    endDate,
+    isClosed,
+    closedBy,
+    closedAt,
+    closeReason,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AccountingPeriodRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.startDate == this.startDate &&
+          other.endDate == this.endDate &&
+          other.isClosed == this.isClosed &&
+          other.closedBy == this.closedBy &&
+          other.closedAt == this.closedAt &&
+          other.closeReason == this.closeReason &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class AccountingPeriodsCompanion extends UpdateCompanion<AccountingPeriodRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<int> startDate;
+  final Value<int> endDate;
+  final Value<bool> isClosed;
+  final Value<String?> closedBy;
+  final Value<int?> closedAt;
+  final Value<String?> closeReason;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const AccountingPeriodsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.isClosed = const Value.absent(),
+    this.closedBy = const Value.absent(),
+    this.closedAt = const Value.absent(),
+    this.closeReason = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AccountingPeriodsCompanion.insert({
+    required String id,
+    required String name,
+    required int startDate,
+    required int endDate,
+    this.isClosed = const Value.absent(),
+    this.closedBy = const Value.absent(),
+    this.closedAt = const Value.absent(),
+    this.closeReason = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       startDate = Value(startDate),
+       endDate = Value(endDate),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<AccountingPeriodRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<int>? startDate,
+    Expression<int>? endDate,
+    Expression<bool>? isClosed,
+    Expression<String>? closedBy,
+    Expression<int>? closedAt,
+    Expression<String>? closeReason,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+      if (isClosed != null) 'is_closed': isClosed,
+      if (closedBy != null) 'closed_by': closedBy,
+      if (closedAt != null) 'closed_at': closedAt,
+      if (closeReason != null) 'close_reason': closeReason,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AccountingPeriodsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<int>? startDate,
+    Value<int>? endDate,
+    Value<bool>? isClosed,
+    Value<String?>? closedBy,
+    Value<int?>? closedAt,
+    Value<String?>? closeReason,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return AccountingPeriodsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      isClosed: isClosed ?? this.isClosed,
+      closedBy: closedBy ?? this.closedBy,
+      closedAt: closedAt ?? this.closedAt,
+      closeReason: closeReason ?? this.closeReason,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<int>(startDate.value);
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<int>(endDate.value);
+    }
+    if (isClosed.present) {
+      map['is_closed'] = Variable<bool>(isClosed.value);
+    }
+    if (closedBy.present) {
+      map['closed_by'] = Variable<String>(closedBy.value);
+    }
+    if (closedAt.present) {
+      map['closed_at'] = Variable<int>(closedAt.value);
+    }
+    if (closeReason.present) {
+      map['close_reason'] = Variable<String>(closeReason.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AccountingPeriodsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('isClosed: $isClosed, ')
+          ..write('closedBy: $closedBy, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('closeReason: $closeReason, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -27054,6 +27780,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LostSalesTable lostSales = $LostSalesTable(this);
   late final $BackupsTable backups = $BackupsTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
+  late final $AccountingPeriodsTable accountingPeriods =
+      $AccountingPeriodsTable(this);
   late final Index idxSubCategoriesCategory = Index(
     'idx_sub_categories_category',
     'CREATE INDEX idx_sub_categories_category ON sub_categories (category_id)',
@@ -27330,6 +28058,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_backups_status',
     'CREATE INDEX idx_backups_status ON backups (status)',
   );
+  late final Index idxAccountingPeriodsDates = Index(
+    'idx_accounting_periods_dates',
+    'CREATE INDEX idx_accounting_periods_dates ON accounting_periods (start_date, end_date)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -27370,6 +28102,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     lostSales,
     backups,
     appSettings,
+    accountingPeriods,
     idxSubCategoriesCategory,
     idxItemUnitsItem,
     idxItemUnitsPerLarge,
@@ -27439,6 +28172,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxLostSalesCreated,
     idxBackupsCreated,
     idxBackupsStatus,
+    idxAccountingPeriodsDates,
   ];
 }
 
@@ -37407,6 +38141,8 @@ typedef $$JournalEntriesTableCreateCompanionBuilder =
       Value<int> totalDebitMicros,
       Value<int> totalCreditMicros,
       Value<bool> isPosted,
+      Value<bool> isReversal,
+      Value<String?> reversalOfEntryId,
       required String createdBy,
       required int createdAt,
       required int updatedAt,
@@ -37423,6 +38159,8 @@ typedef $$JournalEntriesTableUpdateCompanionBuilder =
       Value<int> totalDebitMicros,
       Value<int> totalCreditMicros,
       Value<bool> isPosted,
+      Value<bool> isReversal,
+      Value<String?> reversalOfEntryId,
       Value<String> createdBy,
       Value<int> createdAt,
       Value<int> updatedAt,
@@ -37485,6 +38223,16 @@ class $$JournalEntriesTableFilterComposer
 
   ColumnFilters<bool> get isPosted => $composableBuilder(
     column: $table.isPosted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isReversal => $composableBuilder(
+    column: $table.isReversal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reversalOfEntryId => $composableBuilder(
+    column: $table.reversalOfEntryId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -37558,6 +38306,16 @@ class $$JournalEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isReversal => $composableBuilder(
+    column: $table.isReversal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reversalOfEntryId => $composableBuilder(
+    column: $table.reversalOfEntryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get createdBy => $composableBuilder(
     column: $table.createdBy,
     builder: (column) => ColumnOrderings(column),
@@ -37618,6 +38376,16 @@ class $$JournalEntriesTableAnnotationComposer
   GeneratedColumn<bool> get isPosted =>
       $composableBuilder(column: $table.isPosted, builder: (column) => column);
 
+  GeneratedColumn<bool> get isReversal => $composableBuilder(
+    column: $table.isReversal,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reversalOfEntryId => $composableBuilder(
+    column: $table.reversalOfEntryId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get createdBy =>
       $composableBuilder(column: $table.createdBy, builder: (column) => column);
 
@@ -37674,6 +38442,8 @@ class $$JournalEntriesTableTableManager
                 Value<int> totalDebitMicros = const Value.absent(),
                 Value<int> totalCreditMicros = const Value.absent(),
                 Value<bool> isPosted = const Value.absent(),
+                Value<bool> isReversal = const Value.absent(),
+                Value<String?> reversalOfEntryId = const Value.absent(),
                 Value<String> createdBy = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
@@ -37688,6 +38458,8 @@ class $$JournalEntriesTableTableManager
                 totalDebitMicros: totalDebitMicros,
                 totalCreditMicros: totalCreditMicros,
                 isPosted: isPosted,
+                isReversal: isReversal,
+                reversalOfEntryId: reversalOfEntryId,
                 createdBy: createdBy,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -37704,6 +38476,8 @@ class $$JournalEntriesTableTableManager
                 Value<int> totalDebitMicros = const Value.absent(),
                 Value<int> totalCreditMicros = const Value.absent(),
                 Value<bool> isPosted = const Value.absent(),
+                Value<bool> isReversal = const Value.absent(),
+                Value<String?> reversalOfEntryId = const Value.absent(),
                 required String createdBy,
                 required int createdAt,
                 required int updatedAt,
@@ -37718,6 +38492,8 @@ class $$JournalEntriesTableTableManager
                 totalDebitMicros: totalDebitMicros,
                 totalCreditMicros: totalCreditMicros,
                 isPosted: isPosted,
+                isReversal: isReversal,
+                reversalOfEntryId: reversalOfEntryId,
                 createdBy: createdBy,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -40096,6 +40872,316 @@ typedef $$AppSettingsTableProcessedTableManager =
       AppSettingRow,
       PrefetchHooks Function()
     >;
+typedef $$AccountingPeriodsTableCreateCompanionBuilder =
+    AccountingPeriodsCompanion Function({
+      required String id,
+      required String name,
+      required int startDate,
+      required int endDate,
+      Value<bool> isClosed,
+      Value<String?> closedBy,
+      Value<int?> closedAt,
+      Value<String?> closeReason,
+      required int createdAt,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$AccountingPeriodsTableUpdateCompanionBuilder =
+    AccountingPeriodsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<int> startDate,
+      Value<int> endDate,
+      Value<bool> isClosed,
+      Value<String?> closedBy,
+      Value<int?> closedAt,
+      Value<String?> closeReason,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$AccountingPeriodsTableFilterComposer
+    extends Composer<_$AppDatabase, $AccountingPeriodsTable> {
+  $$AccountingPeriodsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isClosed => $composableBuilder(
+    column: $table.isClosed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closedBy => $composableBuilder(
+    column: $table.closedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closeReason => $composableBuilder(
+    column: $table.closeReason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AccountingPeriodsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AccountingPeriodsTable> {
+  $$AccountingPeriodsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isClosed => $composableBuilder(
+    column: $table.isClosed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get closedBy => $composableBuilder(
+    column: $table.closedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get closeReason => $composableBuilder(
+    column: $table.closeReason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AccountingPeriodsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AccountingPeriodsTable> {
+  $$AccountingPeriodsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumn<int> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<bool> get isClosed =>
+      $composableBuilder(column: $table.isClosed, builder: (column) => column);
+
+  GeneratedColumn<String> get closedBy =>
+      $composableBuilder(column: $table.closedBy, builder: (column) => column);
+
+  GeneratedColumn<int> get closedAt =>
+      $composableBuilder(column: $table.closedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get closeReason => $composableBuilder(
+    column: $table.closeReason,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$AccountingPeriodsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AccountingPeriodsTable,
+          AccountingPeriodRow,
+          $$AccountingPeriodsTableFilterComposer,
+          $$AccountingPeriodsTableOrderingComposer,
+          $$AccountingPeriodsTableAnnotationComposer,
+          $$AccountingPeriodsTableCreateCompanionBuilder,
+          $$AccountingPeriodsTableUpdateCompanionBuilder,
+          (
+            AccountingPeriodRow,
+            BaseReferences<
+              _$AppDatabase,
+              $AccountingPeriodsTable,
+              AccountingPeriodRow
+            >,
+          ),
+          AccountingPeriodRow,
+          PrefetchHooks Function()
+        > {
+  $$AccountingPeriodsTableTableManager(
+    _$AppDatabase db,
+    $AccountingPeriodsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AccountingPeriodsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AccountingPeriodsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AccountingPeriodsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> startDate = const Value.absent(),
+                Value<int> endDate = const Value.absent(),
+                Value<bool> isClosed = const Value.absent(),
+                Value<String?> closedBy = const Value.absent(),
+                Value<int?> closedAt = const Value.absent(),
+                Value<String?> closeReason = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AccountingPeriodsCompanion(
+                id: id,
+                name: name,
+                startDate: startDate,
+                endDate: endDate,
+                isClosed: isClosed,
+                closedBy: closedBy,
+                closedAt: closedAt,
+                closeReason: closeReason,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required int startDate,
+                required int endDate,
+                Value<bool> isClosed = const Value.absent(),
+                Value<String?> closedBy = const Value.absent(),
+                Value<int?> closedAt = const Value.absent(),
+                Value<String?> closeReason = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => AccountingPeriodsCompanion.insert(
+                id: id,
+                name: name,
+                startDate: startDate,
+                endDate: endDate,
+                isClosed: isClosed,
+                closedBy: closedBy,
+                closedAt: closedAt,
+                closeReason: closeReason,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AccountingPeriodsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AccountingPeriodsTable,
+      AccountingPeriodRow,
+      $$AccountingPeriodsTableFilterComposer,
+      $$AccountingPeriodsTableOrderingComposer,
+      $$AccountingPeriodsTableAnnotationComposer,
+      $$AccountingPeriodsTableCreateCompanionBuilder,
+      $$AccountingPeriodsTableUpdateCompanionBuilder,
+      (
+        AccountingPeriodRow,
+        BaseReferences<
+          _$AppDatabase,
+          $AccountingPeriodsTable,
+          AccountingPeriodRow
+        >,
+      ),
+      AccountingPeriodRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -40170,4 +41256,6 @@ class $AppDatabaseManager {
       $$BackupsTableTableManager(_db, _db.backups);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
+  $$AccountingPeriodsTableTableManager get accountingPeriods =>
+      $$AccountingPeriodsTableTableManager(_db, _db.accountingPeriods);
 }

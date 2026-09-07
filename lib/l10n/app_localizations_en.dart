@@ -2124,4 +2124,225 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get expenseCategoryDeactivated => 'Category deactivated';
+
+  @override
+  String get navCashbox => 'Cashbox';
+
+  @override
+  String get navChartAccounts => 'Chart of Accounts';
+
+  @override
+  String get navJournal => 'Journal';
+
+  @override
+  String get navAccountStatement => 'Account Statement';
+
+  @override
+  String get navPeriodClose => 'Period Close';
+
+  @override
+  String get chartAccountsTitle => 'Chart of Accounts';
+
+  @override
+  String get journalTitle => 'Journal';
+
+  @override
+  String get accountStatementTitle => 'Account Statement';
+
+  @override
+  String get periodCloseTitle => 'Period Close';
+
+  @override
+  String get accountsAddTitle => 'Add Account';
+
+  @override
+  String get accountsEditTitle => 'Edit Account';
+
+  @override
+  String get accountsColCode => 'Code';
+
+  @override
+  String get accountsColName => 'Name';
+
+  @override
+  String get accountsColType => 'Type';
+
+  @override
+  String get accountsColBalance => 'Balance';
+
+  @override
+  String get accountsColStatus => 'Status';
+
+  @override
+  String get accountsNameEn => 'English Name';
+
+  @override
+  String get accountsOpeningBalance => 'Opening Balance';
+
+  @override
+  String get accountsNotes => 'Notes';
+
+  @override
+  String get accountsNoData => 'No data';
+
+  @override
+  String get accountsCodeRequired => 'Enter account code';
+
+  @override
+  String get accountsNameRequired => 'Enter account name';
+
+  @override
+  String get accountsFilterAll => 'All';
+
+  @override
+  String get accountTypeAsset => 'Asset';
+
+  @override
+  String get accountTypeLiability => 'Liability';
+
+  @override
+  String get accountTypeEquity => 'Equity';
+
+  @override
+  String get accountTypeRevenue => 'Revenue';
+
+  @override
+  String get accountTypeExpense => 'Expense';
+
+  @override
+  String get journalColEntryNumber => 'Entry #';
+
+  @override
+  String get journalColDate => 'Date';
+
+  @override
+  String get journalColDescription => 'Description';
+
+  @override
+  String get journalColRefType => 'Reference';
+
+  @override
+  String get journalColDebit => 'Debit';
+
+  @override
+  String get journalColCredit => 'Credit';
+
+  @override
+  String get journalFilterRefType => 'Ref Type';
+
+  @override
+  String get journalReversalBadge => 'Reversal';
+
+  @override
+  String get journalDetailTitle => 'Journal Detail';
+
+  @override
+  String get journalDetailLines => 'Journal Lines';
+
+  @override
+  String get accountStatementFromDate => 'From date';
+
+  @override
+  String get accountStatementToDate => 'To date';
+
+  @override
+  String get accountStatementClosingBalance => 'Closing Balance';
+
+  @override
+  String get accountStatementSelectAccount =>
+      'Select an account to view statement';
+
+  @override
+  String get periodName => 'Period Name';
+
+  @override
+  String get periodStartDate => 'Start Date';
+
+  @override
+  String get periodEndDate => 'End Date';
+
+  @override
+  String get periodStatus => 'Status';
+
+  @override
+  String get periodOpen => 'Open';
+
+  @override
+  String get periodClosed => 'Closed';
+
+  @override
+  String get periodCreate => 'New Period';
+
+  @override
+  String get periodNameRequired => 'Enter period name';
+
+  @override
+  String get periodCreatedMessage => 'Period created';
+
+  @override
+  String get periodClosedMessage => 'Period closed';
+
+  @override
+  String get periodCloseConfirmMessage =>
+      'Are you sure you want to close this period?';
+
+  @override
+  String get periodCloseReason => 'Close reason';
+
+  @override
+  String get refTypeSale => 'Sale';
+
+  @override
+  String get refTypePurchase => 'Purchase';
+
+  @override
+  String get refTypeReturn => 'Return';
+
+  @override
+  String get refTypeExpense => 'Expense';
+
+  @override
+  String get refTypeCashbox => 'Cashbox';
+
+  @override
+  String get refTypeOpeningBalance => 'Opening Balance';
+
+  @override
+  String get refTypeAdjustment => 'Adjustment';
+
+  @override
+  String get refTypeManual => 'Manual';
+
+  @override
+  String get refTypeCustomerPayment => 'Customer Payment';
+
+  @override
+  String get csRecordPayment => 'Record Payment';
+
+  @override
+  String get csPaymentTitle => 'Receive Customer Payment';
+
+  @override
+  String get csPaymentAmount => 'Amount';
+
+  @override
+  String get csPaymentCash => 'Cash';
+
+  @override
+  String get csPaymentCard => 'Card';
+
+  @override
+  String get csPaymentNote => 'Note';
+
+  @override
+  String get csPaymentAmountError => 'Enter a positive amount';
+
+  @override
+  String get csPaymentSplitError => 'Cash + card must equal the amount';
+
+  @override
+  String get csPaymentSaved => 'Payment recorded';
+
+  @override
+  String get csPaymentRefundTitle => 'Refund to Customer';
 }

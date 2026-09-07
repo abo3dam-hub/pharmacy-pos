@@ -40,6 +40,9 @@ enum PaymentMethod { cash, card, mixed, credit }
 
 enum PurchaseStatus { pending, received, cancelled }
 
+/// Purchase payment method — mirrors sale payment methods for purchase accounting.
+enum PurchasePaymentMethod { cash, card, credit }
+
 /// Bonus engine types (§4.18, §13): Bonus 1, Bonus 2, or Gift.
 enum PurchaseBonusType { bonus_1, bonus_2, gift }
 

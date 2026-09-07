@@ -61,7 +61,12 @@ void main() {
 
     test('seeds chart of accounts', () async {
       final accounts = await db.select(db.accounts).get();
-      expect(accounts, hasLength(12));
+      // 12 Phase 2–7 accounts + acc_1099 (cash over/short) + acc_4002
+      // (purchase returns) added in Phase 10.
+      expect(accounts, hasLength(14));
+      final codes = accounts.map((a) => a.code).toSet();
+      expect(codes, contains('1099'));
+      expect(codes, contains('4002'));
     });
   });
 }

@@ -15,12 +15,15 @@ import '../../domain/services/audit_service.dart';
 import '../../domain/services/base_unit_converter.dart';
 import '../../domain/services/bonus_calculator.dart';
 import '../../domain/services/cashbox_service.dart';
+import '../../domain/services/customer_payment_service.dart';
 import '../../domain/services/permission_service.dart';
 import '../../domain/services/purchase_service.dart';
 import '../../domain/services/return_service.dart';
 import '../../domain/services/sale_service.dart';
 import '../../domain/services/stock_service.dart';
+import '../../features/accounts/application/accounting_controller.dart';
 import '../../features/accounts/application/cashbox_controller.dart';
+import '../../features/accounts/data/accounting_dao.dart';
 import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/application/users_controller.dart';
 import '../../features/auth/data/daos/user_dao.dart';
@@ -85,6 +88,27 @@ final cashboxRepositoryProvider =
 final cashboxControllerProvider =
     StateNotifierProvider<CashboxController, CashboxViewState>(
         (ref) => getIt<CashboxController>());
+final customerPaymentServiceProvider =
+    Provider<CustomerPaymentService>((ref) => getIt<CustomerPaymentService>());
+// ── Phase 10: Accounting ────────────────────────────────────────────────────
+final accountingDaoProvider =
+    Provider<AccountingDao>((ref) => getIt<AccountingDao>());
+final accountsControllerProvider =
+    StateNotifierProvider<AccountsController, AccountsViewState>(
+        (ref) => getIt<AccountsController>());
+final journalControllerProvider =
+    StateNotifierProvider<JournalController, JournalViewState>(
+        (ref) => getIt<JournalController>());
+final journalDetailControllerProvider =
+    StateNotifierProvider<JournalDetailController, JournalDetailViewState>(
+        (ref) => getIt<JournalDetailController>());
+final accountStatementControllerProvider =
+    StateNotifierProvider<AccountStatementController,
+            AccountStatementViewState>(
+        (ref) => getIt<AccountStatementController>());
+final periodsControllerProvider =
+    StateNotifierProvider<PeriodsController, PeriodsViewState>(
+        (ref) => getIt<PeriodsController>());
 final expenseRepositoryProvider =
     Provider<ExpenseRepository>((ref) => getIt<ExpenseRepository>());
 final expenseControllerProvider =

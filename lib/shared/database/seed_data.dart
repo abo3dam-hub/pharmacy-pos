@@ -400,6 +400,100 @@ Future<void> seedDefaults(AppDatabase db) async {
   // Phase 9 expense categories master (idempotent; the engine resolves the GL
   // account for each expense against this table).
   await seedExpenseCategories(db);
+
+  // Phase 10 chart of accounts additions: cash over/short + purchase returns.
+  await db.batch((batch) {
+    batch.insertAll(db.accounts, [
+      AccountsCompanion.insert(
+        id: 'acc_1099',
+        code: '1099',
+        name: 'فرق الصندوق',
+        nameEn: const Value('Cash Over/Short'),
+        accountType: AccountType.expense,
+        isSystem: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      ),
+      AccountsCompanion.insert(
+        id: 'acc_4002',
+        code: '4002',
+        name: 'مرتجعات المشتريات',
+        nameEn: const Value('Purchase Returns'),
+        accountType: AccountType.liability,
+        isSystem: const Value(true),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ], mode: InsertMode.insertOrIgnore);
+  });
+
+  // Phase 10 accounting permissions are part of kSeedPermissions (loop above)
+  // for fresh installs; this ensures idempotent addition for any partial state.
+  await ensureAccountingPermissions(db);
+}
+
+/// Phase 10 accounting RBAC — idempotently ensures the accounting permission
+/// seeds exist and grants them to admin (all), pharmacist (view) and viewer
+/// (view). Fresh installs already cover these via kSeedPermissions.
+Future<void> ensureAccountingPermissions(AppDatabase db) async {
+  final now = DateTime.now().millisecondsSinceEpoch;
+  const newCodes = <String, String>{
+    Perm.accountingView: 'عرض القيود المحاسبية',
+    Perm.accountingPost: 'ترحيل قيود محاسبية',
+  };
+  await db.batch((batch) {
+    for (final e in newCodes.entries) {
+      batch.insert(
+        db.permissions,
+        PermissionsCompanion.insert(
+          id: 'perm_${e.key.replaceAll('.', '_')}',
+          code: e.key,
+          name: e.key,
+          nameAr: e.value,
+          createdAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+    // Admin → both.
+    for (final e in newCodes.entries) {
+      batch.insert(
+        db.rolePermissions,
+        RolePermissionsCompanion.insert(
+          id: 'rp_admin_${e.key.replaceAll('.', '_')}',
+          roleId: 'role_admin',
+          permissionId: 'perm_${e.key.replaceAll('.', '_')}',
+          granted: const Value(true),
+          createdAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+    // Pharmacist → view.
+    batch.insert(
+      db.rolePermissions,
+      RolePermissionsCompanion.insert(
+        id: 'rp_pharmacist_accounting_view',
+        roleId: 'role_pharmacist',
+        permissionId: 'perm_accounting_view',
+        granted: const Value(true),
+        createdAt: now,
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
+    // Viewer → view.
+    batch.insert(
+      db.rolePermissions,
+      RolePermissionsCompanion.insert(
+        id: 'rp_viewer_accounting_view',
+        roleId: 'role_viewer',
+        permissionId: 'perm_accounting_view',
+        granted: const Value(true),
+        createdAt: now,
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
+  });
 }
 
 /// Phase 9 expense categories master (idempotent — `insertOrIgnore`). Codes

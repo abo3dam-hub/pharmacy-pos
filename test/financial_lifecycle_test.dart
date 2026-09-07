@@ -590,7 +590,7 @@ void main() {
     );
   });
 
-  test('adjustCash requires cashbox.operate + reason and lands on Capital',
+  test('adjustCash requires cashbox.operate + reason and lands on Cash Over/Short',
       () async {
     await const FinancialPostingService().adjustCash(
       db,
@@ -600,7 +600,9 @@ void main() {
     );
     expect(await cashboxTotal(), 5000);
     expect(await accountBalance(SystemAccountCode.cash), 5000);
-    expect(await accountBalance(SystemAccountCode.capital), 5000);
+    // Positive adjustment = cash overage → credit to the expense-type
+    // cash over/short account, so its balance is negative (income-side).
+    expect(await accountBalance(SystemAccountCode.cashOverShort), -5000);
 
     await const FinancialPostingService().adjustCash(
       db,
@@ -609,6 +611,8 @@ void main() {
       userId: 'user_admin',
     );
     expect(await cashboxTotal(), 3000);
+    // Negative adjustment = cash shortage → debit (expense increases).
+    expect(await accountBalance(SystemAccountCode.cashOverShort), -3000);
 
     await expectLater(
       const FinancialPostingService().adjustCash(

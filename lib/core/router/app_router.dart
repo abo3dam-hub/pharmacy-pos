@@ -13,7 +13,13 @@ import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/presentation/pages/access_denied_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/users_page.dart';
+import '../../features/accounts/presentation/pages/accounts_hub_page.dart';
 import '../../features/accounts/presentation/pages/cashbox_page.dart';
+import '../../features/accounts/presentation/pages/chart_of_accounts_page.dart';
+import '../../features/accounts/presentation/pages/journal_page.dart';
+import '../../features/accounts/presentation/pages/journal_detail_page.dart';
+import '../../features/accounts/presentation/pages/account_statement_page.dart';
+import '../../features/accounts/presentation/pages/periods_page.dart';
 import '../../features/customers/presentation/pages/customer_statement_page.dart';
 import '../../features/customers/presentation/pages/customers_page.dart';
 import '../../features/expenses/presentation/pages/expenses_page.dart';
@@ -194,6 +200,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                 ],
+                if (section == AppSection.accounts) ...[
+                  GoRoute(
+                    path: 'cashbox',
+                    builder: (context, _) => const CashboxPage(),
+                  ),
+                  GoRoute(
+                    path: 'chart',
+                    builder: (context, _) => const ChartOfAccountsPage(),
+                  ),
+                  GoRoute(
+                    path: 'journal',
+                    builder: (context, _) => const JournalPage(),
+                  ),
+                  GoRoute(
+                    path: 'journal/detail/:id',
+                    builder: (context, state) => JournalDetailPage(
+                      entryId: state.pathParameters['id']!,
+                    ),
+                  ),
+                  GoRoute(
+                    path: 'statement',
+                    builder: (context, _) => const AccountStatementPage(),
+                  ),
+                  GoRoute(
+                    path: 'periods',
+                    builder: (context, _) => const PeriodsPage(),
+                  ),
+                ],
               ],
             ),
         ],
@@ -212,7 +246,7 @@ Widget _sectionPage(AppSection section, BuildContext context) {
   if (section == AppSection.suppliers) return const SuppliersPage();
   if (section == AppSection.purchases) return const PurchasesPage();
   if (section == AppSection.customers) return const CustomersPage();
-  if (section == AppSection.accounts) return const CashboxPage();
+  if (section == AppSection.accounts) return const AccountsHubPage();
   if (section == AppSection.expenses) return const ExpensesPage();
   final l10n = AppLocalizations.of(context);
   return SectionPlaceholder(

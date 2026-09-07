@@ -16,4 +16,10 @@ class SystemAccountCode {
   static const String operatingExpenses = '5100';
   static const String rent = '5101';
   static const String salaries = '5102';
+
+  /// Cash over/short — used by cashbox adjustments (replaces Capital stand-in).
+  static const String cashOverShort = '1099';
+
+  /// Purchase returns — contra-inventory account for purchase return reversals.
+  static const String purchaseReturns = '4002';
 }
