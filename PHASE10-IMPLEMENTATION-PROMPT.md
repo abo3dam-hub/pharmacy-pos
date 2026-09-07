@@ -1,0 +1,1176 @@
+PHASE 10 — ACCOUNTING ENGINE & MANAGEMENT
+
+STRICT IMPLEMENTATION PROMPT
+
+ROLE
+
+You are a Senior Flutter Desktop Engineer, Accounting Systems Architect, Database Engineer, and Financial Integrity Auditor.
+
+You are continuing an existing production-oriented Pharmacy Management & POS system.
+
+This is NOT a greenfield project.
+
+You MUST inspect and understand the existing architecture, database, business logic, financial posting lifecycle, permissions, audit system, and all previous phase handoffs before modifying code.
+
+---
+
+1. AUTHORITATIVE PROJECT BASELINE
+
+Current verified baseline:
+
+- Phase 9 completed successfully.
+- Commit:
+
+"8431eeef5183296d563f96e1c8e7bb1971fdfe5a"
+
+- Tests: "390/390"
+- "flutter analyze": "0 issues"
+- Database schema: "v7"
+- Phase 9 completion report:
+
+"PHASE9-COMPLETION-REPORT.md"
+
+The authoritative architecture document is:
+
+"PROJECT-ARCHITECTURE-PLAN.md"
+
+The Architecture Plan is the single source of truth for the official roadmap.
+
+Do NOT silently modify the roadmap.
+
+---
+
+2. CRITICAL POLICY — MANDATORY HANDOFF AUDIT
+
+Before writing or modifying application code, perform a complete:
+
+PRE-IMPLEMENTATION SCOPE & HANDOFF AUDIT
+
+Review:
+
+1. "PROJECT-ARCHITECTURE-PLAN.md"
+2. Phase 6 completion/gap-closure documentation
+3. Phase 7 completion documentation
+4. Phase 7.5 completion documentation
+5. Phase 8 completion documentation
+6. Phase 9 completion documentation
+7. Current source code
+8. Current database schema and migrations
+9. Existing Financial Posting Service
+10. Existing Cashbox implementation
+11. Existing Expense accounting
+12. Existing customer balance / AR implementation
+13. Existing purchase and purchase-return implementation
+14. Existing permissions and audit system
+
+You must identify every relevant handoff and classify it as:
+
+- "IMPLEMENTED"
+- "PHASE 10"
+- "LATER PHASE"
+- "OUT OF ROADMAP"
+
+Do NOT assume that something mentioned in an old completion report is still missing.
+
+Inspect the current code.
+
+Do NOT implement anything that already exists.
+
+Do NOT rebuild completed functionality.
+
+---
+
+3. IMPORTANT PREVIOUS-PHASE HANDOFFS
+
+You MUST explicitly account for the following.
+
+Phase 6
+
+Already implemented and authoritative:
+
+- Partial-unit selling.
+- Configurable partial-sale markup.
+- Default 10% markup.
+- Base-unit conversion.
+- FEFO.
+- Prescription gating.
+- Prescription sale linkage foundation.
+- Smart Alternatives.
+- Lost Sales Quick Capture.
+- Receipt PDF.
+- Z-Report.
+- Relevant POS financial lifecycle.
+
+Do NOT rebuild these.
+
+Accounting must correctly understand their financial consequences.
+
+For example:
+
+Partial-unit sales MUST use the already-established pricing/business rules.
+
+Do NOT create a second partial pricing calculation inside accounting.
+
+---
+
+4. PHASE 7 HANDOFF
+
+Existing authoritative functionality includes:
+
+- Sales.
+- Returns.
+- Invoice void.
+- Stock reversal.
+- Prescription reversal.
+- Financial reversal.
+- POS checkout.
+- Cash/card/mixed payments.
+- Credit-sale foundation.
+- FEFO.
+- RX enforcement.
+
+Accounting must integrate with these existing events.
+
+Do NOT rebuild sales or returns.
+
+Voids MUST be represented through accounting reversal logic.
+
+Never delete historical accounting records simply because an invoice was voided.
+
+---
+
+5. PHASE 7.5 — CRITICAL FINANCIAL FOUNDATION
+
+The existing Financial Posting Service is the authoritative financial engine.
+
+Relevant existing APIs include:
+
+- "postSale"
+- "postReturn"
+- "postVoidReversal"
+- "recordExpense"
+- "adjustCash"
+- customer payment/refund functionality
+
+The architectural rule is:
+
+BUSINESS EVENT
+      ↓
+EXISTING FINANCIAL POSTING SERVICE
+      ↓
+JOURNAL ENTRIES
+      ↓
+ACCOUNTING MANAGEMENT / UI
+
+NOT:
+
+BUSINESS EVENT
+      ↓
+NEW ACCOUNTING ENGINE
+
+You MUST NOT create a second financial posting engine.
+
+You MUST NOT duplicate existing posting logic.
+
+You MUST NOT re-post historical financial events merely because Phase 10 introduces accounting UI.
+
+---
+
+6. PHASE 8 HANDOFF
+
+Existing:
+
+- Cash Box.
+- Open/close.
+- Deposit.
+- Withdrawal.
+- Adjustment.
+- Cashbox ledger.
+- Cash/card/credit sale support.
+- Credit limit enforcement at posting.
+- Cashbox reconciliation.
+- RBAC.
+- Audit.
+- Customer-payment service layer.
+
+The Customer Payment UI was not implemented previously.
+
+Because it is directly related to Accounts Receivable and accounting management, it is INCLUDED in Phase 10.
+
+Do NOT implement:
+
+- Banking module.
+- Bank transfers.
+- Drawer import/export.
+- Per-user shift targets.
+
+Those are NOT part of the official Phase 10 roadmap.
+
+---
+
+7. PHASE 9 HANDOFF
+
+Existing:
+
+- Expense CRUD.
+- Expense categories.
+- Expense numbering.
+- Cash/card expense accounting.
+- Expense cancellation/reversal.
+- Cashbox integration.
+- GL posting.
+- Audit.
+- RBAC.
+- Receipt attachment.
+
+Phase 10 must expose/manage the accounting effects already generated by expenses.
+
+Do NOT rebuild expense posting.
+
+Do NOT create duplicate expense journals.
+
+Receipt backup remains a later concern.
+
+---
+
+8. CORE OBJECTIVE
+
+Implement:
+
+ACCOUNTING ENGINE & MANAGEMENT
+
+The objective is to provide the accounting management foundation around the existing financial engine.
+
+This phase MUST establish:
+
+1. Chart of Accounts.
+2. Journal management/viewer.
+3. Basic account statement.
+4. Customer Payment UI.
+5. Accounting integration audit.
+6. Double-posting protection.
+7. Journal immutability.
+8. Period close.
+9. Cashbox ↔ GL reconciliation.
+10. Purchase accounting integration where actually missing.
+
+---
+
+9. CHART OF ACCOUNTS
+
+Implement a proper hierarchical Chart of Accounts.
+
+Each account should support, as appropriate:
+
+- Account code.
+- Arabic name.
+- English name.
+- Account type.
+- Parent account.
+- Active/inactive status.
+- System/manual classification.
+- Posting allowed.
+- Hierarchical relationships.
+
+Account types:
+
+- Asset
+- Liability
+- Equity
+- Revenue
+- Expense
+
+Requirements:
+
+- Account codes must be unique.
+- Prevent accidental deletion of used accounts.
+- System accounts must be protected.
+- Validate parent-child relationships.
+- Do not allow invalid hierarchy cycles.
+- Do not allow posting to non-posting parent accounts unless the existing architecture explicitly supports that model.
+- Preserve existing system account codes.
+- Do NOT arbitrarily rename or remap existing financial accounts.
+
+Before changing account mappings, inspect all existing postings.
+
+---
+
+10. EXISTING ACCOUNT MAPPING AUDIT
+
+Before implementing new accounting mappings, inspect actual current mappings.
+
+At minimum review:
+
+Sales
+
+Expected accounting conceptually:
+
+Dr Cash / Bank / Accounts Receivable
+    Cr Sales Revenue
+
+and inventory cost:
+
+Dr COGS
+    Cr Inventory
+
+But DO NOT blindly assume the exact current implementation.
+
+Inspect the actual Financial Posting Service and database.
+
+Returns
+
+Expected conceptual reversal:
+
+Dr Sales Returns / Revenue reversal
+    Cr Cash / AR
+
+and inventory reversal:
+
+Dr Inventory
+    Cr COGS
+
+Again, inspect existing implementation first.
+
+Void
+
+Must use reversal entries.
+
+Never delete original accounting history.
+
+Expenses
+
+Existing Phase 9 behavior must remain authoritative.
+
+Customer Payment
+
+Expected:
+
+Dr Cash / Bank
+    Cr Accounts Receivable
+
+Cashbox operations
+
+Inspect current behavior for:
+
+- Deposit
+- Withdrawal
+- Adjustment
+- Return refund
+- Sale
+- Credit down payment
+- Customer payment
+- Expense
+- Void
+
+Accounting and cashbox must remain consistent.
+
+---
+
+11. PURCHASE ACCOUNTING — MANDATORY CODE AUDIT
+
+Phase 4 implemented purchases and purchase returns.
+
+Previous financial work indicated purchase accounting/full purchases GL may have been deferred.
+
+You MUST inspect the current code.
+
+Do NOT assume either state.
+
+If purchase accounting already exists:
+
+- preserve it.
+- integrate it.
+- prevent duplicate posting.
+
+If purchase accounting is genuinely missing and accounting integration is required:
+
+Implement the necessary accounting treatment.
+
+Conceptually:
+
+Purchase:
+
+Dr Inventory
+    Cr Accounts Payable / Cash / Bank
+
+Purchase Return:
+
+Dr Accounts Payable / Cash / Bank
+    Cr Inventory
+
+But the exact implementation MUST follow the existing purchase business model.
+
+Do not invent supplier accounting behavior without inspecting existing entities, payment logic, and purchase lifecycle.
+
+---
+
+12. DOUBLE-POSTING PROTECTION
+
+THIS IS ONE OF THE MOST IMPORTANT REQUIREMENTS.
+
+Every financial business event must produce exactly one intended accounting effect.
+
+Audit at least:
+
+- Sale
+- Return
+- Void
+- Expense
+- Customer Payment
+- Cashbox Deposit
+- Cashbox Withdrawal
+- Cashbox Adjustment
+- Purchase
+- Purchase Return
+
+For every event determine:
+
+1. What triggers it?
+2. Which service performs posting?
+3. Which journal is created?
+4. What reference identifies it?
+5. Can the same event be triggered twice?
+6. Is the operation transactional?
+7. Is there an idempotency or uniqueness guard?
+8. Can retry create duplicate journals?
+
+Where appropriate, enforce uniqueness using stable source-event references.
+
+Do not solve this by simply hiding duplicate records in the UI.
+
+The database/service layer must protect financial integrity.
+
+---
+
+13. JOURNAL MANAGEMENT
+
+Implement a Journal Viewer / Journal Management interface.
+
+Display:
+
+- Journal number.
+- Date.
+- Reference.
+- Description.
+- Source event.
+- Account.
+- Debit.
+- Credit.
+- Balanced status.
+- Created by.
+- Created timestamp.
+- Reversal relationship.
+
+Requirements:
+
+- DB-side filtering.
+- DB-side pagination.
+- No loading the entire journal table into memory.
+- Search by journal/reference where appropriate.
+- Date filtering where appropriate.
+- Account filtering where appropriate.
+- Source-event filtering where appropriate.
+
+Every journal must satisfy:
+
+TOTAL DEBIT == TOTAL CREDIT
+
+---
+
+14. JOURNAL IMMUTABILITY
+
+Posted journals are immutable.
+
+After posting:
+
+NO:
+
+- Edit.
+- Delete.
+- Changing debit.
+- Changing credit.
+- Changing account.
+- Changing financial date.
+
+Correction mechanism:
+
+Original Journal
+      ↓
+Reversal Journal
+      ↓
+Corrected Journal
+
+Every correction must preserve:
+
+- Original reference.
+- Reversal relationship.
+- User.
+- Timestamp.
+- Reason.
+- Audit trail.
+
+Do not implement destructive accounting edits.
+
+---
+
+15. CUSTOMER PAYMENT UI
+
+Build the missing Customer Payment workflow.
+
+The UI must support:
+
+- Customer selection.
+- Current outstanding balance.
+- Payment amount.
+- Cash/card payment.
+- Remaining balance.
+- Reference/notes where appropriate.
+- Permission enforcement.
+- Audit reason/reference where required.
+- Atomic save.
+
+Rules:
+
+- Amount > 0.
+- Cannot exceed business-defined allowable amount unless the existing financial engine explicitly supports overpayment/refund behavior.
+- Customer must exist.
+- Payment must be posted through the existing financial posting service.
+- Do not directly manipulate AR balances from the UI.
+
+Accounting effect must remain consistent with the existing financial engine:
+
+Dr Cash / Bank
+    Cr Accounts Receivable
+
+The customer balance must be recalculated from authoritative financial data, not manually incremented/decremented by the UI.
+
+---
+
+16. BASIC ACCOUNT STATEMENT
+
+Implement a basic Account Statement for accounting management.
+
+This is NOT Phase 11's advanced reporting system.
+
+It should provide:
+
+- Date.
+- Journal/reference.
+- Description.
+- Debit.
+- Credit.
+- Running balance.
+
+Support:
+
+- Account selection.
+- Basic date filtering.
+- DB-side querying.
+- Correct opening/running balance calculation.
+
+Do not build:
+
+- advanced analytics.
+- financial dashboards.
+- export/reporting suites.
+- Phase 11 reporting engine.
+
+---
+
+17. PERIOD CLOSE
+
+Implement basic accounting period management.
+
+Requirements:
+
+- Open period.
+- Close period.
+- Permission controlled.
+- Audit logged.
+- Financial posting into closed periods must be rejected.
+- Financial history inside closed periods must not be modified.
+- Journal reversal/correction must respect period state.
+
+If reopening a closed period is supported:
+
+- require elevated permission.
+- require reason.
+- audit the action.
+
+Do NOT build a complex year-end closing wizard.
+
+Do NOT implement tax/year-end accounting unless already part of the existing architecture.
+
+---
+
+18. CASHBOX ↔ ACCOUNTING RECONCILIATION
+
+Verify consistency between Cashbox and GL.
+
+Test all relevant events:
+
+Cash Sale
+
+Cashbox increases.
+
+GL cash increases.
+
+Credit Sale
+
+No cash movement unless there is a down payment.
+
+AR increases.
+
+Credit Sale Down Payment
+
+Cash/card increases appropriately.
+
+AR reflects only the remaining credit.
+
+Customer Payment
+
+Cash/card increases.
+
+AR decreases.
+
+Cash Expense
+
+Cashbox decreases.
+
+Cash/GL decreases.
+
+Expense increases.
+
+Card Expense
+
+Cashbox must NOT receive a cash movement.
+
+Bank/card account reflects the transaction.
+
+Deposit
+
+Cashbox decreases.
+
+Destination account increases if the existing architecture supports it.
+
+Withdrawal
+
+Cashbox decreases according to the defined business rule.
+
+Adjustment
+
+Existing financial adjustment logic must be reviewed.
+
+Pay special attention to the known historical debt:
+
+"adjustCash" previously used Capital "acc_3000" as a temporary stand-in for cash over/short.
+
+Determine whether this is still true.
+
+If still present, resolve it appropriately within Phase 10 accounting design.
+
+Do not silently leave an obviously incorrect accounting mapping without documenting it.
+
+Return Refund
+
+Cashbox decreases where a cash refund occurs.
+
+Accounting reversal must match.
+
+Void
+
+Financial reversal must reconcile with Cashbox and GL.
+
+---
+
+19. MONEY & NUMBER RULES
+
+ABSOLUTE REQUIREMENT:
+
+Money must remain integer-based in the smallest currency unit.
+
+Never introduce:
+
+- double
+- float
+- floating-point money calculations.
+
+Percentages must use basis points.
+
+All displayed numbers MUST use Western/Latin digits:
+
+"0 1 2 3 4 5 6 7 8 9"
+
+This applies to:
+
+- Prices.
+- Amounts.
+- Quantities.
+- Invoice numbers.
+- Journal numbers.
+- Account codes.
+- Customer IDs.
+- Prescription IDs.
+- Barcodes.
+- Dates.
+- Pagination.
+- Balances.
+- Reports.
+- Counts.
+
+Arabic UI does NOT mean Arabic-Indic digits.
+
+---
+
+20. LOCALIZATION & UI
+
+Arabic is the primary UI language.
+
+Requirements:
+
+- Professional Arabic terminology.
+- RTL by default.
+- English secondary.
+- LTR for English.
+- Existing localization architecture must be reused.
+- No hard-coded user-facing strings.
+- Consistent terminology across accounting screens.
+
+Examples of professional terminology:
+
+- دليل الحسابات
+- القيود اليومية
+- كشف الحساب
+- الذمم المدينة
+- الذمم الدائنة
+- الإيرادات
+- المصروفات
+- الأصول
+- الالتزامات
+- حقوق الملكية
+- مدين
+- دائن
+- إغلاق الفترة المحاسبية
+
+Use existing project terminology where it already exists.
+
+---
+
+21. RBAC & SECURITY
+
+Accounting operations MUST respect the existing permission architecture.
+
+At minimum review permissions for:
+
+- Chart of Accounts viewing.
+- Chart of Accounts management.
+- Journal viewing.
+- Customer payments.
+- Period close.
+- Period reopen.
+- Accounting corrections/reversals.
+
+Do not rely only on UI hiding.
+
+Authorization must exist at the domain/application boundary.
+
+Sensitive financial operations must be audited.
+
+---
+
+22. DATABASE & MIGRATIONS
+
+If schema changes are required:
+
+- Increment schema version correctly.
+- Add forward-only migration.
+- Never delete/recreate the database.
+- Never reset production data.
+- Never destroy historical journals.
+- Preserve existing data.
+- Make migration idempotent where appropriate.
+- Update migration tests.
+- Update backup/schema validation tests.
+
+Before migration:
+
+- inspect current v7 schema.
+- understand all existing financial tables.
+- identify foreign keys/indexes/constraints.
+- preserve existing records.
+
+After migration:
+
+- verify v1 → current migration chain.
+- verify fresh database.
+- verify backup/restore compatibility.
+
+---
+
+23. TRANSACTIONS & ATOMICITY
+
+Financial operations must be atomic.
+
+Examples:
+
+Customer payment:
+
+Validate
+↓
+Permission
+↓
+Create financial posting
+↓
+Update affected financial state
+↓
+Audit
+↓
+Commit
+
+If any critical operation fails:
+
+ROLLBACK EVERYTHING
+
+Never leave:
+
+- cashbox updated but GL missing.
+- GL updated but AR missing.
+- journal created but business event missing.
+- customer payment recorded without accounting.
+- accounting record without audit when audit is required.
+
+---
+
+24. TESTING REQUIREMENTS
+
+Do NOT reduce or delete existing tests to make the phase pass.
+
+Baseline:
+
+"390/390"
+
+All previous tests MUST continue passing.
+
+Add comprehensive tests for:
+
+Chart of Accounts
+
+- create.
+- edit allowed fields.
+- duplicate code rejection.
+- hierarchy.
+- invalid parent.
+- used-account deletion protection.
+- system-account protection.
+- posting restrictions.
+
+Journals
+
+- balanced journal.
+- unbalanced journal rejection.
+- immutable journal.
+- reversal.
+- correction relationship.
+- duplicate event protection.
+
+Customer Payments
+
+- valid payment.
+- cash payment.
+- card payment.
+- AR reduction.
+- remaining balance.
+- permission.
+- audit.
+- atomic rollback.
+- duplicate submission protection.
+
+Period Close
+
+- close.
+- audit.
+- posting blocked.
+- modification blocked.
+- reopen permission if implemented.
+
+Cashbox ↔ GL
+
+Test every relevant event listed above.
+
+Purchases
+
+If purchase accounting is implemented/fixed:
+
+- purchase posting.
+- purchase return.
+- duplicate prevention.
+- rollback.
+
+Migration
+
+- v7 → new schema.
+- full migration chain.
+- fresh database.
+- backup roundtrip.
+
+Regression
+
+Run the entire existing suite.
+
+---
+
+25. PERFORMANCE
+
+Follow the architecture performance rules.
+
+Do NOT:
+
+- load all journals.
+- load all accounts unnecessarily.
+- calculate massive statements in Dart when SQL can perform the work efficiently.
+- scan the entire database for normal UI filtering.
+
+Use:
+
+- indexed queries.
+- pagination.
+- DB-side filtering.
+- appropriate aggregation.
+
+---
+
+26. DO NOT EXPAND THE ROADMAP
+
+DO NOT implement:
+
+- Trial Balance.
+- Income Statement.
+- Balance Sheet.
+- Advanced Financial Statements.
+- Advanced Customer Statements.
+- Supplier Statements.
+- Sales Reports.
+- Purchase Reports.
+- Inventory Reports.
+- Lost Sales Reports.
+- PDF/Excel reporting framework.
+- Banking module.
+- Bank transfers.
+- Drawer import/export.
+- Per-user shift targets.
+- Backup redesign.
+- Expense receipt backup system.
+- New POS architecture.
+- New sales engine.
+- New inventory engine.
+
+Those belong to later roadmap phases or are outside the official roadmap.
+
+The only permitted enhancements are small, logical accounting-management extensions directly necessary for Phase 10.
+
+---
+
+27. ARCHITECTURE RULES
+
+Respect:
+
+- Clean Architecture.
+- Feature-based modular structure.
+- Domain purity.
+- Repository abstraction.
+- DAO/database separation.
+- Existing dependency injection.
+- Existing Riverpod architecture.
+- Existing RBAC.
+- Existing audit system.
+
+Do not move business logic into widgets.
+
+Do not access Drift directly from presentation.
+
+Do not create global shortcuts around repositories/use cases.
+
+Do not introduce a parallel architecture.
+
+---
+
+28. IMPLEMENTATION ORDER
+
+Follow this order:
+
+STEP 1 — Audit
+
+No code changes.
+
+Produce a complete audit internally and identify:
+
+- Existing accounting tables.
+- Existing account mappings.
+- Existing journal implementation.
+- Existing Financial Posting Service behavior.
+- Existing Cashbox integration.
+- Existing purchase accounting.
+- Existing customer payment service.
+- Existing permissions.
+- Existing audit mechanisms.
+- Existing schema constraints.
+- All unresolved financial handoffs.
+
+STEP 2 — Design
+
+Define the minimal required schema/domain/application/UI changes.
+
+Avoid unnecessary migration.
+
+
+
+STEP 3 — Financial Integrity First
+
+Fix/complete accounting integration and double-posting protection.
+
+STEP 4 — Chart of Accounts
+
+Implement account hierarchy and management.
+
+STEP 5 — Journal Management
+
+Implement journal viewer and immutable accounting history.
+
+STEP 6 — Customer Payments
+
+Implement the UI using the existing financial service.
+
+STEP 7 — Account Statement
+
+Implement basic statement functionality.
+
+STEP 8 — Period Close
+
+Implement period protection.
+
+STEP 9 — Cashbox/GL Reconciliation
+Verify and fix accounting consistency.
+STEP 10 — Testing
+Run full regression and all new tests.
+STEP 11 — UI/Localization Audit
+Verify Arabic, RTL, English, and Latin digits.
+STEP 12 — Final Audit
+Compare actual implementation against this scope.
+29. STOP CONDITIONS
+STOP and report instead of guessing if you discover:
+Existing accounting logic contradicts the Architecture Plan.
+Existing Financial Posting Service produces duplicate journals.
+Existing schema cannot safely support the required behavior without architectural redesign.
+Purchase accounting semantics are ambiguous.
+Existing account mappings would cause historical financial corruption.
+A proposed fix requires changing a completed phase's business rule.
+A requirement would expand the official roadmap.
+A migration would require destructive database changes.
+Do NOT silently make assumptions.
+Explain:
+What was discovered.
+Why it is a conflict.
+Which files/components are affected.
+The safest proposed resolution.
+30. FINAL ACCEPTANCE GATES
+Phase 10 is NOT complete unless all gates pass.
+Gate A — Scope
+No unauthorized roadmap expansion.
+Gate B — Architecture
+No parallel accounting engine.
+Gate C — Financial Integrity
+Every business event posts exactly once.
+Gate D — Double Entry
+Every journal is balanced:
+Total Debit == Total Credit
+Gate E — Immutability
+Posted journals cannot be edited/deleted.
+Gate F — Reversal
+Corrections use reversal/corrected entries.
+Gate G — AR
+Customer payments correctly reduce Accounts Receivable.
+Gate H — Cashbox
+Cashbox and accounting remain consistent.
+Gate I — Period Close
+Closed periods reject prohibited financial operations.
+Gate J — RBAC
+Sensitive accounting operations are protected.
+Gate K — Audit
+Sensitive financial operations are audited.
+Gate L — Localization
+Arabic-first, RTL, English supported.
+Gate M — Digits
+All displayed numbers use Latin digits 0-9.
+Gate N — Database
+Forward-only migration with no data destruction.
+Gate O — Regression
+All previous tests pass.
+Gate P — Quality
+flutter analyze returns:
+0 issues
+31. REQUIRED FINAL REPORT
+Create:
+PHASE10-COMPLETION-REPORT.md
+The report MUST include:
+Phase objective.
+Baseline commit.
+Final commit.
+Pre-implementation audit summary.
+Scope classification.
+Files/modules changed.
+Database/schema changes.
+Financial posting integration.
+Double-posting protection.
+Chart of Accounts implementation.
+Journal management.
+Customer Payment UI.
+Account Statement.
+Period Close.
+Cashbox ↔ GL reconciliation.
+Purchase accounting status.
+RBAC.
+Audit.
+Localization.
+Latin-digit compliance.
+Tests before.
+Tests after.
+flutter analyze result.
+Migration verification.
+Acceptance matrix.
+Known limitations.
+Technical debt.
+Explicit Phase 11 handoff.
+32. PHASE 11 HANDOFF
+At completion, explicitly hand off only the appropriate remaining work to Phase 11.
+Phase 11 is:
+FINANCIAL & BUSINESS REPORTING
+Expected Phase 11 scope:
+Trial Balance.
+Income Statement.
+Balance Sheet.
+Advanced Account Statements.
+Sales reports.
+Purchase reports.
+Inventory reports.
+Customer statements.
+Supplier statements.
+Lost Sales reports.
+Date-range reporting.
+Filters.
+PDF/Excel reporting.
+Business analytics.
+Do NOT start Phase 11 implementation during Phase 10.
+33. FINAL RULE
+The most important rule of this phase:
+DO NOT REBUILD WHAT ALREADY WORKS.
+And the second:
+DO NOT POST THE SAME BUSINESS EVENT TWICE.
+And the third:
+DO NOT SACRIFICE HISTORICAL FINANCIAL INTEGRITY FOR UI CONVENIENCE.
+And the fourth:
+THE EXISTING FINANCIAL POSTING SERVICE REMAINS THE AUTHORITATIVE FINANCIAL ENGINE.
+And the fifth:
+THE OFFICIAL ARCHITECTURE PLAN REMAINS THE ROADMAP.
+Execute Phase 10 only after the complete pre-implementation audit has been performed.
+If the audit reveals a conflict, STOP before making destructive or speculative changes.
+Otherwise implement the phase incrementally, test after each major milestone, and finish with the required completion report and exact commit hash.
