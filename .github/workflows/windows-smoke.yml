@@ -54,7 +54,7 @@ jobs:
         if: steps.resolve.outputs.mode == 'local'
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.44.2'
 
       - name: Build local Windows release (instrumented source on this branch)
         if: steps.resolve.outputs.mode == 'local'
