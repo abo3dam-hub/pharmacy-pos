@@ -28,6 +28,7 @@ import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/application/users_controller.dart';
 import '../../features/auth/data/daos/user_dao.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
+import '../../features/backup/application/data_management_controller.dart';
 import '../../features/customers/application/customers_controller.dart';
 import '../../features/customers/domain/usecases/customers_use_cases.dart';
 import '../../features/expenses/application/expense_controller.dart';
@@ -231,3 +232,8 @@ final settingsControllerProvider =
 final rbacControllerProvider =
     StateNotifierProvider<RbacController, RbacViewState>(
         (ref) => getIt<RbacController>());
+
+// ── Phase 13: Backup / Restore / Export ────────────────────────────────────
+final dataManagementControllerProvider = StateNotifierProvider
+        <DataManagementController, DataManagementState>(
+    (ref) => getIt<DataManagementController>());

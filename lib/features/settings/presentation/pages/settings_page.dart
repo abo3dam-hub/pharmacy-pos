@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
@@ -203,6 +204,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ],
                 ),
               ),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.backup_outlined),
+              title: Text(l10n.dataManagementTitle),
+              subtitle: Text(l10n.dataManagementSubtitle),
+              trailing: const Icon(Icons.chevron_left),
+              onTap: () => context.go('/settings/data'),
             ),
           ),
         ],

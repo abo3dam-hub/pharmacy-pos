@@ -2932,4 +2932,114 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get permissionsClearAll => 'إزالة الكل';
+
+  @override
+  String get dataManagementTitle => 'النسخ الاحتياطي والاستعادة';
+
+  @override
+  String get dataManagementSubtitle =>
+      'إدارة النسخ الاحتياطي والاستعادة وتصدير البيانات';
+
+  @override
+  String get dataManagementBackupTitle => 'إنشاء نسخة احتياطية';
+
+  @override
+  String get dataManagementBackupHint =>
+      'نسخة ذاتية الاحتواء تشمل قاعدة البيانات وإيصالات المصروفات المرفقة، مع المعرّف وسجل التدقيق.';
+
+  @override
+  String get dataManagementCreateBackup => 'إنشاء نسخة احتياطية';
+
+  @override
+  String get dataManagementChooseDestinationFolder => 'اختيار مجلد الحفظ';
+
+  @override
+  String get dataManagementBackupCreated => 'تم إنشاء النسخة الاحتياطية بنجاح';
+
+  @override
+  String dataManagementBackupSize(String size) {
+    return 'الحجم: $size';
+  }
+
+  @override
+  String get dataManagementRestoreTitle => 'الاستعادة من نسخة';
+
+  @override
+  String get dataManagementRestoreHint =>
+      'الاستعادة تستبدل البيانات الحالية بالكامل. تُنشأ نسخة أمان تلقائية قبل أي استعادة.';
+
+  @override
+  String get dataManagementChooseArchive => 'اختيار ملف النسخة';
+
+  @override
+  String get dataManagementRestoreNow => 'بدء الاستعادة';
+
+  @override
+  String get dataManagementRestoreConfirmTitle => 'تأكيد الاستعادة';
+
+  @override
+  String get dataManagementRestoreConfirmBody =>
+      'سيتم استبدال البيانات الحالية بالكامل بمحتويات النسخة. يُنشأ نسخة أمان تلقائية أولاً، ولا يمكن التراجع عن العملية بعد اكتمالها.';
+
+  @override
+  String get dataManagementRestoreRestartRequired =>
+      'تمت الاستعادة بنجاح. الرجاء تسجيل الخروج وإعادة تشغيل التطبيق لعرض البيانات المستعادة.';
+
+  @override
+  String get dataManagementRestoreInvalid => 'النسخة غير صالحة للاستعادة';
+
+  @override
+  String get dataManagementRestorePreviewStatus => 'الحالة';
+
+  @override
+  String get dataManagementRestorePreviewSchema => 'إصدار قاعدة البيانات';
+
+  @override
+  String get dataManagementRestorePreviewDate => 'تاريخ النسخة';
+
+  @override
+  String get dataManagementRestorePreviewApp => 'إصدار التطبيق';
+
+  @override
+  String get dataManagementRestorePreviewValid => 'صالحة';
+
+  @override
+  String get dataManagementRestorePreviewInvalid => 'غير صالحة';
+
+  @override
+  String dataManagementRestoreSchemaNote(int version) {
+    return 'إصدار المخطط في النسخة: $version';
+  }
+
+  @override
+  String dataManagementFilesCount(int count) {
+    return '$count ملف مرفق';
+  }
+
+  @override
+  String get dataManagementExportTitle => 'تصدير البيانات';
+
+  @override
+  String get dataManagementExportHint =>
+      'تصدير كامل لجميع الجداول إلى ملفات CSV داخل مجلد، مع ملف معلومات، دون أي تعديل على قاعدة البيانات.';
+
+  @override
+  String get dataManagementExportNow => 'بدء التصدير';
+
+  @override
+  String get dataManagementExportDone => 'تم تصدير البيانات بنجاح';
+
+  @override
+  String get dataManagementExportDestination => 'مجلد التصدير';
+
+  @override
+  String dataManagementExportSummary(int rows, int tables) {
+    return '$rows صف في $tables جدول';
+  }
+
+  @override
+  String get dataManagementNotPermitted => 'ليست لديك صلاحية لهذا الإجراء';
+
+  @override
+  String get dataManagementRestartRequiredTitle => 'إعادة التشغيل مطلوبة';
 }

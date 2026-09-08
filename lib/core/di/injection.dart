@@ -12,15 +12,21 @@ import '../../data/daos/stock_movement_dao.dart';
 import '../../data/daos/therapeutic_group_dao.dart';
 import '../../data/daos/unit_dao.dart';
 import '../../domain/services/audit_service.dart';
+import '../../domain/services/app_paths.dart';
+import '../../domain/services/backup_archive_service.dart';
 import '../../domain/services/base_unit_converter.dart';
 import '../../domain/services/bonus_calculator.dart';
 import '../../domain/services/cashbox_service.dart';
+import '../../domain/services/data_export_service.dart';
 import '../../domain/services/financial_posting_service.dart';
 import '../../domain/services/permission_service.dart';
 import '../../domain/services/purchase_service.dart';
 import '../../domain/services/return_service.dart';
+import '../../domain/services/restore_service.dart';
 import '../../domain/services/sale_service.dart';
 import '../../domain/services/stock_service.dart';
+import '../../features/backup/application/data_management_controller.dart';
+import '../../features/backup/domain/usecases/backup_use_cases.dart';
 import '../../features/accounts/application/accounting_controller.dart';
 import '../../features/accounts/application/cashbox_controller.dart';
 import '../../features/accounts/data/accounting_dao.dart';
@@ -151,6 +157,7 @@ void setupDependencies() {
   _registerPhase10(db);
   _registerPhase11(db);
   _registerPhase12(db);
+  _registerPhase13(db);
 }
 
 /// Phase 7 — POS workspace data layer over the existing transactional engine.
@@ -664,6 +671,35 @@ void _registerAuth(AppDatabase db) {
         getIt<ReactivateUserUseCase>(),
         getIt<ChangePasswordUseCase>(),
         audit,
+        db,
+      ));
+}
+
+void _registerPhase13(AppDatabase db) {
+  final permissions = getIt<PermissionService>();
+
+  getIt.registerLazySingleton<AppPaths>(() => const AppPaths());
+  getIt.registerLazySingleton<BackupArchiveService>(
+      () => const BackupArchiveService());
+  getIt.registerLazySingleton<RestoreService>(() => const RestoreService());
+  getIt.registerLazySingleton<DataExportService>(() => const DataExportService());
+
+  getIt.registerLazySingleton<CreateBackupUseCase>(
+      () => CreateBackupUseCase(getIt<BackupArchiveService>(), permissions));
+  getIt.registerLazySingleton<PreviewRestoreUseCase>(
+      () => PreviewRestoreUseCase(getIt<RestoreService>(), permissions));
+  getIt.registerLazySingleton<RestoreBackupUseCase>(
+      () => RestoreBackupUseCase(getIt<RestoreService>(), permissions));
+  getIt.registerLazySingleton<ExportDataUseCase>(
+      () => ExportDataUseCase(getIt<DataExportService>(), permissions));
+
+  getIt.registerLazySingleton<DataManagementController>(() =>
+      DataManagementController(
+        getIt<CreateBackupUseCase>(),
+        getIt<PreviewRestoreUseCase>(),
+        getIt<RestoreBackupUseCase>(),
+        getIt<ExportDataUseCase>(),
+        getIt<AppPaths>(),
         db,
       ));
 }

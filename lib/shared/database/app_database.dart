@@ -110,6 +110,9 @@ class AppDatabase extends _$AppDatabase {
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
           await customStatement('PRAGMA journal_mode=WAL');
+          // Phase 13 rights must exist on every database the app opens —
+          // fresh installs, upgraded stores and restored archives.
+          await ensureBackupPermissions(this);
         },
       );
 

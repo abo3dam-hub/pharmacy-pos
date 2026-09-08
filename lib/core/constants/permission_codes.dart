@@ -83,6 +83,7 @@ final class Perm {
   static const String settingsEdit = 'settings.edit';
   static const String backup = 'backup';
   static const String backupRestore = 'backup.restore';
+  static const String exportData = 'export.data';
 }
 
 /// Seed definitions: (code, Arabic name).
@@ -154,4 +155,5 @@ final List<({String code, String name})> kSeedPermissions = [
   (code: Perm.settingsEdit, name: 'تعديل الإعدادات'),
   (code: Perm.backup, name: 'النسخ الاحتياطي'),
   (code: Perm.backupRestore, name: 'الاستعادة من نسخة'),
+  (code: Perm.exportData, name: 'تصدير البيانات'),
 ];

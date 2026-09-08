@@ -35,6 +35,7 @@ import '../../features/sales/presentation/pages/pos_invoice_page.dart';
 import '../../features/sales/presentation/pages/pos_workspace_page.dart';
 import '../../features/sales/presentation/pages/z_report_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/backup/presentation/pages/data_management_page.dart';
 import '../../features/suppliers/presentation/pages/supplier_statement_page.dart';
 import '../../features/suppliers/presentation/pages/suppliers_page.dart';
 import '../../features/reports/presentation/pages/reports_hub_page.dart';
@@ -89,7 +90,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           !authState.permissions.contains(Perm.auditView)) {
         return '/access-denied';
       }
-      if (path == AppSection.settings.path &&
+if ((path == AppSection.settings.path ||
+          path.startsWith('${AppSection.settings.path}/')) &&
           !authState.permissions.contains(Perm.settingsView)) {
         return '/access-denied';
       }
@@ -260,6 +262,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'periods',
                     builder: (context, _) => const PeriodsPage(),
+                  ),
+                ],
+                if (section == AppSection.settings) ...[
+                  GoRoute(
+                    path: 'data',
+                    builder: (context, _) => const DataManagementPage(),
                   ),
                 ],
               ],

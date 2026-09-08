@@ -5833,6 +5833,198 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إزالة الكل'**
   String get permissionsClearAll;
+
+  /// No description provided for @dataManagementTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'النسخ الاحتياطي والاستعادة'**
+  String get dataManagementTitle;
+
+  /// No description provided for @dataManagementSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة النسخ الاحتياطي والاستعادة وتصدير البيانات'**
+  String get dataManagementSubtitle;
+
+  /// No description provided for @dataManagementBackupTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنشاء نسخة احتياطية'**
+  String get dataManagementBackupTitle;
+
+  /// No description provided for @dataManagementBackupHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة ذاتية الاحتواء تشمل قاعدة البيانات وإيصالات المصروفات المرفقة، مع المعرّف وسجل التدقيق.'**
+  String get dataManagementBackupHint;
+
+  /// No description provided for @dataManagementCreateBackup.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنشاء نسخة احتياطية'**
+  String get dataManagementCreateBackup;
+
+  /// No description provided for @dataManagementChooseDestinationFolder.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار مجلد الحفظ'**
+  String get dataManagementChooseDestinationFolder;
+
+  /// No description provided for @dataManagementBackupCreated.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إنشاء النسخة الاحتياطية بنجاح'**
+  String get dataManagementBackupCreated;
+
+  /// No description provided for @dataManagementBackupSize.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحجم: {size}'**
+  String dataManagementBackupSize(String size);
+
+  /// No description provided for @dataManagementRestoreTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاستعادة من نسخة'**
+  String get dataManagementRestoreTitle;
+
+  /// No description provided for @dataManagementRestoreHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاستعادة تستبدل البيانات الحالية بالكامل. تُنشأ نسخة أمان تلقائية قبل أي استعادة.'**
+  String get dataManagementRestoreHint;
+
+  /// No description provided for @dataManagementChooseArchive.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار ملف النسخة'**
+  String get dataManagementChooseArchive;
+
+  /// No description provided for @dataManagementRestoreNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدء الاستعادة'**
+  String get dataManagementRestoreNow;
+
+  /// No description provided for @dataManagementRestoreConfirmTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد الاستعادة'**
+  String get dataManagementRestoreConfirmTitle;
+
+  /// No description provided for @dataManagementRestoreConfirmBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم استبدال البيانات الحالية بالكامل بمحتويات النسخة. يُنشأ نسخة أمان تلقائية أولاً، ولا يمكن التراجع عن العملية بعد اكتمالها.'**
+  String get dataManagementRestoreConfirmBody;
+
+  /// No description provided for @dataManagementRestoreRestartRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت الاستعادة بنجاح. الرجاء تسجيل الخروج وإعادة تشغيل التطبيق لعرض البيانات المستعادة.'**
+  String get dataManagementRestoreRestartRequired;
+
+  /// No description provided for @dataManagementRestoreInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'النسخة غير صالحة للاستعادة'**
+  String get dataManagementRestoreInvalid;
+
+  /// No description provided for @dataManagementRestorePreviewStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get dataManagementRestorePreviewStatus;
+
+  /// No description provided for @dataManagementRestorePreviewSchema.
+  ///
+  /// In ar, this message translates to:
+  /// **'إصدار قاعدة البيانات'**
+  String get dataManagementRestorePreviewSchema;
+
+  /// No description provided for @dataManagementRestorePreviewDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ النسخة'**
+  String get dataManagementRestorePreviewDate;
+
+  /// No description provided for @dataManagementRestorePreviewApp.
+  ///
+  /// In ar, this message translates to:
+  /// **'إصدار التطبيق'**
+  String get dataManagementRestorePreviewApp;
+
+  /// No description provided for @dataManagementRestorePreviewValid.
+  ///
+  /// In ar, this message translates to:
+  /// **'صالحة'**
+  String get dataManagementRestorePreviewValid;
+
+  /// No description provided for @dataManagementRestorePreviewInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير صالحة'**
+  String get dataManagementRestorePreviewInvalid;
+
+  /// No description provided for @dataManagementRestoreSchemaNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'إصدار المخطط في النسخة: {version}'**
+  String dataManagementRestoreSchemaNote(int version);
+
+  /// No description provided for @dataManagementFilesCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} ملف مرفق'**
+  String dataManagementFilesCount(int count);
+
+  /// No description provided for @dataManagementExportTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصدير البيانات'**
+  String get dataManagementExportTitle;
+
+  /// No description provided for @dataManagementExportHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصدير كامل لجميع الجداول إلى ملفات CSV داخل مجلد، مع ملف معلومات، دون أي تعديل على قاعدة البيانات.'**
+  String get dataManagementExportHint;
+
+  /// No description provided for @dataManagementExportNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدء التصدير'**
+  String get dataManagementExportNow;
+
+  /// No description provided for @dataManagementExportDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تصدير البيانات بنجاح'**
+  String get dataManagementExportDone;
+
+  /// No description provided for @dataManagementExportDestination.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجلد التصدير'**
+  String get dataManagementExportDestination;
+
+  /// No description provided for @dataManagementExportSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'{rows} صف في {tables} جدول'**
+  String dataManagementExportSummary(int rows, int tables);
+
+  /// No description provided for @dataManagementNotPermitted.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليست لديك صلاحية لهذا الإجراء'**
+  String get dataManagementNotPermitted;
+
+  /// No description provided for @dataManagementRestartRequiredTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة التشغيل مطلوبة'**
+  String get dataManagementRestartRequiredTitle;
 }
 
 class _AppLocalizationsDelegate

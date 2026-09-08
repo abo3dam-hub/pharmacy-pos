@@ -668,3 +668,45 @@ Future<void> ensureExpensePermissions(AppDatabase db) async {
     );
   });
 }
+
+/// Phase 13 backup/restore/export RBAC — idempotently ensures the
+/// `backup`, `backup.restore` and `export.data` permission seeds exist and are
+/// granted to admin. Fresh installs already cover these via kSeedPermissions;
+/// this guarantees the rights exist for any partial state (upgraded databases
+/// and restored archives that predate Phase 13).
+Future<void> ensureBackupPermissions(AppDatabase db) async {
+  final now = DateTime.now().millisecondsSinceEpoch;
+  const newCodes = <String, String>{
+    Perm.backup: 'النسخ الاحتياطي',
+    Perm.backupRestore: 'الاستعادة من نسخة',
+    Perm.exportData: 'تصدير البيانات',
+  };
+  await db.batch((batch) {
+    for (final e in newCodes.entries) {
+      batch.insert(
+        db.permissions,
+        PermissionsCompanion.insert(
+          id: 'perm_${e.key.replaceAll('.', '_')}',
+          code: e.key,
+          name: e.key,
+          nameAr: e.value,
+          createdAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+    for (final e in newCodes.entries) {
+      batch.insert(
+        db.rolePermissions,
+        RolePermissionsCompanion.insert(
+          id: 'rp_admin_${e.key.replaceAll('.', '_')}',
+          roleId: 'role_admin',
+          permissionId: 'perm_${e.key.replaceAll('.', '_')}',
+          granted: const Value(true),
+          createdAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+  });
+}

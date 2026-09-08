@@ -2941,4 +2941,117 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get permissionsClearAll => 'Clear all';
+
+  @override
+  String get dataManagementTitle => 'Backup, Restore & Data';
+
+  @override
+  String get dataManagementSubtitle =>
+      'Manage self-contained backups, restore and data export';
+
+  @override
+  String get dataManagementBackupTitle => 'Create a backup';
+
+  @override
+  String get dataManagementBackupHint =>
+      'A self-contained archive with the database, attached expense receipts, manifest and audit trail.';
+
+  @override
+  String get dataManagementCreateBackup => 'Create backup';
+
+  @override
+  String get dataManagementChooseDestinationFolder =>
+      'Choose destination folder';
+
+  @override
+  String get dataManagementBackupCreated => 'Backup created successfully';
+
+  @override
+  String dataManagementBackupSize(String size) {
+    return 'Size: $size';
+  }
+
+  @override
+  String get dataManagementRestoreTitle => 'Restore from backup';
+
+  @override
+  String get dataManagementRestoreHint =>
+      'Restore fully replaces the current data. An automatic safety backup is created before any restore.';
+
+  @override
+  String get dataManagementChooseArchive => 'Choose backup archive';
+
+  @override
+  String get dataManagementRestoreNow => 'Start restore';
+
+  @override
+  String get dataManagementRestoreConfirmTitle => 'Confirm restore';
+
+  @override
+  String get dataManagementRestoreConfirmBody =>
+      'The current data will be fully replaced by the archive contents. A safety backup is created first and this cannot be undone once completed.';
+
+  @override
+  String get dataManagementRestoreRestartRequired =>
+      'Restore completed successfully. Please log out and restart the app to view the restored data.';
+
+  @override
+  String get dataManagementRestoreInvalid =>
+      'The archive is not valid for restore';
+
+  @override
+  String get dataManagementRestorePreviewStatus => 'Status';
+
+  @override
+  String get dataManagementRestorePreviewSchema => 'Database version';
+
+  @override
+  String get dataManagementRestorePreviewDate => 'Backup date';
+
+  @override
+  String get dataManagementRestorePreviewApp => 'Application version';
+
+  @override
+  String get dataManagementRestorePreviewValid => 'Valid';
+
+  @override
+  String get dataManagementRestorePreviewInvalid => 'Invalid';
+
+  @override
+  String dataManagementRestoreSchemaNote(int version) {
+    return 'Schema version in archive: $version';
+  }
+
+  @override
+  String dataManagementFilesCount(int count) {
+    return '$count attached files';
+  }
+
+  @override
+  String get dataManagementExportTitle => 'Export data';
+
+  @override
+  String get dataManagementExportHint =>
+      'Full export of all tables into CSV files inside a folder, with an info file, without modifying the database.';
+
+  @override
+  String get dataManagementExportNow => 'Start export';
+
+  @override
+  String get dataManagementExportDone => 'Data exported successfully';
+
+  @override
+  String get dataManagementExportDestination => 'Export folder';
+
+  @override
+  String dataManagementExportSummary(int rows, int tables) {
+    return '$rows rows in $tables tables';
+  }
+
+  @override
+  String get dataManagementNotPermitted =>
+      'You do not have permission for this action';
+
+  @override
+  String get dataManagementRestartRequiredTitle => 'Restart required';
 }

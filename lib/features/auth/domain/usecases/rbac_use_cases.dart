@@ -17,6 +17,9 @@ const Set<String> kAdminRoleMinimumPermissions = {
   'audit.view',
   'settings.view',
   'settings.edit',
+  'backup',
+  'backup.restore',
+  'export.data',
 };
 
 /// Loads roles + permissions for the roles page. Requires `roles.view`.
