@@ -1,0 +1,88 @@
+name: windows-smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_id:
+        description: >-
+          GitHub artifact ID of the pharmacy-pos-windows release zip to smoke
+          test (e.g. 10065382654). Leave empty to build a local Windows release
+          on the runner instead.
+        required: false
+        type: string
+      wait_seconds:
+        description: Seconds to let the app run before probing.
+        required: false
+        default: "15"
+        type: string
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve artifact
+        id: resolve
+        shell: pwsh
+        run: |
+          $id = "${{ inputs.artifact_id }}"
+          if ($id -eq "") {
+            Write-Output "using local release build"
+            "mode=local" | Out-File -FilePath "$env:GITHUB_OUTPUT" -Append
+          } else {
+            "mode=artifact" | Out-File -FilePath "$env:GITHUB_OUTPUT" -Append
+            "artifact_id=$id" | Out-File -FilePath "$env:GITHUB_OUTPUT" -Append
+          }
+
+      - name: Download artifact
+        if: steps.resolve.outputs.mode == 'artifact'
+        shell: pwsh
+        run: |
+          $id = "${{ steps.resolve.outputs.artifact_id }}"
+          gh api "repos/$($env:GITHUB_REPOSITORY)/actions/artifacts/$id/zip" > artifact.zip
+          New-Item -ItemType Directory -Force -Path build\windows\x64\runner\Release | Out-Null
+          Expand-Archive -Path artifact.zip -DestinationPath build\windows\x64\runner\Release -Force
+
+      - name: Build local Windows release (instrumented source on this branch)
+        if: steps.resolve.outputs.mode == 'local'
+        shell: pwsh
+        run: |
+          flutter config --no-analytics
+          flutter pub get
+          flutter gen-l10n
+          flutter build windows --release
+          Remove-Item build\windows\x64\runner\Release\data\flutter_assets\NOTICES.Z -ErrorAction SilentlyContinue
+
+      - name: Smoke test
+        shell: pwsh
+        run: |
+          ./.github/scripts/windows_smoke.ps1 `
+            -ExeDir (Join-Path $PWD "build\windows\x64\runner\Release") `
+            -WaitSeconds ${{ inputs.wait_seconds }} `
+            -OutDir (Join-Path $PWD "smoke-out")
+
+      - name: Upload smoke evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-smoke-evidence
+          path: smoke-out
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Summarize
+        shell: pwsh
+        if: always()
+        run: |
+          if (Test-Path smoke-out\results.json) {
+            $r = Get-Content smoke-out\results.json -Raw | ConvertFrom-Json
+            $alive = if ($r.aliveAfterWait) { "ALIVE (black/hang candidate)" } else { "EXITED (code $($r.exitCode))" }
+            echo "::notice title=windows-smoke result::$alive"
+            echo "windowFound=$($r.windowFound) title=$($r.windowTitle) sqlite=$($r.sqliteInDocuments)"
+            echo "crashDumps=$($r.crashDumps.Count) events=$($r.eventLogEntries.Count)"
+            echo "screenshot=$($r.screenShot) windowCapture=$($r.windowCaptured)"
+          }
