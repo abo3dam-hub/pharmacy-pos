@@ -106,6 +106,13 @@ if ($hwnd -ne [IntPtr]::Zero) {
 $results.screenShot = Capture-Screen (Join-Path $OutDir "screen.png")
 $results.windowCaptured = if ($hwnd -ne [IntPtr]::Zero) { Capture-Window $hwnd (Join-Path $OutDir "window.png") } else { $false }
 
+# --- Temporary startup checkpoint log (Phase 16 black-screen diagnostics) ---
+$startupLog = Join-Path $env:TEMP "pharmacy_pos_startup.log"
+$results.startupLog = $null
+if (Test-Path $startupLog) {
+  $results.startupLog = (Get-Content $startupLog -Raw -ErrorAction SilentlyContinue)
+}
+
 # --- Did the DB get touched? (fresh run would create the sqlite in Documents) ---
 $docsDb = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "pharmacy_pos.sqlite"
 $results.sqliteInDocuments = Stat $docsDb
