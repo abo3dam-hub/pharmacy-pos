@@ -6,6 +6,63 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 
 ---
 
+## [1.0.1] — 2026-09-08 — Windows black-screen fix
+
+Fixes a Windows-only rendering issue in the v1.0.0 release: on machines whose
+GPU caps Direct3D 11 at **feature level 9_3** (e.g. Intel `Ironlake`/HD
+Graphics, WDDM 1.1, no Vulkan), the app opened a window that stayed completely
+black while the process ran normally — no crash, no error output, no database
+access. Verified reproductions against the exact v1.0.0 artifact on
+`windows-latest` show the same build renders the login screen correctly on
+feature-level 11 hardware, so the failure is hardware/toolchain-specific, not
+an application defect.
+
+### Root cause
+
+- flutter/flutter#191978 — a **Flutter engine regression introduced in 3.47.0**
+  (commit `c7926ac`, PR flutter/engine#190374). The Windows compositor
+  (`shell/platform/windows/compositor_opengl.cc`) started passing **sized** GL
+  internal formats (`GL_RGBA8`/`GL_BGRA8_EXT`) to `glTexImage2D` on the
+  OpenGL ES 2.0 context the Windows embedder always creates. On D3D11
+  feature-level 9_3 machines ANGLE falls back to its FL9_3 display, where a
+  sized `TexImage2D` internal format is out of spec for ES 2.0; the backing
+  store texture is never allocated, the framebuffer is incomplete, and
+  `blitFramebuffer` copies nothing → **silent all-black window over a fully
+  healthy app**. Both Impeller and Skia are affected; stock `flutter create`
+  apps reproduce it; no app code is involved.
+- Field-validated workaround from the issue: **build with Flutter 3.44.2**
+  (the last release line before 3.47). End-user rebuilds with 3.44.2
+  consistently fix the black screen on the affected hardware.
+
+### Changes in this release
+
+- Pin the Windows release toolchain to **Flutter 3.44.2** in
+  `.github/workflows/ci.yml` (`build-windows`) and `.github/workflows/windows-smoke.yml`.
+- Loosen the Dart SDK constraint to `'>=3.12.0 <4.0.0'` in `pubspec.yaml`
+  (Flutter 3.44.x ships Dart 3.12) and align `pubspec.lock`.
+- Version bump: `pubspec.yaml` `1.0.1+1`; updated `windows/runner/Runner.rc`
+  fallback metadata.
+- Removed the temporary Phase-16 startup checkpoint instrumentation from
+  `lib/main.dart` after CI evidence (startup log `enter-main` → `setup-done` →
+  `runApp-called` → `first-frame`) confirmed the Dart startup and first-frame
+  paths complete on non-9_3 hardware.
+
+### Verification
+
+- `flutter analyze`: 0 issues; `flutter test`: **517/517 pass** (Flutter 3.47.2).
+- CI `build-windows` on v1.0.1 tag, built with **Flutter 3.44.2**: success.
+- Runtime smoke of the `pharmacy-pos-windows` v1.0.1 artifact on
+  `windows-latest`: process stays alive, window `pharmacy_pos` found, login
+  screen captured (rendered content, not black), no crash dumps, no Event Log
+  errors, SQLite database untouched until login.
+- Caveat: CI hardware reports feature level 11 (`Microsoft Hyper-V Video`), so
+  the FL9_3 scenario itself cannot be recreated on our runners. The fix relies
+  on the field-validated 3.44.2 toolchain from flutter/flutter#191978; when an
+  upstream Flutter release containing the engine fix (`[Windows] Use GL_RGBA as
+  backing store internal format`) ships, the pin can be lifted.
+
+---
+
 ## [1.0.0] — 2026-09-08 — Final Production Release
 
 The first formal production release (`v1.0.0`). Delivered by the Phase 1 → 16
