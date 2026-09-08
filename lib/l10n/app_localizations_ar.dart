@@ -1754,6 +1754,51 @@ class AppLocalizationsAr extends AppLocalizations {
       'البيع الآجل يتطلب تحديد عميل له حساب آجل';
 
   @override
+  String get posCashLabel => 'نقدي';
+
+  @override
+  String get posCardLabel => 'بطاقة';
+
+  @override
+  String get posMixedLabel => 'مختلط';
+
+  @override
+  String get posClearCart => 'تفريغ السلة';
+
+  @override
+  String get posRx => 'وصفة';
+
+  @override
+  String get posReceiptFooter => 'فرع الصيدلية · شكراً لتعاملكم معنا';
+
+  @override
+  String posItemCount(int count) {
+    return '$count صنف';
+  }
+
+  @override
+  String get posRestore => 'استرجاع';
+
+  @override
+  String get posCustomerSearchHint => 'ابحث عن عميل بالاسم أو الهاتف';
+
+  @override
+  String get posChooseActiveRx => 'اختر الوصفة النشطة';
+
+  @override
+  String get posReturnSelectInvoiceHint =>
+      'اختر فاتورة من القائمة وحدد الكميات المرتجعة';
+
+  @override
+  String get posVoidInvoice => 'إلغاء الفاتورة';
+
+  @override
+  String get posInvoiceVoided => 'تم إلغاء الفاتورة';
+
+  @override
+  String get posVoidInvoiceFailed => 'تعذر إلغاء الفاتورة';
+
+  @override
   String get cashboxTitle => 'الصندوق';
 
   @override
@@ -3083,4 +3128,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get dataManagementRestartRequiredTitle => 'إعادة التشغيل مطلوبة';
+
+  @override
+  String get auditLogDateFrom => 'من';
+
+  @override
+  String get auditLogDateTo => 'إلى';
 }

@@ -3512,6 +3512,90 @@ abstract class AppLocalizations {
   /// **'البيع الآجل يتطلب تحديد عميل له حساب آجل'**
   String get posCreditCustomerRequired;
 
+  /// No description provided for @posCashLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقدي'**
+  String get posCashLabel;
+
+  /// No description provided for @posCardLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطاقة'**
+  String get posCardLabel;
+
+  /// No description provided for @posMixedLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'مختلط'**
+  String get posMixedLabel;
+
+  /// No description provided for @posClearCart.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفريغ السلة'**
+  String get posClearCart;
+
+  /// No description provided for @posRx.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصفة'**
+  String get posRx;
+
+  /// No description provided for @posReceiptFooter.
+  ///
+  /// In ar, this message translates to:
+  /// **'فرع الصيدلية · شكراً لتعاملكم معنا'**
+  String get posReceiptFooter;
+
+  /// No description provided for @posItemCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} صنف'**
+  String posItemCount(int count);
+
+  /// No description provided for @posRestore.
+  ///
+  /// In ar, this message translates to:
+  /// **'استرجاع'**
+  String get posRestore;
+
+  /// No description provided for @posCustomerSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث عن عميل بالاسم أو الهاتف'**
+  String get posCustomerSearchHint;
+
+  /// No description provided for @posChooseActiveRx.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر الوصفة النشطة'**
+  String get posChooseActiveRx;
+
+  /// No description provided for @posReturnSelectInvoiceHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر فاتورة من القائمة وحدد الكميات المرتجعة'**
+  String get posReturnSelectInvoiceHint;
+
+  /// No description provided for @posVoidInvoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الفاتورة'**
+  String get posVoidInvoice;
+
+  /// No description provided for @posInvoiceVoided.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إلغاء الفاتورة'**
+  String get posInvoiceVoided;
+
+  /// No description provided for @posVoidInvoiceFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر إلغاء الفاتورة'**
+  String get posVoidInvoiceFailed;
+
   /// No description provided for @cashboxTitle.
   ///
   /// In ar, this message translates to:
@@ -6103,6 +6187,18 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إعادة التشغيل مطلوبة'**
   String get dataManagementRestartRequiredTitle;
+
+  /// No description provided for @auditLogDateFrom.
+  ///
+  /// In ar, this message translates to:
+  /// **'من'**
+  String get auditLogDateFrom;
+
+  /// No description provided for @auditLogDateTo.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلى'**
+  String get auditLogDateTo;
 }
 
 class _AppLocalizationsDelegate

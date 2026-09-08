@@ -706,7 +706,7 @@ class _ProductList extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    isOut ? l10n.posOutOfStock : 'المتاح: $available',
+                    isOut ? l10n.posOutOfStock : '${l10n.posAvailableStock}: $available',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: isOut
                               ? Theme.of(context).colorScheme.error
@@ -787,7 +787,7 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                               overflow: TextOverflow.ellipsis),
                           subtitle: Text(
                             '${_lineQty(line)} $unitLabel'
-                            '${line.isRxLinked ? ' · وصفة' : ''}',
+                            '${line.isRxLinked ? ' · ${l10n.posRx}' : ''}',
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -980,7 +980,7 @@ class _CustomerHeader extends ConsumerWidget {
           ),
           if (state.cart.any((l) => l.isRxLinked))
             IconButton(
-              tooltip: 'تفريغ السلة',
+              tooltip: l10n.posClearCart,
               onPressed: notifier.clearCart,
               icon: const Icon(Icons.delete_sweep_outlined),
             ),
@@ -1123,20 +1123,20 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
           const SizedBox(height: AppSpacing.m),
           SegmentedButton<PosPaymentMethod>(
             segments: [
-              const ButtonSegment(
+              ButtonSegment(
                 value: PosPaymentMethod.cash,
-                label: Text('نقدي'),
-                icon: Icon(Icons.payments_outlined),
+                label: Text(l10n.posCashLabel),
+                icon: const Icon(Icons.payments_outlined),
               ),
-              const ButtonSegment(
+              ButtonSegment(
                 value: PosPaymentMethod.card,
-                label: Text('بطاقة'),
-                icon: Icon(Icons.credit_card),
+                label: Text(l10n.posCardLabel),
+                icon: const Icon(Icons.credit_card),
               ),
-              const ButtonSegment(
+              ButtonSegment(
                 value: PosPaymentMethod.mixed,
-                label: Text('مختلط'),
-                icon: Icon(Icons.account_balance_wallet_outlined),
+                label: Text(l10n.posMixedLabel),
+                icon: const Icon(Icons.account_balance_wallet_outlined),
               ),
               ButtonSegment(
                 value: PosPaymentMethod.credit,
@@ -1331,7 +1331,7 @@ class _ReceiptDialog extends ConsumerWidget {
               _row(l10n.commonChange, invoice.changeMicros),
               const Divider(),
               Text(
-                'فرع الصيدلية · شكراً لتعاملكم معنا',
+                l10n.posReceiptFooter,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -1479,7 +1479,7 @@ class _HoldBillsSheet extends ConsumerWidget {
                   title: Text(held[index].label),
                   subtitle: Text(
                     '${held[index].customerName ?? ''} · '
-                    '${held[index].cart.length} صنف',
+                    '${l10n.posItemCount(held[index].cart.length)}',
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -1494,7 +1494,7 @@ class _HoldBillsSheet extends ConsumerWidget {
                           notifier.restoreHeldBill(index);
                           Navigator.of(context).pop();
                         },
-                        child: Text('استرجاع'),
+                        child: Text(l10n.posRestore),
                       ),
                     ],
                   ),
@@ -1665,7 +1665,7 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
               controller: _query,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'ابحث عن عميل بالاسم أو الهاتف',
+                hintText: l10n.posCustomerSearchHint,
                 prefixIcon: const Icon(Icons.search),
                 isDense: true,
                 border: const OutlineInputBorder(),
@@ -1720,10 +1720,11 @@ Future<String?> showPrescriptionPickerDialog(
   if (prescriptions.isEmpty) {
     return null;
   }
+  final l10n = AppLocalizations.of(context);
   return showDialog<String>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: const Text('اختر الوصفة النشطة'),
+      title: Text(l10n.posChooseActiveRx),
       content: SizedBox(
         width: 420,
         child: ListView.separated(
@@ -1736,7 +1737,7 @@ Future<String?> showPrescriptionPickerDialog(
               leading: const Icon(Icons.description_outlined),
               title: Text(rx.prescriptionNumber),
               subtitle: Text(
-                '${rx.patientName} · ${rx.items.length} صنف',
+                '${rx.patientName} · ${l10n.posItemCount(rx.items.length)}',
               ),
               onTap: () => Navigator.of(ctx).pop(rx.id),
             );
@@ -1906,7 +1907,7 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
       children: [
         Text(
           invoice == null
-              ? 'اختر فاتورة من القائمة وحدد الكميات المرتجعة'
+              ? l10n.posReturnSelectInvoiceHint
               : '${l10n.posInvoiceTitle} · ${invoice.invoiceNumber}',
           style: Theme.of(context).textTheme.titleMedium,
         ),
@@ -1993,7 +1994,7 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
             OutlinedButton.icon(
               onPressed: () => _submitVoid(invoice),
               icon: const Icon(Icons.cancel_outlined),
-              label: const Text('إلغاء الفاتورة'),
+              label: Text(l10n.posVoidInvoice),
             ),
           ],
         ],
@@ -2036,8 +2037,8 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
         content: Text(ok
-            ? 'تم إلغاء الفاتورة'
-            : notifier.currentState.errorMessage ?? 'تعذر إلغاء الفاتورة'),
+            ? l10n.posInvoiceVoided
+            : notifier.currentState.errorMessage ?? l10n.posVoidInvoiceFailed),
       ));
     _reason.clear();
     notifier.clearError();

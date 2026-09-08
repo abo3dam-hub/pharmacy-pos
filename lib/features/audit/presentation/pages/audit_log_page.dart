@@ -66,7 +66,7 @@ class _AuditLogPageState extends ConsumerState<AuditLogPage> {
       initialDate: _from ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      helpText: 'من',
+      helpText: AppLocalizations.of(context).auditLogDateFrom,
     );
     if (picked == null || !mounted) return;
     setState(() {
@@ -82,7 +82,7 @@ class _AuditLogPageState extends ConsumerState<AuditLogPage> {
       initialDate: _to ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
-      helpText: 'إلى',
+      helpText: AppLocalizations.of(context).auditLogDateTo,
     );
     if (picked == null || !mounted) return;
     setState(() {

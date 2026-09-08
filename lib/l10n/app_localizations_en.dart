@@ -1759,6 +1759,52 @@ class AppLocalizationsEn extends AppLocalizations {
       'Credit sale requires selecting a customer with an account';
 
   @override
+  String get posCashLabel => 'Cash';
+
+  @override
+  String get posCardLabel => 'Card';
+
+  @override
+  String get posMixedLabel => 'Mixed';
+
+  @override
+  String get posClearCart => 'Clear cart';
+
+  @override
+  String get posRx => 'Rx';
+
+  @override
+  String get posReceiptFooter =>
+      'Pharmacy branch · Thank you for your business';
+
+  @override
+  String posItemCount(int count) {
+    return '$count items';
+  }
+
+  @override
+  String get posRestore => 'Restore';
+
+  @override
+  String get posCustomerSearchHint => 'Search customer by name or phone';
+
+  @override
+  String get posChooseActiveRx => 'Choose active prescription';
+
+  @override
+  String get posReturnSelectInvoiceHint =>
+      'Choose an invoice from the list and set the quantities to return';
+
+  @override
+  String get posVoidInvoice => 'Void invoice';
+
+  @override
+  String get posInvoiceVoided => 'Invoice voided';
+
+  @override
+  String get posVoidInvoiceFailed => 'Could not void invoice';
+
+  @override
   String get cashboxTitle => 'Cash Box';
 
   @override
@@ -3095,4 +3141,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dataManagementRestartRequiredTitle => 'Restart required';
+
+  @override
+  String get auditLogDateFrom => 'From';
+
+  @override
+  String get auditLogDateTo => 'To';
 }
