@@ -11,8 +11,8 @@ import '../../../core/widgets/app_shell.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/presentation/pages/access_denied_page.dart';
+import '../../features/auth/presentation/pages/admin_hub_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
-import '../../features/auth/presentation/pages/users_page.dart';
 import '../../features/accounts/presentation/pages/accounts_hub_page.dart';
 import '../../features/accounts/presentation/pages/cashbox_page.dart';
 import '../../features/accounts/presentation/pages/chart_of_accounts_page.dart';
@@ -20,6 +20,7 @@ import '../../features/accounts/presentation/pages/journal_page.dart';
 import '../../features/accounts/presentation/pages/journal_detail_page.dart';
 import '../../features/accounts/presentation/pages/account_statement_page.dart';
 import '../../features/accounts/presentation/pages/periods_page.dart';
+import '../../features/audit/presentation/pages/audit_log_page.dart';
 import '../../features/customers/presentation/pages/customer_statement_page.dart';
 import '../../features/customers/presentation/pages/customers_page.dart';
 import '../../features/expenses/presentation/pages/expenses_page.dart';
@@ -33,6 +34,7 @@ import '../../features/purchases/presentation/pages/purchases_page.dart';
 import '../../features/sales/presentation/pages/pos_invoice_page.dart';
 import '../../features/sales/presentation/pages/pos_workspace_page.dart';
 import '../../features/sales/presentation/pages/z_report_page.dart';
+import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/suppliers/presentation/pages/supplier_statement_page.dart';
 import '../../features/suppliers/presentation/pages/suppliers_page.dart';
 import '../../features/reports/presentation/pages/reports_hub_page.dart';
@@ -73,7 +75,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       if (path == '/login') return '/';
       if (path == AppSection.users.path &&
-          !authState.permissions.contains(Perm.usersView)) {
+          !authState.permissions.contains(Perm.usersView) &&
+          !authState.permissions.contains(Perm.rolesView)) {
+        return '/access-denied';
+      }
+      if (path.startsWith('${AppSection.users.path}/roles') ||
+          path.startsWith('${AppSection.users.path}/permissions')) {
+        if (!authState.permissions.contains(Perm.rolesView)) {
+          return '/access-denied';
+        }
+      }
+      if (path == AppSection.audit.path &&
+          !authState.permissions.contains(Perm.auditView)) {
+        return '/access-denied';
+      }
+      if (path == AppSection.settings.path &&
+          !authState.permissions.contains(Perm.settingsView)) {
         return '/access-denied';
       }
       if (path.startsWith(AppSection.sale.path) &&
@@ -141,6 +158,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               path: section.path == '/' ? '/' : section.path,
               builder: (context, _) => _sectionPage(section, context),
               routes: [
+                if (section == AppSection.users) ...[
+                  GoRoute(
+                    path: 'roles',
+                    builder: (context, _) =>
+                        const AdminHubPage(initialTab: AdminTab.roles),
+                  ),
+                  GoRoute(
+                    path: 'permissions',
+                    builder: (context, _) =>
+                        const AdminHubPage(initialTab: AdminTab.permissions),
+                  ),
+                ],
                 if (section == AppSection.inventory)
                   GoRoute(
                     path: 'batches/:itemId',
@@ -260,7 +289,7 @@ bool _hasAnyReportPermission(Set<String> permissions) {
 /// page. `/users` is the first built module (§16).
 Widget _sectionPage(AppSection section, BuildContext context) {
   if (section == AppSection.sale) return const PosWorkspacePage();
-  if (section == AppSection.users) return const UsersPage();
+  if (section == AppSection.users) return const AdminHubPage();
   if (section == AppSection.inventory) return const InventoryPage();
   if (section == AppSection.suppliers) return const SuppliersPage();
   if (section == AppSection.purchases) return const PurchasesPage();
@@ -268,6 +297,8 @@ Widget _sectionPage(AppSection section, BuildContext context) {
   if (section == AppSection.accounts) return const AccountsHubPage();
   if (section == AppSection.expenses) return const ExpensesPage();
   if (section == AppSection.reports) return const ReportsHubPage();
+  if (section == AppSection.settings) return const SettingsPage();
+  if (section == AppSection.audit) return const AuditLogPage();
   final l10n = AppLocalizations.of(context);
   return SectionPlaceholder(
     icon: section.icon,

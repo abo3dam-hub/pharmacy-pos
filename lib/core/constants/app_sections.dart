@@ -17,7 +17,8 @@ enum AppSection {
   expenses(Icons.receipt_long_outlined),
   reports(Icons.bar_chart),
   settings(Icons.settings_outlined),
-  users(Icons.manage_accounts_outlined);
+  users(Icons.manage_accounts_outlined),
+  audit(Icons.history_outlined);
 
   const AppSection(this.icon);
 
@@ -36,6 +37,7 @@ enum AppSection {
         AppSection.reports => '/reports',
         AppSection.settings => '/settings',
         AppSection.users => '/users',
+        AppSection.audit => '/audit',
       };
 
   /// Resolves a route path back to its section (unknown → dashboard).
@@ -63,5 +65,6 @@ enum AppSection {
         AppSection.reports => l10n.navReports,
         AppSection.settings => l10n.navSettings,
         AppSection.users => l10n.navUsers,
+        AppSection.audit => l10n.navAudit,
       };
 }

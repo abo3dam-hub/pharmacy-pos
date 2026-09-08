@@ -5305,6 +5305,534 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لا توجد بيانات في هذا النطاق'**
   String get reportNoData;
+
+  /// No description provided for @navAudit.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل التدقيق'**
+  String get navAudit;
+
+  /// No description provided for @auditDetailTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل العملية'**
+  String get auditDetailTitle;
+
+  /// No description provided for @auditSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث عن عملية (العملية، الكيان، المعرف، ملاحظة)'**
+  String get auditSearchHint;
+
+  /// No description provided for @auditFromDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'من تاريخ'**
+  String get auditFromDate;
+
+  /// No description provided for @auditToDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلى تاريخ'**
+  String get auditToDate;
+
+  /// No description provided for @auditAllActions.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل العمليات'**
+  String get auditAllActions;
+
+  /// No description provided for @auditAllUsers.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل المستخدمين'**
+  String get auditAllUsers;
+
+  /// No description provided for @auditClearFilters.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الفلاتر'**
+  String get auditClearFilters;
+
+  /// No description provided for @auditEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد عمليات مطابقة'**
+  String get auditEmpty;
+
+  /// No description provided for @auditColumnDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت'**
+  String get auditColumnDate;
+
+  /// No description provided for @auditColumnUser.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستخدم'**
+  String get auditColumnUser;
+
+  /// No description provided for @auditColumnAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملية'**
+  String get auditColumnAction;
+
+  /// No description provided for @auditColumnEntity.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكيان'**
+  String get auditColumnEntity;
+
+  /// No description provided for @auditColumnEntityId.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعرف'**
+  String get auditColumnEntityId;
+
+  /// No description provided for @auditColumnNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظة'**
+  String get auditColumnNote;
+
+  /// No description provided for @auditSnapshotsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لقطات التغيير'**
+  String get auditSnapshotsTitle;
+
+  /// No description provided for @auditBeforeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل'**
+  String get auditBeforeLabel;
+
+  /// No description provided for @auditAfterLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد'**
+  String get auditAfterLabel;
+
+  /// No description provided for @auditActionCreate.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنشاء'**
+  String get auditActionCreate;
+
+  /// No description provided for @auditActionUpdate.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل'**
+  String get auditActionUpdate;
+
+  /// No description provided for @auditActionDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get auditActionDelete;
+
+  /// No description provided for @auditActionLogin.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل دخول'**
+  String get auditActionLogin;
+
+  /// No description provided for @auditActionLogout.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسجيل خروج'**
+  String get auditActionLogout;
+
+  /// No description provided for @auditActionLoginFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاولة دخول فاشلة'**
+  String get auditActionLoginFailed;
+
+  /// No description provided for @auditActionVoid.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get auditActionVoid;
+
+  /// No description provided for @auditActionRestore.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة'**
+  String get auditActionRestore;
+
+  /// No description provided for @auditActionPriceChange.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير سعر'**
+  String get auditActionPriceChange;
+
+  /// No description provided for @auditActionBulkOp.
+  ///
+  /// In ar, this message translates to:
+  /// **'عملية جماعية'**
+  String get auditActionBulkOp;
+
+  /// No description provided for @auditActionConfig.
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير الإعدادات'**
+  String get auditActionConfig;
+
+  /// No description provided for @auditActionBackup.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة احتياطية'**
+  String get auditActionBackup;
+
+  /// No description provided for @auditActionRestoreBackup.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة نسخة'**
+  String get auditActionRestoreBackup;
+
+  /// No description provided for @auditEntityUser.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستخدم'**
+  String get auditEntityUser;
+
+  /// No description provided for @auditEntityRole.
+  ///
+  /// In ar, this message translates to:
+  /// **'دور'**
+  String get auditEntityRole;
+
+  /// No description provided for @auditEntityPermission.
+  ///
+  /// In ar, this message translates to:
+  /// **'صلاحية'**
+  String get auditEntityPermission;
+
+  /// No description provided for @auditEntityAppSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعدادات النظام'**
+  String get auditEntityAppSettings;
+
+  /// No description provided for @auditEntityItem.
+  ///
+  /// In ar, this message translates to:
+  /// **'صنف'**
+  String get auditEntityItem;
+
+  /// No description provided for @auditEntityBatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'دفعة'**
+  String get auditEntityBatch;
+
+  /// No description provided for @auditEntityCategory.
+  ///
+  /// In ar, this message translates to:
+  /// **'فئة'**
+  String get auditEntityCategory;
+
+  /// No description provided for @auditEntityManufacturer.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصنّع'**
+  String get auditEntityManufacturer;
+
+  /// No description provided for @auditEntityTherapeuticGroup.
+  ///
+  /// In ar, this message translates to:
+  /// **'مجموعة علاجية'**
+  String get auditEntityTherapeuticGroup;
+
+  /// No description provided for @auditEntityUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'وحدة'**
+  String get auditEntityUnit;
+
+  /// No description provided for @auditEntityCustomer.
+  ///
+  /// In ar, this message translates to:
+  /// **'عميل'**
+  String get auditEntityCustomer;
+
+  /// No description provided for @auditEntitySupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'مورد'**
+  String get auditEntitySupplier;
+
+  /// No description provided for @auditEntitySalesInvoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة بيع'**
+  String get auditEntitySalesInvoice;
+
+  /// No description provided for @auditEntityPurchaseInvoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة شراء'**
+  String get auditEntityPurchaseInvoice;
+
+  /// No description provided for @auditEntityReturn.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع'**
+  String get auditEntityReturn;
+
+  /// No description provided for @auditEntityExpense.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصروف'**
+  String get auditEntityExpense;
+
+  /// No description provided for @auditEntityPrescription.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصفة طبية'**
+  String get auditEntityPrescription;
+
+  /// No description provided for @auditEntityCashbox.
+  ///
+  /// In ar, this message translates to:
+  /// **'صندوق'**
+  String get auditEntityCashbox;
+
+  /// No description provided for @auditEntityPeriod.
+  ///
+  /// In ar, this message translates to:
+  /// **'فترة'**
+  String get auditEntityPeriod;
+
+  /// No description provided for @auditEntityLostSale.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقص'**
+  String get auditEntityLostSale;
+
+  /// No description provided for @auditEntityBackup.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة احتياطية'**
+  String get auditEntityBackup;
+
+  /// No description provided for @settingsGeneralTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات العامة'**
+  String get settingsGeneralTitle;
+
+  /// No description provided for @settingsBusinessName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم النشاط التجاري'**
+  String get settingsBusinessName;
+
+  /// No description provided for @settingsBusinessNameHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'يظهر في الفواتير والتقارير'**
+  String get settingsBusinessNameHint;
+
+  /// No description provided for @settingsBusinessNameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم النشاط التجاري مطلوب'**
+  String get settingsBusinessNameRequired;
+
+  /// No description provided for @settingsTaxRate.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الضريبة'**
+  String get settingsTaxRate;
+
+  /// No description provided for @settingsTaxRateHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة ضريبة القيمة المضافة'**
+  String get settingsTaxRateHint;
+
+  /// No description provided for @settingsTaxInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الضريبة يجب أن تكون بين 0% و 100%'**
+  String get settingsTaxInvalid;
+
+  /// No description provided for @settingsCurrency.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملة'**
+  String get settingsCurrency;
+
+  /// No description provided for @settingsCurrencyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'رمز العملة المعروض في الواجهة'**
+  String get settingsCurrencyHint;
+
+  /// No description provided for @settingsSavedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ الإعدادات بنجاح'**
+  String get settingsSavedMessage;
+
+  /// No description provided for @rolesSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدارة أدوار المستخدمين وصلاحياتهم'**
+  String get rolesSubtitle;
+
+  /// No description provided for @rolesAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة دور'**
+  String get rolesAdd;
+
+  /// No description provided for @rolesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أدوار'**
+  String get rolesEmpty;
+
+  /// No description provided for @rolesCreateTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'دور جديد'**
+  String get rolesCreateTitle;
+
+  /// No description provided for @rolesEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الدور'**
+  String get rolesEditTitle;
+
+  /// No description provided for @rolesNameAr.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الدور'**
+  String get rolesNameAr;
+
+  /// No description provided for @rolesNameRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الدور مطلوب'**
+  String get rolesNameRequired;
+
+  /// No description provided for @rolesPermissionsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحيات'**
+  String get rolesPermissionsTitle;
+
+  /// No description provided for @rolesPermissionsCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} صلاحية'**
+  String rolesPermissionsCount(int count);
+
+  /// No description provided for @rolesUsersCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مستخدم'**
+  String rolesUsersCount(int count);
+
+  /// No description provided for @rolesSystemBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'دور أساسي'**
+  String get rolesSystemBadge;
+
+  /// No description provided for @rolesInactiveBadge.
+  ///
+  /// In ar, this message translates to:
+  /// **'معطّل'**
+  String get rolesInactiveBadge;
+
+  /// No description provided for @rolesNameExists.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الدور موجود مسبقاً'**
+  String get rolesNameExists;
+
+  /// No description provided for @rolesPermissionsFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'صلاحيات {name}'**
+  String rolesPermissionsFor(String name);
+
+  /// No description provided for @rolesPermissionsSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ الصلاحيات'**
+  String get rolesPermissionsSaved;
+
+  /// No description provided for @rolesUpdatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث الدور'**
+  String get rolesUpdatedMessage;
+
+  /// No description provided for @rolesCreatedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إنشاء الدور'**
+  String get rolesCreatedMessage;
+
+  /// No description provided for @rolesDeletedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حذف الدور'**
+  String get rolesDeletedMessage;
+
+  /// No description provided for @rolesDelete.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الدور'**
+  String get rolesDelete;
+
+  /// No description provided for @rolesDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الدور'**
+  String get rolesDeleteTitle;
+
+  /// No description provided for @rolesDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد حذف الدور «{name}»؟'**
+  String rolesDeleteConfirm(String name);
+
+  /// No description provided for @rolesTabTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأدوار'**
+  String get rolesTabTitle;
+
+  /// No description provided for @permissionsTabTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحيات'**
+  String get permissionsTabTitle;
+
+  /// No description provided for @permissionsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كافة صلاحيات النظام حسب الوحدات'**
+  String get permissionsSubtitle;
+
+  /// No description provided for @permissionsSelectAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديد الكل'**
+  String get permissionsSelectAll;
+
+  /// No description provided for @permissionsClearAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة الكل'**
+  String get permissionsClearAll;
 }
 
 class _AppLocalizationsDelegate

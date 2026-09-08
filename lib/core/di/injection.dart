@@ -91,6 +91,16 @@ import '../../features/suppliers/domain/usecases/suppliers_use_cases.dart';
 import '../../features/reports/application/reports_controller.dart';
 import '../../features/reports/data/reports_dao.dart';
 import '../../features/reports/domain/services/report_export_service.dart';
+import '../../features/settings/application/settings_controller.dart';
+import '../../features/settings/data/settings_repository_impl.dart';
+import '../../features/settings/domain/repositories/settings_repository.dart';
+import '../../features/settings/domain/usecases/settings_use_cases.dart';
+import '../../features/audit/application/audit_controller.dart';
+import '../../features/audit/data/audit_dao.dart';
+import '../../features/audit/domain/usecases/audit_use_cases.dart';
+import '../../features/auth/application/rbac_controller.dart';
+import '../../features/auth/data/daos/rbac_dao.dart';
+import '../../features/auth/domain/usecases/rbac_use_cases.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/models/enums.dart';
 
@@ -140,6 +150,7 @@ void setupDependencies() {
   _registerPhase9(db);
   _registerPhase10(db);
   _registerPhase11(db);
+  _registerPhase12(db);
 }
 
 /// Phase 7 — POS workspace data layer over the existing transactional engine.
@@ -216,6 +227,74 @@ void _registerPhase9(AppDatabase db) {
         getIt<CreateExpenseCategoryUseCase>(),
         getIt<UpdateExpenseCategoryUseCase>(),
         getIt<SetExpenseCategoryActiveUseCase>(),
+      ));
+}
+
+/// Phase 12 — Audit log & Settings / administration: the read-only audit
+/// viewer, Application Settings (Business Name / Tax / Currency) and Role &
+/// Permission management. Everything wires over existing §4.25–§4.27 tables.
+void _registerPhase12(AppDatabase db) {
+  final audit = getIt<AuditService>();
+  final perms = getIt<PermissionService>();
+
+  // Application settings (business name / tax / currency) over `app_settings`.
+  getIt.registerLazySingleton<SettingsRepository>(
+      () => SettingsRepositoryImpl(getIt<SettingsDao>(), db));
+  getIt.registerLazySingleton<GetAppSettingsUseCase>(
+      () => GetAppSettingsUseCase(getIt<SettingsRepository>(), perms));
+  getIt.registerLazySingleton<SaveAppSettingsUseCase>(
+      () => SaveAppSettingsUseCase(
+        getIt<SettingsRepository>(),
+        perms,
+        audit,
+      ));
+  getIt.registerLazySingleton<SettingsController>(
+      () => SettingsController(
+        getIt<GetAppSettingsUseCase>(),
+        getIt<SaveAppSettingsUseCase>(),
+        db,
+      ));
+
+  // Audit viewer (read-only, paginated, filtered).
+  getIt.registerLazySingleton<AuditDao>(() => AuditDao(db));
+  getIt.registerLazySingleton<ListAuditLogsUseCase>(
+      () => ListAuditLogsUseCase(getIt<AuditDao>(), perms));
+  getIt.registerLazySingleton<ListAuditActionsUseCase>(
+      () => ListAuditActionsUseCase(getIt<AuditDao>(), perms));
+  getIt.registerLazySingleton<ListAuditActorsUseCase>(
+      () => ListAuditActorsUseCase(getIt<AuditDao>(), perms));
+  getIt.registerLazySingleton<AuditController>(
+      () => AuditController(
+        getIt<ListAuditLogsUseCase>(),
+        getIt<ListAuditActionsUseCase>(),
+        getIt<ListAuditActorsUseCase>(),
+        db,
+      ));
+
+  // Role & permission management over `roles` / `role_permissions` /
+  // `permissions`.
+  getIt.registerLazySingleton<RbacDao>(() => RbacDao(db));
+  getIt.registerLazySingleton<LoadRolesSnapshotUseCase>(
+      () => LoadRolesSnapshotUseCase(getIt<RbacDao>(), perms));
+  getIt.registerLazySingleton<GetRoleDetailUseCase>(
+      () => GetRoleDetailUseCase(getIt<RbacDao>(), perms));
+  getIt.registerLazySingleton<CreateRoleUseCase>(
+      () => CreateRoleUseCase(getIt<RbacDao>(), perms, audit));
+  getIt.registerLazySingleton<UpdateRoleUseCase>(
+      () => UpdateRoleUseCase(getIt<RbacDao>(), perms, audit));
+  getIt.registerLazySingleton<SetRolePermissionsUseCase>(
+      () => SetRolePermissionsUseCase(getIt<RbacDao>(), perms, audit));
+  getIt.registerLazySingleton<DeleteRoleUseCase>(
+      () => DeleteRoleUseCase(getIt<RbacDao>(), perms, audit));
+  getIt.registerLazySingleton<RbacController>(
+      () => RbacController(
+        getIt<LoadRolesSnapshotUseCase>(),
+        getIt<GetRoleDetailUseCase>(),
+        getIt<CreateRoleUseCase>(),
+        getIt<UpdateRoleUseCase>(),
+        getIt<SetRolePermissionsUseCase>(),
+        getIt<DeleteRoleUseCase>(),
+        db,
       ));
 }
 

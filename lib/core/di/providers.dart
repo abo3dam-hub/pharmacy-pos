@@ -47,6 +47,9 @@ import '../../features/sales/presentation/controllers/pos_workspace_controller.d
 import '../../features/sales/presentation/controllers/pos_workspace_state.dart';
 import '../../features/suppliers/application/suppliers_controller.dart';
 import '../../features/suppliers/domain/usecases/suppliers_use_cases.dart';
+import '../../features/settings/application/settings_controller.dart';
+import '../../features/audit/application/audit_controller.dart';
+import '../../features/auth/application/rbac_controller.dart';
 import '../../features/accounts/domain/repositories/cashbox_repository.dart';
 import '../../features/reports/application/reports_controller.dart';
 import '../../features/reports/data/reports_dao.dart';
@@ -217,3 +220,14 @@ final inventoryReportControllerProvider =
 final lostSalesReportControllerProvider =
     StateNotifierProvider<LostSalesReportController,
         ReportViewState<LostSalesReport>>((ref) => getIt<LostSalesReportController>());
+
+// ── Phase 12: Audit log, Settings & RBAC ────────────────────────────────────
+final auditControllerProvider =
+    StateNotifierProvider<AuditController, AuditViewState>(
+        (ref) => getIt<AuditController>());
+final settingsControllerProvider =
+    StateNotifierProvider<SettingsController, SettingsViewState>(
+        (ref) => getIt<SettingsController>());
+final rbacControllerProvider =
+    StateNotifierProvider<RbacController, RbacViewState>(
+        (ref) => getIt<RbacController>());

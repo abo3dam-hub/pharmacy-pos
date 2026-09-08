@@ -2,8 +2,14 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pharmacy_pos/core/di/providers.dart';
 import 'package:pharmacy_pos/domain/services/audit_service.dart';
+import 'package:pharmacy_pos/domain/services/permission_service.dart';
+import 'package:pharmacy_pos/features/audit/application/audit_controller.dart';
+import 'package:pharmacy_pos/features/audit/data/audit_dao.dart';
+import 'package:pharmacy_pos/features/audit/domain/usecases/audit_use_cases.dart';
 import 'package:pharmacy_pos/features/auth/application/auth_controller.dart';
+import 'package:pharmacy_pos/features/auth/application/rbac_controller.dart';
 import 'package:pharmacy_pos/features/auth/application/users_controller.dart';
+import 'package:pharmacy_pos/features/auth/data/daos/rbac_dao.dart';
 import 'package:pharmacy_pos/features/auth/data/daos/user_dao.dart';
 import 'package:pharmacy_pos/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:pharmacy_pos/features/auth/domain/repositories/auth_repository.dart';
@@ -18,7 +24,12 @@ import 'package:pharmacy_pos/features/auth/domain/usecases/login.dart';
 import 'package:pharmacy_pos/features/auth/domain/usecases/logout.dart';
 import 'package:pharmacy_pos/features/auth/domain/usecases/reactivate_user.dart';
 import 'package:pharmacy_pos/features/auth/domain/usecases/update_user.dart';
+import 'package:pharmacy_pos/features/auth/domain/usecases/rbac_use_cases.dart';
+import 'package:pharmacy_pos/features/settings/application/settings_controller.dart';
+import 'package:pharmacy_pos/features/settings/data/settings_repository_impl.dart';
+import 'package:pharmacy_pos/features/settings/domain/usecases/settings_use_cases.dart';
 import 'package:pharmacy_pos/shared/database/app_database.dart';
+import 'package:pharmacy_pos/shared/database/settings_dao.dart';
 
 import 'helpers.dart';
 
@@ -66,6 +77,58 @@ Future<({ProviderContainer container, AppDatabase db, AuthRepository repository}
     authRepositoryProvider.overrideWithValue(repository),
     authControllerProvider.overrideWith((ref) => authController),
     usersViewControllerProvider.overrideWith((ref) => usersController),
+
+    // Phase 12: settings, audit viewer and RBAC management, all backed by the
+    // same testing DB so misused providers fail loudly instead of silently.
+    settingsControllerProvider.overrideWith(
+      (ref) => SettingsController(
+        GetAppSettingsUseCase(
+          SettingsRepositoryImpl(SettingsDao(db), db),
+          const PermissionService(),
+        ),
+        SaveAppSettingsUseCase(
+          SettingsRepositoryImpl(SettingsDao(db), db),
+          const PermissionService(),
+          const AuditService(),
+        ),
+        db,
+      ),
+    ),
+    auditControllerProvider.overrideWith(
+      (ref) => AuditController(
+        ListAuditLogsUseCase(AuditDao(db), const PermissionService()),
+        ListAuditActionsUseCase(AuditDao(db), const PermissionService()),
+        ListAuditActorsUseCase(AuditDao(db), const PermissionService()),
+        db,
+      ),
+    ),
+    rbacControllerProvider.overrideWith(
+      (ref) => RbacController(
+        LoadRolesSnapshotUseCase(RbacDao(db), const PermissionService()),
+        GetRoleDetailUseCase(RbacDao(db), const PermissionService()),
+        CreateRoleUseCase(
+          RbacDao(db),
+          const PermissionService(),
+          const AuditService(),
+        ),
+        UpdateRoleUseCase(
+          RbacDao(db),
+          const PermissionService(),
+          const AuditService(),
+        ),
+        SetRolePermissionsUseCase(
+          RbacDao(db),
+          const PermissionService(),
+          const AuditService(),
+        ),
+        DeleteRoleUseCase(
+          RbacDao(db),
+          const PermissionService(),
+          const AuditService(),
+        ),
+        db,
+      ),
+    ),
   ]);
   return (container: container, db: db, repository: repository);
 }

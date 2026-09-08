@@ -2668,4 +2668,277 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportNoData => 'No data in this range';
+
+  @override
+  String get navAudit => 'Audit log';
+
+  @override
+  String get auditDetailTitle => 'Event details';
+
+  @override
+  String get auditSearchHint => 'Search actions, entities, IDs or notes';
+
+  @override
+  String get auditFromDate => 'From date';
+
+  @override
+  String get auditToDate => 'To date';
+
+  @override
+  String get auditAllActions => 'All actions';
+
+  @override
+  String get auditAllUsers => 'All users';
+
+  @override
+  String get auditClearFilters => 'Clear filters';
+
+  @override
+  String get auditEmpty => 'No matching log entries';
+
+  @override
+  String get auditColumnDate => 'Time';
+
+  @override
+  String get auditColumnUser => 'User';
+
+  @override
+  String get auditColumnAction => 'Action';
+
+  @override
+  String get auditColumnEntity => 'Entity';
+
+  @override
+  String get auditColumnEntityId => 'ID';
+
+  @override
+  String get auditColumnNote => 'Note';
+
+  @override
+  String get auditSnapshotsTitle => 'Snapshots';
+
+  @override
+  String get auditBeforeLabel => 'Before';
+
+  @override
+  String get auditAfterLabel => 'After';
+
+  @override
+  String get auditActionCreate => 'Create';
+
+  @override
+  String get auditActionUpdate => 'Update';
+
+  @override
+  String get auditActionDelete => 'Delete';
+
+  @override
+  String get auditActionLogin => 'Sign in';
+
+  @override
+  String get auditActionLogout => 'Sign out';
+
+  @override
+  String get auditActionLoginFailed => 'Failed sign-in';
+
+  @override
+  String get auditActionVoid => 'Void';
+
+  @override
+  String get auditActionRestore => 'Restore';
+
+  @override
+  String get auditActionPriceChange => 'Price change';
+
+  @override
+  String get auditActionBulkOp => 'Bulk operation';
+
+  @override
+  String get auditActionConfig => 'Settings change';
+
+  @override
+  String get auditActionBackup => 'Backup';
+
+  @override
+  String get auditActionRestoreBackup => 'Restore backup';
+
+  @override
+  String get auditEntityUser => 'User';
+
+  @override
+  String get auditEntityRole => 'Role';
+
+  @override
+  String get auditEntityPermission => 'Permission';
+
+  @override
+  String get auditEntityAppSettings => 'System settings';
+
+  @override
+  String get auditEntityItem => 'Item';
+
+  @override
+  String get auditEntityBatch => 'Batch';
+
+  @override
+  String get auditEntityCategory => 'Category';
+
+  @override
+  String get auditEntityManufacturer => 'Manufacturer';
+
+  @override
+  String get auditEntityTherapeuticGroup => 'Therapeutic group';
+
+  @override
+  String get auditEntityUnit => 'Unit';
+
+  @override
+  String get auditEntityCustomer => 'Customer';
+
+  @override
+  String get auditEntitySupplier => 'Supplier';
+
+  @override
+  String get auditEntitySalesInvoice => 'Sales invoice';
+
+  @override
+  String get auditEntityPurchaseInvoice => 'Purchase invoice';
+
+  @override
+  String get auditEntityReturn => 'Return';
+
+  @override
+  String get auditEntityExpense => 'Expense';
+
+  @override
+  String get auditEntityPrescription => 'Prescription';
+
+  @override
+  String get auditEntityCashbox => 'Cashbox';
+
+  @override
+  String get auditEntityPeriod => 'Period';
+
+  @override
+  String get auditEntityLostSale => 'Lost sale';
+
+  @override
+  String get auditEntityBackup => 'Backup';
+
+  @override
+  String get settingsGeneralTitle => 'General settings';
+
+  @override
+  String get settingsBusinessName => 'Business name';
+
+  @override
+  String get settingsBusinessNameHint =>
+      'Shown on invoices, receipts and reports';
+
+  @override
+  String get settingsBusinessNameRequired => 'Business name is required';
+
+  @override
+  String get settingsTaxRate => 'Tax rate';
+
+  @override
+  String get settingsTaxRateHint => 'Value-added tax rate';
+
+  @override
+  String get settingsTaxInvalid => 'Tax rate must be between 0% and 100%';
+
+  @override
+  String get settingsCurrency => 'Currency';
+
+  @override
+  String get settingsCurrencyHint => 'Currency code displayed in the UI';
+
+  @override
+  String get settingsSavedMessage => 'Settings saved';
+
+  @override
+  String get rolesSubtitle => 'Manage user roles and their permissions';
+
+  @override
+  String get rolesAdd => 'Add role';
+
+  @override
+  String get rolesEmpty => 'No roles found';
+
+  @override
+  String get rolesCreateTitle => 'New role';
+
+  @override
+  String get rolesEditTitle => 'Edit role';
+
+  @override
+  String get rolesNameAr => 'Role name';
+
+  @override
+  String get rolesNameRequired => 'Role name is required';
+
+  @override
+  String get rolesPermissionsTitle => 'Permissions';
+
+  @override
+  String rolesPermissionsCount(int count) {
+    return '$count permissions';
+  }
+
+  @override
+  String rolesUsersCount(int count) {
+    return '$count users';
+  }
+
+  @override
+  String get rolesSystemBadge => 'System';
+
+  @override
+  String get rolesInactiveBadge => 'Disabled';
+
+  @override
+  String get rolesNameExists => 'Role name already exists';
+
+  @override
+  String rolesPermissionsFor(String name) {
+    return 'Permissions for \"$name\"';
+  }
+
+  @override
+  String get rolesPermissionsSaved => 'Permissions saved';
+
+  @override
+  String get rolesUpdatedMessage => 'Role updated';
+
+  @override
+  String get rolesCreatedMessage => 'Role created';
+
+  @override
+  String get rolesDeletedMessage => 'Role deleted';
+
+  @override
+  String get rolesDelete => 'Delete role';
+
+  @override
+  String get rolesDeleteTitle => 'Delete role';
+
+  @override
+  String rolesDeleteConfirm(String name) {
+    return 'Delete role \"$name\"?';
+  }
+
+  @override
+  String get rolesTabTitle => 'Roles';
+
+  @override
+  String get permissionsTabTitle => 'Permissions';
+
+  @override
+  String get permissionsSubtitle => 'All system permissions grouped by module';
+
+  @override
+  String get permissionsSelectAll => 'Select all';
+
+  @override
+  String get permissionsClearAll => 'Clear all';
 }

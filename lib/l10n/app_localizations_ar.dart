@@ -2659,4 +2659,277 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get reportNoData => 'لا توجد بيانات في هذا النطاق';
+
+  @override
+  String get navAudit => 'سجل التدقيق';
+
+  @override
+  String get auditDetailTitle => 'تفاصيل العملية';
+
+  @override
+  String get auditSearchHint =>
+      'ابحث عن عملية (العملية، الكيان، المعرف، ملاحظة)';
+
+  @override
+  String get auditFromDate => 'من تاريخ';
+
+  @override
+  String get auditToDate => 'إلى تاريخ';
+
+  @override
+  String get auditAllActions => 'كل العمليات';
+
+  @override
+  String get auditAllUsers => 'كل المستخدمين';
+
+  @override
+  String get auditClearFilters => 'مسح الفلاتر';
+
+  @override
+  String get auditEmpty => 'لا توجد عمليات مطابقة';
+
+  @override
+  String get auditColumnDate => 'الوقت';
+
+  @override
+  String get auditColumnUser => 'المستخدم';
+
+  @override
+  String get auditColumnAction => 'العملية';
+
+  @override
+  String get auditColumnEntity => 'الكيان';
+
+  @override
+  String get auditColumnEntityId => 'المعرف';
+
+  @override
+  String get auditColumnNote => 'ملاحظة';
+
+  @override
+  String get auditSnapshotsTitle => 'لقطات التغيير';
+
+  @override
+  String get auditBeforeLabel => 'قبل';
+
+  @override
+  String get auditAfterLabel => 'بعد';
+
+  @override
+  String get auditActionCreate => 'إنشاء';
+
+  @override
+  String get auditActionUpdate => 'تعديل';
+
+  @override
+  String get auditActionDelete => 'حذف';
+
+  @override
+  String get auditActionLogin => 'تسجيل دخول';
+
+  @override
+  String get auditActionLogout => 'تسجيل خروج';
+
+  @override
+  String get auditActionLoginFailed => 'محاولة دخول فاشلة';
+
+  @override
+  String get auditActionVoid => 'إلغاء';
+
+  @override
+  String get auditActionRestore => 'استعادة';
+
+  @override
+  String get auditActionPriceChange => 'تغيير سعر';
+
+  @override
+  String get auditActionBulkOp => 'عملية جماعية';
+
+  @override
+  String get auditActionConfig => 'تغيير الإعدادات';
+
+  @override
+  String get auditActionBackup => 'نسخة احتياطية';
+
+  @override
+  String get auditActionRestoreBackup => 'استعادة نسخة';
+
+  @override
+  String get auditEntityUser => 'مستخدم';
+
+  @override
+  String get auditEntityRole => 'دور';
+
+  @override
+  String get auditEntityPermission => 'صلاحية';
+
+  @override
+  String get auditEntityAppSettings => 'إعدادات النظام';
+
+  @override
+  String get auditEntityItem => 'صنف';
+
+  @override
+  String get auditEntityBatch => 'دفعة';
+
+  @override
+  String get auditEntityCategory => 'فئة';
+
+  @override
+  String get auditEntityManufacturer => 'مصنّع';
+
+  @override
+  String get auditEntityTherapeuticGroup => 'مجموعة علاجية';
+
+  @override
+  String get auditEntityUnit => 'وحدة';
+
+  @override
+  String get auditEntityCustomer => 'عميل';
+
+  @override
+  String get auditEntitySupplier => 'مورد';
+
+  @override
+  String get auditEntitySalesInvoice => 'فاتورة بيع';
+
+  @override
+  String get auditEntityPurchaseInvoice => 'فاتورة شراء';
+
+  @override
+  String get auditEntityReturn => 'مرتجع';
+
+  @override
+  String get auditEntityExpense => 'مصروف';
+
+  @override
+  String get auditEntityPrescription => 'وصفة طبية';
+
+  @override
+  String get auditEntityCashbox => 'صندوق';
+
+  @override
+  String get auditEntityPeriod => 'فترة';
+
+  @override
+  String get auditEntityLostSale => 'ناقص';
+
+  @override
+  String get auditEntityBackup => 'نسخة احتياطية';
+
+  @override
+  String get settingsGeneralTitle => 'الإعدادات العامة';
+
+  @override
+  String get settingsBusinessName => 'اسم النشاط التجاري';
+
+  @override
+  String get settingsBusinessNameHint => 'يظهر في الفواتير والتقارير';
+
+  @override
+  String get settingsBusinessNameRequired => 'اسم النشاط التجاري مطلوب';
+
+  @override
+  String get settingsTaxRate => 'نسبة الضريبة';
+
+  @override
+  String get settingsTaxRateHint => 'نسبة ضريبة القيمة المضافة';
+
+  @override
+  String get settingsTaxInvalid => 'نسبة الضريبة يجب أن تكون بين 0% و 100%';
+
+  @override
+  String get settingsCurrency => 'العملة';
+
+  @override
+  String get settingsCurrencyHint => 'رمز العملة المعروض في الواجهة';
+
+  @override
+  String get settingsSavedMessage => 'تم حفظ الإعدادات بنجاح';
+
+  @override
+  String get rolesSubtitle => 'إدارة أدوار المستخدمين وصلاحياتهم';
+
+  @override
+  String get rolesAdd => 'إضافة دور';
+
+  @override
+  String get rolesEmpty => 'لا توجد أدوار';
+
+  @override
+  String get rolesCreateTitle => 'دور جديد';
+
+  @override
+  String get rolesEditTitle => 'تعديل الدور';
+
+  @override
+  String get rolesNameAr => 'اسم الدور';
+
+  @override
+  String get rolesNameRequired => 'اسم الدور مطلوب';
+
+  @override
+  String get rolesPermissionsTitle => 'الصلاحيات';
+
+  @override
+  String rolesPermissionsCount(int count) {
+    return '$count صلاحية';
+  }
+
+  @override
+  String rolesUsersCount(int count) {
+    return '$count مستخدم';
+  }
+
+  @override
+  String get rolesSystemBadge => 'دور أساسي';
+
+  @override
+  String get rolesInactiveBadge => 'معطّل';
+
+  @override
+  String get rolesNameExists => 'اسم الدور موجود مسبقاً';
+
+  @override
+  String rolesPermissionsFor(String name) {
+    return 'صلاحيات $name';
+  }
+
+  @override
+  String get rolesPermissionsSaved => 'تم حفظ الصلاحيات';
+
+  @override
+  String get rolesUpdatedMessage => 'تم تحديث الدور';
+
+  @override
+  String get rolesCreatedMessage => 'تم إنشاء الدور';
+
+  @override
+  String get rolesDeletedMessage => 'تم حذف الدور';
+
+  @override
+  String get rolesDelete => 'حذف الدور';
+
+  @override
+  String get rolesDeleteTitle => 'حذف الدور';
+
+  @override
+  String rolesDeleteConfirm(String name) {
+    return 'هل تريد حذف الدور «$name»؟';
+  }
+
+  @override
+  String get rolesTabTitle => 'الأدوار';
+
+  @override
+  String get permissionsTabTitle => 'الصلاحيات';
+
+  @override
+  String get permissionsSubtitle => 'كافة صلاحيات النظام حسب الوحدات';
+
+  @override
+  String get permissionsSelectAll => 'تحديد الكل';
+
+  @override
+  String get permissionsClearAll => 'إزالة الكل';
 }
