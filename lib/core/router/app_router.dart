@@ -8,6 +8,7 @@ import '../../../core/constants/app_sections.dart';
 import '../../../core/constants/permission_codes.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/widgets/app_shell.dart';
+import '../../../core/widgets/pos_shortcut_scope.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/presentation/pages/access_denied_page.dart';
@@ -145,13 +146,15 @@ if ((path == AppSection.settings.path ||
       ShellRoute(
         builder: (context, state, child) {
           final section = AppSection.fromPath(state.uri.path);
-          return AppShell(
-            selectedSection: section,
-            onSectionSelected: (s) => context.go(s.path),
-            appBarActions: [
-              _LogoutButton(),
-            ],
-            child: child,
+          return PosShortcutScope(
+            child: AppShell(
+              selectedSection: section,
+              onSectionSelected: (s) => context.go(s.path),
+              appBarActions: [
+                _LogoutButton(),
+              ],
+              child: child,
+            ),
           );
         },
         routes: [

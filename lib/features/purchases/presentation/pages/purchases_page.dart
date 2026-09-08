@@ -17,6 +17,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/models/enums.dart';
 import '../../application/purchases_controller.dart';
 import '../widgets/purchase_status_chip.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// §12 purchases section: searchable, filterable invoice grid with the new
 /// invoice action. Create/edit/receive/cancel/return live in the form and
@@ -368,14 +369,14 @@ class _PurchasesPageState extends ConsumerState<PurchasesPage> {
           const SizedBox(width: AppSpacing.m),
           IconButton(
             onPressed: _page <= 1 ? null : () => _toPage(_page - 1),
-            icon: const Icon(Icons.chevron_left),
+            icon: Icon(AppDirectionalIcons.previous(context)),
             tooltip: l10n.commonPrevious,
           ),
           IconButton(
             onPressed: _page >= pageCount || pageCount == 0
                 ? null
                 : () => _toPage(_page + 1),
-            icon: const Icon(Icons.chevron_right),
+            icon: Icon(AppDirectionalIcons.next(context)),
             tooltip: l10n.commonNext,
           ),
         ],

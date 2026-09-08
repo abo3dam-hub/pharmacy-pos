@@ -15,6 +15,7 @@ import '../../../../features/reports/domain/services/statement_export.dart';
 import '../../../../features/reports/presentation/widgets/report_actions.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../application/suppliers_controller.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// Supplier statement (كشف حساب) page — one supplier's document ledger in a
 /// date range with keyset pagination and a summary footer. Routed at
@@ -178,7 +179,7 @@ class _SupplierStatementPageState extends ConsumerState<SupplierStatementView> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back),
+                      icon: Icon(AppDirectionalIcons.back(context)),
                       tooltip: l10n.commonBack,
                       onPressed: () => context.go('/suppliers'),
                     ),
@@ -318,14 +319,14 @@ class _SupplierStatementPageState extends ConsumerState<SupplierStatementView> {
                 onPressed: statement.page <= 1
                     ? null
                     : () => _toPage(statement.page - 1),
-                icon: const Icon(Icons.chevron_left),
+                icon: Icon(AppDirectionalIcons.previous(context)),
                 tooltip: l10n.commonPrevious,
               ),
               IconButton(
                 onPressed: statement.page >= pageCount || pageCount == 0
                     ? null
                     : () => _toPage(statement.page + 1),
-                icon: const Icon(Icons.chevron_right),
+                icon: Icon(AppDirectionalIcons.next(context)),
                 tooltip: l10n.commonNext,
               ),
             ],

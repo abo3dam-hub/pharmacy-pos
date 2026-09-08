@@ -144,12 +144,25 @@ class _DataManagementPageState extends ConsumerState<DataManagementPage> {
           archivePath: _archivePath!,
         );
     if (!mounted) return;
+    final state = ref.read(dataManagementControllerProvider);
     if (failure != null) {
       _showFailure(failure);
+      // A failed restore that closed the live connection must lead to a
+      // restart: the data on disk is safe (rolled back to the emergency
+      // backup, which stays preserved) but the in-memory connection is no
+      // longer usable.
+      if (state.dbClosed) {
+        await _promptRestartRequired();
+      }
       return;
     }
-    // Restart flow: the restored file replaces the live database, so the
-    // in-memory singleton must not be used further.
+    // Successful restore replaced the live database file, so the in-memory
+    // singleton connection must not be used further — restart is required.
+    await _promptRestartRequired();
+  }
+
+  Future<void> _promptRestartRequired() async {
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(

@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -20,7 +23,7 @@ import 'auth_harness.dart';
 
 /// Signs in through the real login form using the seeded dev admin
 /// (locale-agnostic: uses field order, not localized labels).
-Future<void> _signIn(
+Future<void> signIn(
   WidgetTester tester, {
   required String username,
   required String password,
@@ -74,6 +77,26 @@ void main() {
       expect(dark.extension<AppTypography>(), isNotNull);
     });
 
+    test('muted text tokens pass WCAG AA contrast on their respective canvases', () {
+      double relativeLuminance(Color c) {
+        final channel = [c.r, c.g, c.b].map((s) {
+          return s <= 0.03928 ? s / 12.92 : math.pow((s + 0.055) / 1.055, 2.4).toDouble();
+        }).toList();
+        return 0.2126 * channel[0] + 0.7152 * channel[1] + 0.0722 * channel[2];
+      }
+
+      double contrastRatio(Color a, Color b) {
+        final l1 = relativeLuminance(a);
+        final l2 = relativeLuminance(b);
+        final lighter = math.max(l1, l2);
+        final darker  = math.min(l1, l2);
+        return (lighter + 0.05) / (darker + 0.05);
+      }
+
+      expect(contrastRatio(AppColors.textMuted, AppColors.canvas), greaterThanOrEqualTo(4.5));
+      expect(contrastRatio(AppColors.darkTextMuted, AppColors.darkCanvas), greaterThanOrEqualTo(4.5));
+    });
+
     test('spacing and breakpoints follow the unified scale', () {
       expect(AppBreakpoints.layoutFor(1280), AppLayout.desktop);
       expect(AppBreakpoints.layoutFor(760), AppLayout.tablet);
@@ -97,7 +120,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await _signIn(tester, username: 'admin', password: 'Admin@123');
+      await signIn(tester, username: 'admin', password: 'Admin@123');
       await tester.pumpAndSettle();
 
       final ctx = tester.element(find.text('الرئيسية').first);
@@ -117,7 +140,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await _signIn(tester, username: 'admin', password: 'Admin@123');
+      await signIn(tester, username: 'admin', password: 'Admin@123');
       await tester.pumpAndSettle();
 
       expect(find.text('Dashboard'), findsWidgets);
@@ -151,6 +174,38 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(NavigationRail), findsOneWidget);
       expect(find.text('المخزون'), findsOneWidget);
+    });
+
+    testWidgets('shell navigation destinations expose readable semantics',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(harness(const AppShell()));
+      await tester.pumpAndSettle();
+
+      // Walk the rail's real semantics subtree: every destination must surface
+      // its localized section label to a screen reader (not a bare icon).
+      final labels = <String>[];
+      void collect(SemanticsNode node) {
+        if (node.label.isNotEmpty) labels.add(node.label);
+        for (final child in node
+            .debugListChildrenInOrder(DebugSemanticsDumpOrder.traversalOrder)) {
+          collect(child);
+        }
+      }
+
+      collect(tester.getSemantics(find.byType(NavigationRail)));
+      for (final label in ['الرئيسية', 'المخزون', 'مبيعات', 'الإعدادات']) {
+        expect(
+          labels.any((l) => l.split('\n').first == label),
+          isTrue,
+          reason: 'rail should expose "$label" to assistive tech',
+        );
+      }
+      semantics.dispose();
     });
   });
 

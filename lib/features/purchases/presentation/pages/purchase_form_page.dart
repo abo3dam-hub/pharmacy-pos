@@ -15,6 +15,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../../../shared/models/enums.dart';
 import '../../domain/repositories/purchases_repository.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// Purchase invoice form — create (`/purchases/new`) or edit a pending invoice
 /// (`/purchases/edit/:id`). Lines carry paid quantities, unit costs, discounts
@@ -389,7 +390,7 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: Icon(AppDirectionalIcons.back(context)),
             tooltip: l10n.commonBack,
             onPressed: () => context.go('/purchases'),
           ),

@@ -13,6 +13,7 @@ import '../../application/audit_controller.dart';
 import '../../domain/entities/audit_entry.dart';
 import '../widgets/audit_detail_dialog.dart';
 import '../widgets/audit_labels.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// Phase 12 Audit Log viewer (سجل التدقيق): read-only, paginated audit trail
 /// with search + date/actor/action filters. Route guard requires `audit.view`.
@@ -340,14 +341,14 @@ class _AuditLogPageState extends ConsumerState<AuditLogPage> {
           const SizedBox(width: AppSpacing.m),
           IconButton(
             onPressed: state.page <= 1 ? null : () => _toPage(state.page - 1),
-            icon: const Icon(Icons.chevron_left),
+            icon: Icon(AppDirectionalIcons.previous(context)),
             tooltip: l10n.commonPrevious,
           ),
           IconButton(
             onPressed: state.page >= pageCount || pageCount == 0
                 ? null
                 : () => _toPage(state.page + 1),
-            icon: const Icon(Icons.chevron_right),
+            icon: Icon(AppDirectionalIcons.next(context)),
             tooltip: l10n.commonNext,
           ),
         ],

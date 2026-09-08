@@ -13,6 +13,7 @@ import '../../../../data/daos/prescription_dao.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/models/enums.dart';
 import '../../application/prescriptions_controller.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// §4.12 prescription detail: header, items and the Phase-6 "prepare for sale"
 /// lookup. Routed at `/customers/prescriptions/detail/:id`.
@@ -110,7 +111,7 @@ class _PrescriptionDetailPageState
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: Icon(AppDirectionalIcons.back(context)),
                   tooltip: l10n.commonBack,
                   onPressed: () => context.pop(),
                 ),

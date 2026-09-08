@@ -16,6 +16,7 @@ import '../../../../features/reports/presentation/widgets/report_actions.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../application/customers_controller.dart';
 import '../widgets/customer_payment_dialog.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// Customer statement (كشف حساب العميل) — one customer's sales-ledger documents
 /// in a date range with keyset pagination and a summary footer. Routed at
@@ -192,7 +193,7 @@ class _CustomerStatementPageState
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back),
+                      icon: Icon(AppDirectionalIcons.back(context)),
                       tooltip: l10n.commonBack,
                       onPressed: () => context.go('/customers'),
                     ),
@@ -345,14 +346,14 @@ class _CustomerStatementPageState
                 onPressed: statement.page <= 1
                     ? null
                     : () => _toPage(statement.page - 1),
-                icon: const Icon(Icons.chevron_left),
+                icon: Icon(AppDirectionalIcons.previous(context)),
                 tooltip: l10n.commonPrevious,
               ),
               IconButton(
                 onPressed: statement.page >= pageCount || pageCount == 0
                     ? null
                     : () => _toPage(statement.page + 1),
-                icon: const Icon(Icons.chevron_right),
+                icon: Icon(AppDirectionalIcons.next(context)),
                 tooltip: l10n.commonNext,
               ),
             ],

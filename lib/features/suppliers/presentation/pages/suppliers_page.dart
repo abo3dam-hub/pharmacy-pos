@@ -17,6 +17,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../application/suppliers_controller.dart';
 import '../widgets/supplier_dialog.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// §16 suppliers section: master registry + derived balances ledger. Uses the
 /// `suppliersControllerProvider` for search, CRUD and the statement generator.
@@ -320,14 +321,14 @@ class _SuppliersPageState extends ConsumerState<SuppliersPage> {
           const SizedBox(width: AppSpacing.m),
           IconButton(
             onPressed: page <= 1 ? null : () => _toPage(page - 1),
-            icon: const Icon(Icons.chevron_left),
+            icon: Icon(AppDirectionalIcons.previous(context)),
             tooltip: l10n.commonPrevious,
           ),
           IconButton(
             onPressed: page >= pageCount || pageCount == 0
                 ? null
                 : () => _toPage(page + 1),
-            icon: const Icon(Icons.chevron_right),
+            icon: Icon(AppDirectionalIcons.next(context)),
             tooltip: l10n.commonNext,
           ),
         ],

@@ -2918,6 +2918,12 @@ abstract class AppLocalizations {
   /// **'السلة فارغة — أضف أصنافاً للبيع'**
   String get posCartItemEmpty;
 
+  /// No description provided for @posDeleteHeldBill.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الفاتورة المعلقة'**
+  String get posDeleteHeldBill;
+
   /// No description provided for @posUnitBox.
   ///
   /// In ar, this message translates to:
@@ -2989,6 +2995,24 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعذر طباعة المستند'**
   String get posPrintFailed;
+
+  /// No description provided for @posQtyDecrease.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنقاص الكمية'**
+  String get posQtyDecrease;
+
+  /// No description provided for @posQtyIncrease.
+  ///
+  /// In ar, this message translates to:
+  /// **'زيادة الكمية'**
+  String get posQtyIncrease;
+
+  /// No description provided for @posRemoveLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة الصنف'**
+  String get posRemoveLine;
 
   /// No description provided for @zReportTitle.
   ///
@@ -5677,6 +5701,60 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تم حفظ الإعدادات بنجاح'**
   String get settingsSavedMessage;
+
+  /// No description provided for @shortcutsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختصارات لوحة المفاتيح'**
+  String get shortcutsTitle;
+
+  /// No description provided for @shortcutsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تُطبّق الاختصارات في كل شاشات النظام وتُحفظ تلقائيًا'**
+  String get shortcutsSubtitle;
+
+  /// No description provided for @shortcutsSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم تحديث الاختصارات'**
+  String get shortcutsSaved;
+
+  /// No description provided for @shortcutsDuplicate.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذا المفتاح مُعيّن لإجراء آخر، اختر مفتاحًا مختلفًا'**
+  String get shortcutsDuplicate;
+
+  /// No description provided for @shortcutsSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'البحث عن منتج'**
+  String get shortcutsSearch;
+
+  /// No description provided for @shortcutsToggleUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تبديل وحدة الصرف'**
+  String get shortcutsToggleUnit;
+
+  /// No description provided for @shortcutsHoldBill.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعليق الفاتورة'**
+  String get shortcutsHoldBill;
+
+  /// No description provided for @shortcutsCheckout.
+  ///
+  /// In ar, this message translates to:
+  /// **'إتمام البيع'**
+  String get shortcutsCheckout;
+
+  /// No description provided for @shortcutsAlternatives.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض البدائل'**
+  String get shortcutsAlternatives;
 
   /// No description provided for @rolesSubtitle.
   ///

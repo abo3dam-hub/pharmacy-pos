@@ -1460,6 +1460,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get posCartItemEmpty => 'Cart is empty — add items to sell';
 
   @override
+  String get posDeleteHeldBill => 'Delete held bill';
+
+  @override
   String get posUnitBox => 'Box';
 
   @override
@@ -1494,6 +1497,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get posPrintFailed => 'Failed to print document';
+
+  @override
+  String get posQtyDecrease => 'Decrease quantity';
+
+  @override
+  String get posQtyIncrease => 'Increase quantity';
+
+  @override
+  String get posRemoveLine => 'Remove item';
 
   @override
   String get zReportTitle => 'End-of-Shift Report (Z)';
@@ -2855,6 +2867,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSavedMessage => 'Settings saved';
+
+  @override
+  String get shortcutsTitle => 'Keyboard shortcuts';
+
+  @override
+  String get shortcutsSubtitle =>
+      'Applied across every screen and saved automatically';
+
+  @override
+  String get shortcutsSaved => 'Shortcuts updated';
+
+  @override
+  String get shortcutsDuplicate =>
+      'This key is already used by another action — pick a different one';
+
+  @override
+  String get shortcutsSearch => 'Search product';
+
+  @override
+  String get shortcutsToggleUnit => 'Toggle box/fraction unit';
+
+  @override
+  String get shortcutsHoldBill => 'Hold bill';
+
+  @override
+  String get shortcutsCheckout => 'Checkout';
+
+  @override
+  String get shortcutsAlternatives => 'Show alternatives';
 
   @override
   String get rolesSubtitle => 'Manage user roles and their permissions';

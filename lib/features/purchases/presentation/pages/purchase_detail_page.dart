@@ -18,6 +18,7 @@ import '../../../../shared/models/enums.dart';
 import '../widgets/purchase_return_dialog.dart';
 import '../widgets/purchase_status_chip.dart';
 import '../widgets/receive_dialog.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// Purchase invoice detail page — header, lines (effective qty/cost), bonuses
 /// and the receive / cancel / return actions. Routed at
@@ -209,7 +210,7 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: Icon(AppDirectionalIcons.back(context)),
                 tooltip: l10n.commonBack,
                 onPressed: () => context.go('/purchases'),
               ),

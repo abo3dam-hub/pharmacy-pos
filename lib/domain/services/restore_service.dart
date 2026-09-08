@@ -208,10 +208,21 @@ class RestoreService {
       }
       final emergencyBackupPath = emergency.archivePath;
 
-      // 6. Activation. If anything here fails we roll back to [emergency].
+      // 6. Close the live connection BEFORE any filesystem replacement. On
+      //    Windows an open SQLite file cannot be safely deleted/replaced, and a
+      //    stale WAL/SHM could otherwise override the restored data. If the
+      //    connection cannot be closed, nothing has been replaced yet — abort
+      //    loudly and preserve the emergency backup (no rollback needed).
       try {
         await onBeforeReplace?.call();
+      } catch (e) {
+        throw InvalidOperationException(
+            'تعذّر إغلاق قاعدة البيانات الحالية بأمان؛ تم إيقاف الاستعادة '
+            'قبل أي تغيير. احتفظ بنسخة الأمان: $emergencyBackupPath');
+      }
 
+      // 7. Replace files; if anything here fails we roll back to [emergency].
+      try {
         // Replace the live database file (drop stale WAL artefacts).
         for (final suffix in const ['-wal', '-shm']) {
           final sidecar = File('$liveDatabasePath$suffix');
@@ -232,7 +243,7 @@ class RestoreService {
           manifest.files,
         );
 
-        // 7. Reopen + validate the activated database.
+        // 8. Reopen + validate the activated database.
         final reopened = AppDatabase.fromFilePath(liveDatabasePath);
         await _assertHealthy(reopened);
         final schemaAfter =
@@ -270,8 +281,8 @@ class RestoreService {
           databaseIntegrityOk: true,
         );
       } catch (e) {
-        // 8. Activation failed → roll back to the emergency backup and report
-        //    failure loudly. The emergency archive stays preserved.
+        // 9. Replacement/activation failed → roll back to the emergency backup
+        //    and report failure loudly. The emergency archive stays preserved.
         final rolledBack =
             await _tryRollback(emergencyBackupPath, liveDatabasePath,
                 receiptsDirectory);

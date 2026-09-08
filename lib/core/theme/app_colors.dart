@@ -33,7 +33,7 @@ abstract final class AppColors {
   // ── Text (charcoal / dark gray) ───────────────────────────────────────
   static const Color textPrimary = Color(0xFF24292B);
   static const Color textSecondary = Color(0xFF5A6366);
-  static const Color textMuted = Color(0xFF7C858A);
+  static const Color textMuted = Color(0xFF6B7278);
   static const Color textOnAccent = Color(0xFFFFFFFF);
 
   // ── Semantic (never decorative) ───────────────────────────────────────
@@ -59,7 +59,7 @@ abstract final class AppColors {
   static const Color darkDivider = Color(0xFF2E3432);
   static const Color darkTextPrimary = Color(0xFFE8EAE7);
   static const Color darkTextSecondary = Color(0xFF9BA4A0);
-  static const Color darkTextMuted = Color(0xFF767F7A);
+  static const Color darkTextMuted = Color(0xFF79827E);
   static const Color darkAccent = Color(0xFF9E8FD0);
   static const Color darkSuccess = Color(0xFF62B18B);
   static const Color darkWarning = Color(0xFFD29B4A);

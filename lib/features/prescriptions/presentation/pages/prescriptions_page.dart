@@ -15,6 +15,7 @@ import '../../../../core/widgets/search_field.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/models/enums.dart';
 import '../../application/prescriptions_controller.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// §4.12 prescriptions list — reusable in the customers section tab and as the
 /// standalone `/customers` sub-section. Rows are joined with the customer name;
@@ -181,14 +182,14 @@ class _PrescriptionsListState extends ConsumerState<PrescriptionsList> {
           const SizedBox(width: AppSpacing.m),
           IconButton(
             onPressed: page <= 1 ? null : () => _toPage(page - 1),
-            icon: const Icon(Icons.chevron_left),
+            icon: Icon(AppDirectionalIcons.previous(context)),
             tooltip: l10n.commonPrevious,
           ),
           IconButton(
             onPressed: page >= pageCount || pageCount == 0
                 ? null
                 : () => _toPage(page + 1),
-            icon: const Icon(Icons.chevron_right),
+            icon: Icon(AppDirectionalIcons.next(context)),
             tooltip: l10n.commonNext,
           ),
         ],
@@ -236,7 +237,7 @@ class _PrescriptionsListState extends ConsumerState<PrescriptionsList> {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints.tightFor(
                       width: 32, height: 32),
-                  icon: const Icon(Icons.arrow_forward_ios),
+                  icon: Icon(AppDirectionalIcons.drillIn(context)),
                   tooltip: l10n.prescriptionDetail,
                   onPressed: () => _openDetail(p.row.id),
                 ),

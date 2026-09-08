@@ -109,6 +109,7 @@ import '../../features/auth/data/daos/rbac_dao.dart';
 import '../../features/auth/domain/usecases/rbac_use_cases.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/models/enums.dart';
+import 'app_database_lifecycle.dart';
 
 final getIt = GetIt.instance;
 
@@ -701,5 +702,6 @@ void _registerPhase13(AppDatabase db) {
         getIt<ExportDataUseCase>(),
         getIt<AppPaths>(),
         db,
+        AppDatabaseLifecycle(db),
       ));
 }

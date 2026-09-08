@@ -77,6 +77,7 @@ Future<({ProviderContainer container, AppDatabase db, AuthRepository repository}
     authRepositoryProvider.overrideWithValue(repository),
     authControllerProvider.overrideWith((ref) => authController),
     usersViewControllerProvider.overrideWith((ref) => usersController),
+    settingsDaoProvider.overrideWithValue(SettingsDao(db)),
 
     // Phase 12: settings, audit viewer and RBAC management, all backed by the
     // same testing DB so misused providers fail loudly instead of silently.

@@ -57,6 +57,8 @@ import '../../features/reports/data/reports_dao.dart';
 import '../../features/reports/domain/entities/report_models.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/database/settings_dao.dart';
+import '../../core/shortcuts/shortcut_bindings_controller.dart';
+import '../../core/shortcuts/shortcut_manager.dart';
 import 'injection.dart';
 
 /// Riverpod-agnostic providers for [[getIt]]-owned singletons (§35).
@@ -171,6 +173,9 @@ final posCatalogDaoProvider = Provider<PosCatalogDao>((ref) => getIt<PosCatalogD
 final salesRepositoryProvider =
     Provider<SalesRepository>((ref) => getIt<SalesRepository>());
 final settingsDaoProvider = Provider<SettingsDao>((ref) => getIt<SettingsDao>());
+final shortcutBindingsProvider = StateNotifierProvider<
+    ShortcutBindingsController, Map<PosShortcutKind, String>>(
+    (ref) => ShortcutBindingsController(ref.watch(settingsDaoProvider)));
 final zReportDaoProvider = Provider<ZReportDao>((ref) => getIt<ZReportDao>());
 final posWorkspaceControllerProvider = StateNotifierProvider
     .family<PosWorkspaceController, PosWorkspaceState, int>((

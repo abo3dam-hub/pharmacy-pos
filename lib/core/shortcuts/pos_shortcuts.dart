@@ -1,10 +1,11 @@
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-/// Central POS keyboard shortcut registry (§5 keyboard shortcuts).
+/// POS workspace intent types (§21 keyboard shortcuts).
 ///
-/// Single source of truth for supported workspace actions — the workspace
-/// wires ONE [Shortcuts] + [Actions] set from [desktopMap].
+/// [PosShortcutManager] (core/shortcuts) owns the centralized, settings-backed
+/// binding registry; these [Intent] types let the workspace map each action to
+/// its contextual handler and let the app shell register the same keys
+/// app-wide.
 ///   * F1  — focus the product search field
 ///   * F2  — toggle the selected cart line unit (box ↔ fraction)
 ///   * F5  — hold the current bill
@@ -28,17 +29,4 @@ class CheckoutIntent extends Intent {
 
 class ShowAlternativesIntent extends Intent {
   const ShowAlternativesIntent();
-}
-
-class PosShortcuts {
-  PosShortcuts._();
-
-  static final Map<ShortcutActivator, Intent> desktopMap = {
-    const SingleActivator(LogicalKeyboardKey.f1): const SearchFocusIntent(),
-    const SingleActivator(LogicalKeyboardKey.f2): const ToggleUnitModeIntent(),
-    const SingleActivator(LogicalKeyboardKey.f5): const HoldBillIntent(),
-    const SingleActivator(LogicalKeyboardKey.f12): const CheckoutIntent(),
-    const SingleActivator(LogicalKeyboardKey.keyS, alt: true):
-        const ShowAlternativesIntent(),
-  };
 }

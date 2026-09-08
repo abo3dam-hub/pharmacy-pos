@@ -1456,6 +1456,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get posCartItemEmpty => 'السلة فارغة — أضف أصنافاً للبيع';
 
   @override
+  String get posDeleteHeldBill => 'حذف الفاتورة المعلقة';
+
+  @override
   String get posUnitBox => 'علبة';
 
   @override
@@ -1490,6 +1493,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get posPrintFailed => 'تعذر طباعة المستند';
+
+  @override
+  String get posQtyDecrease => 'إنقاص الكمية';
+
+  @override
+  String get posQtyIncrease => 'زيادة الكمية';
+
+  @override
+  String get posRemoveLine => 'إزالة الصنف';
 
   @override
   String get zReportTitle => 'تقرير نهاية الوردية (Z)';
@@ -2846,6 +2858,35 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsSavedMessage => 'تم حفظ الإعدادات بنجاح';
+
+  @override
+  String get shortcutsTitle => 'اختصارات لوحة المفاتيح';
+
+  @override
+  String get shortcutsSubtitle =>
+      'تُطبّق الاختصارات في كل شاشات النظام وتُحفظ تلقائيًا';
+
+  @override
+  String get shortcutsSaved => 'تم تحديث الاختصارات';
+
+  @override
+  String get shortcutsDuplicate =>
+      'هذا المفتاح مُعيّن لإجراء آخر، اختر مفتاحًا مختلفًا';
+
+  @override
+  String get shortcutsSearch => 'البحث عن منتج';
+
+  @override
+  String get shortcutsToggleUnit => 'تبديل وحدة الصرف';
+
+  @override
+  String get shortcutsHoldBill => 'تعليق الفاتورة';
+
+  @override
+  String get shortcutsCheckout => 'إتمام البيع';
+
+  @override
+  String get shortcutsAlternatives => 'عرض البدائل';
 
   @override
   String get rolesSubtitle => 'إدارة أدوار المستخدمين وصلاحياتهم';

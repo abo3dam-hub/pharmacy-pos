@@ -24,6 +24,7 @@ import '../../domain/repositories/inventory_repository.dart';
 import '../widgets/bulk_dialog.dart';
 import '../widgets/item_dialog.dart';
 import '../widgets/status_chips.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// §22 items grid tab — search, active filter, selection, bulk actions,
 /// create/edit/toggle, and Excel import/export.
@@ -402,14 +403,14 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
           const SizedBox(width: AppSpacing.m),
           IconButton(
             onPressed: state.page <= 1 ? null : () => _toPage(state.page - 1),
-            icon: const Icon(Icons.chevron_left),
+            icon: Icon(AppDirectionalIcons.previous(context)),
             tooltip: l10n.commonPrevious,
           ),
           IconButton(
             onPressed: state.page >= pageCount || pageCount == 0
                 ? null
                 : () => _toPage(state.page + 1),
-            icon: const Icon(Icons.chevron_right),
+            icon: Icon(AppDirectionalIcons.next(context)),
             tooltip: l10n.commonNext,
           ),
         ],

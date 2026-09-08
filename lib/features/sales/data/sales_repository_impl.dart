@@ -278,58 +278,92 @@ class SalesRepositoryImpl implements SalesRepository {
             ],
     ).get();
 
-    final items = <PosInvoiceView>[];
-    for (final r in rows) {
-      final header = SalesInvoiceRow(
-        id: r.read<String>('id'),
-        invoiceNumber: r.read<String>('invoice_number'),
-        invoiceType: invoiceTypeValues.fromSql(r.read<String>('invoice_type')),
-        saleStatus:
-            SaleStatus.values.byName(r.read<String>('sale_status')),
-        originalInvoiceId: r.read<String?>('original_invoice_id'),
-        customerId: r.read<String?>('customer_id'),
-        userId: r.read<String>('user_id'),
-        subtotalMicros: r.read<int>('subtotal_micros'),
-        discountTotalMicros: r.read<int>('discount_total_micros'),
-        vatTotalMicros: r.read<int>('vat_total_micros'),
-        totalMicros: r.read<int>('total_micros'),
-        totalCostMicros: r.read<int>('total_cost_micros'),
-        profitMicros: r.read<int>('profit_micros'),
-        paymentMethod:
-            PaymentMethod.values.byName(r.read<String>('payment_method')),
-        paidMicros: r.read<int>('paid_micros'),
-        changeMicros: r.read<int>('change_micros'),
-        cashMicros: r.read<int>('cash_micros'),
-        cardMicros: r.read<int>('card_micros'),
-        creditMicros: r.read<int>('credit_micros'),
-        remainingMicros: r.read<int>('remaining_micros'),
-        prescriptionId: r.read<String?>('prescription_id'),
-        notes: r.read<String?>('notes'),
-        voidReason: r.read<String?>('void_reason'),
-        voidedBy: r.read<String?>('voided_by'),
-        voidedAt: r.read<int?>('voided_at'),
-        createdAt: r.read<int>('created_at'),
-        updatedAt: r.read<int>('updated_at'),
-      );
-      items.add(await _buildInvoiceView(header));
-    }
-    return PageResult(items: items, total: total, request: request);
+    final headers = <SalesInvoiceRow>[
+      for (final r in rows)
+        SalesInvoiceRow(
+          id: r.read<String>('id'),
+          invoiceNumber: r.read<String>('invoice_number'),
+          invoiceType: invoiceTypeValues.fromSql(r.read<String>('invoice_type')),
+          saleStatus: SaleStatus.values.byName(r.read<String>('sale_status')),
+          originalInvoiceId: r.read<String?>('original_invoice_id'),
+          customerId: r.read<String?>('customer_id'),
+          userId: r.read<String>('user_id'),
+          subtotalMicros: r.read<int>('subtotal_micros'),
+          discountTotalMicros: r.read<int>('discount_total_micros'),
+          vatTotalMicros: r.read<int>('vat_total_micros'),
+          totalMicros: r.read<int>('total_micros'),
+          totalCostMicros: r.read<int>('total_cost_micros'),
+          profitMicros: r.read<int>('profit_micros'),
+          paymentMethod:
+              PaymentMethod.values.byName(r.read<String>('payment_method')),
+          paidMicros: r.read<int>('paid_micros'),
+          changeMicros: r.read<int>('change_micros'),
+          cashMicros: r.read<int>('cash_micros'),
+          cardMicros: r.read<int>('card_micros'),
+          creditMicros: r.read<int>('credit_micros'),
+          remainingMicros: r.read<int>('remaining_micros'),
+          prescriptionId: r.read<String?>('prescription_id'),
+          notes: r.read<String?>('notes'),
+          voidReason: r.read<String?>('void_reason'),
+          voidedBy: r.read<String?>('voided_by'),
+          voidedAt: r.read<int?>('voided_at'),
+          createdAt: r.read<int>('created_at'),
+          updatedAt: r.read<int>('updated_at'),
+        ),
+    ];
+    // One batched load for the whole page (customers + lines + names) instead
+    // of 5 queries per invoice (§30 — no N+1 on the POS invoice search).
+    return PageResult(
+      items: await _buildInvoiceViews(headers),
+      total: total,
+      request: request,
+    );
   }
 
   Future<PosInvoiceView> _buildInvoiceView(SalesInvoiceRow header) async {
-    final customer = header.customerId == null
-        ? null
-        : await (_db.select(_db.customers)
-              ..where((c) => c.id.equals(header.customerId!)))
-            .getSingleOrNull();
+    final views = await _buildInvoiceViews([header]);
+    return views.single;
+  }
 
-    final lineRows = await (_db.select(_db.salesInvoiceItems)
-          ..where((i) => i.invoiceId.equals(header.id))
-          ..orderBy([(i) => OrderingTerm.asc(i.createdAt)]))
-        .get();
-    final itemIds = {for (final l in lineRows) l.itemId};
-    final batchIds = {for (final l in lineRows) l.batchId};
-    final unitIds = {for (final l in lineRows) l.unitTypeId};
+  /// Builds views for many headers with a fixed set of batched queries:
+  /// customers, lines, item names, batch numbers and unit names loaded once
+  /// for the whole set ([IN] clauses), then grouped per invoice.
+  Future<List<PosInvoiceView>> _buildInvoiceViews(
+      List<SalesInvoiceRow> headers) async {
+    if (headers.isEmpty) return const [];
+
+    final headerIds = {for (final h in headers) h.id};
+    final customerIds = {
+      for (final h in headers)
+        if (h.customerId != null) h.customerId!,
+    };
+
+    final customers = <String, CustomerRow>{};
+    if (customerIds.isNotEmpty) {
+      final rows = await (_db.select(_db.customers)
+            ..where((c) => c.id.isIn(customerIds)))
+          .get();
+      for (final r in rows) {
+        customers[r.id] = r;
+      }
+    }
+
+    final linesByInvoice = <String, List<SalesInvoiceItemRow>>{};
+    final itemIds = <String>{};
+    final batchIds = <String>{};
+    final unitIds = <String>{};
+    if (headerIds.isNotEmpty) {
+      final rows = await (_db.select(_db.salesInvoiceItems)
+            ..where((i) => i.invoiceId.isIn(headerIds))
+            ..orderBy([(i) => OrderingTerm.asc(i.createdAt)]))
+          .get();
+      for (final l in rows) {
+        linesByInvoice.putIfAbsent(l.invoiceId, () => []).add(l);
+        itemIds.add(l.itemId);
+        batchIds.add(l.batchId);
+        unitIds.add(l.unitTypeId);
+      }
+    }
 
     final names = <String, String>{};
     if (itemIds.isNotEmpty) {
@@ -357,6 +391,27 @@ class SalesRepositoryImpl implements SalesRepository {
       }
     }
 
+    return [
+      for (final header in headers)
+        _toInvoiceView(
+          header,
+          customer: customers[header.customerId],
+          lines: linesByInvoice[header.id] ?? const [],
+          names: names,
+          batchNumbers: batchNumbers,
+          unitNames: unitNames,
+        ),
+    ];
+  }
+
+  PosInvoiceView _toInvoiceView(
+    SalesInvoiceRow header, {
+    required CustomerRow? customer,
+    required List<SalesInvoiceItemRow> lines,
+    required Map<String, String> names,
+    required Map<String, String> batchNumbers,
+    required Map<String, String> unitNames,
+  }) {
     return PosInvoiceView(
       id: header.id,
       invoiceNumber: header.invoiceNumber,
@@ -383,7 +438,7 @@ class SalesRepositoryImpl implements SalesRepository {
       voidedBy: header.voidedBy,
       voidedAt: header.voidedAt,
       lines: [
-        for (final l in lineRows)
+        for (final l in lines)
           PosInvoiceLineView(
             id: l.id,
             invoiceId: l.invoiceId,

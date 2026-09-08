@@ -18,6 +18,7 @@ import '../../../../shared/database/app_database.dart';
 import '../../application/customers_controller.dart';
 import '../../../prescriptions/presentation/pages/prescriptions_page.dart';
 import '../widgets/customer_dialog.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// §16 customers section: the customer/patient registry (tab 1) and their
 /// prescriptions (tab 2). Later phases add the POS/sales ledger (§11).
@@ -297,14 +298,14 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
           const SizedBox(width: AppSpacing.m),
           IconButton(
             onPressed: page <= 1 ? null : () => _toPage(page - 1),
-            icon: const Icon(Icons.chevron_left),
+            icon: Icon(AppDirectionalIcons.previous(context)),
             tooltip: l10n.commonPrevious,
           ),
           IconButton(
             onPressed: page >= pageCount || pageCount == 0
                 ? null
                 : () => _toPage(page + 1),
-            icon: const Icon(Icons.chevron_right),
+            icon: Icon(AppDirectionalIcons.next(context)),
             tooltip: l10n.commonNext,
           ),
         ],

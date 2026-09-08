@@ -107,7 +107,9 @@ class _InvoiceBody extends StatelessWidget {
                 elevation: 0,
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.m),
-                  child: DataTable(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
                     headingRowHeight: AppLayoutTokens.tableHeaderHeight,
                     dataRowMinHeight: AppLayoutTokens.tableRowHeight,
                     columns: [
@@ -137,7 +139,8 @@ class _InvoiceBody extends StatelessWidget {
                             style: context.appTypography.numericStrong,
                           )),
                         ]),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

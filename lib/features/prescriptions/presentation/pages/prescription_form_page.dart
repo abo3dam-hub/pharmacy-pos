@@ -11,6 +11,7 @@ import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../domain/repositories/prescription_repository.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// §4.12 create-prescription form. One header (patient + doctor) and a list of
 /// item lines (dose schedule). Saved via the prescriptions controller; the
@@ -207,7 +208,7 @@ class _PrescriptionFormPageState extends ConsumerState<PrescriptionFormPage> {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: Icon(AppDirectionalIcons.back(context)),
                   tooltip: l10n.commonBack,
                   onPressed: () => context.pop(),
                 ),

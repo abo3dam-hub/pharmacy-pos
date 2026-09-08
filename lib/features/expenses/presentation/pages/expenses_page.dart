@@ -19,6 +19,7 @@ import '../../../../shared/models/enums.dart';
 import '../../application/expense_controller.dart';
 import '../../domain/entities/expense_list_item.dart';
 import '../widgets/expense_dialogs.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 String _formatDate(int millis) =>
     DateTime.fromMillisecondsSinceEpoch(millis)
@@ -258,14 +259,14 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
           const SizedBox(width: AppSpacing.m),
           IconButton(
             onPressed: page <= 1 ? null : () => _toPage(page - 1),
-            icon: const Icon(Icons.chevron_left),
+            icon: Icon(AppDirectionalIcons.previous(context)),
             tooltip: l10n.commonPrevious,
           ),
           IconButton(
             onPressed: page >= pageCount || pageCount == 0
                 ? null
                 : () => _toPage(page + 1),
-            icon: const Icon(Icons.chevron_right),
+            icon: Icon(AppDirectionalIcons.next(context)),
             tooltip: l10n.commonNext,
           ),
         ],

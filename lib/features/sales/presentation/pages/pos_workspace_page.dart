@@ -12,6 +12,7 @@ import '../../../../core/pdf/pdf_arabic.dart';
 import '../../../../core/pdf/pdf_documents.dart';
 import '../../../../core/shortcuts/barcode_buffer.dart';
 import '../../../../core/shortcuts/pos_shortcuts.dart';
+import '../../../../core/shortcuts/shortcut_manager.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/responsive_layout.dart';
@@ -128,7 +129,8 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
     };
 
     return Shortcuts(
-      shortcuts: PosShortcuts.desktopMap,
+      shortcuts: PosShortcutManager.buildIntentMap(
+          ref.watch(shortcutBindingsProvider)),
       child: Actions(
         actions: actions,
         child: Scaffold(
@@ -759,6 +761,7 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.remove_circle_outline),
+                                tooltip: AppLocalizations.of(context).posQtyDecrease,
                                 onPressed: () =>
                                     widget.notifier.updateQuantity(
                                         index, line.quantity - 1),
@@ -773,12 +776,14 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                               ),
                               IconButton(
                                 icon: const Icon(Icons.add_circle_outline),
+                                tooltip: AppLocalizations.of(context).posQtyIncrease,
                                 onPressed: () =>
                                     widget.notifier.updateQuantity(
                                         index, line.quantity + 1),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.close),
+                                tooltip: AppLocalizations.of(context).posRemoveLine,
                                 visualDensity: VisualDensity.compact,
                                 onPressed: () => widget.notifier.removeLine(index),
                               ),
@@ -1448,6 +1453,7 @@ class _HoldBillsSheet extends ConsumerWidget {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.delete_outline),
+                        tooltip: AppLocalizations.of(context).posDeleteHeldBill,
                         onPressed: () => notifier.deleteHeldBill(index),
                       ),
                       FilledButton(
@@ -1903,6 +1909,7 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.remove_circle_outline),
+                        tooltip: AppLocalizations.of(context).posQtyDecrease,
                         onPressed: returnable <= 0
                             ? null
                             : () => widget.notifier
@@ -1918,6 +1925,7 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.add_circle_outline),
+                        tooltip: AppLocalizations.of(context).posQtyIncrease,
                         onPressed: qty >= returnable
                             ? null
                             : () => widget.notifier

@@ -16,6 +16,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../application/users_controller.dart';
 import '../../domain/entities/user.dart';
 import '../widgets/user_dialog.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// Admin user management page (§16 U3). Admin-only: the router requires
 /// `users.view` and action buttons are hidden without `users.create/edit`.
@@ -256,14 +257,14 @@ class _UsersPageState extends ConsumerState<UsersPage> {
           const SizedBox(width: AppSpacing.m),
           IconButton(
             onPressed: state.page <= 1 ? null : () => _toPage(state.page - 1),
-            icon: const Icon(Icons.chevron_left),
+            icon: Icon(AppDirectionalIcons.previous(context)),
             tooltip: l10n.commonPrevious,
           ),
           IconButton(
             onPressed: state.page >= pageCount || pageCount == 0
                 ? null
                 : () => _toPage(state.page + 1),
-            icon: const Icon(Icons.chevron_right),
+            icon: Icon(AppDirectionalIcons.next(context)),
             tooltip: l10n.commonNext,
           ),
         ],

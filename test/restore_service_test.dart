@@ -296,6 +296,119 @@ void main() {
       throwsA(isA<InvalidOperationException>()),
     );
   });
+
+  test('onBeforeReplace is invoked before the live DB is replaced', () async {
+    await seedFinancialData();
+    await seedExpenseWithReceipt();
+    final archivePath = await createArchive();
+    await seedOldStateOnDisk();
+
+    var beforeReplaceCalls = 0;
+    await restoreService.restore(
+      archivePath: archivePath,
+      liveDb: db,
+      liveDatabasePath: liveDatabasePath,
+      receiptsDirectory: liveReceiptsDir,
+      emergencyDirectory: emergencyDir,
+      userId: 'user_admin',
+      onBeforeReplace: () async {
+        beforeReplaceCalls++;
+      },
+    );
+
+    // The close callback must have run exactly once, right before replacement.
+    expect(beforeReplaceCalls, 1);
+    // The old live data was replaced.
+    final reopened = AppDatabase.fromFilePath(liveDatabasePath);
+    try {
+      final oldItem = await (reopened.select(reopened.items)
+            ..where((i) => i.id.equals('item_old_only')))
+          .getSingleOrNull();
+      expect(oldItem, isNull);
+    } finally {
+      await reopened.close();
+    }
+  });
+
+  test('an unclosable live DB aborts restore without touching live data',
+      () async {
+    await seedFinancialData();
+    await seedExpenseWithReceipt();
+    final archivePath = await createArchive();
+    await seedOldStateOnDisk();
+
+    final marker = File(p.join(work.path, 'close_failed.marker'));
+    await expectLater(
+      restoreService.restore(
+        archivePath: archivePath,
+        liveDb: db,
+        liveDatabasePath: liveDatabasePath,
+        receiptsDirectory: liveReceiptsDir,
+        emergencyDirectory: emergencyDir,
+        userId: 'user_admin',
+        onBeforeReplace: () async {
+          await marker.writeAsString('attempted');
+          throw StateError('cannot close live database');
+        },
+      ),
+      throwsA(isA<InvalidOperationException>()),
+    );
+
+    // The close was attempted, the restore was aborted, and the live DB and
+    // receipts are untouched (no deletion, no rollback of live data).
+    expect(await marker.readAsString(), 'attempted');
+    expect(File(liveDatabasePath).existsSync(), isTrue,
+        reason: 'live DB must not be deleted when the connection is unclosable');
+    expect(File(p.join(liveReceiptsDir, 'old_trace.txt')).existsSync(), isTrue,
+        reason: 'live receipts must not be deleted when close fails');
+
+    // The still-open live in-memory DB is fully intact (nothing was destroyed).
+    final row = await db.customSelect(
+        'SELECT COALESCE(SUM(amount_micros),0) AS s '
+        'FROM cashbox_transactions').getSingle();
+    expect(row.read<int>('s'), 20000);
+
+    // An emergency backup was still created and preserved for safety.
+    final emergencyDirObj = Directory(emergencyDir);
+    final emergencyFiles = emergencyDirObj.existsSync()
+        ? emergencyDirObj.listSync().whereType<File>().toList()
+        : <File>[];
+    expect(emergencyFiles, isNotEmpty,
+        reason: 'the pre-restore emergency backup must remain available');
+    expect(await emergencyFiles.first.exists(), isTrue);
+  });
+
+  test('an unclosable live DB never leaves stale WAL/SHM behind trials',
+      () async {
+    // Guard: a live (open) in-memory DB has no on-disk sidecar; this test
+    // verifies that aborting before replacement never creates WAL/SHM around
+    // the live path.
+    await seedFinancialData();
+    final archivePath = await createArchive();
+    Directory(p.dirname(liveDatabasePath)).createSync(recursive: true);
+    // Simulate a pre-existing live DB file + stale sidecars.
+    File(liveDatabasePath).writeAsBytesSync(const [1, 2, 3, 4]);
+    File('$liveDatabasePath-wal').writeAsBytesSync(const [9]);
+    File('$liveDatabasePath-shm').writeAsBytesSync(const [9]);
+
+    await expectLater(
+      restoreService.restore(
+        archivePath: archivePath,
+        liveDb: db,
+        liveDatabasePath: liveDatabasePath,
+        receiptsDirectory: liveReceiptsDir,
+        emergencyDirectory: emergencyDir,
+        userId: 'user_admin',
+        onBeforeReplace: () async => throw StateError('close refused'),
+      ),
+      throwsA(isA<InvalidOperationException>()),
+    );
+
+    // The live files were not touched in any way.
+    expect(File(liveDatabasePath).readAsBytesSync(), [1, 2, 3, 4]);
+    expect(File('$liveDatabasePath-wal').readAsBytesSync(), [9]);
+    expect(File('$liveDatabasePath-shm').readAsBytesSync(), [9]);
+  });
 }
 
 /// Rewrites [source]'s `manifest.json` via [mutate] and writes a new archive

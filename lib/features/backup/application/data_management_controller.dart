@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/exceptions.dart';
 import '../../../core/errors/failures.dart';
 import '../../../domain/services/app_paths.dart';
+import '../../../domain/services/database_lifecycle.dart';
 import '../../../shared/database/app_database.dart';
 import '../domain/entities/backup_results.dart';
 import '../domain/entities/data_export_result.dart';
@@ -19,6 +20,7 @@ class DataManagementState {
     this.lastBackup,
     this.lastRestore,
     this.lastExport,
+    this.dbClosed = false,
   });
 
   final DataManagementStatus status;
@@ -28,6 +30,12 @@ class DataManagementState {
   final RestoreResult? lastRestore;
   final DataExportResult? lastExport;
 
+  /// True once the live database connection was closed by a restore attempt.
+  /// When true, the application must be restarted (the data on disk is safe —
+  /// restored, or rolled back to the emergency backup — but the in-memory
+  /// connection is no longer usable).
+  final bool dbClosed;
+
   DataManagementState copyWith({
     DataManagementStatus? status,
     bool? busy,
@@ -35,6 +43,7 @@ class DataManagementState {
     BackupArchiveResult? Function()? lastBackup,
     RestoreResult? Function()? lastRestore,
     DataExportResult? Function()? lastExport,
+    bool? applyDbClosed,
   }) {
     return DataManagementState(
       status: status ?? this.status,
@@ -43,6 +52,7 @@ class DataManagementState {
       lastBackup: lastBackup != null ? lastBackup() : this.lastBackup,
       lastRestore: lastRestore != null ? lastRestore() : this.lastRestore,
       lastExport: lastExport != null ? lastExport() : this.lastExport,
+      dbClosed: applyDbClosed ?? dbClosed,
     );
   }
 }
@@ -57,6 +67,7 @@ class DataManagementController extends StateNotifier<DataManagementState> {
     this._export,
     this._paths,
     this._db,
+    this._lifecycle,
   ) : super(const DataManagementState());
 
   final CreateBackupUseCase _create;
@@ -65,6 +76,10 @@ class DataManagementController extends StateNotifier<DataManagementState> {
   final ExportDataUseCase _export;
   final AppPaths _paths;
   final AppDatabase _db;
+
+  /// Owns the live database connection that a restore must close (and that a
+  /// failed restore then requires a restart to recover from).
+  final DatabaseLifecycle _lifecycle;
 
   Future<Failure?> createBackup({
     required String? actingRoleId,
@@ -130,20 +145,35 @@ class DataManagementController extends StateNotifier<DataManagementState> {
         receiptsDirectory: await _paths.receiptsDirectory(),
         emergencyDirectory: await _paths.emergencyDirectory(),
         userId: actingUserId,
+        // The live SQLite connection must be closed BEFORE any file is
+        // replaced, otherwise Windows cannot safely delete/replace the open
+        // database (and a stale WAL/SHM could corrupt the restored data).
+        // Throwing here (unclosable connection) aborts the restore before any
+        // destruction; the emergency backup remains available.
+        onBeforeReplace: () => _lifecycle.close(),
       );
+      final dbClosed = _lifecycle.isClosed;
       state = state.copyWith(
         busy: false,
         status: DataManagementStatus.success,
+        applyDbClosed: dbClosed,
         lastRestore: () => result,
       );
       return null;
     } on AppException catch (e) {
       state = state.copyWith(
-          busy: false, status: DataManagementStatus.error, error: () => e.failure);
+        busy: false,
+        status: DataManagementStatus.error,
+        applyDbClosed: _lifecycle.isClosed,
+        error: () => e.failure,
+      );
       return e.failure;
     } on Exception catch (e) {
       state = state.copyWith(
-          busy: false, status: DataManagementStatus.error);
+        busy: false,
+        status: DataManagementStatus.error,
+        applyDbClosed: _lifecycle.isClosed,
+      );
       return DatabaseFailure('حدث خطأ غير متوقع أثناء الاستعادة', cause: e);
     }
   }

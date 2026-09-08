@@ -19,6 +19,7 @@ import '../../domain/entities/inventory_item.dart';
 import '../widgets/batch_dialog.dart';
 import '../widgets/status_chips.dart';
 import '../widgets/stock_adjust_dialog.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// Batch ledger page for a single item (§4.8, §4.9): batches table + recent
 /// stock movements. Routed at `/inventory/batches/:itemId`.
@@ -184,7 +185,7 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: Icon(AppDirectionalIcons.back(context)),
                 tooltip: l10n.commonBack,
                 onPressed: () => context.go('/inventory'),
               ),

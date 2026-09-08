@@ -62,6 +62,7 @@ class _SearchFieldState extends State<SearchField> {
               ? null
               : IconButton(
                   icon: const Icon(Icons.clear),
+                  tooltip: MaterialLocalizations.of(context).clearButtonTooltip,
                   onPressed: () {
                     _controller.clear();
                     _debounce?.cancel();

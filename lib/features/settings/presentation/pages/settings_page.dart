@@ -5,12 +5,14 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/shortcuts/shortcut_manager.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../application/settings_controller.dart';
 import '../../domain/entities/app_settings_entity.dart';
 import '../../domain/entities/currency_options.dart';
+import '../../../../core/widgets/app_rtl_icons.dart';
 
 /// Phase 12 Application Settings page (الإعدادات): Business Name, Tax rate and
 /// Currency. Values persist through the settings use case + repository into
@@ -111,10 +113,32 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Future<void> _rebind(PosShortcutKind kind, String? token) async {
+    final ok = await ref
+        .read(shortcutBindingsProvider.notifier)
+        .rebind(kind, token);
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+          SnackBar(content: Text(ok ? l10n.shortcutsSaved : l10n.shortcutsDuplicate)));
+  }
+
+  String _shortcutsLabel(AppLocalizations l10n, PosShortcutKind kind) =>
+      switch (kind) {
+        PosShortcutKind.search => l10n.shortcutsSearch,
+        PosShortcutKind.toggleUnit => l10n.shortcutsToggleUnit,
+        PosShortcutKind.holdBill => l10n.shortcutsHoldBill,
+        PosShortcutKind.checkout => l10n.shortcutsCheckout,
+        PosShortcutKind.alternatives => l10n.shortcutsAlternatives,
+      };
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(settingsControllerProvider);
+    final shortcuts = ref.watch(shortcutBindingsProvider);
     final typography = Theme.of(context).textTheme;
 
     return LoadingOverlay(
@@ -207,11 +231,65 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
           ),
           Card(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.l),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l10n.shortcutsTitle, style: typography.titleMedium),
+                  const SizedBox(height: AppSpacing.s),
+                  Text(l10n.shortcutsSubtitle,
+                      style: typography.bodySmall),
+                  const SizedBox(height: AppSpacing.m),
+                  for (final kind in PosShortcutKind.values) ...[
+                    Wrap(
+                      spacing: AppSpacing.m,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(_shortcutsLabel(l10n, kind),
+                            style: typography.bodyLarge),
+                        SizedBox(
+                          width: 180,
+                          child: DropdownButtonFormField<String>(
+                            key: ValueKey(
+                                '${kind.name}-${shortcuts[kind] ?? kind.defaultToken}'),
+                            initialValue:
+                                shortcuts[kind] ?? kind.defaultToken,
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              contentPadding:
+                                  EdgeInsets.symmetric(horizontal: 12),
+                              border: OutlineInputBorder(),
+                            ),
+                            items: [
+                              for (final entry
+                                  in PosShortcutManager.assignable.entries)
+                                DropdownMenuItem(
+                                  value: entry.key,
+                                  child: Text(
+                                      PosShortcutManager.assignableLabels[
+                                              entry.key] ??
+                                          entry.key),
+                                ),
+                            ],
+                            onChanged:
+                                _canEdit ? (v) => _rebind(kind, v) : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.m),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          Card(
             child: ListTile(
               leading: const Icon(Icons.backup_outlined),
               title: Text(l10n.dataManagementTitle),
               subtitle: Text(l10n.dataManagementSubtitle),
-              trailing: const Icon(Icons.chevron_left),
+              trailing: Icon(AppDirectionalIcons.drillIn(context)),
               onTap: () => context.go('/settings/data'),
             ),
           ),
