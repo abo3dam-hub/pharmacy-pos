@@ -76,16 +76,23 @@ if ($results.exeExists) {
   exit 1
 }
 
-# --- Poll for a window titled pharmacy_pos ---
+# --- Poll for the app's main window handle ---
 $hwnd = [IntPtr]::Zero
 for ($i = 0; $i -lt $WaitSeconds * 10; $i++) {
   Start-Sleep -Milliseconds 100
   $proc.Refresh()
   if ($proc.HasExited) { break }
-  $hwnd = [NWin]::FindWindow($null, "pharmacy_pos")
+  $hwnd = $proc.MainWindowHandle
   if ($hwnd -ne [IntPtr]::Zero) { break }
 }
 $results.windowFound = ($hwnd -ne [IntPtr]::Zero)
+$results.windowRect = $null
+if ($hwnd -ne [IntPtr]::Zero) {
+  $r = New-Object NWin+RECT
+  if ([NWin]::GetWindowRect($hwnd, [ref]$r)) {
+    $results.windowRect = "L=$($r.Left) T=$($r.Top) R=$($r.Right) B=$($r.Bottom)"
+  }
+}
 
 # --- Wait remaining time ---
 Start-Sleep -Seconds $WaitSeconds
@@ -132,6 +139,16 @@ try {
     Select-Object -First 5 -Property TimeCreated, ProviderName, LevelDisplayName, @{n = 'Msg'; e = { $_.Message.Substring(0, [Math]::Min(300, $_.Message.Length)) } }
   $results.eventLogEntries = @($events)
 } catch { $results.eventLogEntries = @() }
+
+# --- Windows version + GPU adapter (correlates with D3D black-screen reports) ---
+try {
+  $os = Get-CimInstance Win32_OperatingSystem
+  $results.os = "$($os.Caption) build $($os.BuildNumber)"
+} catch { $results.os = "unknown" }
+try {
+  $results.gpu = @(Get-CimInstance Win32_VideoController |
+    Select-Object -ExpandProperty Name)
+} catch { $results.gpu = @("unknown") }
 
 # --- Kill the process if still running ---
 if (-not $proc.HasExited) { Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue; $results.killed = $true } else { $results.killed = $false }
