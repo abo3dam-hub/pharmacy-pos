@@ -42,20 +42,21 @@ class BarcodeBuffer {
 
   String get partial => _buffer.toString();
 
-  /// Feeds one printable character from the scanner stream.
-  void feed(String char) {
-    if (char.isEmpty) return;
+  /// Feeds one printable character from the scanner stream. Returns `true`
+  /// when a complete barcode was emitted (terminator reached or the [maxLength]
+  /// cap triggered) — callers keep priority for the scan path in that case.
+  bool feed(String char) {
+    if (char.isEmpty) return false;
     _idle?.cancel();
     if (char == terminator) {
-      _complete();
-      return;
+      return _complete();
     }
     _buffer.write(char);
     if (_buffer.length > maxLength) {
-      _complete();
-      return;
+      return _complete();
     }
     _idle = Timer(timeout, reset);
+    return false;
   }
 
   /// Explicitly completes/resets (e.g. focus lost or scan cancelled).
@@ -65,7 +66,9 @@ class BarcodeBuffer {
     _buffer.clear();
   }
 
-  void _complete() {
+  /// Emits the buffered code once. Returns `true` when a non-empty barcode was
+  /// actually delivered to [onBarcode] (empty/false starts emit nothing).
+  bool _complete() {
     _idle?.cancel();
     _idle = null;
     final raw = _buffer.toString();
@@ -82,7 +85,9 @@ class BarcodeBuffer {
     code = code.trim();
     final cb = onBarcode;
     reset();
-    if (code.isNotEmpty) cb?.call(code);
+    if (code.isEmpty) return false;
+    cb?.call(code);
+    return true;
   }
 
   /// Convenience collation — real scanners may deliver a multi-char chunk.

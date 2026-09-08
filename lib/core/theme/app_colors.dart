@@ -39,9 +39,13 @@ abstract final class AppColors {
   // ── Semantic (never decorative) ───────────────────────────────────────
   static const Color success = Color(0xFF2E7D5B);
   static const Color successContainer = Color(0xFFDDEBDD);
-  static const Color warning = Color(0xFFB7791F);
+  // #7F5714 passes WCAG AA normal-text contrast (≥4.5:1) on every soft
+  // light surface it renders on (the previous #B7791F only reached ~3.4–3.6:1).
+  static const Color warning = Color(0xFF7F5714);
   static const Color warningContainer = Color(0xFFF4E8D2);
-  static const Color error = Color(0xFFB45550);
+  // #A9323A passes WCAG AA on canvas (#F7F7F5), surface (#FCFCFB) and on the
+  // error container (#F6DEDA); the previous #B45550 failed on canvas/container.
+  static const Color error = Color(0xFFA9323A);
   static const Color errorContainer = Color(0xFFF6DEDA);
   static const Color info = Color(0xFF3D6B96);
   static const Color infoContainer = Color(0xFFDCE7F2);

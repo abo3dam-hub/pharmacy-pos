@@ -1,3 +1,4 @@
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/data_grid/page_request.dart';
@@ -36,6 +37,19 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
   /// Read-only snapshot for external (presentation-layer) reads; using `state`
   /// directly trips the StateNotifier "visible for testing" lints.
   PosWorkspaceState get currentState => state;
+
+  /// Resets the search back to its empty state (used by the §21 quick-add
+  /// after an item is added). Exists because `copyWith` cannot null a nullable
+  /// field directly.
+  void clearSearch() {
+    state = state.copyWith(
+      searchQuery: '',
+      searchResults: null,
+      clearSearchResults: true,
+      clearError: true,
+      loading: false,
+    );
+  }
 
   // ── Search / scan ─────────────────────────────────────────────────────
 

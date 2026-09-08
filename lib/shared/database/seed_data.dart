@@ -8,6 +8,28 @@ import 'app_database.dart';
 
 const _defaultAdminPassword = 'Admin@123';
 
+/// Permission codes granted to the read-only `viewer` role (§16 roles). Shared
+/// by the fresh-install seed and the idempotent legacy seed below so both stay
+/// in lock-step.
+const kViewerPermissionCodes = {
+  Perm.search,
+  Perm.viewInventory,
+  Perm.viewAlternatives,
+  Perm.inventoryView,
+  Perm.stockView,
+  Perm.salesView,
+  Perm.purchasesView,
+  Perm.suppliersView,
+  Perm.customersView,
+  Perm.reportsViewSales,
+  Perm.reportsViewPurchases,
+  Perm.reportsViewInventory,
+  Perm.reportsViewProfit,
+  Perm.cashboxView,
+  Perm.expensesView,
+  Perm.expenseCategoriesView,
+};
+
 /// Seeds the default data that must exist on first run.
 ///
 /// This is kept in its own library (separate from `app_database.dart`) so the
@@ -226,24 +248,7 @@ Future<void> seedDefaults(AppDatabase db) async {
 
   // Viewer role → read-only: search, inventory views, stock views, sales /
   // purchases / customers reports. Never mutating rights (§16 roles).
-  final viewerCodes = {
-    Perm.search,
-    Perm.viewInventory,
-    Perm.viewAlternatives,
-    Perm.inventoryView,
-    Perm.stockView,
-    Perm.salesView,
-    Perm.purchasesView,
-    Perm.suppliersView,
-    Perm.customersView,
-    Perm.reportsViewSales,
-    Perm.reportsViewPurchases,
-    Perm.reportsViewInventory,
-    Perm.reportsViewProfit,
-    Perm.cashboxView,
-    Perm.expensesView,
-    Perm.expenseCategoriesView,
-  };
+  final viewerCodes = kViewerPermissionCodes;
   await db.batch((batch) {
     batch.insertAll(
       db.rolePermissions,
@@ -702,6 +707,57 @@ Future<void> ensureBackupPermissions(AppDatabase db) async {
           id: 'rp_admin_${e.key.replaceAll('.', '_')}',
           roleId: 'role_admin',
           permissionId: 'perm_${e.key.replaceAll('.', '_')}',
+          granted: const Value(true),
+          createdAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+    }
+  });
+}
+
+/// Phase 15 legacy healing (§13): the read-only `viewer` role was historically
+/// seeded only on fresh installs. Databases created during the early phases and
+/// upgraded in place — plus restored archives — can therefore lack the role or
+/// some of its grant rows (e.g. the Phase 9 expense-category grant). This
+/// idempotently re-creates the role and every viewer grant using `INSERT OR
+/// IGNORE` (safe under the `UNIQUE(roleId, permissionId)` key), so existing
+/// grants and any manual permission denials are never overwritten.
+Future<void> ensureViewerSeeded(AppDatabase db) async {
+  final now = DateTime.now().millisecondsSinceEpoch;
+  await db.batch((batch) {
+    batch.insert(
+      db.roles,
+      RoleRow(
+        id: 'role_viewer',
+        name: 'viewer',
+        nameAr: 'مشاهد',
+        isSystem: true,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
+    for (final p in kSeedPermissions) {
+      if (!kViewerPermissionCodes.contains(p.code)) continue;
+      batch.insert(
+        db.permissions,
+        PermissionsCompanion.insert(
+          id: 'perm_${p.code.replaceAll('.', '_')}',
+          code: p.code,
+          name: p.code,
+          nameAr: p.name,
+          createdAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+      batch.insert(
+        db.rolePermissions,
+        RolePermissionsCompanion.insert(
+          id: 'rp_viewer_perm_${p.code.replaceAll('.', '_')}',
+          roleId: 'role_viewer',
+          permissionId: 'perm_${p.code.replaceAll('.', '_')}',
           granted: const Value(true),
           createdAt: now,
         ),

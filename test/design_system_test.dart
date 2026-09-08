@@ -97,6 +97,56 @@ void main() {
       expect(contrastRatio(AppColors.darkTextMuted, AppColors.darkCanvas), greaterThanOrEqualTo(4.5));
     });
 
+    test('warning/error tokens pass WCAG AA (4.5:1) on every surface they render on', () {
+      double relativeLuminance(Color c) {
+        final channel = [c.r, c.g, c.b].map((s) {
+          return s <= 0.03928 ? s / 12.92 : math.pow((s + 0.055) / 1.055, 2.4).toDouble();
+        }).toList();
+        return 0.2126 * channel[0] + 0.7152 * channel[1] + 0.0722 * channel[2];
+      }
+
+      double contrastRatio(Color a, Color b) {
+        final l1 = relativeLuminance(a);
+        final l2 = relativeLuminance(b);
+        final lighter = math.max(l1, l2);
+        final darker  = math.min(l1, l2);
+        return (lighter + 0.05) / (darker + 0.05);
+      }
+
+      // Text-on-soft-background pairs (§24 statuses: solid text on light surfaces).
+      const lightBackdrops = [
+        AppColors.canvas,
+        AppColors.surfaceLight,
+        AppColors.surfaceVariant,
+        AppColors.successContainer,
+        AppColors.infoContainer,
+      ];
+      for (final token in [AppColors.warning, AppColors.error]) {
+        for (final backdrop in lightBackdrops) {
+          expect(
+            contrastRatio(token, backdrop),
+            greaterThanOrEqualTo(4.5),
+            reason: '$token must reach AA on $backdrop',
+          );
+        }
+      }
+      // Solid status text on its own soft container.
+      expect(contrastRatio(AppColors.error, AppColors.errorContainer),
+          greaterThanOrEqualTo(4.5));
+      expect(contrastRatio(AppColors.warning, AppColors.warningContainer),
+          greaterThanOrEqualTo(4.5));
+      // Inverse text on the solid status colors themselves.
+      expect(contrastRatio(AppColors.onWarning, AppColors.warning),
+          greaterThanOrEqualTo(4.5));
+      expect(contrastRatio(AppColors.onError, AppColors.error),
+          greaterThanOrEqualTo(4.5));
+      // Dark variant must stay AA too.
+      expect(contrastRatio(AppColors.darkWarning, AppColors.darkCanvas),
+          greaterThanOrEqualTo(4.5));
+      expect(contrastRatio(AppColors.darkError, AppColors.darkCanvas),
+          greaterThanOrEqualTo(4.5));
+    });
+
     test('spacing and breakpoints follow the unified scale', () {
       expect(AppBreakpoints.layoutFor(1280), AppLayout.desktop);
       expect(AppBreakpoints.layoutFor(760), AppLayout.tablet);

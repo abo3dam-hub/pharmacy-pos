@@ -643,6 +643,29 @@ void main() {
       buffer.feed('\n');
       expect(emitted, isNull);
     });
+
+    test('feed reports whether a barcode was emitted', () {
+      final buffer = BarcodeBuffer();
+      String? emitted;
+      buffer.onBarcode = (b) => emitted = b;
+      // A lone terminator emits nothing…
+      expect(buffer.feed('\n'), isFalse);
+      expect(emitted, isNull);
+      // …while a completed scan reports `true`.
+      buffer.feed('6');
+      buffer.feed('2');
+      expect(buffer.feed('\n'), isTrue);
+      expect(emitted, '62');
+      // The maxLength cap also reports a completed scan.
+      final capped = BarcodeBuffer(maxLength: 3);
+      String? cappedEmit;
+      capped.onBarcode = (b) => cappedEmit = b;
+      expect(capped.feed('1'), isFalse);
+      expect(capped.feed('2'), isFalse);
+      expect(capped.feed('3'), isFalse);
+      expect(capped.feed('4'), isTrue);
+      expect(cappedEmit, '1234');
+    });
   });
 
   group('PosWorkspaceController (with fake repo)', () {

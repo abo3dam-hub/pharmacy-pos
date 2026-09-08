@@ -90,6 +90,7 @@ class PosWorkspaceState {
     bool clearError = false,
     String? searchQuery,
     PageResult<PosCatalogItem>? searchResults,
+    bool clearSearchResults = false,
     List<PosCartLine>? cart,
     List<PosHeldBill>? heldBills,
     PosCustomer? customer,
@@ -117,7 +118,9 @@ class PosWorkspaceState {
       busy: busy ?? this.busy,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       searchQuery: searchQuery ?? this.searchQuery,
-      searchResults: searchResults ?? this.searchResults,
+      searchResults: clearSearchResults
+          ? null
+          : (searchResults ?? this.searchResults),
       cart: cart ?? this.cart,
       heldBills: heldBills ?? this.heldBills,
       customer: clearCustomer ? null : (customer ?? this.customer),

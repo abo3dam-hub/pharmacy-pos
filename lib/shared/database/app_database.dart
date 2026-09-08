@@ -113,6 +113,9 @@ class AppDatabase extends _$AppDatabase {
           // Phase 13 rights must exist on every database the app opens —
           // fresh installs, upgraded stores and restored archives.
           await ensureBackupPermissions(this);
+          // Phase 15: the read-only viewer role was historically only seeded on
+          // fresh installs; heal upgraded/restored stores idempotently.
+          await ensureViewerSeeded(this);
         },
       );
 

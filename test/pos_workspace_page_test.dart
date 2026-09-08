@@ -135,6 +135,64 @@ Future<String> _seedCustomer(
   return id;
 }
 
+/// Sellable item with a custom name/barcode (quick-add tests need more than
+/// the single hard-coded `بانادول` product).
+Future<String> _seedNamedSellableItem(
+  AppDatabase db, {
+  required String name,
+  required String barcode,
+}) async {
+  final now = DateTime.now().millisecondsSinceEpoch;
+  await awaitCategory(db);
+  final id =
+      'item_${now}_${DateTime.now().microsecondsSinceEpoch % 100000}';
+  await db.into(db.items).insert(
+        ItemsCompanion.insert(
+          id: id,
+          primaryBarcode: Value(barcode),
+          tradeName: name,
+          tradeNameEn: Value(name),
+          scientificName: Value(name),
+          categoryId: 'cat_test_default',
+          sellingPriceMicros: const Value(10000),
+          vatRateBasisPoints: const Value(0),
+          isActive: const Value(true),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+  await db.into(db.units).insert(
+        UnitsCompanion.insert(
+          id: 'unit_strip',
+          name: 'شريط',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await db.into(db.units).insert(
+        UnitsCompanion.insert(
+          id: 'unit_box',
+          name: 'علبة',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await db.into(db.itemUnits).insert(
+        ItemUnitsCompanion.insert(
+          id: 'iu_$id',
+          itemId: id,
+          baseUnitId: 'unit_strip',
+          largeUnitId: 'unit_box',
+          unitsPerLarge: Value(100),
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await insertBatch(db, id, quantityBase: 300);
+  return id;
+}
+
 void main() {
   group('PosWorkspacePage', () {
     testWidgets('search → add to cart → qty → pay → receipt → persisted',
@@ -276,6 +334,117 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('عميل تجريبي · 0000000000'), findsOneWidget);
+    });
+
+    testWidgets('Enter on a unique search result adds it and clears the query',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final base = await buildAuthHarness();
+      addTearDown(base.db.close);
+      addTearDown(base.container.dispose);
+      final db = base.db;
+      await base
+          .container
+          .read(authControllerProvider.notifier)
+          .login('admin', 'Admin@123');
+      await _seedSellableItem(db);
+      final pos = _posOverrides(db);
+
+      await tester.pumpWidget(
+        _harness(base.container, pos.overrides, const PosWorkspacePage()),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'بانادول');
+      // Long enough for the search debounce AND the scanner-buffer idle reset
+      // to have run, so Enter is a plain keyboard submit (not a scan end).
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(ListTile, 'بانادول'), findsOneWidget);
+
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 علبة'), findsOneWidget,
+          reason: 'the single result joined the cart directly');
+      expect(find.text('لا توجد نتائج مطابقة'), findsOneWidget,
+          reason: 'the field + results were cleared for the next item');
+    });
+
+    testWidgets('Enter on ambiguous results keeps the searchable list',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final base = await buildAuthHarness();
+      addTearDown(base.db.close);
+      addTearDown(base.container.dispose);
+      final db = base.db;
+      await base
+          .container
+          .read(authControllerProvider.notifier)
+          .login('admin', 'Admin@123');
+      await _seedSellableItem(db);
+      await _seedNamedSellableItem(db, name: 'بانادول فوار', barcode: '6291041500220');
+      final pos = _posOverrides(db);
+
+      await tester.pumpWidget(
+        _harness(base.container, pos.overrides, const PosWorkspacePage()),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'بانادول');
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ListTile), findsNWidgets(2));
+      expect(find.widgetWithText(ListTile, 'بانادول'), findsOneWidget);
+
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ListTile), findsNWidgets(2),
+          reason: 'ambiguous results are never picked from silently');
+      expect(find.text('السلة فارغة — أضف أصنافاً للبيع'), findsOneWidget,
+          reason: 'nothing was added to the cart');
+    });
+
+    testWidgets('Enter right after scan keystrokes stays a scan (priority)',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final base = await buildAuthHarness();
+      addTearDown(base.db.close);
+      addTearDown(base.container.dispose);
+      final db = base.db;
+      await base
+          .container
+          .read(authControllerProvider.notifier)
+          .login('admin', 'Admin@123');
+      await _seedSellableItem(db);
+      final pos = _posOverrides(db);
+
+      await tester.pumpWidget(
+        _harness(base.container, pos.overrides, const PosWorkspacePage()),
+      );
+      await tester.pumpAndSettle();
+
+      // Scan a barcode: submit before the 400ms idle window elapses, so the
+      // terminator completes the in-progress scan (existing §5 behavior).
+      await tester.enterText(find.byType(TextField).first, '6291041500213');
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 علبة'), findsOneWidget,
+          reason: 'the completed scan adds the barcode-matched product');
     });
   });
 }

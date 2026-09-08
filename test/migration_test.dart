@@ -504,4 +504,71 @@ void main() {
       await upgraded.close();
     });
   });
+  group('Phase 15 — legacy viewer-role healing', () {
+    test('ensureViewerSeeded recreates role + grants and stays idempotent',
+        () async {
+      ensureSqlite();
+      final db = AppDatabase.forTesting();
+
+      // Simulate a legacy store that predates the viewer role: drop the role
+      // (grants first, to satisfy the FK) exactly as an early upgrade could
+      // leave it.
+      await (db.delete(db.rolePermissions)
+            ..where((rp) => rp.roleId.equals('role_viewer')))
+          .go();
+      await (db.delete(db.roles)..where((r) => r.id.equals('role_viewer'))).go();
+
+      final missing = await (db.select(db.roles)
+            ..where((r) => r.id.equals('role_viewer')))
+          .get();
+      expect(missing, isEmpty, reason: 'legacy store lacks the viewer role');
+
+      await ensureViewerSeeded(db);
+
+      final role = await (db.select(db.roles)
+            ..where((r) => r.id.equals('role_viewer')))
+          .getSingle();
+      expect(role.name, 'viewer');
+      expect(role.isSystem, true);
+
+      final grants = await (db.select(db.rolePermissions)
+            ..where((rp) => rp.roleId.equals('role_viewer')))
+          .get();
+      expect(grants, hasLength(kViewerPermissionCodes.length),
+          reason: 'every viewer permission is granted after healing');
+      expect(grants.every((g) => g.granted), isTrue);
+      for (final p in kViewerPermissionCodes) {
+        expect(
+          grants.where((g) =>
+              g.permissionId == 'perm_${p.replaceAll('.', '_')}'),
+          hasLength(1),
+          reason: 'viewer must hold $p',
+        );
+      }
+
+      // Idempotency: re-running must not duplicate rows.
+      await ensureViewerSeeded(db);
+      final again = await (db.select(db.rolePermissions)
+            ..where((rp) => rp.roleId.equals('role_viewer')))
+          .get();
+      expect(again, hasLength(kViewerPermissionCodes.length));
+
+      // A manual denial must never be overwritten by the seed.
+      await (db.update(db.rolePermissions)
+            ..where((rp) =>
+                rp.roleId.equals('role_viewer') &
+                    rp.permissionId.equals('perm_search')))
+          .write(const RolePermissionsCompanion(granted: Value(false)));
+      await ensureViewerSeeded(db);
+      final denied = await (db.select(db.rolePermissions)
+            ..where((rp) =>
+                rp.roleId.equals('role_viewer') &
+                    rp.permissionId.equals('perm_search')))
+          .getSingle();
+      expect(denied.granted, isFalse,
+          reason: 'INSERT OR IGNORE preserves deliberate denials');
+
+      await db.close();
+    });
+  });
 }

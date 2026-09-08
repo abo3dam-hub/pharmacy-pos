@@ -508,11 +508,43 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
 
   void _onSubmitted(String value) {
     _debounce?.cancel();
-    // A hardware scanner terminates with Enter — complete the buffer.
-    widget.barcodeBuffer.feed(widget.barcodeBuffer.terminator);
-    ref
-        .read(posWorkspaceControllerProvider(widget.tabIndex).notifier)
-        .search(value);
+    // A hardware scanner terminates with Enter — complete the buffer first so
+    // scan keystrokes keep priority (§5). Only when no barcode was emitted (no
+    // scan in progress) does Enter become the §21 quick-add: an unambiguous
+    // single search result is added straight to the cart.
+    final scanned = widget.barcodeBuffer.feed(widget.barcodeBuffer.terminator);
+    final notifier =
+        ref.read(posWorkspaceControllerProvider(widget.tabIndex).notifier);
+    if (scanned) {
+      notifier.search(value);
+      return;
+    }
+    _quickAdd(value, notifier);
+  }
+
+  /// Enter on a bare search (no scanner event): re-search the trimmed query and,
+  /// when it resolves to exactly one product, add it to the cart and clear the
+  /// field for the next item. Multi-result queries still show the list — they
+  /// are never picked from silently.
+  Future<void> _quickAdd(
+    String value,
+    PosWorkspaceController notifier,
+  ) async {
+    final q = value.trim();
+    if (q.isEmpty) return;
+    await notifier.search(q);
+    if (!mounted) return;
+    final items = notifier.currentState.searchResults?.items ?? const <PosCatalogItem>[];
+    if (items.length != 1) return;
+    await notifier.addToCart(items.single);
+    if (!mounted) return;
+    // A failed add surfaces an error message — keep the query intact for retry.
+    if (notifier.currentState.errorMessage != null) return;
+    widget.barcodeBuffer.reset();
+    _lastText = '';
+    _query.clear();
+    // Reset the search/result state so the panel is ready for the next item.
+    notifier.clearSearch();
   }
 
   @override
@@ -537,6 +569,7 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
                 border: const OutlineInputBorder(),
                 isDense: true,
               ),
+              textInputAction: TextInputAction.done,
               onChanged: _onChanged,
               onSubmitted: _onSubmitted,
             ),
