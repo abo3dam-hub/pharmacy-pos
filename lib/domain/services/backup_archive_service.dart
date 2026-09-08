@@ -160,7 +160,12 @@ class BackupArchiveService {
       rethrow;
     } finally {
       if (await workDir.exists()) {
-        await workDir.delete(recursive: true);
+        try {
+          await workDir.delete(recursive: true);
+        } catch (_) {
+          // Best-effort cleanup: a locked handle (Windows) must never mask the
+          // backup result or the already-reported success.
+        }
       }
     }
   }
@@ -185,7 +190,10 @@ class BackupArchiveService {
     Archive? decoded;
     try {
       decoded = ZipDecoder().decodeBuffer(input);
-      // Map logical name -> staged absolute path.
+      // Map archive-internal name -> staged absolute path. Archive entries and
+      // manifest `relativePath` values are always forward-slash separated; the
+      // on-disk (platform-separator) path is computed separately so lookups do
+      // not depend on the host operating system.
       final staged = <String, String>{};
 
       for (final entry in decoded.files) {
@@ -193,7 +201,7 @@ class BackupArchiveService {
         final safeName = _sanitizeEntryPath(entry.name);
         final target = _safeJoin(outDir.path, safeName);
         await _extractEntry(entry, target);
-        staged[safeName] = target;
+        staged[entry.name] = target;
       }
 
       // manifest.json must exist and parse.
@@ -278,8 +286,15 @@ class BackupArchiveService {
     final file = File(target);
     await file.create(recursive: true);
     final output = OutputFileStream(target);
-    entry.writeContent(output);
-    await output.close();
+    try {
+      entry.writeContent(output);
+    } finally {
+      // Windows keeps the target locked until the handle is closed, even after
+      // the underlying copy errored; always close so the staging dir can be
+      // cleaned up (and a corrupt entry reports its real error, not a delete
+      // failure).
+      await output.close();
+    }
   }
 
   Future<void> _snapshotViaVacuumInto(AppDatabase db, String target) async {

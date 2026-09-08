@@ -56,11 +56,12 @@ void main() {
     expect(File(archivePath).existsSync(), isTrue);
 
     // Layout inside the zip.
-    final decoded = ZipDecoder()
-        .decodeBuffer(InputFileStream(archivePath));
-    expect(decoded.files.map((f) => f.name),
+    final input1 = InputFileStream(archivePath);
+    final decoded1 = ZipDecoder().decodeBuffer(input1);
+    expect(decoded1.files.map((f) => f.name),
         containsAll([BackupArchiveLayout.manifestFileName, BackupArchiveLayout.databaseFileName]));
-    await decoded.clear();
+    await decoded1.clear();
+    input1.closeSync();
 
     // Extract + verify (the service's own validation) succeeds.
     final extracted = await service.extractAndVerify(
@@ -179,16 +180,17 @@ void main() {
     final archivePath = await createBackup();
 
     // Re-wrap the original entries plus a rogue "files/evil.txt".
-    final decoded =
-        ZipDecoder().decodeBuffer(InputFileStream(archivePath));
+    final input2 = InputFileStream(archivePath);
+    final decoded2 = ZipDecoder().decodeBuffer(input2);
     final archive = Archive();
-    for (final entry in decoded.files) {
+    for (final entry in decoded2.files) {
       final bytes = (entry.content as List<int>);
       archive.addFile(
           ArchiveFile(entry.name, bytes.length, bytes));
     }
     archive.addFile(ArchiveFile('files/evil.txt', 3, [1, 2, 3]));
-    await decoded.clear();
+    await decoded2.clear();
+    input2.closeSync();
     final zipPath = p.join(work.path, 'extra.zip');
     File(zipPath).writeAsBytesSync(
         ZipEncoder().encode(archive, level: 0)!);

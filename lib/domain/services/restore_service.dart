@@ -118,7 +118,11 @@ class RestoreService {
       );
     } finally {
       if (await work.exists()) {
-        await work.delete(recursive: true);
+        try {
+          await work.delete(recursive: true);
+        } catch (_) {
+          // Best-effort cleanup: never mask the preview verdict.
+        }
       }
     }
   }
@@ -296,7 +300,12 @@ class RestoreService {
       }
     } finally {
       if (await staging.exists()) {
-        await staging.delete(recursive: true);
+        try {
+          await staging.delete(recursive: true);
+        } catch (_) {
+          // Best-effort cleanup: an undeliverable locked handle (Windows) must
+          // not replace the primary restore outcome with a delete failure.
+        }
       }
     }
   }
@@ -431,7 +440,11 @@ class RestoreService {
         return true;
       } finally {
         if (await work.exists()) {
-          await work.delete(recursive: true);
+          try {
+            await work.delete(recursive: true);
+          } catch (_) {
+            // Best-effort cleanup inside rollback; the boolean result stands.
+          }
         }
       }
     } catch (_) {

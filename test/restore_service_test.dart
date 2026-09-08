@@ -419,7 +419,8 @@ void _rewriteManifestJson(
   String target,
   void Function(Map<String, Object?> json) mutate,
 ) {
-  final decoded = ZipDecoder().decodeBuffer(InputFileStream(source));
+  final input = InputFileStream(source);
+  final decoded = ZipDecoder().decodeBuffer(input);
   final archive = Archive();
   for (final entry in decoded.files) {
     if (entry.name == BackupArchiveLayout.manifestFileName) {
@@ -437,4 +438,5 @@ void _rewriteManifestJson(
   }
   final bytes = ZipEncoder().encode(archive, level: 0)!;
   File(target).writeAsBytesSync(bytes);
+  input.closeSync();
 }
