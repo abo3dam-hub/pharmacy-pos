@@ -50,11 +50,16 @@ jobs:
           New-Item -ItemType Directory -Force -Path build\windows\x64\runner\Release | Out-Null
           Expand-Archive -Path artifact.zip -DestinationPath build\windows\x64\runner\Release -Force
 
+      - name: Set up Flutter SDK
+        if: steps.resolve.outputs.mode == 'local'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.2'
+
       - name: Build local Windows release (instrumented source on this branch)
         if: steps.resolve.outputs.mode == 'local'
         shell: pwsh
         run: |
-          flutter config --no-analytics
           flutter pub get
           flutter gen-l10n
           flutter build windows --release
