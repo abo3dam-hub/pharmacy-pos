@@ -19,8 +19,11 @@ Final gates:
 - `flutter analyze` → **No issues found** (0 issues).
 - `flutter test` → **517 pass / 0 failures** (514 baseline + 3 new
   localization-parity regression tests).
-- Windows release build → **run on GitHub Actions `windows-latest`, green** —
-  see §6 (workflow link + artifact).
+- Windows release build → **executed on GitHub Actions `windows-latest`,
+  green** — see §6. The first two tag runs failed and surfaced real
+  Windows-only defects (backup/restore archive handling + a test
+  `DateTime` overflow); all fixed, final release-tag run passed every stage
+  including `flutter build windows --release` and artifact upload.
 - Release tag `v1.0.0` created and pushed; CI `build-windows` job completed
   successfully.
 - Localization parity enforced by a new committed regression test.
@@ -46,7 +49,8 @@ Status of every Phase 15 handoff item and its Phase 16 disposition:
 | Versioning / changelog / release notes absent | **Resolved** | `CHANGELOG.md`, README release documentation, tag `v1.0.0`; `pubspec.yaml` `1.0.0+1` consistent with Windows executable version 1.0.0.1. |
 | CI Windows job lacking `gen-l10n` stage | **Resolved** | `flutter gen-l10n` added to `build-windows` before analyze/test/build. |
 | Final verify-only areas (reports, accounting, backup…) | **Verified** | Confirmed by existing regression suites — all green. |
-| `accounting_period_enforcement_test.dart` single intermittent failure under heavy parallel load (observed once) | **Observed, not reproduced** | Occurred once in 5 full-suite executions this phase (incl. `--concurrency=24`). Passes in isolation and on re-runs. Accounting layer untouched by Phase 16; root cause not capturable (no reproduction). Documented observation, not a release change. |
+| `accounting_period_enforcement_test.dart` intermittent failure (seen locally + on Windows CI) | **Diagnosed & fixed** | `DateTime(epochMillis)` was passed as a `DateTime(year, …)` argument; the wrapped int64 clock lands in or out of range randomly → ArgumentError. Fixed to use plain epoch millis. See §6. |
+| Windows-only backup/restore defects (only executable on a real Windows run) | **Diagnosed & fixed** | Archive `staged` map keyed by OS-normalized path (Windows backslashes) vs forward-slash manifest paths → receipts failed; `_extractEntry` leaked an open handle on corrupt entries; cleanup could mask primary errors. All fixed with best-effort staging cleanup. See §6. |
 
 ### 2.2 What changed (deliberately narrow)
 
@@ -133,14 +137,37 @@ searched for user-visible Arabic string literals; non-user-visible Arabic
 ## 6. Windows Release Build (REAL — executed on CI)
 
 - Trigger: tag `v1.0.0` pushed to `origin`.
-- Runner: GitHub Actions **`windows-latest`** (Windows Server, 2-core), Flutter
+- Runner: GitHub Actions **`windows-latest`** (Windows Server), Flutter
   **stable** via `subosito/flutter-action@v2`.
 - Stages: checkout → pub get → **gen-l10n** (added) → analyze → test →
   `flutter build windows --release` → upload `pharmacy-pos-windows`.
-- Result: **success** on the first run. Full `Run Details` and the workflow
-  link are recorded below; the build output artifact **`pharmacy-pos-windows`**
-  (self-contained `build/windows/x64/runner/Release/`) is on the run page.
-  The build exercises the real Windows toolchain (Visual Studio C++ + Flutter
+- **Final result: SUCCESS** — release-tag run
+  `https://github.com/abo3dam-hub/pharmacy-pos/actions/runs/34248737492`
+  (commit `ce72f14fd58916adac03eecdc43aeb6c17e6f3e`, tag `v1.0.0`). Both jobs
+  green; `build-windows` ran the full Windows analyze + 517-test suite +
+  release build; artifact **`pharmacy-pos-windows`** (~19 MB,
+  `build/windows/x64/runner/Release/`) uploaded.
+- **Iteration history (why two earlier tag runs failed):** the first real
+  Windows runs exposed defects Linux could not:
+  1. **Archive verification failed on Windows for any receipt-bearing
+     backup/restore/preview** — `extractAndVerify` keyed its `staged` map with
+     `p.normalize(entry.name)` (backslashes on Windows) while manifest
+     `relativePath` values are always forward-slash → "manifest-listed file
+     missing" → 5 tests failed. Fixed by keying on the archive-internal name.
+  2. **`_extractEntry` leaked an open `OutputFileStream` when a corrupt
+     entry's deflate errored** → Windows held the staged file lock →
+     `staging.delete` threw `PathAccessException`, masking the intended
+     `InvalidOperationException` on corrupt-archive restore. Fixed with
+     try/finally close; cleanup deletions are now best-effort everywhere so a
+     locked leftover can never mask a primary result.
+  3. **Latent `DateTime(epochMillis)` overflow** in two accounting-period
+     tests (RBAC + audit): `DateTime(epochMillis)` wraps the int64 clock, so
+     the instant is garbage and randomly out of range → intermittent
+     ArgumentError on both Linux and Windows. Fixed to use epoch millis
+     directly. (Unrelated to localization; surfaced by the release gate.)
+  After these fixes the release-tag run passed every stage on the first
+  attempt.
+- The build exercises the real Windows toolchain (Visual Studio C++ + Flutter
   Windows embedding) and proves the committed localization + native SQLite
   bundling (`sqlite3_flutter_libs`) compose into a runnable release.
 
@@ -171,9 +198,11 @@ bundled native SQLite DLL, fonts, assets, plugins). No installer is produced.
 4. **`4002 Purchase Returns` unused** — purchase returns post via the
    supplier-payable/inventory model; activation rejected to preserve
    accounting semantics.
-5. **`accounting_period_enforcement_test.dart` rare parallel-load flake**
-   (observed once this phase) — passes in isolation, under `--concurrency=24`,
-   and in 4 subsequent full-suite runs; accounting layer untouched by Phase 16.
+
+> The intermittent `accounting_period_enforcement_test.dart` failure
+> (originally item 5) was **not** accepted as a limitation: it was diagnosed
+> in this phase (`DateTime(epochMillis)` used as a year argument, whose int64
+> clock wrap lands in/out of range randomly) and fixed. It no longer occurs.
 
 ## 8. Intentionally and Unambiguously NOT Changed
 
@@ -191,16 +220,18 @@ documented reasons; none are Phase 16 defects.
 | `flutter analyze` | 0 issues | ✓ No issues found |
 | `flutter test` | 0 failures | ✓ 517 pass / 0 fail (4 green runs) |
 | ARB parity | exact | ✓ enforced by test |
-| Windows build | executed for real | ✓ `build-windows` green on `windows-latest` (§6) |
+| Windows build | executed for real | ✓ `build-windows` green on `windows-latest`; run https://github.com/abo3dam-hub/pharmacy-pos/actions/runs/34248737492 |
 | Version consistency | pubspec ↔ exe ↔ config ↔ docs | ✓ 1.0.0+1 / 1.0.0.1 / v1.0.0 |
 | Release docs | changelog + README | ✓ CHANGELOG.md + README.md |
 | Completion report | this file | ✓ |
-| Commit + tag + push | repository release | ✓ see records below |
+| Commit + tag + push | repository release | ✓ commit `ce72f14` + tag `v1.0.0` |
 
 ---
 
 ## 10. Release Records
 
-- **Commit:** Phase 16 commit on `main` (see `git log` for SHA).
-- **Tag:** `v1.0.0` → pushed to `origin`; workflow `build-windows` **succeeded**.
+- **Commit:** `ce72f14fd58916adac03eecdc43aeb6c17e6f3e` (tag `v1.0.0`) on `main` —
+  the finalized release commit.
+- **Tag:** `v1.0.0` → pushed to `origin`; workflow `build-windows`
+  **succeeded** (run 34248737492, artifact `pharmacy-pos-windows` ~19 MB).
 - Final report delivered in the session summary.

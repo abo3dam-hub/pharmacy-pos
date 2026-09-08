@@ -58,7 +58,22 @@ published the final release tag.
 - **Localization parity regression test added** (`localization_parity_test.dart`)
   to keep the Arabic/English key parity invariant protected.
 - **Real Windows release build** executed on a GitHub Actions `windows-latest`
-  runner (`flutter build windows --release`) — see below.
+  runner (`flutter build windows --release`) — see below. The first real run
+  surfaced **four Windows-only bugs** that Linux CI could not exercise; all
+  were fixed and the release-tag run is green:
+  - `extractAndVerify` keyed staged files with the OS-normalized entry name,
+    while manifest `relativePath` values are forward-slash — receipt-bearing
+    backups/restores/previews failed on Windows ("manifest-listed file
+    missing"). Keys now use the archive-internal name.
+  - `_extractEntry` left the output handle open when a corrupt entry's
+    deflate stream errored, leaking a Windows file lock that masked the real
+    error on corrupt-archive restore. The output stream always closes now.
+  - Staging/work cleanup in `createBackup`/`preview`/`restore`/rollback is
+    best-effort so a locked leftover can never replace the primary outcome.
+  - Intermittent failure in the accounting-period RBAC/audit tests (seen
+    locally and on CI) was root-caused to `DateTime(epochMillis)` used as a
+    year constructor argument, whose int64 clock wraps land either in or out
+    of range depending on the wall clock — fixed to use epoch millis directly.
 - **CI hardening:** the `build-windows` job now runs `flutter gen-l10n` before
   analyze/test/build so the release build always uses freshly generated
   localization.
