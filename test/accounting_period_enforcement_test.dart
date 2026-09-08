@@ -328,7 +328,7 @@ void main() {
           updatedAt: now,
         ));
 
-    final start = DateTime(now).millisecondsSinceEpoch;
+    final start = now;
     // Pharmacist (view only, no accounting.post) cannot create.
     await expectLater(
       periods.createPeriod(db,
@@ -355,7 +355,7 @@ void main() {
 
   test('period creation and closing are audited', () async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    final start = DateTime(now).millisecondsSinceEpoch;
+    final start = now;
     final id = await periods.createPeriod(db,
         name: 'A1',
         startDate: start,
