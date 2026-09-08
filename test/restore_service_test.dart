@@ -241,7 +241,7 @@ void main() {
     // Tamper the manifest's schema version to a hypothetical future one.
     final spoiled = p.join(work.path, 'future.zip');
     _rewriteManifestJson(archivePath, spoiled,
-        (json) => json['schema_version'] = 9);
+        (json) => json['schema_version'] = 999);
 
     final preview = await restoreService.preview(spoiled);
     expect(preview.valid, isFalse);

@@ -21,6 +21,7 @@ import 'tables/customer_payments.dart';
 import 'tables/customers.dart';
 import 'tables/expense_categories.dart';
 import 'tables/expenses.dart';
+import 'tables/item_suppliers.dart';
 import 'tables/item_units.dart';
 import 'tables/items.dart';
 import 'tables/journal_entries.dart';
@@ -55,6 +56,7 @@ part 'app_database.g.dart';
   Units,
   ItemUnits,
   Items,
+  ItemSuppliers,
   Batches,
   StockMovements,
   Suppliers,
@@ -98,7 +100,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -251,6 +253,12 @@ class AppDatabase extends _$AppDatabase {
       if (pCount.read<int>('c') < 1) {
         await ensureAccountingPermissions(this);
       }
+    }
+    if (from < 9) {
+      // Product management UX: many-to-many preferred suppliers per item.
+      // `item_suppliers` carries its own composite unique key + FK indexes so
+      // existing databases migrate in place without touching purchase history.
+      await m.createTable(itemSuppliers);
     }
   }
 }

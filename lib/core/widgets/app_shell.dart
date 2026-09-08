@@ -97,6 +97,7 @@ class _AppShellState extends State<AppShell> {
                     labelType: layout == AppLayout.desktop
                         ? NavigationRailLabelType.all
                         : NavigationRailLabelType.none,
+                    scrollable: true,
                     onDestinationSelected: (i) => _select(sections[i]),
                     destinations: [
                       for (final section in sections)

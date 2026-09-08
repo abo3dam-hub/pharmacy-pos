@@ -6,6 +6,72 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 
 ---
 
+## [1.1.0] — 2026-09-08 — Product Management UX fixes
+
+Complete rework of the product (item) management experience plus the
+schema/migration, regression-test, and error-mapping work to support it.
+See `PRODUCT-MANAGEMENT-UX-FIX-REPORT.md` for the itemized 21-section report.
+
+### New in this release
+
+- **Scrollable sidebar** — the `NavigationRail` in `app_shell.dart` is now
+  `scrollable: true`, so every section (including Settings) stays reachable on
+  short screens instead of overflowing the viewport.
+- **Many-to-many item ↔ suppliers** — new `item_suppliers` link table
+  (schema v9). Supplier chips are picked inline in the product dialog; the
+  repository persists/updates the links in the same transaction as the item,
+  and bulk Excel imports preserve them.
+- **Searchable master-data dropdowns** — new reusable
+  `SearchableDropdownField` (typeahead + inline "+" creator). Category,
+  sub-category, manufacturer, therapeutic group, and the unit/packaging
+  selectors all filter as you type; picking a category filters sub-categories,
+  and a created row is auto-selected.
+- **Packaging unit auto-suggestion** — choosing the base unit pre-fills the
+  commercial ("packaging") unit; the form also labels the packaging field
+  clearly.
+- **Form validation + targeted errors** — no more generic
+  "حدث خطأ أثناء حفظ البيانات". Unit-relation completeness, units-per-large
+  (≥1), and partial-sale parts/base checks each surface a specific message.
+- **Partial-sale wiring** — enabling partial selling auto-fills the default
+  10% markup (stored in basis points) and validates parts/base quantities.
+- **Wired error mapping** — repository `_guarded` translates
+  `SqliteException`/`ValidationException`/`UnauthorizedException` into
+  `DuplicateException`/`ValidationException`/`DatabaseException`/permission
+  failures so the UI shows precise feedback (e.g. duplicate barcode) instead of
+  the catch-all.
+- **BUG FIX (found by new tests):** the "units per large" input was not wired
+  to the enforced value — entered values were ignored and the validation could
+  never fire. The `TextFormField` now syncs via `onChanged`.
+
+### Data / migration
+
+- Schema **v8 → v9**: `item_suppliers` created (`id` PK, `itemId` → Items,
+  `supplierId` → Suppliers, composite unique `{itemId, supplierId}`).
+- `migration_test.dart` mirrors v9 (`from < 9` block); fresh/v1→v9 migrations
+  verified; restore schema-tamper test updated for the new supported version.
+- `kCurrentSupportedSchemaVersion` in `backup_manifest.dart` bumped to 9 —
+  this was the root cause of stale backup/restore expectations.
+
+### Localization
+
+- 13 new ARB keys (ar/en, exact parity): packaging-unit, suppliers, add-new,
+  inventory units/base/large/per-invalid guidance, partial-sale unit/parts/
+  base/markup messages. `localization_parity_test.dart` enforces parity.
+
+### Verification
+
+- `flutter analyze lib test`: 0 issues.
+- `flutter test`: **532/532 pass**, including:
+  - `item_save_regression_test.dart` (duplicate barcode → `DuplicateException`,
+    suppliers M2M persist/dedupe/update, bulk shelf-edit preserves suppliers).
+  - `item_form_ux_test.dart` (7 widget tests: rail scrolling, targeted
+    validation, form order, suppliers chips, inline category auto-select,
+    filtered subcategory, partial-sale markup/validation).
+- Release-tag `v1.1.0` triggers the Windows build on Flutter 3.44.2 (kept for
+  the v1.0.1 black-screen workaround) via CI.
+
+---
+
 ## [1.0.1] — 2026-09-08 — Windows black-screen fix
 
 Fixes a Windows-only rendering issue in the v1.0.0 release: on machines whose

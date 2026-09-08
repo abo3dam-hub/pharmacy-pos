@@ -133,7 +133,9 @@ class BulkUpdateItemsUseCase {
             largeUnitId: units.largeUnitId,
             unitsPerLarge: units.unitsPerLarge,
           );
-    final draft = ItemDraft.fromRow(row, units: relation);
+    final supplierIds = await _repo.supplierIdsForItem(row.id);
+    final draft = ItemDraft.fromRow(
+        row, units: relation, supplierIds: supplierIds);
 
     switch (input.operation) {
       case BulkOperation.changeCategory:
@@ -188,6 +190,7 @@ class BulkUpdateItemsUseCase {
       generalNotes: draft.generalNotes,
       licenseNumber: draft.licenseNumber,
       units: draft.units,
+      supplierIds: draft.supplierIds,
     );
   }
 

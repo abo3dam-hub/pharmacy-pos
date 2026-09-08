@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/searchable_dropdown_field.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
+import '../../../suppliers/domain/repositories/supplier_repository.dart';
+import '../../../suppliers/presentation/widgets/supplier_dialog.dart';
 import '../../domain/repositories/inventory_repository.dart';
+import 'master_data_dialog.dart';
 
 /// Result of the item form: the validated [ItemDraft].
 class ItemFormResult {
@@ -16,7 +20,9 @@ class ItemFormResult {
 
 /// Shows the §5 item create/edit form dialog. Returns a validated draft or
 /// null if cancelled. Money is entered as decimal and stored in integer
-/// micro-units; percentages are integer basis points.
+/// micro-units; percentages are integer basis points. Master-data + supplier
+/// creates are performed via [onCreateMasterData] / [onCreateSupplier] so the
+/// dialog stays widget-testable while the caller owns persisting and audit.
 Future<ItemFormResult?> showItemFormDialog(
   BuildContext context, {
   required String title,
@@ -26,6 +32,11 @@ Future<ItemFormResult?> showItemFormDialog(
   required List<ManufacturerRow> manufacturers,
   required List<TherapeuticGroupRow> groups,
   required List<UnitRow> units,
+  List<SupplierRow> suppliers = const [],
+  Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
+      onCreateMasterData,
+  Future<SupplierRow?> Function(SupplierDraft draft)? onCreateSupplier,
+  int defaultPartialSaleMarkupBasisPoints = 1000,
 }) async {
   final result = await showDialog<ItemFormResult>(
     context: context,
@@ -37,6 +48,10 @@ Future<ItemFormResult?> showItemFormDialog(
       manufacturers: manufacturers,
       groups: groups,
       units: units,
+      suppliers: suppliers,
+      onCreateMasterData: onCreateMasterData,
+      onCreateSupplier: onCreateSupplier,
+      defaultPartialSaleMarkupBasisPoints: defaultPartialSaleMarkupBasisPoints,
     ),
   );
   return result;
@@ -51,6 +66,10 @@ class _ItemFormDialog extends StatefulWidget {
     required this.manufacturers,
     required this.groups,
     required this.units,
+    this.suppliers = const [],
+    this.onCreateMasterData,
+    this.onCreateSupplier,
+    this.defaultPartialSaleMarkupBasisPoints = 1000,
   });
 
   final String title;
@@ -60,6 +79,11 @@ class _ItemFormDialog extends StatefulWidget {
   final List<ManufacturerRow> manufacturers;
   final List<TherapeuticGroupRow> groups;
   final List<UnitRow> units;
+  final List<SupplierRow> suppliers;
+  final Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
+      onCreateMasterData;
+  final Future<SupplierRow?> Function(SupplierDraft draft)? onCreateSupplier;
+  final int defaultPartialSaleMarkupBasisPoints;
 
   @override
   State<_ItemFormDialog> createState() => _ItemFormDialogState();
@@ -70,6 +94,13 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   late final ItemDraft _initial;
 
   final _controllers = <String, TextEditingController>{};
+
+  late List<CategoryRow> _categories;
+  late List<SubCategoryRow> _subCategories;
+  late List<ManufacturerRow> _manufacturers;
+  late List<TherapeuticGroupRow> _groups;
+  late List<UnitRow> _units;
+  late List<SupplierRow> _suppliers;
 
   bool _hasExpiry = false;
   bool _printLabel = false;
@@ -86,16 +117,21 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   String? _baseUnitId;
   String? _largeUnitId;
   String _unitsPerLarge = '1';
+  late final Set<String> _selectedSupplierIds;
   bool _partialSaleEnabled = false;
   String? _sellablePartUnitId;
-  String _partsPerFullProduct = '';
-  String _sellablePartBaseQuantity = '';
-  String _partialSaleMarkupBasisPoints = '';
 
   @override
   void initState() {
     super.initState();
     _initial = widget.initial ?? const ItemDraft(tradeName: '', categoryId: '');
+    _categories = [...widget.categories];
+    _subCategories = [...widget.subCategories];
+    _manufacturers = [...widget.manufacturers];
+    _groups = [...widget.groups];
+    _units = [...widget.units];
+    _suppliers = [...widget.suppliers];
+    _selectedSupplierIds = {..._initial.supplierIds};
     _hasExpiry = _initial.hasExpiry;
     _printLabel = _initial.printBarcodeLabel;
     _isOtc = _initial.isOtc;
@@ -109,23 +145,9 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     _groupId = _initial.therapeuticGroupId;
     _baseUnitId = _initial.units?.baseUnitId;
     _largeUnitId = _initial.units?.largeUnitId;
-    _unitsPerLarge =
-        '${_initial.units?.unitsPerLarge ?? 1}';
+    _unitsPerLarge = '${_initial.units?.unitsPerLarge ?? 1}';
     _partialSaleEnabled = _initial.partialSaleEnabled;
     _sellablePartUnitId = _initial.sellablePartUnitId;
-    _partsPerFullProduct =
-        _initial.partsPerFullProduct != null
-            ? '${_initial.partsPerFullProduct}'
-            : '';
-    _sellablePartBaseQuantity =
-        _initial.sellablePartBaseQuantity != null
-            ? '${_initial.sellablePartBaseQuantity}'
-            : '';
-    _partialSaleMarkupBasisPoints =
-        _initial.partialSaleMarkupBasisPoints != null
-            ? (_initial.partialSaleMarkupBasisPoints! / 100).toStringAsFixed(
-                _initial.partialSaleMarkupBasisPoints! % 100 == 0 ? 0 : 2)
-            : '';
 
     String seed(String key, String value) {
       final c = TextEditingController(text: value);
@@ -159,10 +181,23 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     seed('vat', _pct(_initial.vatRateBasisPoints));
     seed('minStock', '${_initial.minimumStockBase}');
     seed('maxStock', '${_initial.maximumStockBase}');
+    seed('partsPerFullProduct',
+        _initial.partsPerFullProduct != null ? '${_initial.partsPerFullProduct}' : '');
+    seed('sellablePartBaseQuantity',
+        _initial.sellablePartBaseQuantity != null
+            ? '${_initial.sellablePartBaseQuantity}'
+            : '');
+    seed('partialSaleMarkupBasisPoints',
+        _initial.partialSaleMarkupBasisPoints != null
+            ? _pct(_initial.partialSaleMarkupBasisPoints!)
+            : '');
   }
 
   static String _pct(int basisPoints) =>
       (basisPoints / 100).toStringAsFixed(basisPoints % 100 == 0 ? 0 : 2);
+
+  int get _defaultMarkupBasisPoints => widget.defaultPartialSaleMarkupBasisPoints;
+  String get _defaultMarkupPercent => _pct(_defaultMarkupBasisPoints);
 
   TextEditingController _c(String key, {String? hint}) {
     final existing = _controllers[key];
@@ -217,6 +252,47 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       _snack(l10n.inventorySelectCategory);
       return false;
     }
+    if (_baseUnitId == null) {
+      _snack(l10n.inventorySelectBaseUnit);
+      return false;
+    }
+    if (_largeUnitId == null) {
+      _snack(l10n.inventorySelectLargeUnit);
+      return false;
+    }
+    final unitsPerLarge = int.tryParse(_unitsPerLarge) ?? 0;
+    if (unitsPerLarge <= 0) {
+      _snack(l10n.inventoryUnitsPerLargeInvalid);
+      return false;
+    }
+    if (_partialSaleEnabled) {
+      if (_sellablePartUnitId == null) {
+        _snack(l10n.partialSaleUnitRequired);
+        return false;
+      }
+      final parts = int.tryParse(_c('partsPerFullProduct').text.trim());
+      if (parts == null || parts <= 0) {
+        _snack(l10n.partialSalePartsRequired);
+        return false;
+      }
+      if (parts <= 1) {
+        _snack(l10n.partialSalePartsInvalid);
+        return false;
+      }
+      final baseQty = int.tryParse(_c('sellablePartBaseQuantity').text.trim());
+      if (baseQty == null || baseQty < 1) {
+        _snack(l10n.partialSaleBaseInvalid);
+        return false;
+      }
+      final markupText = _c('partialSaleMarkupBasisPoints').text.trim();
+      if (markupText.isNotEmpty) {
+        final d = double.tryParse(markupText.replaceAll(',', ''));
+        if (d == null || d < 0 || d > 100) {
+          _snack(l10n.partialSaleMarkupInvalid);
+          return false;
+        }
+      }
+    }
     return true;
   }
 
@@ -241,6 +317,12 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     final minStock = _intFrom('minStock');
     final maxStock = _intFrom('maxStock');
     final unitsPerLarge = int.tryParse(_unitsPerLarge);
+
+    final parts = int.tryParse(_c('partsPerFullProduct').text.trim());
+    final baseQty = int.tryParse(_c('sellablePartBaseQuantity').text.trim());
+    final markupText = _c('partialSaleMarkupBasisPoints').text.trim();
+    final markup = markupText.isEmpty ? _defaultMarkupBasisPoints
+        : (double.tryParse(markupText.replaceAll(',', ''))! * 100).round();
 
     if (cost == null || selling == null || subUnit == null ||
         wholesale == null || halfWholesale == null || custom1 == null ||
@@ -290,28 +372,17 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       usageInstructions: _emptyToNull(_c('usageInstructions').text),
       generalNotes: _emptyToNull(_c('generalNotes').text),
       licenseNumber: _emptyToNull(_c('licenseNumber').text),
-      units: (_baseUnitId == null && _largeUnitId == null)
-          ? _initial.units
-          : ItemUnitRelation(
-              baseUnitId: _baseUnitId!,
-              largeUnitId: _largeUnitId!,
-              unitsPerLarge: unitsPerLarge,
-            ),
+      units: ItemUnitRelation(
+        baseUnitId: _baseUnitId!,
+        largeUnitId: _largeUnitId!,
+        unitsPerLarge: unitsPerLarge,
+      ),
+      supplierIds: _selectedSupplierIds.toList(),
       partialSaleEnabled: _partialSaleEnabled,
       sellablePartUnitId: _partialSaleEnabled ? _sellablePartUnitId : null,
-      partsPerFullProduct:
-          _partialSaleEnabled ? int.tryParse(_c('partsPerFullProduct').text) : null,
-      sellablePartBaseQuantity:
-          _partialSaleEnabled ? int.tryParse(_c('sellablePartBaseQuantity').text) : null,
-      partialSaleMarkupBasisPoints:
-          _partialSaleEnabled
-              ? (() {
-                  final v = _c('partialSaleMarkupBasisPoints').text.trim();
-                  if (v.isEmpty) return null;
-                  final d = double.tryParse(v);
-                  return d != null ? (d * 100).round() : null;
-                })()
-              : null,
+      partsPerFullProduct: _partialSaleEnabled ? parts : null,
+      sellablePartBaseQuantity: _partialSaleEnabled ? baseQty : null,
+      partialSaleMarkupBasisPoints: _partialSaleEnabled ? markup : null,
     );
     Navigator.of(context).pop(ItemFormResult(draft));
   }
@@ -321,14 +392,69 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     return t.isEmpty ? null : t;
   }
 
+  // ----- inline master-data + supplier creation -----
+
+  Future<void> _addMasterData(MasterDataKind kind) async {
+    final l10n = AppLocalizations.of(context);
+    final title = switch (kind) {
+      MasterDataKind.category => l10n.categoriesAddTitle,
+      MasterDataKind.subCategory => l10n.subCategoriesAddTitle,
+      MasterDataKind.manufacturer => l10n.manufacturersAdd,
+      MasterDataKind.group => l10n.groupsAdd,
+      MasterDataKind.unit => l10n.unitsAdd,
+    };
+    final result = await showMasterDataFormDialog(
+      context,
+      kind: kind,
+      title: title,
+      categories: _categories,
+    );
+    if (result == null || !mounted) return;
+    final created = await widget.onCreateMasterData?.call(kind, result.draft);
+    if (created == null || !mounted) return;
+    setState(() {
+      switch (kind) {
+        case MasterDataKind.category:
+          _categories = [..._categories, created as CategoryRow];
+          _categoryId = created.id;
+          _subCategoryId = null;
+        case MasterDataKind.subCategory:
+          _subCategories = [..._subCategories, created as SubCategoryRow];
+          _subCategoryId = created.id;
+        case MasterDataKind.manufacturer:
+          _manufacturers = [..._manufacturers, created as ManufacturerRow];
+          _manufacturerId = created.id;
+        case MasterDataKind.group:
+          _groups = [..._groups, created as TherapeuticGroupRow];
+          _groupId = created.id;
+        case MasterDataKind.unit:
+          _units = [..._units, created as UnitRow];
+      }
+    });
+  }
+
+  Future<void> _addSupplier() async {
+    final l10n = AppLocalizations.of(context);
+    final draft = await showSupplierFormDialog(
+      context,
+      title: l10n.supplierAddTitle,
+    );
+    if (draft == null || !mounted) return;
+    final created = await widget.onCreateSupplier?.call(draft);
+    if (created == null || !mounted) return;
+    setState(() {
+      _suppliers = [..._suppliers, created];
+      _selectedSupplierIds.add(created.id);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final unitsDisabled = _baseUnitId == null;
     return AlertDialog(
       title: Text(widget.title),
       content: SizedBox(
-        width: 640,
+        width: 680,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -352,43 +478,46 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                 Wrap(
                   spacing: AppSpacing.m,
                   runSpacing: AppSpacing.m,
+                  crossAxisAlignment: WrapCrossAlignment.start,
                   children: [
-                    _dropdown(
+                    _masterDropdown(
                       value: _categoryId,
                       label: l10n.itemCategory,
-                      items: widget.categories,
+                      items: _categories,
                       nameOf: (c) => c.name,
                       onChanged: (v) => setState(() {
                         _categoryId = v;
                         _subCategoryId = null;
                       }),
-                      width: 220,
+                      kind: MasterDataKind.category,
+                      width: 200,
                     ),
-                    _dropdown(
+                    _masterDropdown<SubCategoryRow>(
                       value: _subCategoryId,
                       label: l10n.itemSubCategory,
-                      items: widget.subCategories
-                          .where((s) => s.categoryId == _categoryId)
-                          .toList(),
+                      items:
+                          _subCategories.where((s) => s.categoryId == _categoryId).toList(),
                       nameOf: (s) => s.name,
                       onChanged: (v) => setState(() => _subCategoryId = v),
-                      width: 220,
+                      width: 210,
                     ),
-                    _dropdown(
+                    _masterDropdown(
                       value: _manufacturerId,
                       label: l10n.itemManufacturer,
-                      items: widget.manufacturers,
+                      items: _manufacturers,
                       nameOf: (m) => m.name,
                       onChanged: (v) => setState(() => _manufacturerId = v),
-                      width: 220,
+                      kind: MasterDataKind.manufacturer,
+                      width: 200,
                     ),
-                    _dropdown(
+                    _masterDropdown(
                       value: _groupId,
                       label: l10n.itemGroup,
-                      items: widget.groups,
+                      items: _groups,
                       nameOf: (g) => g.name,
                       onChanged: (v) => setState(() => _groupId = v),
-                      width: 220,
+                      kind: MasterDataKind.group,
+                      width: 200,
                     ),
                     _text(_c('pharmaForm'), l10n.itemPharmaForm, 140),
                     _text(_c('dose'), l10n.itemDose, 140),
@@ -396,14 +525,28 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                     _text(_c('shelfLocation'), l10n.itemShelfLocation, 140),
                   ],
                 ),
-                _section(l10n.itemScientificName),
+                _section(l10n.itemSuppliers),
                 Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
+                  spacing: AppSpacing.s,
+                  runSpacing: AppSpacing.s,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    _text(_c('scientificName'), l10n.itemScientificName, 250),
-                    _text(_c('activeIngredient'), l10n.itemActiveIngredient, 250),
-                    _text(_c('equivalentDrug'), l10n.itemEquivalentDrug, 250),
+                    for (final supplier in _suppliers)
+                      FilterChip(
+                        label: Text(supplier.name,
+                            overflow: TextOverflow.ellipsis),
+                        visualDensity: VisualDensity.compact,
+                        selected: _selectedSupplierIds.contains(supplier.id),
+                        onSelected: (on) => setState(() {
+                          if (on) {
+                            _selectedSupplierIds.add(supplier.id);
+                          } else {
+                            _selectedSupplierIds.remove(supplier.id);
+                          }
+                        }),
+                      ),
+                    if (widget.onCreateSupplier != null)
+                      _addButton(l10n.itemAddNew, _addSupplier),
                   ],
                 ),
                 _section(l10n.itemUnitsRelation),
@@ -411,24 +554,20 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                   spacing: AppSpacing.m,
                   runSpacing: AppSpacing.m,
                   children: [
-                    _dropdown(
+                    _unitDropdown(
                       value: _baseUnitId,
                       label: l10n.itemBaseUnit,
-                      items: widget.units,
-                      nameOf: (u) => u.name,
                       onChanged: (v) => setState(() {
                         _baseUnitId = v;
                         if (v != null) _largeUnitId ??= v;
                       }),
                       width: 200,
                     ),
-                    _dropdown(
-                      value: unitsDisabled ? null : _largeUnitId,
-                      label: l10n.itemLargeUnit,
-                      items: widget.units,
-                      nameOf: (u) => u.name,
+                    _unitDropdown(
+                      value: _largeUnitId,
+                      label: l10n.itemPackagingUnit,
                       onChanged: (v) => setState(() => _largeUnitId = v),
-                      width: 200,
+                      width: 220,
                     ),
                     SizedBox(
                       width: 160,
@@ -439,8 +578,25 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                           isDense: true,
                         ),
                         keyboardType: TextInputType.number,
+                        onChanged: (v) => _unitsPerLarge = v.trim(),
                       ),
                     ),
+                  ],
+                ),
+                _section('${l10n.itemCost} / ${l10n.itemPrice}'),
+                Wrap(
+                  spacing: AppSpacing.m,
+                  runSpacing: AppSpacing.m,
+                  children: [
+                    _text(_c('cost'), l10n.itemCost, 160),
+                    _text(_c('discount'), l10n.itemPurchaseDiscount, 160),
+                    _text(_c('selling'), l10n.itemPrice, 150),
+                    _text(_c('subUnit'), l10n.itemSubUnitPrice, 150),
+                    _text(_c('wholesale'), l10n.itemWholesalePrice, 150),
+                    _text(_c('halfWholesale'), l10n.itemHalfWholesalePrice, 150),
+                    _text(_c('custom1'), l10n.itemCustomPrice1, 140),
+                    _text(_c('custom2'), l10n.itemCustomPrice2, 140),
+                    _text(_c('vat'), l10n.itemVatRate, 140),
                   ],
                 ),
                 _section(l10n.partialSaleSection),
@@ -450,57 +606,33 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     _switch('partialSaleEnabled', l10n.partialSaleEnabled,
-                        _partialSaleEnabled, (v) =>
-                            setState(() => _partialSaleEnabled = v)),
+                        _partialSaleEnabled, (v) => setState(() {
+                      _partialSaleEnabled = v;
+                      if (v && _c('partialSaleMarkupBasisPoints').text.isEmpty) {
+                        _c('partialSaleMarkupBasisPoints').text =
+                            _defaultMarkupPercent;
+                      }
+                    })),
                     if (_partialSaleEnabled) ...[
-                      _dropdown(
+                      _unitDropdown(
                         value: _sellablePartUnitId,
                         label: l10n.partialSaleSellablePart,
-                        items: widget.units,
-                        nameOf: (u) => u.name,
                         onChanged: (v) =>
                             setState(() => _sellablePartUnitId = v),
                         width: 200,
                       ),
                       _text(
-                          _c('partsPerFullProduct',
-                              hint: _partsPerFullProduct),
-                          l10n.partialSalePartsPerFull,
+                          _c('partsPerFullProduct'), l10n.partialSalePartsPerFull,
                           180),
                       _text(
-                          _c('sellablePartBaseQuantity',
-                              hint: _sellablePartBaseQuantity),
+                          _c('sellablePartBaseQuantity'),
                           l10n.partialSaleBaseQuantity,
                           180),
                       _text(
-                          _c('partialSaleMarkupBasisPoints',
-                              hint: _partialSaleMarkupBasisPoints),
+                          _c('partialSaleMarkupBasisPoints'),
                           l10n.partialSaleMarkupPercent,
                           180),
                     ],
-                  ],
-                ),
-                _section(l10n.itemCost),
-                Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
-                  children: [
-                    _text(_c('cost'), l10n.itemCost, 160),
-                    _text(_c('discount'), l10n.itemPurchaseDiscount, 160),
-                  ],
-                ),
-                _section(l10n.itemPrice),
-                Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
-                  children: [
-                    _text(_c('selling'), l10n.itemPrice, 150),
-                    _text(_c('subUnit'), l10n.itemSubUnitPrice, 150),
-                    _text(_c('wholesale'), l10n.itemWholesalePrice, 150),
-                    _text(_c('halfWholesale'), l10n.itemHalfWholesalePrice, 150),
-                    _text(_c('custom1'), l10n.itemCustomPrice1, 140),
-                    _text(_c('custom2'), l10n.itemCustomPrice2, 140),
-                    _text(_c('vat'), l10n.itemVatRate, 140),
                   ],
                 ),
                 _section(l10n.itemStock),
@@ -532,6 +664,16 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                     _switch('requiresPrescription', l10n.itemRequiresPrescription,
                         _requiresPrescription,
                         (v) => setState(() => _requiresPrescription = v)),
+                  ],
+                ),
+                _section(l10n.itemScientificName),
+                Wrap(
+                  spacing: AppSpacing.m,
+                  runSpacing: AppSpacing.m,
+                  children: [
+                    _text(_c('scientificName'), l10n.itemScientificName, 250),
+                    _text(_c('activeIngredient'), l10n.itemActiveIngredient, 250),
+                    _text(_c('equivalentDrug'), l10n.itemEquivalentDrug, 250),
                   ],
                 ),
                 _section(l10n.itemUsageInstructions),
@@ -593,30 +735,69 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     );
   }
 
-  Widget _dropdown<T>({
+  /// Searchable master-data dropdown with an inline "+" create button.
+  Widget _masterDropdown<T>({
     required String? value,
     required String label,
     required List<T> items,
     required String Function(T) nameOf,
     ValueChanged<String?>? onChanged,
+    MasterDataKind? kind,
     double width = 220,
   }) {
     String idOf(T item) => (item as dynamic).id as String;
-    return SizedBox(
+    final field = SearchableDropdownField<T>(
+      value: value,
+      items: items,
+      idOf: idOf,
+      nameOf: nameOf,
+      onChanged: onChanged,
+      label: label,
       width: width,
-      child: DropdownButtonFormField<String>(
-        initialValue: value,
-        isExpanded: true,
-        decoration: InputDecoration(labelText: label, isDense: true),
-        items: [
-          for (final item in items)
-            DropdownMenuItem(
-              value: idOf(item),
-              child: Text(nameOf(item), overflow: TextOverflow.ellipsis),
-            ),
-        ],
-        onChanged: onChanged,
-      ),
+    );
+    if (kind == null || widget.onCreateMasterData == null) return field;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        field,
+        _addButton(
+          AppLocalizations.of(context).itemAddNew,
+          () => _addMasterData(kind),
+          compact: true,
+        ),
+      ],
+    );
+  }
+
+  /// Unit dropdown reused by base unit, packaging (large) and sellable-part
+  /// fields; all three share the same inline "+" create flow.
+  Widget _unitDropdown({
+    required String? value,
+    required String label,
+    ValueChanged<String?>? onChanged,
+    double width = 200,
+  }) {
+    return _masterDropdown<UnitRow>(
+      value: value,
+      label: label,
+      items: _units,
+      nameOf: (u) => u.name,
+      onChanged: onChanged,
+      kind: MasterDataKind.unit,
+      width: width,
+    );
+  }
+
+  Widget _addButton(String tooltip, VoidCallback onPressed,
+      {bool compact = false}) {
+    return IconButton(
+      icon: const Icon(Icons.add_circle_outline),
+      tooltip: tooltip,
+      iconSize: 20,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+      onPressed: onPressed,
     );
   }
 

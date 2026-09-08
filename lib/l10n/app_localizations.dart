@@ -1214,11 +1214,53 @@ abstract class AppLocalizations {
   /// **'الوحدة الكبيرة'**
   String get itemLargeUnit;
 
+  /// No description provided for @itemPackagingUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'شكل التعبئة (الوحدة التجارية)'**
+  String get itemPackagingUnit;
+
   /// No description provided for @itemUnitsPerLarge.
   ///
   /// In ar, this message translates to:
   /// **'عدد الوحدات الصغرى في الكبرى'**
   String get itemUnitsPerLarge;
+
+  /// No description provided for @itemSuppliers.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموردون'**
+  String get itemSuppliers;
+
+  /// No description provided for @itemAddNew.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة جديد'**
+  String get itemAddNew;
+
+  /// No description provided for @inventoryUnitsRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'يجب تحديد الوحدة الأساسية وشكل التعبئة'**
+  String get inventoryUnitsRequired;
+
+  /// No description provided for @inventorySelectBaseUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر الوحدة الأساسية'**
+  String get inventorySelectBaseUnit;
+
+  /// No description provided for @inventorySelectLargeUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر شكل التعبئة (الوحدة الكبيرة)'**
+  String get inventorySelectLargeUnit;
+
+  /// No description provided for @inventoryUnitsPerLargeInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الوحدات الأساسية في شكل التعبئة يجب أن يكون أكبر من صفر'**
+  String get inventoryUnitsPerLargeInvalid;
 
   /// No description provided for @itemCurrentStock.
   ///
@@ -2887,6 +2929,42 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'نسبة الزيادة %'**
   String get partialSaleMarkupPercent;
+
+  /// No description provided for @partialSaleUnitRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر وحدة البيع الجزئي'**
+  String get partialSaleUnitRequired;
+
+  /// No description provided for @partialSalePartsRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل عدد الأجزاء في العبوة الكاملة'**
+  String get partialSalePartsRequired;
+
+  /// No description provided for @partialSalePartsInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الأجزاء في العبوة الكاملة يجب أن يكون أكبر من 1'**
+  String get partialSalePartsInvalid;
+
+  /// No description provided for @partialSaleBaseRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل عدد الوحدات الأساسية في الجزء'**
+  String get partialSaleBaseRequired;
+
+  /// No description provided for @partialSaleBaseInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الوحدات الأساسية في الجزء يجب أن يكون 1 على الأقل'**
+  String get partialSaleBaseInvalid;
+
+  /// No description provided for @partialSaleMarkupInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الزيادة يجب أن تكون بين 0 و100'**
+  String get partialSaleMarkupInvalid;
 
   /// No description provided for @posSearchHint.
   ///

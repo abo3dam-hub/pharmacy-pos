@@ -100,6 +100,7 @@ class ItemDraft {
     this.generalNotes,
     this.licenseNumber,
     this.units,
+    this.supplierIds = const [],
     this.partialSaleEnabled = false,
     this.sellablePartUnitId,
     this.partsPerFullProduct,
@@ -144,6 +145,7 @@ class ItemDraft {
   final String? generalNotes;
   final String? licenseNumber;
   final ItemUnitRelation? units;
+  final List<String> supplierIds;
   final bool partialSaleEnabled;
   final String? sellablePartUnitId;
   final int? partsPerFullProduct;
@@ -154,6 +156,7 @@ class ItemDraft {
   factory ItemDraft.fromRow(
     ItemRow row, {
     ItemUnitRelation? units,
+    List<String> supplierIds = const [],
   }) =>
       ItemDraft(
         primaryBarcode: row.primaryBarcode,
@@ -193,6 +196,7 @@ class ItemDraft {
         generalNotes: row.generalNotes,
         licenseNumber: row.licenseNumber,
         units: units,
+        supplierIds: supplierIds,
         partialSaleEnabled: row.partialSaleEnabled,
         sellablePartUnitId: row.sellablePartUnitId,
         partsPerFullProduct: row.partsPerFullProduct,
@@ -205,6 +209,7 @@ class ItemDraft {
     String? categoryId,
     String? subCategoryId,
     String? shelfLocation,
+    List<String>? supplierIds,
   }) =>
       ItemDraft(
         primaryBarcode: primaryBarcode,
@@ -244,6 +249,7 @@ class ItemDraft {
         generalNotes: generalNotes,
         licenseNumber: licenseNumber,
         units: units,
+        supplierIds: supplierIds ?? this.supplierIds,
         partialSaleEnabled: partialSaleEnabled,
         sellablePartUnitId: sellablePartUnitId,
         partsPerFullProduct: partsPerFullProduct,
@@ -294,6 +300,7 @@ abstract class InventoryRepository {
   Future<ItemRow> updateItem(String id, ItemDraft draft);
   Future<void> setItemActive(String id, bool active);
   Future<ItemUnitRow?> itemUnitsFor(String itemId);
+  Future<List<String>> supplierIdsForItem(String itemId);
 
   // Named lookups for the items grid
   Future<CategoryRow?> categoryById(String id);

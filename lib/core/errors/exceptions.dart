@@ -48,3 +48,8 @@ class DuplicateException extends DomainException {
   DuplicateException(String message)
       : super(DuplicateFailure(message));
 }
+
+class DatabaseException extends DomainException {
+  DatabaseException(String message, {Object? cause})
+      : super(DatabaseFailure(message, cause: cause));
+}

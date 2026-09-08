@@ -67,4 +67,30 @@ void main() {
       expect((en[key] as String).trim(), isNotEmpty);
     }
   });
+
+  test('v1.1 product-management UX keys are present in both catalogs', () {
+    const keys = [
+      'itemPackagingUnit',
+      'itemSuppliers',
+      'itemAddNew',
+      'inventoryUnitsRequired',
+      'inventorySelectBaseUnit',
+      'inventorySelectLargeUnit',
+      'inventoryUnitsPerLargeInvalid',
+      'partialSaleUnitRequired',
+      'partialSalePartsRequired',
+      'partialSalePartsInvalid',
+      'partialSaleBaseRequired',
+      'partialSaleBaseInvalid',
+      'partialSaleMarkupInvalid',
+    ];
+    final ar = readArb('app_ar.arb');
+    final en = readArb('app_en.arb');
+    for (final key in keys) {
+      expect(ar.containsKey(key), isTrue, reason: 'Arabic missing $key');
+      expect(en.containsKey(key), isTrue, reason: 'English missing $key');
+      expect((ar[key] as String).trim(), isNotEmpty);
+      expect((en[key] as String).trim(), isNotEmpty);
+    }
+  });
 }

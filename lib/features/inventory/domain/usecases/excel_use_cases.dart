@@ -79,7 +79,9 @@ class ImportItemsUseCase {
       final existingId = row.barcode == null ? null : await _findByScanned(row.barcode!);
       try {
         if (existingId != null) {
-          await _repo.updateItem(existingId, row.draft);
+          final supplierIds = await _repo.supplierIdsForItem(existingId);
+          await _repo.updateItem(
+              existingId, row.draft.copyWith(supplierIds: supplierIds));
           await _audit.write(
             db,
             userId: actingUserId,

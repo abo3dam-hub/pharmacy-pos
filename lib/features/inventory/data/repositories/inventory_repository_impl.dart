@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart' hide isNull;
+import 'package:sqlite3/sqlite3.dart' show SqliteException;
 
 import '../../../../core/data_grid/page_request.dart';
 import '../../../../core/errors/exceptions.dart';
@@ -7,6 +8,7 @@ import '../../../../core/util/ids.dart';
 import '../../../../data/daos/batch_dao.dart';
 import '../../../../data/daos/category_dao.dart';
 import '../../../../data/daos/item_dao.dart';
+import '../../../../data/daos/item_supplier_dao.dart';
 import '../../../../data/daos/manufacturer_dao.dart';
 import '../../../../data/daos/stock_movement_dao.dart';
 import '../../../../data/daos/therapeutic_group_dao.dart';
@@ -29,6 +31,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
     this._unitDao,
     this._batchDao,
     this._movementDao,
+    this._itemSupplierDao,
     this._stock,
   );
 
@@ -40,6 +43,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
   final UnitDao _unitDao;
   final BatchDao _batchDao;
   final StockMovementDao _movementDao;
+  final ItemSupplierDao _itemSupplierDao;
   final StockService _stock;
 
   @override
@@ -71,13 +75,20 @@ class InventoryRepositoryImpl implements InventoryRepository {
       .getSingleOrNull();
 
   @override
+  Future<List<String>> supplierIdsForItem(String itemId) =>
+      _itemSupplierDao.supplierIdsForItem(itemId);
+
+  @override
   Future<ItemRow> createItem(ItemDraft draft) async {
     final id = ItemDao.newItemId();
     final now = DateTime.now().millisecondsSinceEpoch;
-    await _db.transaction(() async {
-      await _db.into(_db.items).insert(_toInsertCompanion(draft, id: id, at: now));
-      await _applyUnits(draft.units, itemId: id);
-    });
+    await _guarded(() => _db.transaction(() async {
+          await _db
+              .into(_db.items)
+              .insert(_toInsertCompanion(draft, id: id, at: now));
+          await _applyUnits(draft.units, itemId: id);
+          await _itemSupplierDao.setForItem(id, draft.supplierIds);
+        }));
     final row = await _itemDao.byId(id);
     if (row == null) throw NotFoundException('المنتج لم يُحفظ');
     return row;
@@ -88,15 +99,16 @@ class InventoryRepositoryImpl implements InventoryRepository {
     final existing = await _itemDao.byId(id);
     if (existing == null) throw NotFoundException('المنتج رقم $id غير موجود');
     final now = DateTime.now().millisecondsSinceEpoch;
-    await _db.transaction(() async {
-      await (_db.update(_db.items)..where((i) => i.id.equals(id)))
-          .write(_toUpdateCompanion(draft, at: now));
-      // Keep the existing unit relation when the update does not carry one
-      // (e.g. bulk category/shelf edits); `createItem` still requires units.
-      if (draft.units != null) {
-        await _applyUnits(draft.units, itemId: id);
-      }
-    });
+    await _guarded(() => _db.transaction(() async {
+          await (_db.update(_db.items)..where((i) => i.id.equals(id)))
+              .write(_toUpdateCompanion(draft, at: now));
+          // Keep the existing unit relation when the update does not carry one
+          // (e.g. bulk category/shelf edits); `createItem` still requires units.
+          if (draft.units != null) {
+            await _applyUnits(draft.units, itemId: id);
+          }
+          await _itemSupplierDao.setForItem(id, draft.supplierIds);
+        }));
     final row = await _itemDao.byId(id);
     if (row == null) throw NotFoundException('المنتج رقم $id غير موجود');
     return row;
@@ -116,6 +128,21 @@ class InventoryRepositoryImpl implements InventoryRepository {
       largeUnitId: relation.largeUnitId,
       unitsPerLarge: relation.unitsPerLarge,
     );
+  }
+
+  /// Maps raw SQLite constraint errors (e.g. a duplicate unique barcode) onto
+  /// the domain exception hierarchy so the UI can render a specific message
+  /// instead of a generic save error.
+  Future<T> _guarded<T>(Future<T> Function() action) async {
+    try {
+      return await action();
+    } on SqliteException catch (e) {
+      // SQLITE_CONSTRAINT (19) / SQLITE_CONSTRAINT_UNIQUE (2067).
+      if (e.extendedResultCode == 2067 || e.resultCode == 19) {
+        throw DuplicateException('البيانات موجودة مسبقًا (ربما الباركود مستخدم بالفعل)');
+      }
+      throw DatabaseException('فشل حفظ المنتج في قاعدة البيانات', cause: e);
+    }
   }
 
   ItemsCompanion _toInsertCompanion(ItemDraft d,

@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -577,7 +576,29 @@ class AppLocalizationsAr extends AppLocalizations {
   String get itemLargeUnit => 'الوحدة الكبيرة';
 
   @override
+  String get itemPackagingUnit => 'شكل التعبئة (الوحدة التجارية)';
+
+  @override
   String get itemUnitsPerLarge => 'عدد الوحدات الصغرى في الكبرى';
+
+  @override
+  String get itemSuppliers => 'الموردون';
+
+  @override
+  String get itemAddNew => 'إضافة جديد';
+
+  @override
+  String get inventoryUnitsRequired => 'يجب تحديد الوحدة الأساسية وشكل التعبئة';
+
+  @override
+  String get inventorySelectBaseUnit => 'اختر الوحدة الأساسية';
+
+  @override
+  String get inventorySelectLargeUnit => 'اختر شكل التعبئة (الوحدة الكبيرة)';
+
+  @override
+  String get inventoryUnitsPerLargeInvalid =>
+      'عدد الوحدات الأساسية في شكل التعبئة يجب أن يكون أكبر من صفر';
 
   @override
   String get itemCurrentStock => 'الرصيد الحالي';
@@ -1437,6 +1458,26 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get partialSaleMarkupPercent => 'نسبة الزيادة %';
+
+  @override
+  String get partialSaleUnitRequired => 'اختر وحدة البيع الجزئي';
+
+  @override
+  String get partialSalePartsRequired => 'أدخل عدد الأجزاء في العبوة الكاملة';
+
+  @override
+  String get partialSalePartsInvalid =>
+      'عدد الأجزاء في العبوة الكاملة يجب أن يكون أكبر من 1';
+
+  @override
+  String get partialSaleBaseRequired => 'أدخل عدد الوحدات الأساسية في الجزء';
+
+  @override
+  String get partialSaleBaseInvalid =>
+      'عدد الوحدات الأساسية في الجزء يجب أن يكون 1 على الأقل';
+
+  @override
+  String get partialSaleMarkupInvalid => 'نسبة الزيادة يجب أن تكون بين 0 و100';
 
   @override
   String get posSearchHint => 'ابحث عن دواء بالاسم أو الباركود...';

@@ -69,7 +69,7 @@ void main() {
       destinationDir: p.join(work.path, 'extracted'),
     );
     expect(extracted.manifest.formatVersion, kBackupFormatVersion);
-    expect(extracted.manifest.schemaVersion, 8);
+    expect(extracted.manifest.schemaVersion, 9);
     expect(extracted.manifest.databaseFileName,
         BackupArchiveLayout.databaseFileName);
     // The extracted database opens and is intact.
@@ -151,7 +151,7 @@ void main() {
     final manifest = BackupManifest(
       formatVersion: kBackupFormatVersion,
       applicationVersion: 'test',
-      schemaVersion: 8,
+      schemaVersion: 9,
       createdAtMillis: DateTime.now().millisecondsSinceEpoch,
       databaseFileName: BackupArchiveLayout.databaseFileName,
       databaseSizeBytes: 4,

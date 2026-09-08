@@ -4,6 +4,7 @@ import '../../data/daos/batch_dao.dart';
 import '../../data/daos/category_dao.dart';
 import '../../data/daos/customer_dao.dart';
 import '../../data/daos/item_dao.dart';
+import '../../data/daos/item_supplier_dao.dart';
 import '../../data/daos/manufacturer_dao.dart';
 import '../../data/daos/prescription_dao.dart';
 import '../../data/daos/purchase_dao.dart';
@@ -139,6 +140,7 @@ void setupDependencies() {
   getIt.registerLazySingleton<UnitDao>(() => UnitDao(db));
   getIt.registerLazySingleton<BatchDao>(() => BatchDao(db));
   getIt.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
+  getIt.registerLazySingleton<ItemSupplierDao>(() => ItemSupplierDao(db));
   getIt.registerLazySingleton<CategoryDao>(() => CategoryDao(db));
   getIt.registerLazySingleton<ManufacturerDao>(() => ManufacturerDao(db));
   getIt.registerLazySingleton<TherapeuticGroupDao>(
@@ -500,6 +502,7 @@ void _registerInventory(AppDatabase db) {
       getIt<UnitDao>(),
       getIt<BatchDao>(),
       getIt<StockMovementDao>(),
+      getIt<ItemSupplierDao>(),
       getIt<StockService>(),
     ),
   );

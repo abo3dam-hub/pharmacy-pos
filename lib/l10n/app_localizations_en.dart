@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -578,7 +577,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemLargeUnit => 'Large unit';
 
   @override
+  String get itemPackagingUnit => 'Packaging (commercial unit)';
+
+  @override
   String get itemUnitsPerLarge => 'Base units per large unit';
+
+  @override
+  String get itemSuppliers => 'Suppliers';
+
+  @override
+  String get itemAddNew => 'Add new';
+
+  @override
+  String get inventoryUnitsRequired => 'Select the base unit and packaging';
+
+  @override
+  String get inventorySelectBaseUnit => 'Select the base unit';
+
+  @override
+  String get inventorySelectLargeUnit => 'Select the packaging (large) unit';
+
+  @override
+  String get inventoryUnitsPerLargeInvalid =>
+      'Base units per packaging unit must be greater than zero';
 
   @override
   String get itemCurrentStock => 'Current stock';
@@ -1441,6 +1462,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get partialSaleMarkupPercent => 'Markup %';
+
+  @override
+  String get partialSaleUnitRequired => 'Select the sellable-part unit';
+
+  @override
+  String get partialSalePartsRequired => 'Enter parts per full product';
+
+  @override
+  String get partialSalePartsInvalid =>
+      'Parts per full product must be greater than 1';
+
+  @override
+  String get partialSaleBaseRequired => 'Enter base units per part';
+
+  @override
+  String get partialSaleBaseInvalid => 'Base units per part must be at least 1';
+
+  @override
+  String get partialSaleMarkupInvalid => 'Markup must be between 0 and 100%';
 
   @override
   String get posSearchHint => 'Search by name or barcode...';

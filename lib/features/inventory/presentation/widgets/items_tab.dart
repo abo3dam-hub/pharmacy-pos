@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -17,12 +18,15 @@ import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/search_field.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../shared/database/app_database.dart';
+import '../../../suppliers/domain/repositories/supplier_repository.dart';
 import '../../application/inventory_controller.dart';
 import '../../application/master_data_controller.dart';
 import '../../domain/entities/inventory_item.dart';
 import '../../domain/repositories/inventory_repository.dart';
 import '../widgets/bulk_dialog.dart';
 import '../widgets/item_dialog.dart';
+import '../widgets/master_data_dialog.dart';
 import '../widgets/status_chips.dart';
 import '../../../../core/widgets/app_rtl_icons.dart';
 
@@ -36,6 +40,8 @@ class ItemsTab extends ConsumerStatefulWidget {
 }
 
 class _ItemsTabState extends ConsumerState<ItemsTab> {
+  List<SupplierRow> _suppliers = const [];
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +55,18 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       await ref
           .read(masterDataControllerProvider.notifier)
           .load(actingRoleId: auth.actingRoleId);
+      // Preferred suppliers for the product form (`suppliers.view`); roles
+      // without that permission simply see an empty supplier picker.
+      try {
+        final suppliers = await ref
+            .read(allSuppliersUseCaseProvider)
+            .call(actingRoleId: auth.actingRoleId);
+        if (mounted) {
+          setState(() => _suppliers = suppliers);
+        }
+      } on AppException {
+        if (mounted) setState(() => _suppliers = const []);
+      }
     });
   }
 
@@ -66,6 +84,12 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
     final l10n = AppLocalizations.of(context);
     final message = switch (failure) {
       UnauthorizedFailure() => l10n.authPermissionDenied,
+      ValidationFailure() => failure.message,
+      DuplicateFailure() => failure.message,
+      NotFoundFailure() => failure.message,
+      InsufficientStockFailure() => failure.message,
+      ExpiredBatchFailure() => failure.message,
+      InvalidOperationFailure() => failure.message,
       _ => l10n.authSaveError,
     };
     ScaffoldMessenger.of(context)
@@ -88,6 +112,8 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
     final l10n = AppLocalizations.of(context);
     final master = ref.read(masterDataControllerProvider);
     if (master.status != MasterDataStatus.ready) return;
+    final defaultMarkup = await _partialSaleMarkupDefault();
+    if (!mounted) return;
     final result = await showItemFormDialog(
       context,
       title: l10n.inventoryItemAddTitle,
@@ -96,6 +122,10 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       manufacturers: master.manufacturers,
       groups: master.groups,
       units: master.units,
+      suppliers: _suppliers,
+      onCreateMasterData: _createMasterData,
+      onCreateSupplier: _createSupplier,
+      defaultPartialSaleMarkupBasisPoints: defaultMarkup,
     );
     if (result == null || !mounted) return;
     final outcome = await ref
@@ -115,6 +145,14 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
     final l10n = AppLocalizations.of(context);
     final master = ref.read(masterDataControllerProvider);
     if (master.status != MasterDataStatus.ready) return;
+    List<String> supplierIds = const [];
+    try {
+      supplierIds = await ref
+          .read(inventoryRepositoryProvider)
+          .supplierIdsForItem(view.item.id);
+    } on AppException {
+      supplierIds = const [];
+    }
     final initial = ItemDraft.fromRow(
       view.item,
       units: view.units == null
@@ -124,7 +162,10 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
               largeUnitId: view.units!.largeUnitId,
               unitsPerLarge: view.units!.unitsPerLarge,
             ),
+      supplierIds: supplierIds,
     );
+    final defaultMarkup = await _partialSaleMarkupDefault();
+    if (!mounted) return;
     final result = await showItemFormDialog(
       context,
       title: l10n.inventoryItemEditTitle,
@@ -134,6 +175,10 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       manufacturers: master.manufacturers,
       groups: master.groups,
       units: master.units,
+      suppliers: _suppliers,
+      onCreateMasterData: _createMasterData,
+      onCreateSupplier: _createSupplier,
+      defaultPartialSaleMarkupBasisPoints: defaultMarkup,
     );
     if (result == null || !mounted) return;
     final outcome = await ref
@@ -146,6 +191,81 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
         ..showSnackBar(SnackBar(content: Text(l10n.inventoryUpdatedMessage)));
     } else {
       _showFailure(outcome);
+    }
+  }
+
+  Future<int> _partialSaleMarkupDefault() async {
+    final value = await ref
+        .read(settingsDaoProvider)
+        .getInt('partial_sale_markup_basis_points');
+    return value ?? 1000;
+  }
+
+  /// Inline master-data creation used by the product form: persists via the
+  /// audited [MasterDataController] then returns the freshly loaded row so the
+  /// form can select it immediately.
+  Future<Object?> _createMasterData(
+      MasterDataKind kind, MasterDataDraft draft) async {
+    final mc = ref.read(masterDataControllerProvider.notifier);
+    final failure = switch (kind) {
+      MasterDataKind.category => await mc.createCategory(draft,
+          actingUserId: _actingUserId, actingRoleId: _actingRoleId),
+      MasterDataKind.subCategory => await mc.createSubCategory(draft,
+          actingUserId: _actingUserId, actingRoleId: _actingRoleId),
+      MasterDataKind.manufacturer => await mc.createManufacturer(draft,
+          actingUserId: _actingUserId, actingRoleId: _actingRoleId),
+      MasterDataKind.group => await mc.createGroup(draft,
+          actingUserId: _actingUserId, actingRoleId: _actingRoleId),
+      MasterDataKind.unit => await mc.createUnit(draft,
+          actingUserId: _actingUserId, actingRoleId: _actingRoleId),
+    };
+    if (failure != null) {
+      _showFailure(failure);
+      return null;
+    }
+    final state = ref.read(masterDataControllerProvider);
+    final name = draft.name.trim();
+    switch (kind) {
+      case MasterDataKind.category:
+        return _firstByName(state.categories, name);
+      case MasterDataKind.subCategory:
+        return _firstSubCategoryByName(state.subCategories, draft, name);
+      case MasterDataKind.manufacturer:
+        return _firstByName(state.manufacturers, name);
+      case MasterDataKind.group:
+        return _firstByName(state.groups, name);
+      case MasterDataKind.unit:
+        return _firstByName(state.units, name);
+    }
+  }
+
+  T? _firstByName<T extends Object>(List<T> rows, String name) {
+    for (final row in rows) {
+      if ((row as dynamic).name?.trim() == name) return row;
+    }
+    return null;
+  }
+
+  SubCategoryRow? _firstSubCategoryByName(
+      List<SubCategoryRow> rows, MasterDataDraft draft, String name) {
+    for (final row in rows) {
+      if (row.categoryId == draft.categoryId && row.name.trim() == name) {
+        return row;
+      }
+    }
+    return null;
+  }
+
+  Future<SupplierRow?> _createSupplier(SupplierDraft draft) async {
+    try {
+      return await ref.read(createSupplierUseCaseProvider).call(
+            draft,
+            actingUserId: _actingUserId,
+            actingRoleId: _actingRoleId,
+          );
+    } on AppException catch (e) {
+      _showFailure(e.failure);
+      return null;
     }
   }
 

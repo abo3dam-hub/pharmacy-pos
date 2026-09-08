@@ -11,13 +11,13 @@ import 'package:sqlite3/sqlite3.dart' as sqlite3;
 import 'helpers.dart';
 
 /// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5/9/10) for
-/// v1→v8 upgrade — implementers must keep this mirror in lockstep with
+/// v1→v9 upgrade — implementers must keep this mirror in lockstep with
 /// `AppDatabase._migrate` in `app_database.dart`.
 class _V1Database extends AppDatabase {
   _V1Database(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -132,6 +132,9 @@ class _V1Database extends AppDatabase {
               await ensureAccountingPermissions(this);
             }
           }
+          if (from < 9) {
+            await m.createTable(itemSuppliers);
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -156,7 +159,7 @@ void main() {
 
     File dbFile() => File('${dir.path}/store.db');
 
-    test('fresh database creates at schema v8 with all columns', () async {
+    test('fresh database creates at schema v9 with all columns', () async {
       ensureSqlite();
       final path = dbFile().path;
 
@@ -165,11 +168,11 @@ void main() {
       final batchId = await insertBatch(db, itemId,
           quantityBase: 7, expiryDays: 90, unitCostMicros: 5000);
 
-      // Verify schema version is 8.
+      // Verify schema version is 9.
       final userVersion =
           await db.customSelect('PRAGMA user_version').getSingle();
-      expect(userVersion.data.values.first, 8,
-          reason: 'fresh DB must be schema v8');
+      expect(userVersion.data.values.first, 9,
+          reason: 'fresh DB must be schema v9');
 
       // Verify v7 Phase 9 additions: category master seeded + expenses columns.
       final categories = await db.select(db.expenseCategories).get();
@@ -280,7 +283,7 @@ void main() {
       expect(reopenedItem.currentStockBase, 7);
       final reopenedVersion =
           await reopened.customSelect('PRAGMA user_version').getSingle();
-      expect(reopenedVersion.data.values.first, 8);
+      expect(reopenedVersion.data.values.first, 9);
 
       // Verify v8 Phase 10 additions: reversing columns on journal_entries,
       // accounting_periods table, and new system accounts.
@@ -297,19 +300,24 @@ void main() {
       await reopened
           .select(reopened.accountingPeriods)
           .get(); // table exists without error
+
+      // Verify v9 additions: the item↔supplier junction table exists.
+      await reopened
+          .select(reopened.itemSuppliers)
+          .get(); // table exists without error
       await reopened.close();
     });
 
-    test('v1 → v8 migration adds all Phase 6/7.5/9/10 columns without data loss',
+    test('v1 → v9 migration adds all Phase 6/7.5/9/10 additions without data loss',
         () async {
       ensureSqlite();
       final path = dbFile().path;
 
-      // Create a v8 database with data (fresh createAll seeds v8 + an expense
+      // Create a v9 database with data (fresh createAll seeds v9 + an expense
       // row that must survive the simulated downgrade).
       final db = AppDatabase.fromFilePath(path);
       final itemId = await insertItem(db);
-      expect(db.schemaVersion, 8);
+      expect(db.schemaVersion, 9);
       final preNow = DateTime.now().millisecondsSinceEpoch;
       await db.into(db.expenses).insert(
             ExpensesCompanion.insert(
@@ -367,19 +375,20 @@ void main() {
       raw.execute('DROP TABLE IF EXISTS accounting_periods');
       raw.execute('DELETE FROM accounts WHERE code = \'1099\'');
       raw.execute('DELETE FROM accounts WHERE code = \'4002\'');
+      raw.execute('DROP TABLE IF EXISTS item_suppliers');
       raw.execute('PRAGMA user_version = 1');
       raw.dispose();
       await db.close();
 
-      // Reopen under the working schema: onUpgrade(1 → 8) recreates everything.
+      // Reopen under the working schema: onUpgrade(1 → 9) recreates everything.
       final upgraded = _V1Database(NativeDatabase(File(path)));
 
-      // Verify user_version is 8 after migration.
+      // Verify user_version is 9 after migration.
       final userVersion = await upgraded
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(userVersion.data.values.first, 8,
-          reason: 'v1 → v8 migration must set user_version to 8');
+      expect(userVersion.data.values.first, 9,
+          reason: 'v1 → v9 migration must set user_version to 9');
 
       // Verify app_settings created.
       final settings = await upgraded.select(upgraded.appSettings).get();
@@ -500,6 +509,23 @@ void main() {
           .getSingle();
       expect(je.isReversal, false,
           reason: 'journal reversal column added on v8 upgrade');
+
+      // v9: the item↔supplier junction table exists after upgrade and accepts
+      // a link row (FKs intact).
+      final migSupId = await insertSupplier(upgraded, name: 'مورد الترقية');
+      final linkId = 'linksup_mig';
+      await upgraded.into(upgraded.itemSuppliers).insert(
+            ItemSuppliersCompanion.insert(
+              id: linkId,
+              itemId: itemId,
+              supplierId: migSupId,
+            ),
+          );
+      final link = await (upgraded.select(upgraded.itemSuppliers)
+            ..where((s) => s.id.equals(linkId)))
+          .getSingle();
+      expect(link.itemId, itemId,
+          reason: 'item_suppliers table created on v9 upgrade');
 
       await upgraded.close();
     });
