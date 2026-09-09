@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pharmacy_pos/core/constants/permission_codes.dart';
 import 'package:pharmacy_pos/core/di/providers.dart';
@@ -146,6 +147,37 @@ void main() {
       final logouts = logs.where((l) => l.action == 'logout').toList();
       expect(logouts, hasLength(1));
       expect(logouts.single.userId, 'user_admin');
+    });
+
+    test('malformed stored hash never hangs the login button', () async {
+      final h = await buildAuthHarness();
+      addTearDown(h.db.close);
+      addTearDown(h.container.dispose);
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await h.db.into(h.db.users).insert(
+            UsersCompanion.insert(
+              id: 'user_corrupt',
+              username: 'legacy',
+              passwordHash: 'legacy-plaintext-not-bcrypt',
+              fullName: 'مستخدم قديم',
+              roleId: UserRole.cashier.roleId,
+              isActive: const Value(true),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+      final notifier = h.container.read(authControllerProvider.notifier);
+      final ok =
+          await notifier.login('legacy', 'legacy-plaintext-not-bcrypt');
+
+      expect(ok, isFalse);
+      final state = h.container.read(authControllerProvider);
+      expect(state.status, AuthStatus.unauthenticated);
+      // The spinner must release: submitting came back down.
+      expect(state.submitting, isFalse);
+      expect(state.error, AuthError.invalidCredentials);
     });
 
     test('the real login pipeline records lastLoginAt', () async {

@@ -79,29 +79,39 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<bool> login(String username, String password) async {
     state = state.copyWith(submitting: true, error: AuthError.invalidCredentials);
-    final result = await _login(username, password);
-    if (result.isSuccess) {
-      final user = result.user!;
-      final permissions = await _listPermissions.call(user.roleId);
-      state = AuthState(
-        session: AuthSession(
-          user: user,
-          loggedInAt: DateTime.now().millisecondsSinceEpoch,
-        ),
-        permissions: Set.unmodifiable(permissions),
-        status: AuthStatus.authenticated,
+    try {
+      final result = await _login(username, password);
+      if (result.isSuccess) {
+        final user = result.user!;
+        final permissions = await _listPermissions.call(user.roleId);
+        state = AuthState(
+          session: AuthSession(
+            user: user,
+            loggedInAt: DateTime.now().millisecondsSinceEpoch,
+          ),
+          permissions: Set.unmodifiable(permissions),
+          status: AuthStatus.authenticated,
+        );
+        await audit?.call(user: user, success: true, note: 'login_success');
+        return true;
+      }
+      state = state.copyWith(
+        submitting: false,
+        error: result.failure == LoginFailure.inactive
+            ? AuthError.inactive
+            : AuthError.invalidCredentials,
       );
-      await audit?.call(user: user, success: true, note: 'login_success');
-      return true;
+      await audit?.call(user: result.subject, success: false, note: 'login_failed');
+      return false;
+    } on Exception {
+      // Never leave the login button stuck spinning: any storage hiccup maps
+      // to the generic credential failure and the form recovers.
+      state = state.copyWith(
+        submitting: false,
+        error: AuthError.invalidCredentials,
+      );
+      return false;
     }
-    state = state.copyWith(
-      submitting: false,
-      error: result.failure == LoginFailure.inactive
-          ? AuthError.inactive
-          : AuthError.invalidCredentials,
-    );
-    await audit?.call(user: result.subject, success: false, note: 'login_failed');
-    return false;
   }
 
   Future<void> logout() async {

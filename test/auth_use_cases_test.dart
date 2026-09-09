@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pharmacy_pos/core/constants/permission_codes.dart';
 import 'package:pharmacy_pos/core/data_grid/page_request.dart';
@@ -12,6 +13,7 @@ import 'package:pharmacy_pos/features/auth/domain/usecases/list_users.dart';
 import 'package:pharmacy_pos/features/auth/domain/usecases/login.dart';
 import 'package:pharmacy_pos/features/auth/domain/usecases/reactivate_user.dart';
 import 'package:pharmacy_pos/features/auth/domain/usecases/update_user.dart';
+import 'package:pharmacy_pos/shared/database/app_database.dart';
 
 import 'auth_harness.dart';
 
@@ -36,6 +38,15 @@ void main() {
     test('enforces the 6-character minimum', () {
       expect(passwords.isValidLength('abc'), isFalse);
       expect(passwords.isValidLength('abcdef'), isTrue);
+    });
+
+    test('malformed stored hash rejects cleanly instead of throwing', () {
+      expect(passwords.verify('Admin@123', ''), isFalse);
+      expect(passwords.verify('Admin@123', 'legacy-plaintext'), isFalse);
+      // Truncated bcrypt hashes used to make checkpw throw (invalid salt
+      // revision), which hung the login spinner.
+      final full = passwords.hash('Admin@123');
+      expect(passwords.verify('Admin@123', full.substring(0, 20)), isFalse);
     });
   });
 
@@ -75,6 +86,70 @@ void main() {
       expect(result.subject, isNotNull);
       final after = await h.repository.findByUsername('admin');
       expect(after!.lastLoginAt, before!.lastLoginAt);
+    });
+
+    test('malformed stored hash rejects cleanly instead of throwing', () async {
+      final h = await buildAuthHarness();
+      addTearDown(h.db.close);
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await h.db.into(h.db.users).insert(
+            UsersCompanion.insert(
+              id: 'user_corrupt',
+              username: 'legacy',
+              passwordHash: 'legacy-plaintext-not-bcrypt',
+              fullName: 'مستخدم قديم',
+              roleId: cashierRole,
+              isActive: const Value(true),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+      final result = await LoginUseCase(h.repository, passwords)
+          .call('legacy', 'legacy-plaintext-not-bcrypt');
+      expect(result.isSuccess, isFalse);
+      expect(result.failure, LoginFailure.invalidCredentials);
+      expect(result.subject?.username, 'legacy');
+    });
+
+    test('duplicate usernames from a restored store still log in', () async {
+      final h = await buildAuthHarness();
+      addTearDown(h.db.close);
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final oldHash = passwords.hash('Repeat@123');
+      // Two rows sharing one username: the oldest must win deterministically
+      // instead of findByUsername throwing on multiple matches.
+      await h.db.into(h.db.users).insert(
+            UsersCompanion.insert(
+              id: 'user_dup_old',
+              username: 'dup',
+              passwordHash: oldHash,
+              fullName: 'الأقدم',
+              roleId: cashierRole,
+              isActive: const Value(true),
+              createdAt: now - 100000,
+              updatedAt: now - 100000,
+            ),
+          );
+      await h.db.into(h.db.users).insert(
+            UsersCompanion.insert(
+              id: 'user_dup_new',
+              username: 'DUP',
+              passwordHash: passwords.hash('Repeat@123'),
+              fullName: 'الأحدث',
+              roleId: cashierRole,
+              isActive: const Value(true),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+      final result =
+          await LoginUseCase(h.repository, passwords).call('dup', 'Repeat@123');
+      expect(result.isSuccess, isTrue);
+      expect(result.user!.id, 'user_dup_old');
     });
 
     test('inactive accounts are rejected before verification', () async {

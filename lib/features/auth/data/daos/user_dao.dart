@@ -37,10 +37,16 @@ class UserDao {
       (_db.select(_db.roles)..where((r) => r.id.equals(roleId))).getSingleOrNull();
 
   Future<AppUser?> findByUsername(String username) async {
-    final row = await (_db.select(_db.users)
-          ..where((u) => u.username.lower().equals(username.toLowerCase())))
-        .getSingleOrNull();
-    if (row == null) return null;
+    // Tolerant to duplicate rows from restored/imported stores: instead of
+    // throwing on multiple matches (which would hang the login flow), the
+    // oldest matching account wins deterministically.
+    final rows = await (_db.select(_db.users)
+          ..where((u) => u.username.lower().equals(username.toLowerCase()))
+          ..orderBy([(u) => OrderingTerm.asc(u.createdAt)])
+          ..limit(1))
+        .get();
+    if (rows.isEmpty) return null;
+    final row = rows.single;
     return _map(row, await _roleFor(row.roleId));
   }
 

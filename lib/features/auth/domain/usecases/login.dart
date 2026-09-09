@@ -46,12 +46,19 @@ class LoginUseCase {
     if (!_passwords.verify(password, user.passwordHash)) {
       return LoginResult.failure(LoginFailure.invalidCredentials, user: user);
     }
-    await _repository.recordLogin(
-      user.id,
-      atMillis: DateTime.now().millisecondsSinceEpoch,
-    );
-    // Re-read so the returned user reflects the recorded login timestamp.
-    final fresh = await _repository.findById(user.id);
-    return LoginResult.success(fresh ?? user);
+    try {
+      await _repository.recordLogin(
+        user.id,
+        atMillis: DateTime.now().millisecondsSinceEpoch,
+      );
+      // Re-read so the returned user reflects the recorded login timestamp.
+      final fresh = await _repository.findById(user.id);
+      return LoginResult.success(fresh ?? user);
+    } on Exception {
+      // A storage hiccup must never surface as an unhandled error on the login
+      // screen; the attempt is rejected with the same generic credential
+      // failure the UI already maps.
+      return LoginResult.failure(LoginFailure.invalidCredentials, user: user);
+    }
   }
 }

@@ -13,8 +13,18 @@ class PasswordService {
   String hash(String password) => BCrypt.hashpw(password, BCrypt.gensalt());
 
   /// Constant-time-safe bcrypt verification.
-  bool verify(String password, String hash) =>
-      BCrypt.checkpw(password, hash);
+  ///
+  /// A malformed or non-bcrypt stored hash (corrupt store / legacy data) must
+  /// reject the attempt cleanly — never throw — so a bad row can't hang the
+  /// login UI.
+  bool verify(String password, String hash) {
+    if (hash.isEmpty) return false;
+    try {
+      return BCrypt.checkpw(password, hash);
+    } on ArgumentError {
+      return false;
+    }
+  }
 
   bool isValidLength(String password) => password.length >= minLength;
 }
