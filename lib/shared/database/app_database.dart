@@ -11,6 +11,7 @@ import '../models/enum_value_converter.dart';
 import 'seed_data.dart';
 import 'tables/accounting_periods.dart';
 import 'tables/accounts.dart';
+import 'tables/active_ingredients.dart';
 import 'tables/app_settings.dart';
 import 'tables/audit_logs.dart';
 import 'tables/backups.dart';
@@ -21,6 +22,9 @@ import 'tables/customer_payments.dart';
 import 'tables/customers.dart';
 import 'tables/expense_categories.dart';
 import 'tables/expenses.dart';
+import 'tables/indications.dart';
+import 'tables/item_active_ingredients.dart';
+import 'tables/item_indications.dart';
 import 'tables/item_suppliers.dart';
 import 'tables/item_units.dart';
 import 'tables/items.dart';
@@ -57,6 +61,10 @@ part 'app_database.g.dart';
   ItemUnits,
   Items,
   ItemSuppliers,
+  ActiveIngredients,
+  ItemActiveIngredients,
+  Indications,
+  ItemIndications,
   Batches,
   StockMovements,
   Suppliers,
@@ -100,7 +108,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -259,6 +267,15 @@ class AppDatabase extends _$AppDatabase {
       // `item_suppliers` carries its own composite unique key + FK indexes so
       // existing databases migrate in place without touching purchase history.
       await m.createTable(itemSuppliers);
+    }
+    if (from < 10) {
+      // Phase 16 product master data: reusable active-ingredient + indication
+      // lists and their per-item junctions. All four tables are brand new —
+      // forward-only, nothing else is rewritten.
+      await m.createTable(activeIngredients);
+      await m.createTable(itemActiveIngredients);
+      await m.createTable(indications);
+      await m.createTable(itemIndications);
     }
   }
 }

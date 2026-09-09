@@ -24,6 +24,7 @@ import '../../features/accounts/presentation/pages/periods_page.dart';
 import '../../features/audit/presentation/pages/audit_log_page.dart';
 import '../../features/customers/presentation/pages/customer_statement_page.dart';
 import '../../features/customers/presentation/pages/customers_page.dart';
+import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/expenses/presentation/pages/expenses_page.dart';
 import '../../features/inventory/presentation/pages/batches_page.dart';
 import '../../features/inventory/presentation/pages/inventory_page.dart';
@@ -299,6 +300,7 @@ bool _hasAnyReportPermission(Set<String> permissions) {
 /// Placeholder modules render `SectionPlaceholder`; real modules return their
 /// page. `/users` is the first built module (§16).
 Widget _sectionPage(AppSection section, BuildContext context) {
+  if (section == AppSection.dashboard) return const DashboardPage();
   if (section == AppSection.sale) return const PosWorkspacePage();
   if (section == AppSection.users) return const AdminHubPage();
   if (section == AppSection.inventory) return const InventoryPage();

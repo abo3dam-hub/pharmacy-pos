@@ -581,6 +581,251 @@ class _UnitsTabState extends ConsumerState<UnitsTab> {
   }
 }
 
+/// §4.2b — active ingredients registry.
+class ActiveIngredientsTab extends ConsumerStatefulWidget {
+  const ActiveIngredientsTab({super.key});
+
+  @override
+  ConsumerState<ActiveIngredientsTab> createState() =>
+      _ActiveIngredientsTabState();
+}
+
+class _ActiveIngredientsTabState extends ConsumerState<ActiveIngredientsTab> {
+  bool get _canEdit =>
+      ref.read(authControllerProvider).permissions.contains(Perm.inventoryEdit);
+  String? get _actingUserId => ref.read(authControllerProvider).user?.id;
+  String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
+
+  void _snack(bool ok) {
+    final l10n = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(ok ? l10n.masterDataSavedMessage : l10n.authSaveError),
+      ));
+  }
+
+  Future<void> _add() async {
+    final l10n = AppLocalizations.of(context);
+    final result = await showMasterDataFormDialog(
+      context,
+      kind: MasterDataKind.activeIngredient,
+      title: l10n.activeIngredientsAdd,
+    );
+    if (result == null || !mounted) return;
+    final failure = await ref.read(masterDataControllerProvider.notifier)
+        .createActiveIngredient(result.draft,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure != null) return;
+    _snack(true);
+  }
+
+  Future<void> _edit(ActiveIngredientRow row) async {
+    final l10n = AppLocalizations.of(context);
+    final result = await showMasterDataFormDialog(
+      context,
+      kind: MasterDataKind.activeIngredient,
+      title: l10n.activeIngredientsEditTitle,
+      initial: MasterDataDraft(
+        name: row.name,
+        nameEn: row.nameEn,
+        description: row.description,
+      ),
+    );
+    if (result == null || !mounted) return;
+    final failure = await ref.read(masterDataControllerProvider.notifier)
+        .updateActiveIngredient(row.id, result.draft,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure != null) return;
+    _snack(true);
+  }
+
+  Future<void> _toggle(ActiveIngredientRow row, bool active) async {
+    final failure = await ref.read(masterDataControllerProvider.notifier)
+        .setActiveIngredientActive(row.id, active,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure != null) return;
+    _snack(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final state = ref.watch(masterDataControllerProvider);
+    final header = _tabHeader(
+      context: context,
+      l10n: l10n,
+      title: l10n.inventoryTabActiveIngredients,
+      canEdit: _canEdit,
+      onAdd: _add,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        header,
+        Expanded(
+          child: LoadingOverlay(
+            visible: state.status == MasterDataStatus.loading,
+            label: l10n.commonLoading,
+            child: state.status == MasterDataStatus.error
+                ? Center(
+                    child: Text(l10n.commonError,
+                        style: context.appTypography.labelSmall),
+                  )
+                : AppDataTable(
+                    emptyMessage: l10n.activeIngredientsEmpty,
+                    columns: [
+                      DataColumn(label: Text(l10n.activeIngredientName)),
+                      DataColumn(label: Text(l10n.masterDataNameEn)),
+                      DataColumn(label: Text(l10n.userNotes)),
+                      DataColumn(label: Text(l10n.userStatusActive)),
+                      DataColumn(label: Text('')),
+                    ],
+                    rows: [
+                      for (final a in state.activeIngredients)
+                        DataRow(cells: [
+                          DataCell(Text(a.name)),
+                          DataCell(Text(a.nameEn ?? '')),
+                          DataCell(Text(a.description ?? '')),
+                          DataCell(_ActiveStatusChipBox(active: a.isActive)),
+                          DataCell(_MasterActions(
+                            canEdit: _canEdit,
+                            onEdit: () => _edit(a),
+                            onToggle: () => _toggle(a, !a.isActive),
+                            active: a.isActive,
+                          )),
+                        ]),
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// §4.2c — indications registry.
+class IndicationsTab extends ConsumerStatefulWidget {
+  const IndicationsTab({super.key});
+
+  @override
+  ConsumerState<IndicationsTab> createState() => _IndicationsTabState();
+}
+
+class _IndicationsTabState extends ConsumerState<IndicationsTab> {
+  bool get _canEdit =>
+      ref.read(authControllerProvider).permissions.contains(Perm.inventoryEdit);
+  String? get _actingUserId => ref.read(authControllerProvider).user?.id;
+  String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
+
+  void _snack(bool ok) {
+    final l10n = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(ok ? l10n.masterDataSavedMessage : l10n.authSaveError),
+      ));
+  }
+
+  Future<void> _add() async {
+    final l10n = AppLocalizations.of(context);
+    final result = await showMasterDataFormDialog(
+      context,
+      kind: MasterDataKind.indication,
+      title: l10n.indicationsAdd,
+    );
+    if (result == null || !mounted) return;
+    final failure = await ref.read(masterDataControllerProvider.notifier)
+        .createIndication(result.draft,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure != null) return;
+    _snack(true);
+  }
+
+  Future<void> _edit(IndicationRow row) async {
+    final l10n = AppLocalizations.of(context);
+    final result = await showMasterDataFormDialog(
+      context,
+      kind: MasterDataKind.indication,
+      title: l10n.indicationsEditTitle,
+      initial: MasterDataDraft(
+        name: row.name,
+        nameEn: row.nameEn,
+        description: row.description,
+      ),
+    );
+    if (result == null || !mounted) return;
+    final failure = await ref.read(masterDataControllerProvider.notifier)
+        .updateIndication(row.id, result.draft,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure != null) return;
+    _snack(true);
+  }
+
+  Future<void> _toggle(IndicationRow row, bool active) async {
+    final failure = await ref.read(masterDataControllerProvider.notifier)
+        .setIndicationActive(row.id, active,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure != null) return;
+    _snack(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final state = ref.watch(masterDataControllerProvider);
+    final header = _tabHeader(
+      context: context,
+      l10n: l10n,
+      title: l10n.inventoryTabIndications,
+      canEdit: _canEdit,
+      onAdd: _add,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        header,
+        Expanded(
+          child: LoadingOverlay(
+            visible: state.status == MasterDataStatus.loading,
+            label: l10n.commonLoading,
+            child: state.status == MasterDataStatus.error
+                ? Center(
+                    child: Text(l10n.commonError,
+                        style: context.appTypography.labelSmall),
+                  )
+                : AppDataTable(
+                    emptyMessage: l10n.indicationsEmpty,
+                    columns: [
+                      DataColumn(label: Text(l10n.indicationName)),
+                      DataColumn(label: Text(l10n.masterDataNameEn)),
+                      DataColumn(label: Text(l10n.userNotes)),
+                      DataColumn(label: Text(l10n.userStatusActive)),
+                      DataColumn(label: Text('')),
+                    ],
+                    rows: [
+                      for (final i in state.indications)
+                        DataRow(cells: [
+                          DataCell(Text(i.name)),
+                          DataCell(Text(i.nameEn ?? '')),
+                          DataCell(Text(i.description ?? '')),
+                          DataCell(_ActiveStatusChipBox(active: i.isActive)),
+                          DataCell(_MasterActions(
+                            canEdit: _canEdit,
+                            onEdit: () => _edit(i),
+                            onToggle: () => _toggle(i, !i.isActive),
+                            active: i.isActive,
+                          )),
+                        ]),
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// Per-row action buttons for master-data grids.
 class _MasterActions extends StatelessWidget {
 const _MasterActions({

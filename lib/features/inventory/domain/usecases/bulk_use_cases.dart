@@ -1,4 +1,5 @@
 import '../../../../core/constants/permission_codes.dart';
+import '../../../../core/data_grid/page_request.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/money/money.dart';
 import '../../../../domain/services/audit_service.dart';
@@ -11,8 +12,25 @@ import 'create_item.dart' show itemAuditJson;
 /// Supported multi-selection grid operations (§22, "Bulk Actions").
 enum BulkOperation { changeCategory, changeShelfLocation, adjustPricePercent }
 
+/// How a price adjustment is scoped over the catalog.
+enum BulkPriceScope {
+  /// Every product in the catalog (selection ignored).
+  all,
+
+  /// All products of a chosen manufacturer (selection ignored).
+  manufacturer,
+
+  /// All products linked to a chosen preferred supplier (selection ignored).
+  supplier,
+
+  /// Only the explicitly selected products.
+  manual,
+}
+
 /// Bulk-edit request over a selection of item ids. Exactly one of
 /// [categoryId] / [shelfLocation] / [basisPoints] applies, per [operation].
+/// Price adjustments additionally carry a [priceScope] that expands the set
+/// beyond the selection for the `all` / `manufacturer` / `supplier` modes.
 class BulkUpdateInput {
   const BulkUpdateInput({
     required this.operation,
@@ -20,6 +38,9 @@ class BulkUpdateInput {
     this.categoryId,
     this.shelfLocation,
     this.basisPoints = 0,
+    this.priceScope = BulkPriceScope.manual,
+    this.priceManufacturerId,
+    this.priceSupplierId,
   });
 
   final BulkOperation operation;
@@ -27,8 +48,12 @@ class BulkUpdateInput {
   final String? categoryId;
   final String? shelfLocation;
   final int basisPoints;
+  final BulkPriceScope priceScope;
+  final String? priceManufacturerId;
+  final String? priceSupplierId;
 
-  bool get isValidRequest => itemIds.isNotEmpty;
+  bool get isValidRequest =>
+      itemIds.isNotEmpty || operation == BulkOperation.adjustPricePercent;
 }
 
 /// Bulk grid editing (§22): audited per row + one summarised `bulk_op` audit
@@ -55,8 +80,9 @@ class BulkUpdateItemsUseCase {
     }
     await _validate(db, input, actingRoleId);
 
+    final ids = await _operatingIds(db, input);
     var updated = 0;
-    for (final id in input.itemIds) {
+    for (final id in ids) {
       final row = await _repo.findItem(id);
       if (row == null) continue;
       final before = itemAuditJson(row);
@@ -85,13 +111,18 @@ class BulkUpdateItemsUseCase {
       entityId: 'bulk:${DateTime.now().microsecondsSinceEpoch}',
       after: {
         'operation': input.operation.name,
-        'count': input.itemIds.length,
+        'price_scope': input.priceScope.name,
+        'price_manufacturer_id': input.priceManufacturerId,
+        'price_supplier_id': input.priceSupplierId,
+        'target': ids.length,
         'updated': updated,
+        'selection': input.itemIds.length,
         'basis_points': input.basisPoints,
         'category_id': input.categoryId,
         'shelf_location': input.shelfLocation,
       },
-      note: 'عملية جماعية (${input.operation.name}) على $updated منتجات',
+      note: 'عملية جماعية (${input.operation.name} - ${input.priceScope.name})'
+          ' على $updated منتجات',
     );
     return updated;
   }
@@ -121,6 +152,42 @@ class BulkUpdateItemsUseCase {
         if (input.basisPoints == 0) {
           throw ValidationException('نسبة التعديل يجب ألا تكون صفرًا');
         }
+        if (input.priceScope == BulkPriceScope.manufacturer &&
+            (input.priceManufacturerId == null ||
+                input.priceManufacturerId!.isEmpty)) {
+          throw ValidationException('اختر المصنّع لتوسيع نطاق التعديل');
+        }
+        if (input.priceScope == BulkPriceScope.supplier &&
+            (input.priceSupplierId == null ||
+                input.priceSupplierId!.isEmpty)) {
+          throw ValidationException('اختر المورد لنطاق التعديل');
+        }
+        if (input.priceScope == BulkPriceScope.manual &&
+            input.itemIds.isEmpty) {
+          throw ValidationException('حدد منتجًا واحدًا على الأقل');
+        }
+    }
+  }
+
+  /// Resolves the operating item set for the requested price scope. For the
+  /// catalog-wide modes the selection is ignored and the scope is expanded.
+  Future<List<String>> _operatingIds(
+    AppDatabase db,
+    BulkUpdateInput input,
+  ) async {
+    switch (input.priceScope) {
+      case BulkPriceScope.manual:
+        return input.itemIds;
+      case BulkPriceScope.all:
+      case BulkPriceScope.manufacturer:
+        final page = await _repo.searchItems(
+          const PageRequest(page: 1, pageSize: 1000000),
+          manufacturerId: input.priceManufacturerId,
+        );
+        return [for (final row in page.items) row.id];
+      case BulkPriceScope.supplier:
+        return _repo.itemIdsForSupplier(input.priceSupplierId ??
+            '');
     }
   }
 
@@ -169,10 +236,7 @@ class BulkUpdateItemsUseCase {
       sizeVolume: draft.sizeVolume,
       shelfLocation: draft.shelfLocation,
       hasExpiry: draft.hasExpiry,
-      printBarcodeLabel: draft.printBarcodeLabel,
-      isOtc: draft.isOtc,
       isControlledDrug: draft.isControlledDrug,
-      scaleBarcodeAlert: draft.scaleBarcodeAlert,
       lockAutoPriceUpdate: draft.lockAutoPriceUpdate,
       requiresPrescription: draft.requiresPrescription,
       costMicros: draft.costMicros,
@@ -199,6 +263,7 @@ class BulkUpdateItemsUseCase {
         BulkOperation.changeShelfLocation =>
           'تغيير موقع رف جماعي إلى ${input.shelfLocation}',
         BulkOperation.adjustPricePercent =>
-          'تعديل أسعار جماعي (${input.basisPoints} نقطة أساس)',
+          'تعديل أسعار جماعي (${input.basisPoints} نقطة أساس، '
+              'نطاق ${input.priceScope.name})',
       };
 }

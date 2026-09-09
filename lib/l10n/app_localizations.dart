@@ -728,6 +728,78 @@ abstract class AppLocalizations {
   /// **'ربح اليوم'**
   String get dashboardProfitToday;
 
+  /// No description provided for @dashboardKpis.
+  ///
+  /// In ar, this message translates to:
+  /// **'نظرة عامة'**
+  String get dashboardKpis;
+
+  /// No description provided for @dashboardUnitsSold.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدات المباعة اليوم'**
+  String get dashboardUnitsSold;
+
+  /// No description provided for @dashboardActiveItems.
+  ///
+  /// In ar, this message translates to:
+  /// **'المنتجات النشطة'**
+  String get dashboardActiveItems;
+
+  /// No description provided for @dashboardStockValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيمة المخزون'**
+  String get dashboardStockValue;
+
+  /// No description provided for @dashboardLowStockEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد منتجات منخفضة المخزون — المخزون جيد.'**
+  String get dashboardLowStockEmpty;
+
+  /// No description provided for @dashboardNearExpiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرب انتهاء الصلاحية'**
+  String get dashboardNearExpiry;
+
+  /// No description provided for @dashboardNearExpiryEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد دفعات تنتهي قريبًا.'**
+  String get dashboardNearExpiryEmpty;
+
+  /// No description provided for @dashboardRecentSales.
+  ///
+  /// In ar, this message translates to:
+  /// **'أحدث الفواتير بيعًا'**
+  String get dashboardRecentSales;
+
+  /// No description provided for @dashboardRecentPurchases.
+  ///
+  /// In ar, this message translates to:
+  /// **'أحدث المشتريات'**
+  String get dashboardRecentPurchases;
+
+  /// No description provided for @dashboardRecentEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يوجد بعد.'**
+  String get dashboardRecentEmpty;
+
+  /// No description provided for @dashboardError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر تحميل لوحة المعلومات.'**
+  String get dashboardError;
+
+  /// No description provided for @dashboardRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get dashboardRetry;
+
   /// No description provided for @inventoryLowStock.
   ///
   /// In ar, this message translates to:
@@ -1082,29 +1154,11 @@ abstract class AppLocalizations {
   /// **'للتاريخ صلاحية'**
   String get itemHasExpiry;
 
-  /// No description provided for @itemPrintLabel.
-  ///
-  /// In ar, this message translates to:
-  /// **'طباعة باركود تسمية'**
-  String get itemPrintLabel;
-
-  /// No description provided for @itemIsOtc.
-  ///
-  /// In ar, this message translates to:
-  /// **'بلا وصفة طبية'**
-  String get itemIsOtc;
-
   /// No description provided for @itemIsControlled.
   ///
   /// In ar, this message translates to:
   /// **'عقار خاضع لضبط خاص'**
   String get itemIsControlled;
-
-  /// No description provided for @itemScaleAlert.
-  ///
-  /// In ar, this message translates to:
-  /// **'تنبيه ميزان الباركود'**
-  String get itemScaleAlert;
 
   /// No description provided for @itemLockPriceAutoUpdate.
   ///
@@ -1556,6 +1610,36 @@ abstract class AppLocalizations {
   /// **'حدد منتجًا واحدًا على الأقل'**
   String get bulkSelectHint;
 
+  /// No description provided for @bulkPriceScopeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نطاق التعديل'**
+  String get bulkPriceScopeTitle;
+
+  /// No description provided for @bulkPriceScopeAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'جميع المنتجات'**
+  String get bulkPriceScopeAll;
+
+  /// No description provided for @bulkPriceScopeManufacturer.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتجات مصنّع محدد'**
+  String get bulkPriceScopeManufacturer;
+
+  /// No description provided for @bulkPriceScopeSupplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتجات من مورد محدد'**
+  String get bulkPriceScopeSupplier;
+
+  /// No description provided for @bulkPriceScopeManual.
+  ///
+  /// In ar, this message translates to:
+  /// **'المنتجات المحددة ({count})'**
+  String bulkPriceScopeManual(int count);
+
   /// No description provided for @categoriesTitle.
   ///
   /// In ar, this message translates to:
@@ -1693,6 +1777,78 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الاختصار'**
   String get unitAbbreviation;
+
+  /// No description provided for @activeIngredientName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المادة الفعالة'**
+  String get activeIngredientName;
+
+  /// No description provided for @indicationName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الاستطباب'**
+  String get indicationName;
+
+  /// No description provided for @activeIngredientsAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مادة فعالة'**
+  String get activeIngredientsAdd;
+
+  /// No description provided for @activeIngredientsEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل مادة فعالة'**
+  String get activeIngredientsEditTitle;
+
+  /// No description provided for @activeIngredientsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مواد فعالة'**
+  String get activeIngredientsEmpty;
+
+  /// No description provided for @indicationsAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة استطباب'**
+  String get indicationsAdd;
+
+  /// No description provided for @indicationsEditTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل استطباب'**
+  String get indicationsEditTitle;
+
+  /// No description provided for @indicationsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد استطبابات'**
+  String get indicationsEmpty;
+
+  /// No description provided for @itemActiveIngredients.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواد الفعالة'**
+  String get itemActiveIngredients;
+
+  /// No description provided for @itemIndications.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاستطبابات'**
+  String get itemIndications;
+
+  /// No description provided for @inventoryTabActiveIngredients.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواد الفعالة'**
+  String get inventoryTabActiveIngredients;
+
+  /// No description provided for @inventoryTabIndications.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاستطبابات'**
+  String get inventoryTabIndications;
 
   /// No description provided for @masterDataNameEn.
   ///

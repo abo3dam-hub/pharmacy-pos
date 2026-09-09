@@ -329,6 +329,43 @@ class AppLocalizationsAr extends AppLocalizations {
   String get dashboardProfitToday => 'ربح اليوم';
 
   @override
+  String get dashboardKpis => 'نظرة عامة';
+
+  @override
+  String get dashboardUnitsSold => 'الوحدات المباعة اليوم';
+
+  @override
+  String get dashboardActiveItems => 'المنتجات النشطة';
+
+  @override
+  String get dashboardStockValue => 'قيمة المخزون';
+
+  @override
+  String get dashboardLowStockEmpty =>
+      'لا توجد منتجات منخفضة المخزون — المخزون جيد.';
+
+  @override
+  String get dashboardNearExpiry => 'قرب انتهاء الصلاحية';
+
+  @override
+  String get dashboardNearExpiryEmpty => 'لا توجد دفعات تنتهي قريبًا.';
+
+  @override
+  String get dashboardRecentSales => 'أحدث الفواتير بيعًا';
+
+  @override
+  String get dashboardRecentPurchases => 'أحدث المشتريات';
+
+  @override
+  String get dashboardRecentEmpty => 'لا يوجد بعد.';
+
+  @override
+  String get dashboardError => 'تعذر تحميل لوحة المعلومات.';
+
+  @override
+  String get dashboardRetry => 'إعادة المحاولة';
+
+  @override
   String get inventoryLowStock => 'منخفض المخزون';
 
   @override
@@ -510,16 +547,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get itemHasExpiry => 'للتاريخ صلاحية';
 
   @override
-  String get itemPrintLabel => 'طباعة باركود تسمية';
-
-  @override
-  String get itemIsOtc => 'بلا وصفة طبية';
-
-  @override
   String get itemIsControlled => 'عقار خاضع لضبط خاص';
-
-  @override
-  String get itemScaleAlert => 'تنبيه ميزان الباركود';
 
   @override
   String get itemLockPriceAutoUpdate => 'قفل التحديث التلقائي للأسعار';
@@ -752,6 +780,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get bulkSelectHint => 'حدد منتجًا واحدًا على الأقل';
 
   @override
+  String get bulkPriceScopeTitle => 'نطاق التعديل';
+
+  @override
+  String get bulkPriceScopeAll => 'جميع المنتجات';
+
+  @override
+  String get bulkPriceScopeManufacturer => 'منتجات مصنّع محدد';
+
+  @override
+  String get bulkPriceScopeSupplier => 'منتجات من مورد محدد';
+
+  @override
+  String bulkPriceScopeManual(int count) {
+    return 'المنتجات المحددة ($count)';
+  }
+
+  @override
   String get categoriesTitle => 'التصنيفات';
 
   @override
@@ -819,6 +864,42 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get unitAbbreviation => 'الاختصار';
+
+  @override
+  String get activeIngredientName => 'اسم المادة الفعالة';
+
+  @override
+  String get indicationName => 'اسم الاستطباب';
+
+  @override
+  String get activeIngredientsAdd => 'إضافة مادة فعالة';
+
+  @override
+  String get activeIngredientsEditTitle => 'تعديل مادة فعالة';
+
+  @override
+  String get activeIngredientsEmpty => 'لا توجد مواد فعالة';
+
+  @override
+  String get indicationsAdd => 'إضافة استطباب';
+
+  @override
+  String get indicationsEditTitle => 'تعديل استطباب';
+
+  @override
+  String get indicationsEmpty => 'لا توجد استطبابات';
+
+  @override
+  String get itemActiveIngredients => 'المواد الفعالة';
+
+  @override
+  String get itemIndications => 'الاستطبابات';
+
+  @override
+  String get inventoryTabActiveIngredients => 'المواد الفعالة';
+
+  @override
+  String get inventoryTabIndications => 'الاستطبابات';
 
   @override
   String get masterDataNameEn => 'الاسم (إنجليزي)';

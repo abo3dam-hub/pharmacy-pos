@@ -123,6 +123,8 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       groups: master.groups,
       units: master.units,
       suppliers: _suppliers,
+      activeIngredients: master.activeIngredients,
+      indications: master.indications,
       onCreateMasterData: _createMasterData,
       onCreateSupplier: _createSupplier,
       defaultPartialSaleMarkupBasisPoints: defaultMarkup,
@@ -146,12 +148,20 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
     final master = ref.read(masterDataControllerProvider);
     if (master.status != MasterDataStatus.ready) return;
     List<String> supplierIds = const [];
+    List<String> activeIngredientIds = const [];
+    List<String> indicationIds = const [];
     try {
       supplierIds = await ref
           .read(inventoryRepositoryProvider)
           .supplierIdsForItem(view.item.id);
+      activeIngredientIds = await ref
+          .read(inventoryRepositoryProvider)
+          .activeIngredientIdsForItem(view.item.id);
+      indicationIds = await ref
+          .read(inventoryRepositoryProvider)
+          .indicationIdsForItem(view.item.id);
     } on AppException {
-      supplierIds = const [];
+      // Empty relations fall back to the free-text / no links.
     }
     final initial = ItemDraft.fromRow(
       view.item,
@@ -163,6 +173,8 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
               unitsPerLarge: view.units!.unitsPerLarge,
             ),
       supplierIds: supplierIds,
+      activeIngredientIds: activeIngredientIds,
+      indicationIds: indicationIds,
     );
     final defaultMarkup = await _partialSaleMarkupDefault();
     if (!mounted) return;
@@ -176,6 +188,8 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       groups: master.groups,
       units: master.units,
       suppliers: _suppliers,
+      activeIngredients: master.activeIngredients,
+      indications: master.indications,
       onCreateMasterData: _createMasterData,
       onCreateSupplier: _createSupplier,
       defaultPartialSaleMarkupBasisPoints: defaultMarkup,
@@ -218,6 +232,10 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
           actingUserId: _actingUserId, actingRoleId: _actingRoleId),
       MasterDataKind.unit => await mc.createUnit(draft,
           actingUserId: _actingUserId, actingRoleId: _actingRoleId),
+      MasterDataKind.activeIngredient => await mc.createActiveIngredient(draft,
+          actingUserId: _actingUserId, actingRoleId: _actingRoleId),
+      MasterDataKind.indication => await mc.createIndication(draft,
+          actingUserId: _actingUserId, actingRoleId: _actingRoleId),
     };
     if (failure != null) {
       _showFailure(failure);
@@ -236,6 +254,10 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
         return _firstByName(state.groups, name);
       case MasterDataKind.unit:
         return _firstByName(state.units, name);
+      case MasterDataKind.activeIngredient:
+        return _firstByName(state.activeIngredients, name);
+      case MasterDataKind.indication:
+        return _firstByName(state.indications, name);
     }
   }
 
@@ -308,6 +330,8 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       context,
       itemIds: ids,
       categories: master.categories,
+      manufacturers: master.manufacturers,
+      suppliers: _suppliers,
       canChangePrices: _canChangePrices,
     );
     if (result == null || !mounted) return;
@@ -317,9 +341,11 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
           actingRoleId: _actingRoleId,
         );
     if (outcome == null && mounted) {
+      final controller = ref.read(inventoryControllerProvider.notifier);
+      final count = controller.lastBulkUpdatedCount;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l10n.bulkDone(ids.length))));
+        ..showSnackBar(SnackBar(content: Text(l10n.bulkDone(count))));
     } else {
       _showFailure(outcome);
     }

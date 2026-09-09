@@ -110,6 +110,11 @@ class InventoryController extends StateNotifier<InventoryViewState> {
   final ListBatchesUseCase _listBatches;
   final AdjustStockUseCase _adjustStock;
   final BulkUpdateItemsUseCase _bulk;
+
+  /// Number of rows touched by the most recent bulk operation (used by the
+  /// items grid success toast, which may exceed the original selection when a
+  /// catalog-wide price scope was requested).
+  int lastBulkUpdatedCount = 0;
   final ExportItemsUseCase _exportItems;
   final ImportItemsUseCase _importItems;
 
@@ -134,6 +139,10 @@ class InventoryController extends StateNotifier<InventoryViewState> {
         total: result.total,
         request: result.request,
         selectedIds: const {},
+        // Any in-flight mutation (create/update/setActive/bulk) clears here
+        // after its mandatory reload lands; without this the LoadingOverlay
+        // never disappears because `busy` stays true forever on success.
+        busy: false,
       );
       return null;
     } on AppException catch (e) {
@@ -271,9 +280,10 @@ class InventoryController extends StateNotifier<InventoryViewState> {
   }) async {
     state = state.copyWith(busy: true, error: () => null);
     try {
-      await _bulk.call(input,
-          actingUserId: actingUserId, actingRoleId: actingRoleId);
+      final updated = await _bulk.call(
+          input, actingUserId: actingUserId, actingRoleId: actingRoleId);
       await reload(actingRoleId: actingRoleId);
+      lastBulkUpdatedCount = updated;
       return null;
     } on AppException catch (e) {
       state = state.copyWith(busy: false, error: () => e.failure);

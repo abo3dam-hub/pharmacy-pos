@@ -5,9 +5,13 @@ import '../../../../core/data_grid/page_request.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/util/ids.dart';
+import '../../../../data/daos/active_ingredient_dao.dart';
 import '../../../../data/daos/batch_dao.dart';
 import '../../../../data/daos/category_dao.dart';
+import '../../../../data/daos/indication_dao.dart';
+import '../../../../data/daos/item_active_ingredient_dao.dart';
 import '../../../../data/daos/item_dao.dart';
+import '../../../../data/daos/item_indication_dao.dart';
 import '../../../../data/daos/item_supplier_dao.dart';
 import '../../../../data/daos/manufacturer_dao.dart';
 import '../../../../data/daos/stock_movement_dao.dart';
@@ -33,6 +37,10 @@ class InventoryRepositoryImpl implements InventoryRepository {
     this._movementDao,
     this._itemSupplierDao,
     this._stock,
+    this._activeIngredientDao,
+    this._indicationDao,
+    this._itemActiveIngredientDao,
+    this._itemIndicationDao,
   );
 
   final AppDatabase _db;
@@ -45,6 +53,10 @@ class InventoryRepositoryImpl implements InventoryRepository {
   final StockMovementDao _movementDao;
   final ItemSupplierDao _itemSupplierDao;
   final StockService _stock;
+  final ActiveIngredientDao _activeIngredientDao;
+  final IndicationDao _indicationDao;
+  final ItemActiveIngredientDao _itemActiveIngredientDao;
+  final ItemIndicationDao _itemIndicationDao;
 
   @override
   AppDatabase get database => _db;
@@ -79,15 +91,22 @@ class InventoryRepositoryImpl implements InventoryRepository {
       _itemSupplierDao.supplierIdsForItem(itemId);
 
   @override
+  Future<List<String>> itemIdsForSupplier(String supplierId) =>
+      _itemSupplierDao.itemIdsForSupplier(supplierId);
+
+  @override
   Future<ItemRow> createItem(ItemDraft draft) async {
     final id = ItemDao.newItemId();
     final now = DateTime.now().millisecondsSinceEpoch;
+    final withSummary = await _syncIngredientSummary(draft);
     await _guarded(() => _db.transaction(() async {
           await _db
               .into(_db.items)
-              .insert(_toInsertCompanion(draft, id: id, at: now));
+              .insert(_toInsertCompanion(withSummary, id: id, at: now));
           await _applyUnits(draft.units, itemId: id);
           await _itemSupplierDao.setForItem(id, draft.supplierIds);
+          await _itemActiveIngredientDao.setForItem(id, draft.activeIngredientIds);
+          await _itemIndicationDao.setForItem(id, draft.indicationIds);
         }));
     final row = await _itemDao.byId(id);
     if (row == null) throw NotFoundException('المنتج لم يُحفظ');
@@ -99,19 +118,38 @@ class InventoryRepositoryImpl implements InventoryRepository {
     final existing = await _itemDao.byId(id);
     if (existing == null) throw NotFoundException('المنتج رقم $id غير موجود');
     final now = DateTime.now().millisecondsSinceEpoch;
+    final withSummary = await _syncIngredientSummary(draft);
     await _guarded(() => _db.transaction(() async {
           await (_db.update(_db.items)..where((i) => i.id.equals(id)))
-              .write(_toUpdateCompanion(draft, at: now));
+              .write(_toUpdateCompanion(withSummary, at: now));
           // Keep the existing unit relation when the update does not carry one
           // (e.g. bulk category/shelf edits); `createItem` still requires units.
           if (draft.units != null) {
             await _applyUnits(draft.units, itemId: id);
           }
           await _itemSupplierDao.setForItem(id, draft.supplierIds);
+          await _itemActiveIngredientDao.setForItem(id, draft.activeIngredientIds);
+          await _itemIndicationDao.setForItem(id, draft.indicationIds);
         }));
     final row = await _itemDao.byId(id);
     if (row == null) throw NotFoundException('المنتج رقم $id غير موجود');
     return row;
+  }
+
+  /// Keeps the denormalized `items.active_ingredient` column in step with the
+  /// junction table: when the draft carries junction ids, rebuild the comma
+  /// summary from the linked ingredient names (preserving legacy free-text
+  /// when the form did not touch the taxonomy).
+  Future<ItemDraft> _syncIngredientSummary(ItemDraft draft) async {
+    if (draft.activeIngredientIds.isEmpty) return draft;
+    final names = <String>[];
+    for (final id in draft.activeIngredientIds.toSet()) {
+      final row = await _activeIngredientDao.byId(id);
+      if (row != null) names.add(row.name);
+    }
+    return draft.copyWith(
+      activeIngredient: names.join(', '),
+    );
   }
 
   @override
@@ -165,10 +203,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       sizeVolume: Value(d.sizeVolume),
       shelfLocation: Value(d.shelfLocation),
       hasExpiry: Value(d.hasExpiry),
-      printBarcodeLabel: Value(d.printBarcodeLabel),
-      isOtc: Value(d.isOtc),
       isControlledDrug: Value(d.isControlledDrug),
-      scaleBarcodeAlert: Value(d.scaleBarcodeAlert),
       lockAutoPriceUpdate: Value(d.lockAutoPriceUpdate),
       requiresPrescription: Value(d.requiresPrescription),
       costMicros: Value(d.costMicros),
@@ -214,10 +249,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       sizeVolume: Value(d.sizeVolume),
       shelfLocation: Value(d.shelfLocation),
       hasExpiry: Value(d.hasExpiry),
-      printBarcodeLabel: Value(d.printBarcodeLabel),
-      isOtc: Value(d.isOtc),
       isControlledDrug: Value(d.isControlledDrug),
-      scaleBarcodeAlert: Value(d.scaleBarcodeAlert),
       lockAutoPriceUpdate: Value(d.lockAutoPriceUpdate),
       requiresPrescription: Value(d.requiresPrescription),
       costMicros: Value(d.costMicros),
@@ -463,6 +495,105 @@ class InventoryRepositoryImpl implements InventoryRepository {
   @override
   Future<void> setTherapeuticGroupActive(String id, bool active) =>
       _groupDao.setActive(id, active);
+
+  // ----- Active ingredients -----
+
+  @override
+  Future<List<ActiveIngredientRow>> activeIngredients({bool? activeOnly}) =>
+      _activeIngredientDao.all(activeOnly: activeOnly);
+
+  @override
+  Future<ActiveIngredientRow> createActiveIngredient(MasterDataDraft draft) async {
+    final id = ActiveIngredientDao.newActiveIngredientId();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final row = ActiveIngredientRow(
+      id: id,
+      name: draft.name.trim(),
+      nameEn: draft.nameEn,
+      description: draft.description,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    );
+    await _activeIngredientDao.insert(row);
+    return row;
+  }
+
+  @override
+  Future<ActiveIngredientRow> updateActiveIngredient(
+      String id, MasterDataDraft draft) async {
+    final existing = await _activeIngredientDao.byId(id);
+    if (existing == null) throw NotFoundException('المادة الفعالة رقم $id غير موجودة');
+    final row = ActiveIngredientRow(
+      id: existing.id,
+      name: draft.name.trim(),
+      nameEn: draft.nameEn,
+      description: draft.description,
+      isActive: existing.isActive,
+      createdAt: existing.createdAt,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    await _activeIngredientDao.update(row);
+    return row;
+  }
+
+  @override
+  Future<void> setActiveIngredientActive(String id, bool active) =>
+      _activeIngredientDao.setActive(id, active);
+
+  // ----- Indications -----
+
+  @override
+  Future<List<IndicationRow>> indications({bool? activeOnly}) =>
+      _indicationDao.all(activeOnly: activeOnly);
+
+  @override
+  Future<IndicationRow> createIndication(MasterDataDraft draft) async {
+    final id = IndicationDao.newIndicationId();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final row = IndicationRow(
+      id: id,
+      name: draft.name.trim(),
+      nameEn: draft.nameEn,
+      description: draft.description,
+      isActive: true,
+      createdAt: now,
+      updatedAt: now,
+    );
+    await _indicationDao.insert(row);
+    return row;
+  }
+
+  @override
+  Future<IndicationRow> updateIndication(String id, MasterDataDraft draft) async {
+    final existing = await _indicationDao.byId(id);
+    if (existing == null) throw NotFoundException('الاستطباب رقم $id غير موجود');
+    final row = IndicationRow(
+      id: existing.id,
+      name: draft.name.trim(),
+      nameEn: draft.nameEn,
+      description: draft.description,
+      isActive: existing.isActive,
+      createdAt: existing.createdAt,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
+    await _indicationDao.update(row);
+    return row;
+  }
+
+  @override
+  Future<void> setIndicationActive(String id, bool active) =>
+      _indicationDao.setActive(id, active);
+
+  // ----- Per-item taxonomy relations -----
+
+  @override
+  Future<List<String>> activeIngredientIdsForItem(String itemId) =>
+      _itemActiveIngredientDao.activeIngredientIdsForItem(itemId);
+
+  @override
+  Future<List<String>> indicationIdsForItem(String itemId) =>
+      _itemIndicationDao.indicationIdsForItem(itemId);
 
   // ----- Units -----
 

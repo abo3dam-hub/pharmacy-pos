@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/data_grid/page_request.dart';
+import '../../../core/util/smart_search.dart';
+import '../../../data/daos/smart_search_dao.dart';
 import '../../sales/domain/entities/pos_catalog_item.dart';
 import '../../sales/domain/services/smart_alternatives_service.dart';
 import '../../../shared/database/app_database.dart';
@@ -14,7 +16,8 @@ class PosCatalogDao {
   final AppDatabase _db;
 
   /// Paginated POS search across name (ar), name (en), scientific name,
-  /// active ingredient and both barcodes, optionally restricted to items that
+  /// active ingredient, both barcodes, plus supplier/ingredient/indication
+  /// names — Arabic-normalized (§P16). Optionally restricted to items that
   /// currently have sellable stock.
   Future<PageResult<PosCatalogItem>> search(
     PageRequest request, {
@@ -24,15 +27,20 @@ class PosCatalogDao {
     final filter = <Expression<bool>>[];
 
     if (q.isNotEmpty) {
-      final like = '%${_escapeLike(q)}%';
-      filter.add([
-        _db.items.tradeName.like(like),
-        _db.items.tradeNameEn.like(like),
-        _db.items.scientificName.like(like),
-        _db.items.activeIngredient.like(like),
-        _db.items.primaryBarcode.like(like),
-        _db.items.secondaryBarcode.like(like),
-      ].reduce((a, b) => a | b));
+      final like = SmartSearch.likePattern(q);
+      final textMatches = <Expression<bool>>[
+        SmartSearch.normalizeExpr(_db.items.tradeName).like(like),
+        SmartSearch.normalizeExpr(_db.items.tradeNameEn).like(like),
+        SmartSearch.normalizeExpr(_db.items.scientificName).like(like),
+        SmartSearch.normalizeExpr(_db.items.activeIngredient).like(like),
+        SmartSearch.normalizeExpr(_db.items.primaryBarcode).like(like),
+        SmartSearch.normalizeExpr(_db.items.secondaryBarcode).like(like),
+      ];
+      final related = await SmartSearchDao(_db).matchingItemIds(q);
+      if (related.isNotEmpty) {
+        textMatches.add(_db.items.id.isIn(related));
+      }
+      filter.add(textMatches.reduce((a, b) => a | b));
     }
     if (inStockOnly == true) {
       filter.add(_db.items.currentStockBase.isBiggerThanValue(0));
@@ -228,7 +236,6 @@ final query = _db.select(_db.items)
       sizeVolume: r.sizeVolume,
       primaryBarcode: r.primaryBarcode,
       secondaryBarcode: r.secondaryBarcode,
-      isOtc: r.isOtc,
       isControlledDrug: r.isControlledDrug,
       requiresPrescription: r.requiresPrescription,
       isActive: r.isActive,

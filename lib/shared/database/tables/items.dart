@@ -44,12 +44,7 @@ class Items extends Table {
   TextColumn get shelfLocation => text().nullable()();
 
   BoolColumn get hasExpiry => boolean().withDefault(const Constant(false))();
-  BoolColumn get printBarcodeLabel =>
-      boolean().withDefault(const Constant(false))();
-  BoolColumn get isOtc => boolean().withDefault(const Constant(false))();
   BoolColumn get isControlledDrug =>
-      boolean().withDefault(const Constant(false))();
-  BoolColumn get scaleBarcodeAlert =>
       boolean().withDefault(const Constant(false))();
   BoolColumn get lockAutoPriceUpdate =>
       boolean().withDefault(const Constant(false))();

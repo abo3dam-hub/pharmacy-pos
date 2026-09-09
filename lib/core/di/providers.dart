@@ -40,6 +40,7 @@ import '../../features/inventory/domain/services/inventory_excel_service.dart';
 import '../../features/inventory/domain/services/inventory_view_builder.dart';
 import '../../features/purchases/application/purchases_controller.dart';
 import '../../features/purchases/domain/usecases/purchases_use_cases.dart';
+import '../../features/dashboard/application/dashboard_controller.dart';
 import '../../features/prescriptions/application/prescriptions_controller.dart';
 import '../../features/sales/data/pos_catalog_dao.dart';
 import '../../features/sales/data/z_report_dao.dart';
@@ -228,6 +229,11 @@ final inventoryReportControllerProvider =
 final lostSalesReportControllerProvider =
     StateNotifierProvider<LostSalesReportController,
         ReportViewState<LostSalesReport>>((ref) => getIt<LostSalesReportController>());
+
+// ── Dashboard (P16) ────────────────────────────────────────────────────────
+final dashboardControllerProvider =
+    StateNotifierProvider<DashboardController, DashboardViewState>(
+        (ref) => getIt<DashboardController>());
 
 // ── Phase 12: Audit log, Settings & RBAC ────────────────────────────────────
 final auditControllerProvider =

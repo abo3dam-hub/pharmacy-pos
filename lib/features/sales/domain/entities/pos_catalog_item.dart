@@ -13,7 +13,6 @@ class PosCatalogItem {
     this.therapeuticGroupId,
     this.primaryBarcode,
     this.secondaryBarcode,
-    required this.isOtc,
     required this.isControlledDrug,
     required this.requiresPrescription,
     required this.isActive,
@@ -48,7 +47,6 @@ class PosCatalogItem {
   final String? therapeuticGroupId;
   final String? primaryBarcode;
   final String? secondaryBarcode;
-  final bool isOtc;
   final bool isControlledDrug;
   final bool requiresPrescription;
   final bool isActive;

@@ -5,7 +5,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../domain/repositories/inventory_repository.dart';
 
-enum MasterDataKind { category, subCategory, manufacturer, group, unit }
+enum MasterDataKind { category, subCategory, manufacturer, group, unit, activeIngredient, indication }
 
 /// Master-data form result.
 class MasterDataFormResult {
@@ -163,7 +163,11 @@ class _MasterDataFormDialogState extends State<_MasterDataFormDialog> {
                                 ? l10n.groupName
                                 : widget.kind == MasterDataKind.unit
                                     ? l10n.unitName
-                                    : l10n.categoryName),
+                                    : widget.kind == MasterDataKind.activeIngredient
+                                        ? l10n.activeIngredientName
+                                        : widget.kind == MasterDataKind.indication
+                                            ? l10n.indicationName
+                                            : l10n.categoryName),
                   ),
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? l10n.inventoryRequiredName

@@ -3065,34 +3065,6 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
     ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _printBarcodeLabelMeta = const VerificationMeta(
-    'printBarcodeLabel',
-  );
-  @override
-  late final GeneratedColumn<bool> printBarcodeLabel = GeneratedColumn<bool>(
-    'print_barcode_label',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("print_barcode_label" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _isOtcMeta = const VerificationMeta('isOtc');
-  @override
-  late final GeneratedColumn<bool> isOtc = GeneratedColumn<bool>(
-    'is_otc',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_otc" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
   static const VerificationMeta _isControlledDrugMeta = const VerificationMeta(
     'isControlledDrug',
   );
@@ -3105,21 +3077,6 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("is_controlled_drug" IN (0, 1))',
-    ),
-    defaultValue: const Constant(false),
-  );
-  static const VerificationMeta _scaleBarcodeAlertMeta = const VerificationMeta(
-    'scaleBarcodeAlert',
-  );
-  @override
-  late final GeneratedColumn<bool> scaleBarcodeAlert = GeneratedColumn<bool>(
-    'scale_barcode_alert',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("scale_barcode_alert" IN (0, 1))',
     ),
     defaultValue: const Constant(false),
   );
@@ -3448,10 +3405,7 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
     sizeVolume,
     shelfLocation,
     hasExpiry,
-    printBarcodeLabel,
-    isOtc,
     isControlledDrug,
-    scaleBarcodeAlert,
     lockAutoPriceUpdate,
     requiresPrescription,
     costMicros,
@@ -3626,36 +3580,12 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
         hasExpiry.isAcceptableOrUnknown(data['has_expiry']!, _hasExpiryMeta),
       );
     }
-    if (data.containsKey('print_barcode_label')) {
-      context.handle(
-        _printBarcodeLabelMeta,
-        printBarcodeLabel.isAcceptableOrUnknown(
-          data['print_barcode_label']!,
-          _printBarcodeLabelMeta,
-        ),
-      );
-    }
-    if (data.containsKey('is_otc')) {
-      context.handle(
-        _isOtcMeta,
-        isOtc.isAcceptableOrUnknown(data['is_otc']!, _isOtcMeta),
-      );
-    }
     if (data.containsKey('is_controlled_drug')) {
       context.handle(
         _isControlledDrugMeta,
         isControlledDrug.isAcceptableOrUnknown(
           data['is_controlled_drug']!,
           _isControlledDrugMeta,
-        ),
-      );
-    }
-    if (data.containsKey('scale_barcode_alert')) {
-      context.handle(
-        _scaleBarcodeAlertMeta,
-        scaleBarcodeAlert.isAcceptableOrUnknown(
-          data['scale_barcode_alert']!,
-          _scaleBarcodeAlertMeta,
         ),
       );
     }
@@ -3962,21 +3892,9 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
         DriftSqlType.bool,
         data['${effectivePrefix}has_expiry'],
       )!,
-      printBarcodeLabel: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}print_barcode_label'],
-      )!,
-      isOtc: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_otc'],
-      )!,
       isControlledDrug: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_controlled_drug'],
-      )!,
-      scaleBarcodeAlert: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}scale_barcode_alert'],
       )!,
       lockAutoPriceUpdate: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
@@ -4111,10 +4029,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
   final String? sizeVolume;
   final String? shelfLocation;
   final bool hasExpiry;
-  final bool printBarcodeLabel;
-  final bool isOtc;
   final bool isControlledDrug;
-  final bool scaleBarcodeAlert;
   final bool lockAutoPriceUpdate;
   final bool requiresPrescription;
 
@@ -4184,10 +4099,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     this.sizeVolume,
     this.shelfLocation,
     required this.hasExpiry,
-    required this.printBarcodeLabel,
-    required this.isOtc,
     required this.isControlledDrug,
-    required this.scaleBarcodeAlert,
     required this.lockAutoPriceUpdate,
     required this.requiresPrescription,
     required this.costMicros,
@@ -4261,10 +4173,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       map['shelf_location'] = Variable<String>(shelfLocation);
     }
     map['has_expiry'] = Variable<bool>(hasExpiry);
-    map['print_barcode_label'] = Variable<bool>(printBarcodeLabel);
-    map['is_otc'] = Variable<bool>(isOtc);
     map['is_controlled_drug'] = Variable<bool>(isControlledDrug);
-    map['scale_barcode_alert'] = Variable<bool>(scaleBarcodeAlert);
     map['lock_auto_price_update'] = Variable<bool>(lockAutoPriceUpdate);
     map['requires_prescription'] = Variable<bool>(requiresPrescription);
     map['cost_micros'] = Variable<int>(costMicros);
@@ -4359,10 +4268,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           ? const Value.absent()
           : Value(shelfLocation),
       hasExpiry: Value(hasExpiry),
-      printBarcodeLabel: Value(printBarcodeLabel),
-      isOtc: Value(isOtc),
       isControlledDrug: Value(isControlledDrug),
-      scaleBarcodeAlert: Value(scaleBarcodeAlert),
       lockAutoPriceUpdate: Value(lockAutoPriceUpdate),
       requiresPrescription: Value(requiresPrescription),
       costMicros: Value(costMicros),
@@ -4432,10 +4338,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       sizeVolume: serializer.fromJson<String?>(json['sizeVolume']),
       shelfLocation: serializer.fromJson<String?>(json['shelfLocation']),
       hasExpiry: serializer.fromJson<bool>(json['hasExpiry']),
-      printBarcodeLabel: serializer.fromJson<bool>(json['printBarcodeLabel']),
-      isOtc: serializer.fromJson<bool>(json['isOtc']),
       isControlledDrug: serializer.fromJson<bool>(json['isControlledDrug']),
-      scaleBarcodeAlert: serializer.fromJson<bool>(json['scaleBarcodeAlert']),
       lockAutoPriceUpdate: serializer.fromJson<bool>(
         json['lockAutoPriceUpdate'],
       ),
@@ -4507,10 +4410,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       'sizeVolume': serializer.toJson<String?>(sizeVolume),
       'shelfLocation': serializer.toJson<String?>(shelfLocation),
       'hasExpiry': serializer.toJson<bool>(hasExpiry),
-      'printBarcodeLabel': serializer.toJson<bool>(printBarcodeLabel),
-      'isOtc': serializer.toJson<bool>(isOtc),
       'isControlledDrug': serializer.toJson<bool>(isControlledDrug),
-      'scaleBarcodeAlert': serializer.toJson<bool>(scaleBarcodeAlert),
       'lockAutoPriceUpdate': serializer.toJson<bool>(lockAutoPriceUpdate),
       'requiresPrescription': serializer.toJson<bool>(requiresPrescription),
       'costMicros': serializer.toJson<int>(costMicros),
@@ -4568,10 +4468,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     Value<String?> sizeVolume = const Value.absent(),
     Value<String?> shelfLocation = const Value.absent(),
     bool? hasExpiry,
-    bool? printBarcodeLabel,
-    bool? isOtc,
     bool? isControlledDrug,
-    bool? scaleBarcodeAlert,
     bool? lockAutoPriceUpdate,
     bool? requiresPrescription,
     int? costMicros,
@@ -4634,10 +4531,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
         ? shelfLocation.value
         : this.shelfLocation,
     hasExpiry: hasExpiry ?? this.hasExpiry,
-    printBarcodeLabel: printBarcodeLabel ?? this.printBarcodeLabel,
-    isOtc: isOtc ?? this.isOtc,
     isControlledDrug: isControlledDrug ?? this.isControlledDrug,
-    scaleBarcodeAlert: scaleBarcodeAlert ?? this.scaleBarcodeAlert,
     lockAutoPriceUpdate: lockAutoPriceUpdate ?? this.lockAutoPriceUpdate,
     requiresPrescription: requiresPrescription ?? this.requiresPrescription,
     costMicros: costMicros ?? this.costMicros,
@@ -4725,16 +4619,9 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           ? data.shelfLocation.value
           : this.shelfLocation,
       hasExpiry: data.hasExpiry.present ? data.hasExpiry.value : this.hasExpiry,
-      printBarcodeLabel: data.printBarcodeLabel.present
-          ? data.printBarcodeLabel.value
-          : this.printBarcodeLabel,
-      isOtc: data.isOtc.present ? data.isOtc.value : this.isOtc,
       isControlledDrug: data.isControlledDrug.present
           ? data.isControlledDrug.value
           : this.isControlledDrug,
-      scaleBarcodeAlert: data.scaleBarcodeAlert.present
-          ? data.scaleBarcodeAlert.value
-          : this.scaleBarcodeAlert,
       lockAutoPriceUpdate: data.lockAutoPriceUpdate.present
           ? data.lockAutoPriceUpdate.value
           : this.lockAutoPriceUpdate,
@@ -4830,10 +4717,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           ..write('sizeVolume: $sizeVolume, ')
           ..write('shelfLocation: $shelfLocation, ')
           ..write('hasExpiry: $hasExpiry, ')
-          ..write('printBarcodeLabel: $printBarcodeLabel, ')
-          ..write('isOtc: $isOtc, ')
           ..write('isControlledDrug: $isControlledDrug, ')
-          ..write('scaleBarcodeAlert: $scaleBarcodeAlert, ')
           ..write('lockAutoPriceUpdate: $lockAutoPriceUpdate, ')
           ..write('requiresPrescription: $requiresPrescription, ')
           ..write('costMicros: $costMicros, ')
@@ -4885,10 +4769,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     sizeVolume,
     shelfLocation,
     hasExpiry,
-    printBarcodeLabel,
-    isOtc,
     isControlledDrug,
-    scaleBarcodeAlert,
     lockAutoPriceUpdate,
     requiresPrescription,
     costMicros,
@@ -4937,10 +4818,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           other.sizeVolume == this.sizeVolume &&
           other.shelfLocation == this.shelfLocation &&
           other.hasExpiry == this.hasExpiry &&
-          other.printBarcodeLabel == this.printBarcodeLabel &&
-          other.isOtc == this.isOtc &&
           other.isControlledDrug == this.isControlledDrug &&
-          other.scaleBarcodeAlert == this.scaleBarcodeAlert &&
           other.lockAutoPriceUpdate == this.lockAutoPriceUpdate &&
           other.requiresPrescription == this.requiresPrescription &&
           other.costMicros == this.costMicros &&
@@ -4989,10 +4867,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
   final Value<String?> sizeVolume;
   final Value<String?> shelfLocation;
   final Value<bool> hasExpiry;
-  final Value<bool> printBarcodeLabel;
-  final Value<bool> isOtc;
   final Value<bool> isControlledDrug;
-  final Value<bool> scaleBarcodeAlert;
   final Value<bool> lockAutoPriceUpdate;
   final Value<bool> requiresPrescription;
   final Value<int> costMicros;
@@ -5038,10 +4913,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     this.sizeVolume = const Value.absent(),
     this.shelfLocation = const Value.absent(),
     this.hasExpiry = const Value.absent(),
-    this.printBarcodeLabel = const Value.absent(),
-    this.isOtc = const Value.absent(),
     this.isControlledDrug = const Value.absent(),
-    this.scaleBarcodeAlert = const Value.absent(),
     this.lockAutoPriceUpdate = const Value.absent(),
     this.requiresPrescription = const Value.absent(),
     this.costMicros = const Value.absent(),
@@ -5088,10 +4960,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     this.sizeVolume = const Value.absent(),
     this.shelfLocation = const Value.absent(),
     this.hasExpiry = const Value.absent(),
-    this.printBarcodeLabel = const Value.absent(),
-    this.isOtc = const Value.absent(),
     this.isControlledDrug = const Value.absent(),
-    this.scaleBarcodeAlert = const Value.absent(),
     this.lockAutoPriceUpdate = const Value.absent(),
     this.requiresPrescription = const Value.absent(),
     this.costMicros = const Value.absent(),
@@ -5142,10 +5011,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     Expression<String>? sizeVolume,
     Expression<String>? shelfLocation,
     Expression<bool>? hasExpiry,
-    Expression<bool>? printBarcodeLabel,
-    Expression<bool>? isOtc,
     Expression<bool>? isControlledDrug,
-    Expression<bool>? scaleBarcodeAlert,
     Expression<bool>? lockAutoPriceUpdate,
     Expression<bool>? requiresPrescription,
     Expression<int>? costMicros,
@@ -5193,10 +5059,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
       if (sizeVolume != null) 'size_volume': sizeVolume,
       if (shelfLocation != null) 'shelf_location': shelfLocation,
       if (hasExpiry != null) 'has_expiry': hasExpiry,
-      if (printBarcodeLabel != null) 'print_barcode_label': printBarcodeLabel,
-      if (isOtc != null) 'is_otc': isOtc,
       if (isControlledDrug != null) 'is_controlled_drug': isControlledDrug,
-      if (scaleBarcodeAlert != null) 'scale_barcode_alert': scaleBarcodeAlert,
       if (lockAutoPriceUpdate != null)
         'lock_auto_price_update': lockAutoPriceUpdate,
       if (requiresPrescription != null)
@@ -5261,10 +5124,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     Value<String?>? sizeVolume,
     Value<String?>? shelfLocation,
     Value<bool>? hasExpiry,
-    Value<bool>? printBarcodeLabel,
-    Value<bool>? isOtc,
     Value<bool>? isControlledDrug,
-    Value<bool>? scaleBarcodeAlert,
     Value<bool>? lockAutoPriceUpdate,
     Value<bool>? requiresPrescription,
     Value<int>? costMicros,
@@ -5311,10 +5171,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
       sizeVolume: sizeVolume ?? this.sizeVolume,
       shelfLocation: shelfLocation ?? this.shelfLocation,
       hasExpiry: hasExpiry ?? this.hasExpiry,
-      printBarcodeLabel: printBarcodeLabel ?? this.printBarcodeLabel,
-      isOtc: isOtc ?? this.isOtc,
       isControlledDrug: isControlledDrug ?? this.isControlledDrug,
-      scaleBarcodeAlert: scaleBarcodeAlert ?? this.scaleBarcodeAlert,
       lockAutoPriceUpdate: lockAutoPriceUpdate ?? this.lockAutoPriceUpdate,
       requiresPrescription: requiresPrescription ?? this.requiresPrescription,
       costMicros: costMicros ?? this.costMicros,
@@ -5404,17 +5261,8 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     if (hasExpiry.present) {
       map['has_expiry'] = Variable<bool>(hasExpiry.value);
     }
-    if (printBarcodeLabel.present) {
-      map['print_barcode_label'] = Variable<bool>(printBarcodeLabel.value);
-    }
-    if (isOtc.present) {
-      map['is_otc'] = Variable<bool>(isOtc.value);
-    }
     if (isControlledDrug.present) {
       map['is_controlled_drug'] = Variable<bool>(isControlledDrug.value);
-    }
-    if (scaleBarcodeAlert.present) {
-      map['scale_barcode_alert'] = Variable<bool>(scaleBarcodeAlert.value);
     }
     if (lockAutoPriceUpdate.present) {
       map['lock_auto_price_update'] = Variable<bool>(lockAutoPriceUpdate.value);
@@ -5530,10 +5378,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
           ..write('sizeVolume: $sizeVolume, ')
           ..write('shelfLocation: $shelfLocation, ')
           ..write('hasExpiry: $hasExpiry, ')
-          ..write('printBarcodeLabel: $printBarcodeLabel, ')
-          ..write('isOtc: $isOtc, ')
           ..write('isControlledDrug: $isControlledDrug, ')
-          ..write('scaleBarcodeAlert: $scaleBarcodeAlert, ')
           ..write('lockAutoPriceUpdate: $lockAutoPriceUpdate, ')
           ..write('requiresPrescription: $requiresPrescription, ')
           ..write('costMicros: $costMicros, ')
@@ -5827,6 +5672,1498 @@ class ItemSuppliersCompanion extends UpdateCompanion<ItemSupplierRow> {
           ..write('id: $id, ')
           ..write('itemId: $itemId, ')
           ..write('supplierId: $supplierId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ActiveIngredientsTable extends ActiveIngredients
+    with TableInfo<$ActiveIngredientsTable, ActiveIngredientRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ActiveIngredientsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _nameEnMeta = const VerificationMeta('nameEn');
+  @override
+  late final GeneratedColumn<String> nameEn = GeneratedColumn<String>(
+    'name_en',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    nameEn,
+    description,
+    isActive,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'active_ingredients';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ActiveIngredientRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('name_en')) {
+      context.handle(
+        _nameEnMeta,
+        nameEn.isAcceptableOrUnknown(data['name_en']!, _nameEnMeta),
+      );
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ActiveIngredientRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ActiveIngredientRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      nameEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_en'],
+      ),
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ActiveIngredientsTable createAlias(String alias) {
+    return $ActiveIngredientsTable(attachedDatabase, alias);
+  }
+}
+
+class ActiveIngredientRow extends DataClass
+    implements Insertable<ActiveIngredientRow> {
+  final String id;
+  final String name;
+  final String? nameEn;
+  final String? description;
+  final bool isActive;
+  final int createdAt;
+  final int updatedAt;
+  const ActiveIngredientRow({
+    required this.id,
+    required this.name,
+    this.nameEn,
+    this.description,
+    required this.isActive,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || nameEn != null) {
+      map['name_en'] = Variable<String>(nameEn);
+    }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['is_active'] = Variable<bool>(isActive);
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  ActiveIngredientsCompanion toCompanion(bool nullToAbsent) {
+    return ActiveIngredientsCompanion(
+      id: Value(id),
+      name: Value(name),
+      nameEn: nameEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nameEn),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      isActive: Value(isActive),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ActiveIngredientRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ActiveIngredientRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      nameEn: serializer.fromJson<String?>(json['nameEn']),
+      description: serializer.fromJson<String?>(json['description']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'nameEn': serializer.toJson<String?>(nameEn),
+      'description': serializer.toJson<String?>(description),
+      'isActive': serializer.toJson<bool>(isActive),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  ActiveIngredientRow copyWith({
+    String? id,
+    String? name,
+    Value<String?> nameEn = const Value.absent(),
+    Value<String?> description = const Value.absent(),
+    bool? isActive,
+    int? createdAt,
+    int? updatedAt,
+  }) => ActiveIngredientRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    nameEn: nameEn.present ? nameEn.value : this.nameEn,
+    description: description.present ? description.value : this.description,
+    isActive: isActive ?? this.isActive,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ActiveIngredientRow copyWithCompanion(ActiveIngredientsCompanion data) {
+    return ActiveIngredientRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      nameEn: data.nameEn.present ? data.nameEn.value : this.nameEn,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActiveIngredientRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('description: $description, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    nameEn,
+    description,
+    isActive,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ActiveIngredientRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.nameEn == this.nameEn &&
+          other.description == this.description &&
+          other.isActive == this.isActive &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ActiveIngredientsCompanion extends UpdateCompanion<ActiveIngredientRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> nameEn;
+  final Value<String?> description;
+  final Value<bool> isActive;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const ActiveIngredientsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.nameEn = const Value.absent(),
+    this.description = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ActiveIngredientsCompanion.insert({
+    required String id,
+    required String name,
+    this.nameEn = const Value.absent(),
+    this.description = const Value.absent(),
+    this.isActive = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<ActiveIngredientRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? nameEn,
+    Expression<String>? description,
+    Expression<bool>? isActive,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (nameEn != null) 'name_en': nameEn,
+      if (description != null) 'description': description,
+      if (isActive != null) 'is_active': isActive,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ActiveIngredientsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? nameEn,
+    Value<String?>? description,
+    Value<bool>? isActive,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return ActiveIngredientsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      nameEn: nameEn ?? this.nameEn,
+      description: description ?? this.description,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (nameEn.present) {
+      map['name_en'] = Variable<String>(nameEn.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActiveIngredientsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('description: $description, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ItemActiveIngredientsTable extends ItemActiveIngredients
+    with TableInfo<$ItemActiveIngredientsTable, ItemActiveIngredientRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ItemActiveIngredientsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activeIngredientIdMeta =
+      const VerificationMeta('activeIngredientId');
+  @override
+  late final GeneratedColumn<String> activeIngredientId =
+      GeneratedColumn<String>(
+        'active_ingredient_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [id, itemId, activeIngredientId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'item_active_ingredients';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ItemActiveIngredientRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('active_ingredient_id')) {
+      context.handle(
+        _activeIngredientIdMeta,
+        activeIngredientId.isAcceptableOrUnknown(
+          data['active_ingredient_id']!,
+          _activeIngredientIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_activeIngredientIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {itemId, activeIngredientId},
+  ];
+  @override
+  ItemActiveIngredientRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ItemActiveIngredientRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      )!,
+      activeIngredientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}active_ingredient_id'],
+      )!,
+    );
+  }
+
+  @override
+  $ItemActiveIngredientsTable createAlias(String alias) {
+    return $ItemActiveIngredientsTable(attachedDatabase, alias);
+  }
+}
+
+class ItemActiveIngredientRow extends DataClass
+    implements Insertable<ItemActiveIngredientRow> {
+  final String id;
+  final String itemId;
+  final String activeIngredientId;
+  const ItemActiveIngredientRow({
+    required this.id,
+    required this.itemId,
+    required this.activeIngredientId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['item_id'] = Variable<String>(itemId);
+    map['active_ingredient_id'] = Variable<String>(activeIngredientId);
+    return map;
+  }
+
+  ItemActiveIngredientsCompanion toCompanion(bool nullToAbsent) {
+    return ItemActiveIngredientsCompanion(
+      id: Value(id),
+      itemId: Value(itemId),
+      activeIngredientId: Value(activeIngredientId),
+    );
+  }
+
+  factory ItemActiveIngredientRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ItemActiveIngredientRow(
+      id: serializer.fromJson<String>(json['id']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      activeIngredientId: serializer.fromJson<String>(
+        json['activeIngredientId'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'itemId': serializer.toJson<String>(itemId),
+      'activeIngredientId': serializer.toJson<String>(activeIngredientId),
+    };
+  }
+
+  ItemActiveIngredientRow copyWith({
+    String? id,
+    String? itemId,
+    String? activeIngredientId,
+  }) => ItemActiveIngredientRow(
+    id: id ?? this.id,
+    itemId: itemId ?? this.itemId,
+    activeIngredientId: activeIngredientId ?? this.activeIngredientId,
+  );
+  ItemActiveIngredientRow copyWithCompanion(
+    ItemActiveIngredientsCompanion data,
+  ) {
+    return ItemActiveIngredientRow(
+      id: data.id.present ? data.id.value : this.id,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      activeIngredientId: data.activeIngredientId.present
+          ? data.activeIngredientId.value
+          : this.activeIngredientId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ItemActiveIngredientRow(')
+          ..write('id: $id, ')
+          ..write('itemId: $itemId, ')
+          ..write('activeIngredientId: $activeIngredientId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, itemId, activeIngredientId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ItemActiveIngredientRow &&
+          other.id == this.id &&
+          other.itemId == this.itemId &&
+          other.activeIngredientId == this.activeIngredientId);
+}
+
+class ItemActiveIngredientsCompanion
+    extends UpdateCompanion<ItemActiveIngredientRow> {
+  final Value<String> id;
+  final Value<String> itemId;
+  final Value<String> activeIngredientId;
+  final Value<int> rowid;
+  const ItemActiveIngredientsCompanion({
+    this.id = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.activeIngredientId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ItemActiveIngredientsCompanion.insert({
+    required String id,
+    required String itemId,
+    required String activeIngredientId,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       itemId = Value(itemId),
+       activeIngredientId = Value(activeIngredientId);
+  static Insertable<ItemActiveIngredientRow> custom({
+    Expression<String>? id,
+    Expression<String>? itemId,
+    Expression<String>? activeIngredientId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (itemId != null) 'item_id': itemId,
+      if (activeIngredientId != null)
+        'active_ingredient_id': activeIngredientId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ItemActiveIngredientsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? itemId,
+    Value<String>? activeIngredientId,
+    Value<int>? rowid,
+  }) {
+    return ItemActiveIngredientsCompanion(
+      id: id ?? this.id,
+      itemId: itemId ?? this.itemId,
+      activeIngredientId: activeIngredientId ?? this.activeIngredientId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (activeIngredientId.present) {
+      map['active_ingredient_id'] = Variable<String>(activeIngredientId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ItemActiveIngredientsCompanion(')
+          ..write('id: $id, ')
+          ..write('itemId: $itemId, ')
+          ..write('activeIngredientId: $activeIngredientId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $IndicationsTable extends Indications
+    with TableInfo<$IndicationsTable, IndicationRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $IndicationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _nameEnMeta = const VerificationMeta('nameEn');
+  @override
+  late final GeneratedColumn<String> nameEn = GeneratedColumn<String>(
+    'name_en',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    nameEn,
+    description,
+    isActive,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'indications';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<IndicationRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('name_en')) {
+      context.handle(
+        _nameEnMeta,
+        nameEn.isAcceptableOrUnknown(data['name_en']!, _nameEnMeta),
+      );
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  IndicationRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return IndicationRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      nameEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name_en'],
+      ),
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $IndicationsTable createAlias(String alias) {
+    return $IndicationsTable(attachedDatabase, alias);
+  }
+}
+
+class IndicationRow extends DataClass implements Insertable<IndicationRow> {
+  final String id;
+  final String name;
+  final String? nameEn;
+  final String? description;
+  final bool isActive;
+  final int createdAt;
+  final int updatedAt;
+  const IndicationRow({
+    required this.id,
+    required this.name,
+    this.nameEn,
+    this.description,
+    required this.isActive,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || nameEn != null) {
+      map['name_en'] = Variable<String>(nameEn);
+    }
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['is_active'] = Variable<bool>(isActive);
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  IndicationsCompanion toCompanion(bool nullToAbsent) {
+    return IndicationsCompanion(
+      id: Value(id),
+      name: Value(name),
+      nameEn: nameEn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nameEn),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      isActive: Value(isActive),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory IndicationRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return IndicationRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      nameEn: serializer.fromJson<String?>(json['nameEn']),
+      description: serializer.fromJson<String?>(json['description']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'nameEn': serializer.toJson<String?>(nameEn),
+      'description': serializer.toJson<String?>(description),
+      'isActive': serializer.toJson<bool>(isActive),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  IndicationRow copyWith({
+    String? id,
+    String? name,
+    Value<String?> nameEn = const Value.absent(),
+    Value<String?> description = const Value.absent(),
+    bool? isActive,
+    int? createdAt,
+    int? updatedAt,
+  }) => IndicationRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    nameEn: nameEn.present ? nameEn.value : this.nameEn,
+    description: description.present ? description.value : this.description,
+    isActive: isActive ?? this.isActive,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  IndicationRow copyWithCompanion(IndicationsCompanion data) {
+    return IndicationRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      nameEn: data.nameEn.present ? data.nameEn.value : this.nameEn,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('IndicationRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('description: $description, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    nameEn,
+    description,
+    isActive,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is IndicationRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.nameEn == this.nameEn &&
+          other.description == this.description &&
+          other.isActive == this.isActive &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class IndicationsCompanion extends UpdateCompanion<IndicationRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> nameEn;
+  final Value<String?> description;
+  final Value<bool> isActive;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const IndicationsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.nameEn = const Value.absent(),
+    this.description = const Value.absent(),
+    this.isActive = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  IndicationsCompanion.insert({
+    required String id,
+    required String name,
+    this.nameEn = const Value.absent(),
+    this.description = const Value.absent(),
+    this.isActive = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<IndicationRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? nameEn,
+    Expression<String>? description,
+    Expression<bool>? isActive,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (nameEn != null) 'name_en': nameEn,
+      if (description != null) 'description': description,
+      if (isActive != null) 'is_active': isActive,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  IndicationsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? nameEn,
+    Value<String?>? description,
+    Value<bool>? isActive,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return IndicationsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      nameEn: nameEn ?? this.nameEn,
+      description: description ?? this.description,
+      isActive: isActive ?? this.isActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (nameEn.present) {
+      map['name_en'] = Variable<String>(nameEn.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('IndicationsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('nameEn: $nameEn, ')
+          ..write('description: $description, ')
+          ..write('isActive: $isActive, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ItemIndicationsTable extends ItemIndications
+    with TableInfo<$ItemIndicationsTable, ItemIndicationRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ItemIndicationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _indicationIdMeta = const VerificationMeta(
+    'indicationId',
+  );
+  @override
+  late final GeneratedColumn<String> indicationId = GeneratedColumn<String>(
+    'indication_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, itemId, indicationId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'item_indications';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ItemIndicationRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('indication_id')) {
+      context.handle(
+        _indicationIdMeta,
+        indicationId.isAcceptableOrUnknown(
+          data['indication_id']!,
+          _indicationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_indicationIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {itemId, indicationId},
+  ];
+  @override
+  ItemIndicationRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ItemIndicationRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      )!,
+      indicationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}indication_id'],
+      )!,
+    );
+  }
+
+  @override
+  $ItemIndicationsTable createAlias(String alias) {
+    return $ItemIndicationsTable(attachedDatabase, alias);
+  }
+}
+
+class ItemIndicationRow extends DataClass
+    implements Insertable<ItemIndicationRow> {
+  final String id;
+  final String itemId;
+  final String indicationId;
+  const ItemIndicationRow({
+    required this.id,
+    required this.itemId,
+    required this.indicationId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['item_id'] = Variable<String>(itemId);
+    map['indication_id'] = Variable<String>(indicationId);
+    return map;
+  }
+
+  ItemIndicationsCompanion toCompanion(bool nullToAbsent) {
+    return ItemIndicationsCompanion(
+      id: Value(id),
+      itemId: Value(itemId),
+      indicationId: Value(indicationId),
+    );
+  }
+
+  factory ItemIndicationRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ItemIndicationRow(
+      id: serializer.fromJson<String>(json['id']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      indicationId: serializer.fromJson<String>(json['indicationId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'itemId': serializer.toJson<String>(itemId),
+      'indicationId': serializer.toJson<String>(indicationId),
+    };
+  }
+
+  ItemIndicationRow copyWith({
+    String? id,
+    String? itemId,
+    String? indicationId,
+  }) => ItemIndicationRow(
+    id: id ?? this.id,
+    itemId: itemId ?? this.itemId,
+    indicationId: indicationId ?? this.indicationId,
+  );
+  ItemIndicationRow copyWithCompanion(ItemIndicationsCompanion data) {
+    return ItemIndicationRow(
+      id: data.id.present ? data.id.value : this.id,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      indicationId: data.indicationId.present
+          ? data.indicationId.value
+          : this.indicationId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ItemIndicationRow(')
+          ..write('id: $id, ')
+          ..write('itemId: $itemId, ')
+          ..write('indicationId: $indicationId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, itemId, indicationId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ItemIndicationRow &&
+          other.id == this.id &&
+          other.itemId == this.itemId &&
+          other.indicationId == this.indicationId);
+}
+
+class ItemIndicationsCompanion extends UpdateCompanion<ItemIndicationRow> {
+  final Value<String> id;
+  final Value<String> itemId;
+  final Value<String> indicationId;
+  final Value<int> rowid;
+  const ItemIndicationsCompanion({
+    this.id = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.indicationId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ItemIndicationsCompanion.insert({
+    required String id,
+    required String itemId,
+    required String indicationId,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       itemId = Value(itemId),
+       indicationId = Value(indicationId);
+  static Insertable<ItemIndicationRow> custom({
+    Expression<String>? id,
+    Expression<String>? itemId,
+    Expression<String>? indicationId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (itemId != null) 'item_id': itemId,
+      if (indicationId != null) 'indication_id': indicationId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ItemIndicationsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? itemId,
+    Value<String>? indicationId,
+    Value<int>? rowid,
+  }) {
+    return ItemIndicationsCompanion(
+      id: id ?? this.id,
+      itemId: itemId ?? this.itemId,
+      indicationId: indicationId ?? this.indicationId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (indicationId.present) {
+      map['indication_id'] = Variable<String>(indicationId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ItemIndicationsCompanion(')
+          ..write('id: $id, ')
+          ..write('itemId: $itemId, ')
+          ..write('indicationId: $indicationId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -28004,6 +29341,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ItemUnitsTable itemUnits = $ItemUnitsTable(this);
   late final $ItemsTable items = $ItemsTable(this);
   late final $ItemSuppliersTable itemSuppliers = $ItemSuppliersTable(this);
+  late final $ActiveIngredientsTable activeIngredients =
+      $ActiveIngredientsTable(this);
+  late final $ItemActiveIngredientsTable itemActiveIngredients =
+      $ItemActiveIngredientsTable(this);
+  late final $IndicationsTable indications = $IndicationsTable(this);
+  late final $ItemIndicationsTable itemIndications = $ItemIndicationsTable(
+    this,
+  );
   late final $BatchesTable batches = $BatchesTable(this);
   late final $StockMovementsTable stockMovements = $StockMovementsTable(this);
   late final $SuppliersTable suppliers = $SuppliersTable(this);
@@ -28099,6 +29444,22 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index idxItemSuppliersSupplier = Index(
     'idx_item_suppliers_supplier',
     'CREATE INDEX idx_item_suppliers_supplier ON item_suppliers (supplier_id)',
+  );
+  late final Index idxItemAiItem = Index(
+    'idx_item_ai_item',
+    'CREATE INDEX idx_item_ai_item ON item_active_ingredients (item_id)',
+  );
+  late final Index idxItemAiIngredient = Index(
+    'idx_item_ai_ingredient',
+    'CREATE INDEX idx_item_ai_ingredient ON item_active_ingredients (active_ingredient_id)',
+  );
+  late final Index idxItemIndItem = Index(
+    'idx_item_ind_item',
+    'CREATE INDEX idx_item_ind_item ON item_indications (item_id)',
+  );
+  late final Index idxItemIndIndication = Index(
+    'idx_item_ind_indication',
+    'CREATE INDEX idx_item_ind_indication ON item_indications (indication_id)',
   );
   late final Index idxBatchesItemExpiry = Index(
     'idx_batches_item_expiry',
@@ -28349,6 +29710,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     itemUnits,
     items,
     itemSuppliers,
+    activeIngredients,
+    itemActiveIngredients,
+    indications,
+    itemIndications,
     batches,
     stockMovements,
     suppliers,
@@ -28391,6 +29756,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxItemsManufacturer,
     idxItemSuppliersItem,
     idxItemSuppliersSupplier,
+    idxItemAiItem,
+    idxItemAiIngredient,
+    idxItemIndItem,
+    idxItemIndIndication,
     idxBatchesItemExpiry,
     idxBatchesExpiry,
     idxBatchesNumber,
@@ -29943,10 +31312,7 @@ typedef $$ItemsTableCreateCompanionBuilder =
       Value<String?> sizeVolume,
       Value<String?> shelfLocation,
       Value<bool> hasExpiry,
-      Value<bool> printBarcodeLabel,
-      Value<bool> isOtc,
       Value<bool> isControlledDrug,
-      Value<bool> scaleBarcodeAlert,
       Value<bool> lockAutoPriceUpdate,
       Value<bool> requiresPrescription,
       Value<int> costMicros,
@@ -29994,10 +31360,7 @@ typedef $$ItemsTableUpdateCompanionBuilder =
       Value<String?> sizeVolume,
       Value<String?> shelfLocation,
       Value<bool> hasExpiry,
-      Value<bool> printBarcodeLabel,
-      Value<bool> isOtc,
       Value<bool> isControlledDrug,
-      Value<bool> scaleBarcodeAlert,
       Value<bool> lockAutoPriceUpdate,
       Value<bool> requiresPrescription,
       Value<int> costMicros,
@@ -30120,23 +31483,8 @@ class $$ItemsTableFilterComposer extends Composer<_$AppDatabase, $ItemsTable> {
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get printBarcodeLabel => $composableBuilder(
-    column: $table.printBarcodeLabel,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isOtc => $composableBuilder(
-    column: $table.isOtc,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<bool> get isControlledDrug => $composableBuilder(
     column: $table.isControlledDrug,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get scaleBarcodeAlert => $composableBuilder(
-    column: $table.scaleBarcodeAlert,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30365,23 +31713,8 @@ class $$ItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get printBarcodeLabel => $composableBuilder(
-    column: $table.printBarcodeLabel,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isOtc => $composableBuilder(
-    column: $table.isOtc,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<bool> get isControlledDrug => $composableBuilder(
     column: $table.isControlledDrug,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get scaleBarcodeAlert => $composableBuilder(
-    column: $table.scaleBarcodeAlert,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -30602,21 +31935,8 @@ class $$ItemsTableAnnotationComposer
   GeneratedColumn<bool> get hasExpiry =>
       $composableBuilder(column: $table.hasExpiry, builder: (column) => column);
 
-  GeneratedColumn<bool> get printBarcodeLabel => $composableBuilder(
-    column: $table.printBarcodeLabel,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isOtc =>
-      $composableBuilder(column: $table.isOtc, builder: (column) => column);
-
   GeneratedColumn<bool> get isControlledDrug => $composableBuilder(
     column: $table.isControlledDrug,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get scaleBarcodeAlert => $composableBuilder(
-    column: $table.scaleBarcodeAlert,
     builder: (column) => column,
   );
 
@@ -30790,10 +32110,7 @@ class $$ItemsTableTableManager
                 Value<String?> sizeVolume = const Value.absent(),
                 Value<String?> shelfLocation = const Value.absent(),
                 Value<bool> hasExpiry = const Value.absent(),
-                Value<bool> printBarcodeLabel = const Value.absent(),
-                Value<bool> isOtc = const Value.absent(),
                 Value<bool> isControlledDrug = const Value.absent(),
-                Value<bool> scaleBarcodeAlert = const Value.absent(),
                 Value<bool> lockAutoPriceUpdate = const Value.absent(),
                 Value<bool> requiresPrescription = const Value.absent(),
                 Value<int> costMicros = const Value.absent(),
@@ -30839,10 +32156,7 @@ class $$ItemsTableTableManager
                 sizeVolume: sizeVolume,
                 shelfLocation: shelfLocation,
                 hasExpiry: hasExpiry,
-                printBarcodeLabel: printBarcodeLabel,
-                isOtc: isOtc,
                 isControlledDrug: isControlledDrug,
-                scaleBarcodeAlert: scaleBarcodeAlert,
                 lockAutoPriceUpdate: lockAutoPriceUpdate,
                 requiresPrescription: requiresPrescription,
                 costMicros: costMicros,
@@ -30890,10 +32204,7 @@ class $$ItemsTableTableManager
                 Value<String?> sizeVolume = const Value.absent(),
                 Value<String?> shelfLocation = const Value.absent(),
                 Value<bool> hasExpiry = const Value.absent(),
-                Value<bool> printBarcodeLabel = const Value.absent(),
-                Value<bool> isOtc = const Value.absent(),
                 Value<bool> isControlledDrug = const Value.absent(),
-                Value<bool> scaleBarcodeAlert = const Value.absent(),
                 Value<bool> lockAutoPriceUpdate = const Value.absent(),
                 Value<bool> requiresPrescription = const Value.absent(),
                 Value<int> costMicros = const Value.absent(),
@@ -30939,10 +32250,7 @@ class $$ItemsTableTableManager
                 sizeVolume: sizeVolume,
                 shelfLocation: shelfLocation,
                 hasExpiry: hasExpiry,
-                printBarcodeLabel: printBarcodeLabel,
-                isOtc: isOtc,
                 isControlledDrug: isControlledDrug,
-                scaleBarcodeAlert: scaleBarcodeAlert,
                 lockAutoPriceUpdate: lockAutoPriceUpdate,
                 requiresPrescription: requiresPrescription,
                 costMicros: costMicros,
@@ -31155,6 +32463,852 @@ typedef $$ItemSuppliersTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $ItemSuppliersTable, ItemSupplierRow>,
       ),
       ItemSupplierRow,
+      PrefetchHooks Function()
+    >;
+typedef $$ActiveIngredientsTableCreateCompanionBuilder =
+    ActiveIngredientsCompanion Function({
+      required String id,
+      required String name,
+      Value<String?> nameEn,
+      Value<String?> description,
+      Value<bool> isActive,
+      required int createdAt,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$ActiveIngredientsTableUpdateCompanionBuilder =
+    ActiveIngredientsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String?> nameEn,
+      Value<String?> description,
+      Value<bool> isActive,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$ActiveIngredientsTableFilterComposer
+    extends Composer<_$AppDatabase, $ActiveIngredientsTable> {
+  $$ActiveIngredientsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ActiveIngredientsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ActiveIngredientsTable> {
+  $$ActiveIngredientsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ActiveIngredientsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ActiveIngredientsTable> {
+  $$ActiveIngredientsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get nameEn =>
+      $composableBuilder(column: $table.nameEn, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$ActiveIngredientsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ActiveIngredientsTable,
+          ActiveIngredientRow,
+          $$ActiveIngredientsTableFilterComposer,
+          $$ActiveIngredientsTableOrderingComposer,
+          $$ActiveIngredientsTableAnnotationComposer,
+          $$ActiveIngredientsTableCreateCompanionBuilder,
+          $$ActiveIngredientsTableUpdateCompanionBuilder,
+          (
+            ActiveIngredientRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ActiveIngredientsTable,
+              ActiveIngredientRow
+            >,
+          ),
+          ActiveIngredientRow,
+          PrefetchHooks Function()
+        > {
+  $$ActiveIngredientsTableTableManager(
+    _$AppDatabase db,
+    $ActiveIngredientsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ActiveIngredientsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ActiveIngredientsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ActiveIngredientsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> nameEn = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ActiveIngredientsCompanion(
+                id: id,
+                name: name,
+                nameEn: nameEn,
+                description: description,
+                isActive: isActive,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> nameEn = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ActiveIngredientsCompanion.insert(
+                id: id,
+                name: name,
+                nameEn: nameEn,
+                description: description,
+                isActive: isActive,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ActiveIngredientsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ActiveIngredientsTable,
+      ActiveIngredientRow,
+      $$ActiveIngredientsTableFilterComposer,
+      $$ActiveIngredientsTableOrderingComposer,
+      $$ActiveIngredientsTableAnnotationComposer,
+      $$ActiveIngredientsTableCreateCompanionBuilder,
+      $$ActiveIngredientsTableUpdateCompanionBuilder,
+      (
+        ActiveIngredientRow,
+        BaseReferences<
+          _$AppDatabase,
+          $ActiveIngredientsTable,
+          ActiveIngredientRow
+        >,
+      ),
+      ActiveIngredientRow,
+      PrefetchHooks Function()
+    >;
+typedef $$ItemActiveIngredientsTableCreateCompanionBuilder =
+    ItemActiveIngredientsCompanion Function({
+      required String id,
+      required String itemId,
+      required String activeIngredientId,
+      Value<int> rowid,
+    });
+typedef $$ItemActiveIngredientsTableUpdateCompanionBuilder =
+    ItemActiveIngredientsCompanion Function({
+      Value<String> id,
+      Value<String> itemId,
+      Value<String> activeIngredientId,
+      Value<int> rowid,
+    });
+
+class $$ItemActiveIngredientsTableFilterComposer
+    extends Composer<_$AppDatabase, $ItemActiveIngredientsTable> {
+  $$ItemActiveIngredientsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get activeIngredientId => $composableBuilder(
+    column: $table.activeIngredientId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ItemActiveIngredientsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ItemActiveIngredientsTable> {
+  $$ItemActiveIngredientsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activeIngredientId => $composableBuilder(
+    column: $table.activeIngredientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ItemActiveIngredientsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ItemActiveIngredientsTable> {
+  $$ItemActiveIngredientsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<String> get activeIngredientId => $composableBuilder(
+    column: $table.activeIngredientId,
+    builder: (column) => column,
+  );
+}
+
+class $$ItemActiveIngredientsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ItemActiveIngredientsTable,
+          ItemActiveIngredientRow,
+          $$ItemActiveIngredientsTableFilterComposer,
+          $$ItemActiveIngredientsTableOrderingComposer,
+          $$ItemActiveIngredientsTableAnnotationComposer,
+          $$ItemActiveIngredientsTableCreateCompanionBuilder,
+          $$ItemActiveIngredientsTableUpdateCompanionBuilder,
+          (
+            ItemActiveIngredientRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ItemActiveIngredientsTable,
+              ItemActiveIngredientRow
+            >,
+          ),
+          ItemActiveIngredientRow,
+          PrefetchHooks Function()
+        > {
+  $$ItemActiveIngredientsTableTableManager(
+    _$AppDatabase db,
+    $ItemActiveIngredientsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ItemActiveIngredientsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ItemActiveIngredientsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ItemActiveIngredientsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> itemId = const Value.absent(),
+                Value<String> activeIngredientId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ItemActiveIngredientsCompanion(
+                id: id,
+                itemId: itemId,
+                activeIngredientId: activeIngredientId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String itemId,
+                required String activeIngredientId,
+                Value<int> rowid = const Value.absent(),
+              }) => ItemActiveIngredientsCompanion.insert(
+                id: id,
+                itemId: itemId,
+                activeIngredientId: activeIngredientId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ItemActiveIngredientsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ItemActiveIngredientsTable,
+      ItemActiveIngredientRow,
+      $$ItemActiveIngredientsTableFilterComposer,
+      $$ItemActiveIngredientsTableOrderingComposer,
+      $$ItemActiveIngredientsTableAnnotationComposer,
+      $$ItemActiveIngredientsTableCreateCompanionBuilder,
+      $$ItemActiveIngredientsTableUpdateCompanionBuilder,
+      (
+        ItemActiveIngredientRow,
+        BaseReferences<
+          _$AppDatabase,
+          $ItemActiveIngredientsTable,
+          ItemActiveIngredientRow
+        >,
+      ),
+      ItemActiveIngredientRow,
+      PrefetchHooks Function()
+    >;
+typedef $$IndicationsTableCreateCompanionBuilder =
+    IndicationsCompanion Function({
+      required String id,
+      required String name,
+      Value<String?> nameEn,
+      Value<String?> description,
+      Value<bool> isActive,
+      required int createdAt,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$IndicationsTableUpdateCompanionBuilder =
+    IndicationsCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String?> nameEn,
+      Value<String?> description,
+      Value<bool> isActive,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$IndicationsTableFilterComposer
+    extends Composer<_$AppDatabase, $IndicationsTable> {
+  $$IndicationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$IndicationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $IndicationsTable> {
+  $$IndicationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nameEn => $composableBuilder(
+    column: $table.nameEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$IndicationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $IndicationsTable> {
+  $$IndicationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get nameEn =>
+      $composableBuilder(column: $table.nameEn, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$IndicationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $IndicationsTable,
+          IndicationRow,
+          $$IndicationsTableFilterComposer,
+          $$IndicationsTableOrderingComposer,
+          $$IndicationsTableAnnotationComposer,
+          $$IndicationsTableCreateCompanionBuilder,
+          $$IndicationsTableUpdateCompanionBuilder,
+          (
+            IndicationRow,
+            BaseReferences<_$AppDatabase, $IndicationsTable, IndicationRow>,
+          ),
+          IndicationRow,
+          PrefetchHooks Function()
+        > {
+  $$IndicationsTableTableManager(_$AppDatabase db, $IndicationsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$IndicationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$IndicationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$IndicationsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> nameEn = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => IndicationsCompanion(
+                id: id,
+                name: name,
+                nameEn: nameEn,
+                description: description,
+                isActive: isActive,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> nameEn = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => IndicationsCompanion.insert(
+                id: id,
+                name: name,
+                nameEn: nameEn,
+                description: description,
+                isActive: isActive,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$IndicationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $IndicationsTable,
+      IndicationRow,
+      $$IndicationsTableFilterComposer,
+      $$IndicationsTableOrderingComposer,
+      $$IndicationsTableAnnotationComposer,
+      $$IndicationsTableCreateCompanionBuilder,
+      $$IndicationsTableUpdateCompanionBuilder,
+      (
+        IndicationRow,
+        BaseReferences<_$AppDatabase, $IndicationsTable, IndicationRow>,
+      ),
+      IndicationRow,
+      PrefetchHooks Function()
+    >;
+typedef $$ItemIndicationsTableCreateCompanionBuilder =
+    ItemIndicationsCompanion Function({
+      required String id,
+      required String itemId,
+      required String indicationId,
+      Value<int> rowid,
+    });
+typedef $$ItemIndicationsTableUpdateCompanionBuilder =
+    ItemIndicationsCompanion Function({
+      Value<String> id,
+      Value<String> itemId,
+      Value<String> indicationId,
+      Value<int> rowid,
+    });
+
+class $$ItemIndicationsTableFilterComposer
+    extends Composer<_$AppDatabase, $ItemIndicationsTable> {
+  $$ItemIndicationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get indicationId => $composableBuilder(
+    column: $table.indicationId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ItemIndicationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ItemIndicationsTable> {
+  $$ItemIndicationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get indicationId => $composableBuilder(
+    column: $table.indicationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ItemIndicationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ItemIndicationsTable> {
+  $$ItemIndicationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<String> get indicationId => $composableBuilder(
+    column: $table.indicationId,
+    builder: (column) => column,
+  );
+}
+
+class $$ItemIndicationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ItemIndicationsTable,
+          ItemIndicationRow,
+          $$ItemIndicationsTableFilterComposer,
+          $$ItemIndicationsTableOrderingComposer,
+          $$ItemIndicationsTableAnnotationComposer,
+          $$ItemIndicationsTableCreateCompanionBuilder,
+          $$ItemIndicationsTableUpdateCompanionBuilder,
+          (
+            ItemIndicationRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ItemIndicationsTable,
+              ItemIndicationRow
+            >,
+          ),
+          ItemIndicationRow,
+          PrefetchHooks Function()
+        > {
+  $$ItemIndicationsTableTableManager(
+    _$AppDatabase db,
+    $ItemIndicationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ItemIndicationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ItemIndicationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ItemIndicationsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> itemId = const Value.absent(),
+                Value<String> indicationId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ItemIndicationsCompanion(
+                id: id,
+                itemId: itemId,
+                indicationId: indicationId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String itemId,
+                required String indicationId,
+                Value<int> rowid = const Value.absent(),
+              }) => ItemIndicationsCompanion.insert(
+                id: id,
+                itemId: itemId,
+                indicationId: indicationId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ItemIndicationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ItemIndicationsTable,
+      ItemIndicationRow,
+      $$ItemIndicationsTableFilterComposer,
+      $$ItemIndicationsTableOrderingComposer,
+      $$ItemIndicationsTableAnnotationComposer,
+      $$ItemIndicationsTableCreateCompanionBuilder,
+      $$ItemIndicationsTableUpdateCompanionBuilder,
+      (
+        ItemIndicationRow,
+        BaseReferences<_$AppDatabase, $ItemIndicationsTable, ItemIndicationRow>,
+      ),
+      ItemIndicationRow,
       PrefetchHooks Function()
     >;
 typedef $$BatchesTableCreateCompanionBuilder =
@@ -41643,6 +43797,14 @@ class $AppDatabaseManager {
       $$ItemsTableTableManager(_db, _db.items);
   $$ItemSuppliersTableTableManager get itemSuppliers =>
       $$ItemSuppliersTableTableManager(_db, _db.itemSuppliers);
+  $$ActiveIngredientsTableTableManager get activeIngredients =>
+      $$ActiveIngredientsTableTableManager(_db, _db.activeIngredients);
+  $$ItemActiveIngredientsTableTableManager get itemActiveIngredients =>
+      $$ItemActiveIngredientsTableTableManager(_db, _db.itemActiveIngredients);
+  $$IndicationsTableTableManager get indications =>
+      $$IndicationsTableTableManager(_db, _db.indications);
+  $$ItemIndicationsTableTableManager get itemIndications =>
+      $$ItemIndicationsTableTableManager(_db, _db.itemIndications);
   $$BatchesTableTableManager get batches =>
       $$BatchesTableTableManager(_db, _db.batches);
   $$StockMovementsTableTableManager get stockMovements =>

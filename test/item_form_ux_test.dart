@@ -298,8 +298,9 @@ void main() {
     );
 
     // Inline "+" exists for category / manufacturer / group / base unit /
-    // packaging unit — but never for the filtered subcategory.
-    expect(find.byIcon(Icons.add_circle_outline), findsNWidgets(5));
+    // packaging unit / active ingredient / indication — but never for the
+    // filtered subcategory.
+    expect(find.byIcon(Icons.add_circle_outline), findsNWidgets(7));
     await tester.tap(find.byIcon(Icons.add_circle_outline).at(0));
     await tester.pumpAndSettle();
     expect(find.text('إضافة تصنيف جديد'), findsOneWidget);

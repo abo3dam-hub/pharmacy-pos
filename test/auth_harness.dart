@@ -25,6 +25,9 @@ import 'package:pharmacy_pos/features/auth/domain/usecases/logout.dart';
 import 'package:pharmacy_pos/features/auth/domain/usecases/reactivate_user.dart';
 import 'package:pharmacy_pos/features/auth/domain/usecases/update_user.dart';
 import 'package:pharmacy_pos/features/auth/domain/usecases/rbac_use_cases.dart';
+import 'package:pharmacy_pos/features/dashboard/application/dashboard_controller.dart';
+import 'package:pharmacy_pos/features/dashboard/data/dashboard_dao.dart';
+import 'package:pharmacy_pos/features/sales/data/z_report_dao.dart';
 import 'package:pharmacy_pos/features/settings/application/settings_controller.dart';
 import 'package:pharmacy_pos/features/settings/data/settings_repository_impl.dart';
 import 'package:pharmacy_pos/features/settings/domain/usecases/settings_use_cases.dart';
@@ -129,6 +132,9 @@ Future<({ProviderContainer container, AppDatabase db, AuthRepository repository}
         ),
         db,
       ),
+    ),
+    dashboardControllerProvider.overrideWith(
+      (ref) => DashboardController(ZReportDao(db), DashboardDao(db)),
     ),
   ]);
   return (container: container, db: db, repository: repository);

@@ -14,11 +14,16 @@ void main() {
   const expectedTables = {
     'manufacturers',
     'therapeutic_groups',
+    'active_ingredients',
+    'indications',
     'categories',
     'sub_categories',
     'units',
     'item_units',
     'items',
+    'item_suppliers',
+    'item_active_ingredients',
+    'item_indications',
     'batches',
     'stock_movements',
     'suppliers',
@@ -53,6 +58,10 @@ void main() {
     'items': {'category_id': true, 'trade_name': true},
     'batches': {'item_id': true, 'batch_number': true},
     'item_units': {'units_per_large': true},
+    'active_ingredients': {'name': true},
+    'indications': {'name': true},
+    'item_active_ingredients': {'item_id': true, 'active_ingredient_id': true},
+    'item_indications': {'item_id': true, 'indication_id': true},
     'stock_movements': {
       'movement_type': true,
       'user_id': true,
@@ -143,6 +152,10 @@ void main() {
     expect(names, contains('idx_returns_original'));
     expect(names, contains('idx_audit_entity'));
     expect(names, contains('idx_backups_created'));
+    expect(names, contains('idx_item_ai_item'));
+    expect(names, contains('idx_item_ai_ingredient'));
+    expect(names, contains('idx_item_ind_item'));
+    expect(names, contains('idx_item_ind_indication'));
   });
 
   test('enum persistence round-trips snake_case stored values', () async {

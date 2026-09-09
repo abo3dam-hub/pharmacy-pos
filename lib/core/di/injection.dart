@@ -3,7 +3,11 @@ import 'package:get_it/get_it.dart';
 import '../../data/daos/batch_dao.dart';
 import '../../data/daos/category_dao.dart';
 import '../../data/daos/customer_dao.dart';
+import '../../data/daos/active_ingredient_dao.dart';
+import '../../data/daos/indication_dao.dart';
+import '../../data/daos/item_active_ingredient_dao.dart';
 import '../../data/daos/item_dao.dart';
+import '../../data/daos/item_indication_dao.dart';
 import '../../data/daos/item_supplier_dao.dart';
 import '../../data/daos/manufacturer_dao.dart';
 import '../../data/daos/prescription_dao.dart';
@@ -54,6 +58,8 @@ import '../../features/auth/domain/usecases/logout.dart';
 import '../../features/auth/domain/usecases/reactivate_user.dart';
 import '../../features/auth/domain/usecases/update_user.dart';
 import '../../features/customers/application/customers_controller.dart';
+import '../../features/dashboard/application/dashboard_controller.dart';
+import '../../features/dashboard/data/dashboard_dao.dart';
 import '../../features/customers/data/repositories/customer_repository_impl.dart';
 import '../../features/customers/domain/repositories/customer_repository.dart';
 import '../../features/customers/domain/usecases/customers_use_cases.dart';
@@ -68,12 +74,14 @@ import '../../features/inventory/data/repositories/inventory_repository_impl.dar
 import '../../features/inventory/domain/repositories/inventory_repository.dart';
 import '../../features/inventory/domain/services/inventory_excel_service.dart';
 import '../../features/inventory/domain/services/inventory_view_builder.dart';
+import '../../features/inventory/domain/usecases/active_ingredients_use_cases.dart';
 import '../../features/inventory/domain/usecases/batches_use_cases.dart';
 import '../../features/inventory/domain/usecases/bulk_use_cases.dart';
 import '../../features/inventory/domain/usecases/categories_use_cases.dart';
 import '../../features/inventory/domain/usecases/create_item.dart';
 import '../../features/inventory/domain/usecases/excel_use_cases.dart';
 import '../../features/inventory/domain/usecases/groups_use_cases.dart';
+import '../../features/inventory/domain/usecases/indications_use_cases.dart';
 import '../../features/inventory/domain/usecases/list_items.dart';
 import '../../features/inventory/domain/usecases/manufacturers_use_cases.dart';
 import '../../features/inventory/domain/usecases/set_item_active.dart';
@@ -141,6 +149,13 @@ void setupDependencies() {
   getIt.registerLazySingleton<BatchDao>(() => BatchDao(db));
   getIt.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
   getIt.registerLazySingleton<ItemSupplierDao>(() => ItemSupplierDao(db));
+  getIt.registerLazySingleton<ActiveIngredientDao>(
+      () => ActiveIngredientDao(db));
+  getIt.registerLazySingleton<IndicationDao>(() => IndicationDao(db));
+  getIt.registerLazySingleton<ItemActiveIngredientDao>(
+      () => ItemActiveIngredientDao(db));
+  getIt.registerLazySingleton<ItemIndicationDao>(
+      () => ItemIndicationDao(db));
   getIt.registerLazySingleton<CategoryDao>(() => CategoryDao(db));
   getIt.registerLazySingleton<ManufacturerDao>(() => ManufacturerDao(db));
   getIt.registerLazySingleton<TherapeuticGroupDao>(
@@ -161,6 +176,13 @@ void setupDependencies() {
   _registerPhase11(db);
   _registerPhase12(db);
   _registerPhase13(db);
+  _registerDashboard(db);
+}
+
+void _registerDashboard(AppDatabase db) {
+  getIt.registerLazySingleton<DashboardDao>(() => DashboardDao(db));
+  getIt.registerLazySingleton<DashboardController>(
+      () => DashboardController(getIt<ZReportDao>(), getIt<DashboardDao>()));
 }
 
 /// Phase 7 — POS workspace data layer over the existing transactional engine.
@@ -504,6 +526,10 @@ void _registerInventory(AppDatabase db) {
       getIt<StockMovementDao>(),
       getIt<ItemSupplierDao>(),
       getIt<StockService>(),
+      getIt<ActiveIngredientDao>(),
+      getIt<IndicationDao>(),
+      getIt<ItemActiveIngredientDao>(),
+      getIt<ItemIndicationDao>(),
     ),
   );
 
@@ -567,6 +593,18 @@ void _registerInventory(AppDatabase db) {
       () => ListUnitsUseCase(repo, perms));
   getIt.registerLazySingleton<SaveUnitUseCase>(
       () => SaveUnitUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<ListActiveIngredientsUseCase>(
+      () => ListActiveIngredientsUseCase(repo, perms));
+  getIt.registerLazySingleton<SaveActiveIngredientUseCase>(
+      () => SaveActiveIngredientUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<SetActiveIngredientActiveUseCase>(
+      () => SetActiveIngredientActiveUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<ListIndicationsUseCase>(
+      () => ListIndicationsUseCase(repo, perms));
+  getIt.registerLazySingleton<SaveIndicationUseCase>(
+      () => SaveIndicationUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<SetIndicationActiveUseCase>(
+      () => SetIndicationActiveUseCase(repo, perms, audit));
 
   // Excel
   getIt.registerLazySingleton<ExportItemsUseCase>(
@@ -603,6 +641,12 @@ void _registerInventory(AppDatabase db) {
             getIt<SetTherapeuticGroupActiveUseCase>(),
             getIt<ListUnitsUseCase>(),
             getIt<SaveUnitUseCase>(),
+            getIt<ListActiveIngredientsUseCase>(),
+            getIt<SaveActiveIngredientUseCase>(),
+            getIt<SetActiveIngredientActiveUseCase>(),
+            getIt<ListIndicationsUseCase>(),
+            getIt<SaveIndicationUseCase>(),
+            getIt<SetIndicationActiveUseCase>(),
           ));
 }
 

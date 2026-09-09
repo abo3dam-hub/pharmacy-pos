@@ -18,6 +18,8 @@ Future<BulkFormResult?> showBulkDialog(
   BuildContext context, {
   required List<String> itemIds,
   required List<CategoryRow> categories,
+  required List<ManufacturerRow> manufacturers,
+  required List<SupplierRow> suppliers,
   required bool canChangePrices,
 }) async {
   final result = await showDialog<BulkFormResult>(
@@ -25,6 +27,8 @@ Future<BulkFormResult?> showBulkDialog(
     builder: (_) => _BulkDialog(
       itemIds: itemIds,
       categories: categories,
+      manufacturers: manufacturers,
+      suppliers: suppliers,
       canChangePrices: canChangePrices,
     ),
   );
@@ -35,11 +39,15 @@ class _BulkDialog extends StatefulWidget {
   const _BulkDialog({
     required this.itemIds,
     required this.categories,
+    required this.manufacturers,
+    required this.suppliers,
     required this.canChangePrices,
   });
 
   final List<String> itemIds;
   final List<CategoryRow> categories;
+  final List<ManufacturerRow> manufacturers;
+  final List<SupplierRow> suppliers;
   final bool canChangePrices;
 
   @override
@@ -52,6 +60,9 @@ class _BulkDialogState extends State<_BulkDialog> {
 
   BulkOperation? _operation;
   String? _categoryId;
+  BulkPriceScope _scope = BulkPriceScope.manual;
+  String? _manufacturerId;
+  String? _supplierId;
 
   @override
   void dispose() {
@@ -92,6 +103,15 @@ class _BulkDialogState extends State<_BulkDialog> {
           _fail(l10n.bulkPercent);
           return;
         }
+        if (_scope == BulkPriceScope.manufacturer &&
+            _manufacturerId == null) {
+          _fail(l10n.bulkPriceScopeManufacturer);
+          return;
+        }
+        if (_scope == BulkPriceScope.supplier && _supplierId == null) {
+          _fail(l10n.bulkPriceScopeSupplier);
+          return;
+        }
     }
     Navigator.of(context).pop(BulkFormResult(
       BulkUpdateInput(
@@ -100,6 +120,10 @@ class _BulkDialogState extends State<_BulkDialog> {
         categoryId: _categoryId,
         shelfLocation: _shelf.text.trim().isEmpty ? null : _shelf.text.trim(),
         basisPoints: _parsePercentBasisPoints() ?? 0,
+        priceScope: op == BulkOperation.adjustPricePercent ? _scope
+            : BulkPriceScope.manual,
+        priceManufacturerId: _manufacturerId,
+        priceSupplierId: _supplierId,
       ),
     ));
   }
@@ -157,7 +181,7 @@ class _BulkDialogState extends State<_BulkDialog> {
                 controller: _shelf,
                 decoration: InputDecoration(labelText: l10n.itemShelfLocation),
               ),
-            if (_operation == BulkOperation.adjustPricePercent)
+            if (_operation == BulkOperation.adjustPricePercent) ...[
               TextFormField(
                 controller: _percent,
                 decoration: InputDecoration(
@@ -166,6 +190,44 @@ class _BulkDialogState extends State<_BulkDialog> {
                 ),
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
               ),
+              const SizedBox(height: AppSpacing.s),
+              Text(l10n.bulkPriceScopeTitle),
+              RadioGroup<BulkPriceScope>(
+                groupValue: _scope,
+                onChanged: (v) =>
+                    setState(() => _scope = v ?? BulkPriceScope.manual),
+                child: Column(
+                  children: [
+                    for (final scope in BulkPriceScope.values)
+                      RadioListTile<BulkPriceScope>(
+                        title: Text(_scopeLabel(l10n, scope)),
+                        value: scope,
+                        dense: true,
+                      ),
+                  ],
+                ),
+              ),
+              if (_scope == BulkPriceScope.manufacturer)
+                DropdownButtonFormField<String>(
+                  initialValue: _manufacturerId,
+                  decoration: InputDecoration(labelText: l10n.itemManufacturer),
+                  items: [
+                    for (final m in widget.manufacturers)
+                      DropdownMenuItem(value: m.id, child: Text(m.name)),
+                  ],
+                  onChanged: (v) => setState(() => _manufacturerId = v),
+                ),
+              if (_scope == BulkPriceScope.supplier)
+                DropdownButtonFormField<String>(
+                  initialValue: _supplierId,
+                  decoration: InputDecoration(labelText: l10n.supplierName),
+                  items: [
+                    for (final s in widget.suppliers)
+                      DropdownMenuItem(value: s.id, child: Text(s.name)),
+                  ],
+                  onChanged: (v) => setState(() => _supplierId = v),
+                ),
+            ],
           ],
         ),
       ),
@@ -186,5 +248,14 @@ class _BulkDialogState extends State<_BulkDialog> {
         BulkOperation.changeCategory => l10n.bulkChangeCategory,
         BulkOperation.changeShelfLocation => l10n.bulkChangeShelf,
         BulkOperation.adjustPricePercent => l10n.bulkAdjustPricePercent,
+      };
+
+  String _scopeLabel(AppLocalizations l10n, BulkPriceScope scope) =>
+      switch (scope) {
+        BulkPriceScope.all => l10n.bulkPriceScopeAll,
+        BulkPriceScope.manufacturer => l10n.bulkPriceScopeManufacturer,
+        BulkPriceScope.supplier => l10n.bulkPriceScopeSupplier,
+        BulkPriceScope.manual => l10n.bulkPriceScopeManual(
+            widget.itemIds.length),
       };
 }

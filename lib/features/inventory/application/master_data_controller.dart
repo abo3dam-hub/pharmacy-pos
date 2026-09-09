@@ -4,15 +4,17 @@ import '../../../core/errors/exceptions.dart';
 import '../../../core/errors/failures.dart';
 import '../../../shared/database/app_database.dart';
 import '../domain/repositories/inventory_repository.dart';
+import '../domain/usecases/active_ingredients_use_cases.dart';
 import '../domain/usecases/categories_use_cases.dart';
 import '../domain/usecases/groups_use_cases.dart';
+import '../domain/usecases/indications_use_cases.dart';
 import '../domain/usecases/manufacturers_use_cases.dart';
 import '../domain/usecases/units_use_cases.dart';
 
 enum MasterDataStatus { initial, loading, ready, error }
 
-/// Categories / sub-categories / manufacturers / therapeutic groups / units —
-/// the item master-data registry (§4.1–4.5).
+/// Categories / sub-categories / manufacturers / therapeutic groups / units /
+/// active ingredients / indications — the item master-data registry (§4.1–4.5).
 class MasterDataViewState {
   const MasterDataViewState({
     this.status = MasterDataStatus.initial,
@@ -21,6 +23,8 @@ class MasterDataViewState {
     this.manufacturers = const [],
     this.groups = const [],
     this.units = const [],
+    this.activeIngredients = const [],
+    this.indications = const [],
     this.error,
     this.busy = false,
   });
@@ -31,6 +35,8 @@ class MasterDataViewState {
   final List<ManufacturerRow> manufacturers;
   final List<TherapeuticGroupRow> groups;
   final List<UnitRow> units;
+  final List<ActiveIngredientRow> activeIngredients;
+  final List<IndicationRow> indications;
   final Failure? error;
   final bool busy;
 
@@ -44,6 +50,8 @@ class MasterDataViewState {
     List<ManufacturerRow>? manufacturers,
     List<TherapeuticGroupRow>? groups,
     List<UnitRow>? units,
+    List<ActiveIngredientRow>? activeIngredients,
+    List<IndicationRow>? indications,
     Failure? Function()? error,
     bool? busy,
   }) {
@@ -54,6 +62,8 @@ class MasterDataViewState {
       manufacturers: manufacturers ?? this.manufacturers,
       groups: groups ?? this.groups,
       units: units ?? this.units,
+      activeIngredients: activeIngredients ?? this.activeIngredients,
+      indications: indications ?? this.indications,
       error: error != null ? error() : this.error,
       busy: busy ?? this.busy,
     );
@@ -76,6 +86,12 @@ class MasterDataController extends StateNotifier<MasterDataViewState> {
     this._setGroupActive,
     this._listUnits,
     this._saveUnit,
+    this._listActiveIngredients,
+    this._saveActiveIngredient,
+    this._setActiveIngredientActive,
+    this._listIndications,
+    this._saveIndication,
+    this._setIndicationActive,
   ) : super(const MasterDataViewState());
 
   final ListCategoriesUseCase _listCategories;
@@ -90,6 +106,12 @@ class MasterDataController extends StateNotifier<MasterDataViewState> {
   final SetTherapeuticGroupActiveUseCase _setGroupActive;
   final ListUnitsUseCase _listUnits;
   final SaveUnitUseCase _saveUnit;
+  final ListActiveIngredientsUseCase _listActiveIngredients;
+  final SaveActiveIngredientUseCase _saveActiveIngredient;
+  final SetActiveIngredientActiveUseCase _setActiveIngredientActive;
+  final ListIndicationsUseCase _listIndications;
+  final SaveIndicationUseCase _saveIndication;
+  final SetIndicationActiveUseCase _setIndicationActive;
 
   Future<Failure?> load({String? actingRoleId}) async {
     state = state.copyWith(status: MasterDataStatus.loading, error: () => null);
@@ -98,6 +120,9 @@ class MasterDataController extends StateNotifier<MasterDataViewState> {
       final manufacturers = await _allManufacturers.call(actingRoleId: actingRoleId);
       final groups = await _listGroups.call(actingRoleId: actingRoleId);
       final units = await _listUnits.call(actingRoleId: actingRoleId);
+      final ingredients =
+          await _listActiveIngredients.call(actingRoleId: actingRoleId);
+      final indications = await _listIndications.call(actingRoleId: actingRoleId);
       state = MasterDataViewState(
         status: MasterDataStatus.ready,
         categories: cats.categories,
@@ -105,6 +130,8 @@ class MasterDataController extends StateNotifier<MasterDataViewState> {
         manufacturers: manufacturers,
         groups: groups,
         units: units,
+        activeIngredients: ingredients,
+        indications: indications,
       );
       return null;
     } on AppException catch (e) {
@@ -257,6 +284,68 @@ class MasterDataController extends StateNotifier<MasterDataViewState> {
     String? actingRoleId,
   }) =>
       _run(() => _saveUnit.update(id, draft,
+          actingUserId: actingUserId, actingRoleId: actingRoleId),
+          actingRoleId: actingRoleId);
+
+  // ----- active ingredients -----
+
+  Future<Failure?> createActiveIngredient(
+    MasterDataDraft draft, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) =>
+      _run(() => _saveActiveIngredient.create(draft,
+          actingUserId: actingUserId, actingRoleId: actingRoleId),
+          actingRoleId: actingRoleId);
+
+  Future<Failure?> updateActiveIngredient(
+    String id,
+    MasterDataDraft draft, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) =>
+      _run(() => _saveActiveIngredient.update(id, draft,
+          actingUserId: actingUserId, actingRoleId: actingRoleId),
+          actingRoleId: actingRoleId);
+
+  Future<Failure?> setActiveIngredientActive(
+    String id,
+    bool active, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) =>
+      _run(() => _setActiveIngredientActive.call(id, active,
+          actingUserId: actingUserId, actingRoleId: actingRoleId),
+          actingRoleId: actingRoleId);
+
+  // ----- indications -----
+
+  Future<Failure?> createIndication(
+    MasterDataDraft draft, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) =>
+      _run(() => _saveIndication.create(draft,
+          actingUserId: actingUserId, actingRoleId: actingRoleId),
+          actingRoleId: actingRoleId);
+
+  Future<Failure?> updateIndication(
+    String id,
+    MasterDataDraft draft, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) =>
+      _run(() => _saveIndication.update(id, draft,
+          actingUserId: actingUserId, actingRoleId: actingRoleId),
+          actingRoleId: actingRoleId);
+
+  Future<Failure?> setIndicationActive(
+    String id,
+    bool active, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) =>
+      _run(() => _setIndicationActive.call(id, active,
           actingUserId: actingUserId, actingRoleId: actingRoleId),
           actingRoleId: actingRoleId);
 

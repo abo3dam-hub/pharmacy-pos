@@ -7,6 +7,10 @@ import 'package:pharmacy_pos/data/daos/item_supplier_dao.dart';
 import 'package:pharmacy_pos/data/daos/manufacturer_dao.dart';
 import 'package:pharmacy_pos/data/daos/stock_movement_dao.dart';
 import 'package:pharmacy_pos/data/daos/therapeutic_group_dao.dart';
+import 'package:pharmacy_pos/data/daos/active_ingredient_dao.dart';
+import 'package:pharmacy_pos/data/daos/indication_dao.dart';
+import 'package:pharmacy_pos/data/daos/item_active_ingredient_dao.dart';
+import 'package:pharmacy_pos/data/daos/item_indication_dao.dart';
 import 'package:pharmacy_pos/data/daos/unit_dao.dart';
 import 'package:pharmacy_pos/domain/services/audit_service.dart';
 import 'package:pharmacy_pos/domain/services/permission_service.dart';
@@ -35,6 +39,10 @@ const _adminRole = 'role_admin';
     StockMovementDao(db),
     ItemSupplierDao(db),
     stock,
+    ActiveIngredientDao(db),
+    IndicationDao(db),
+    ItemActiveIngredientDao(db),
+    ItemIndicationDao(db),
   );
   return (repository: repository, stock: stock);
 }

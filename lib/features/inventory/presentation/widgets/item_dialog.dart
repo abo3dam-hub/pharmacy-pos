@@ -33,6 +33,8 @@ Future<ItemFormResult?> showItemFormDialog(
   required List<TherapeuticGroupRow> groups,
   required List<UnitRow> units,
   List<SupplierRow> suppliers = const [],
+  List<ActiveIngredientRow> activeIngredients = const [],
+  List<IndicationRow> indications = const [],
   Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
       onCreateMasterData,
   Future<SupplierRow?> Function(SupplierDraft draft)? onCreateSupplier,
@@ -49,6 +51,8 @@ Future<ItemFormResult?> showItemFormDialog(
       groups: groups,
       units: units,
       suppliers: suppliers,
+      activeIngredients: activeIngredients,
+      indications: indications,
       onCreateMasterData: onCreateMasterData,
       onCreateSupplier: onCreateSupplier,
       defaultPartialSaleMarkupBasisPoints: defaultPartialSaleMarkupBasisPoints,
@@ -67,6 +71,8 @@ class _ItemFormDialog extends StatefulWidget {
     required this.groups,
     required this.units,
     this.suppliers = const [],
+    this.activeIngredients = const [],
+    this.indications = const [],
     this.onCreateMasterData,
     this.onCreateSupplier,
     this.defaultPartialSaleMarkupBasisPoints = 1000,
@@ -80,6 +86,8 @@ class _ItemFormDialog extends StatefulWidget {
   final List<TherapeuticGroupRow> groups;
   final List<UnitRow> units;
   final List<SupplierRow> suppliers;
+  final List<ActiveIngredientRow> activeIngredients;
+  final List<IndicationRow> indications;
   final Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
       onCreateMasterData;
   final Future<SupplierRow?> Function(SupplierDraft draft)? onCreateSupplier;
@@ -101,12 +109,11 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   late List<TherapeuticGroupRow> _groups;
   late List<UnitRow> _units;
   late List<SupplierRow> _suppliers;
+  late List<ActiveIngredientRow> _activeIngredients;
+  late List<IndicationRow> _indications;
 
   bool _hasExpiry = false;
-  bool _printLabel = false;
-  bool _isOtc = false;
   bool _isControlled = false;
-  bool _scaleAlert = false;
   bool _lockAutoPrice = false;
   bool _requiresPrescription = false;
 
@@ -118,6 +125,8 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   String? _largeUnitId;
   String _unitsPerLarge = '1';
   late final Set<String> _selectedSupplierIds;
+  late final Set<String> _selectedActiveIngredientIds;
+  late final Set<String> _selectedIndicationIds;
   bool _partialSaleEnabled = false;
   String? _sellablePartUnitId;
 
@@ -131,12 +140,13 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     _groups = [...widget.groups];
     _units = [...widget.units];
     _suppliers = [...widget.suppliers];
+    _activeIngredients = [...widget.activeIngredients];
+    _indications = [...widget.indications];
     _selectedSupplierIds = {..._initial.supplierIds};
+    _selectedActiveIngredientIds = {..._initial.activeIngredientIds};
+    _selectedIndicationIds = {..._initial.indicationIds};
     _hasExpiry = _initial.hasExpiry;
-    _printLabel = _initial.printBarcodeLabel;
-    _isOtc = _initial.isOtc;
     _isControlled = _initial.isControlledDrug;
-    _scaleAlert = _initial.scaleBarcodeAlert;
     _lockAutoPrice = _initial.lockAutoPriceUpdate;
     _requiresPrescription = _initial.requiresPrescription;
     _categoryId = _initial.categoryId.isEmpty ? null : _initial.categoryId;
@@ -352,10 +362,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       sizeVolume: _emptyToNull(_c('sizeVolume').text),
       shelfLocation: _emptyToNull(_c('shelfLocation').text),
       hasExpiry: _hasExpiry,
-      printBarcodeLabel: _printLabel,
-      isOtc: _isOtc,
       isControlledDrug: _isControlled,
-      scaleBarcodeAlert: _scaleAlert,
       lockAutoPriceUpdate: _lockAutoPrice,
       requiresPrescription: _requiresPrescription,
       costMicros: cost,
@@ -378,6 +385,8 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         unitsPerLarge: unitsPerLarge,
       ),
       supplierIds: _selectedSupplierIds.toList(),
+      activeIngredientIds: _selectedActiveIngredientIds.toList(),
+      indicationIds: _selectedIndicationIds.toList(),
       partialSaleEnabled: _partialSaleEnabled,
       sellablePartUnitId: _partialSaleEnabled ? _sellablePartUnitId : null,
       partsPerFullProduct: _partialSaleEnabled ? parts : null,
@@ -402,6 +411,8 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       MasterDataKind.manufacturer => l10n.manufacturersAdd,
       MasterDataKind.group => l10n.groupsAdd,
       MasterDataKind.unit => l10n.unitsAdd,
+      MasterDataKind.activeIngredient => l10n.activeIngredientsAdd,
+      MasterDataKind.indication => l10n.indicationsAdd,
     };
     final result = await showMasterDataFormDialog(
       context,
@@ -429,6 +440,12 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           _groupId = created.id;
         case MasterDataKind.unit:
           _units = [..._units, created as UnitRow];
+        case MasterDataKind.activeIngredient:
+          _activeIngredients = [..._activeIngredients, created as ActiveIngredientRow];
+          _selectedActiveIngredientIds.add(created.id);
+        case MasterDataKind.indication:
+          _indications = [..._indications, created as IndicationRow];
+          _selectedIndicationIds.add(created.id);
       }
     });
   }
@@ -523,6 +540,63 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                     _text(_c('dose'), l10n.itemDose, 140),
                     _text(_c('sizeVolume'), l10n.itemSizeVolume, 140),
                     _text(_c('shelfLocation'), l10n.itemShelfLocation, 140),
+                  ],
+                ),
+                _section(l10n.itemActiveIngredients),
+                Wrap(
+                  spacing: AppSpacing.s,
+                  runSpacing: AppSpacing.s,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    for (final ingredient in _activeIngredients)
+                      FilterChip(
+                        label: Text(ingredient.name,
+                            overflow: TextOverflow.ellipsis),
+                        visualDensity: VisualDensity.compact,
+                        selected: _selectedActiveIngredientIds
+                            .contains(ingredient.id),
+                        onSelected: (on) => setState(() {
+                          if (on) {
+                            _selectedActiveIngredientIds.add(ingredient.id);
+                          } else {
+                            _selectedActiveIngredientIds
+                                .remove(ingredient.id);
+                          }
+                        }),
+                      ),
+                    if (widget.onCreateMasterData != null)
+                      _addButton(
+                          AppLocalizations.of(context).itemAddNew,
+                          () => _addMasterData(
+                              MasterDataKind.activeIngredient)),
+                  ],
+                ),
+                _section(l10n.itemIndications),
+                Wrap(
+                  spacing: AppSpacing.s,
+                  runSpacing: AppSpacing.s,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    for (final indication in _indications)
+                      FilterChip(
+                        label: Text(indication.name,
+                            overflow: TextOverflow.ellipsis),
+                        visualDensity: VisualDensity.compact,
+                        selected:
+                            _selectedIndicationIds.contains(indication.id),
+                        onSelected: (on) => setState(() {
+                          if (on) {
+                            _selectedIndicationIds.add(indication.id);
+                          } else {
+                            _selectedIndicationIds.remove(indication.id);
+                          }
+                        }),
+                      ),
+                    if (widget.onCreateMasterData != null)
+                      _addButton(
+                          AppLocalizations.of(context).itemAddNew,
+                          () =>
+                              _addMasterData(MasterDataKind.indication)),
                   ],
                 ),
                 _section(l10n.itemSuppliers),
@@ -651,14 +725,8 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                   children: [
                     _switch('hasExpiry', l10n.itemHasExpiry, _hasExpiry, (v) =>
                         setState(() => _hasExpiry = v)),
-                    _switch('printLabel', l10n.itemPrintLabel, _printLabel,
-                        (v) => setState(() => _printLabel = v)),
-                    _switch('isOtc', l10n.itemIsOtc, _isOtc,
-                        (v) => setState(() => _isOtc = v)),
                     _switch('isControlled', l10n.itemIsControlled,
                         _isControlled, (v) => setState(() => _isControlled = v)),
-                    _switch('scaleAlert', l10n.itemScaleAlert, _scaleAlert,
-                        (v) => setState(() => _scaleAlert = v)),
                     _switch('lockAutoPrice', l10n.itemLockPriceAutoUpdate,
                         _lockAutoPrice, (v) => setState(() => _lockAutoPrice = v)),
                     _switch('requiresPrescription', l10n.itemRequiresPrescription,

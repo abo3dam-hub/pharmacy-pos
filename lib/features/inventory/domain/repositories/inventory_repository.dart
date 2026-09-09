@@ -79,10 +79,7 @@ class ItemDraft {
     this.sizeVolume,
     this.shelfLocation,
     this.hasExpiry = false,
-    this.printBarcodeLabel = false,
-    this.isOtc = false,
     this.isControlledDrug = false,
-    this.scaleBarcodeAlert = false,
     this.lockAutoPriceUpdate = false,
     this.requiresPrescription = false,
     this.costMicros = 0,
@@ -101,6 +98,8 @@ class ItemDraft {
     this.licenseNumber,
     this.units,
     this.supplierIds = const [],
+    this.activeIngredientIds = const [],
+    this.indicationIds = const [],
     this.partialSaleEnabled = false,
     this.sellablePartUnitId,
     this.partsPerFullProduct,
@@ -124,10 +123,7 @@ class ItemDraft {
   final String? sizeVolume;
   final String? shelfLocation;
   final bool hasExpiry;
-  final bool printBarcodeLabel;
-  final bool isOtc;
   final bool isControlledDrug;
-  final bool scaleBarcodeAlert;
   final bool lockAutoPriceUpdate;
   final bool requiresPrescription;
   final int costMicros;
@@ -146,6 +142,8 @@ class ItemDraft {
   final String? licenseNumber;
   final ItemUnitRelation? units;
   final List<String> supplierIds;
+  final List<String> activeIngredientIds;
+  final List<String> indicationIds;
   final bool partialSaleEnabled;
   final String? sellablePartUnitId;
   final int? partsPerFullProduct;
@@ -157,6 +155,8 @@ class ItemDraft {
     ItemRow row, {
     ItemUnitRelation? units,
     List<String> supplierIds = const [],
+    List<String> activeIngredientIds = const [],
+    List<String> indicationIds = const [],
   }) =>
       ItemDraft(
         primaryBarcode: row.primaryBarcode,
@@ -175,10 +175,7 @@ class ItemDraft {
         sizeVolume: row.sizeVolume,
         shelfLocation: row.shelfLocation,
         hasExpiry: row.hasExpiry,
-        printBarcodeLabel: row.printBarcodeLabel,
-        isOtc: row.isOtc,
         isControlledDrug: row.isControlledDrug,
-        scaleBarcodeAlert: row.scaleBarcodeAlert,
         lockAutoPriceUpdate: row.lockAutoPriceUpdate,
         requiresPrescription: row.requiresPrescription,
         costMicros: row.costMicros,
@@ -197,6 +194,8 @@ class ItemDraft {
         licenseNumber: row.licenseNumber,
         units: units,
         supplierIds: supplierIds,
+        activeIngredientIds: activeIngredientIds,
+        indicationIds: indicationIds,
         partialSaleEnabled: row.partialSaleEnabled,
         sellablePartUnitId: row.sellablePartUnitId,
         partsPerFullProduct: row.partsPerFullProduct,
@@ -210,6 +209,9 @@ class ItemDraft {
     String? subCategoryId,
     String? shelfLocation,
     List<String>? supplierIds,
+    List<String>? activeIngredientIds,
+    List<String>? indicationIds,
+    String? activeIngredient,
   }) =>
       ItemDraft(
         primaryBarcode: primaryBarcode,
@@ -217,7 +219,7 @@ class ItemDraft {
         tradeName: tradeName ?? this.tradeName,
         tradeNameEn: tradeNameEn,
         scientificName: scientificName,
-        activeIngredient: activeIngredient,
+        activeIngredient: activeIngredient ?? this.activeIngredient,
         equivalentDrug: equivalentDrug,
         manufacturerId: manufacturerId,
         categoryId: categoryId ?? this.categoryId,
@@ -228,10 +230,7 @@ class ItemDraft {
         sizeVolume: sizeVolume,
         shelfLocation: shelfLocation ?? this.shelfLocation,
         hasExpiry: hasExpiry,
-        printBarcodeLabel: printBarcodeLabel,
-        isOtc: isOtc,
         isControlledDrug: isControlledDrug,
-        scaleBarcodeAlert: scaleBarcodeAlert,
         lockAutoPriceUpdate: lockAutoPriceUpdate,
         requiresPrescription: requiresPrescription,
         costMicros: costMicros,
@@ -250,6 +249,8 @@ class ItemDraft {
         licenseNumber: licenseNumber,
         units: units,
         supplierIds: supplierIds ?? this.supplierIds,
+        activeIngredientIds: activeIngredientIds ?? this.activeIngredientIds,
+        indicationIds: indicationIds ?? this.indicationIds,
         partialSaleEnabled: partialSaleEnabled,
         sellablePartUnitId: sellablePartUnitId,
         partsPerFullProduct: partsPerFullProduct,
@@ -301,6 +302,7 @@ abstract class InventoryRepository {
   Future<void> setItemActive(String id, bool active);
   Future<ItemUnitRow?> itemUnitsFor(String itemId);
   Future<List<String>> supplierIdsForItem(String itemId);
+  Future<List<String>> itemIdsForSupplier(String supplierId);
 
   // Named lookups for the items grid
   Future<CategoryRow?> categoryById(String id);
@@ -336,6 +338,23 @@ abstract class InventoryRepository {
   Future<List<UnitRow>> units({bool? activeOnly});
   Future<UnitRow> createUnit(MasterDataDraft draft);
   Future<UnitRow> updateUnit(String id, MasterDataDraft draft);
+
+  // Active ingredients (§4.2b)
+  Future<List<ActiveIngredientRow>> activeIngredients({bool? activeOnly});
+  Future<ActiveIngredientRow> createActiveIngredient(MasterDataDraft draft);
+  Future<ActiveIngredientRow> updateActiveIngredient(
+      String id, MasterDataDraft draft);
+  Future<void> setActiveIngredientActive(String id, bool active);
+
+  // Indications (§4.2c)
+  Future<List<IndicationRow>> indications({bool? activeOnly});
+  Future<IndicationRow> createIndication(MasterDataDraft draft);
+  Future<IndicationRow> updateIndication(String id, MasterDataDraft draft);
+  Future<void> setIndicationActive(String id, bool active);
+
+  // Per-item taxonomy relations
+  Future<List<String>> activeIngredientIdsForItem(String itemId);
+  Future<List<String>> indicationIdsForItem(String itemId);
 
   // Batches & ledger (§4.8, §4.9)
   Future<List<BatchRow>> batchesForItem(String itemId);

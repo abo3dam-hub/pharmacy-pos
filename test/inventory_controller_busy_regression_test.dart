@@ -1,0 +1,135 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pharmacy_pos/data/daos/active_ingredient_dao.dart';
+import 'package:pharmacy_pos/data/daos/batch_dao.dart';
+import 'package:pharmacy_pos/data/daos/category_dao.dart';
+import 'package:pharmacy_pos/data/daos/indication_dao.dart';
+import 'package:pharmacy_pos/data/daos/item_active_ingredient_dao.dart';
+import 'package:pharmacy_pos/data/daos/item_dao.dart';
+import 'package:pharmacy_pos/data/daos/item_indication_dao.dart';
+import 'package:pharmacy_pos/data/daos/item_supplier_dao.dart';
+import 'package:pharmacy_pos/data/daos/manufacturer_dao.dart';
+import 'package:pharmacy_pos/data/daos/stock_movement_dao.dart';
+import 'package:pharmacy_pos/data/daos/therapeutic_group_dao.dart';
+import 'package:pharmacy_pos/data/daos/unit_dao.dart';
+import 'package:pharmacy_pos/domain/services/audit_service.dart';
+import 'package:pharmacy_pos/domain/services/permission_service.dart';
+import 'package:pharmacy_pos/domain/services/stock_service.dart';
+import 'package:pharmacy_pos/features/inventory/application/inventory_controller.dart';
+import 'package:pharmacy_pos/features/inventory/data/repositories/inventory_repository_impl.dart';
+import 'package:pharmacy_pos/features/inventory/domain/repositories/inventory_repository.dart';
+import 'package:pharmacy_pos/features/inventory/domain/services/inventory_excel_service.dart';
+import 'package:pharmacy_pos/features/inventory/domain/services/inventory_view_builder.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/batches_use_cases.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/bulk_use_cases.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/create_item.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/excel_use_cases.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/list_items.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/set_item_active.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/stock_use_cases.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/update_item.dart';
+import 'package:pharmacy_pos/shared/database/app_database.dart';
+
+import 'helpers.dart';
+
+const _admin = 'user_admin';
+const _adminRole = 'role_admin';
+
+const _draft = ItemDraft(
+  primaryBarcode: '6291041500213',
+  tradeName: 'بانادول',
+  tradeNameEn: 'Panadol',
+  scientificName: 'Paracetamol',
+  categoryId: 'cat_default',
+  costMicros: 5000,
+  sellingPriceMicros: 7500,
+  units: ItemUnitRelation(
+    baseUnitId: 'unit_strip',
+    largeUnitId: 'unit_box',
+    unitsPerLarge: 10,
+  ),
+);
+
+InventoryController _controller(AppDatabase db) {
+  final stock = StockService();
+  final repo = InventoryRepositoryImpl(
+    db,
+    ItemDao(db),
+    CategoryDao(db),
+    ManufacturerDao(db),
+    TherapeuticGroupDao(db),
+    UnitDao(db),
+    BatchDao(db),
+    StockMovementDao(db),
+    ItemSupplierDao(db),
+    stock,
+    ActiveIngredientDao(db),
+    IndicationDao(db),
+    ItemActiveIngredientDao(db),
+    ItemIndicationDao(db),
+  );
+  final perms = const PermissionService();
+  final audit = const AuditService();
+  final builder = InventoryViewBuilder(repo);
+  return InventoryController(
+    ListItemsUseCase(repo, perms, viewBuilder: builder),
+    CreateItemUseCase(repo, perms, audit),
+    UpdateItemUseCase(repo, perms, audit),
+    SetItemActiveUseCase(repo, perms, audit),
+    AddBatchUseCase(repo, perms, audit),
+    VoidBatchUseCase(repo, perms, audit),
+    ListBatchesUseCase(repo, perms),
+    AdjustStockUseCase(repo, perms, audit),
+    BulkUpdateItemsUseCase(repo, perms, audit),
+    ExportItemsUseCase(repo, perms, InventoryExcelService(repo),
+        viewBuilder: builder),
+    ImportItemsUseCase(repo, perms, audit),
+  );
+}
+
+void main() {
+  setUpAll(ensureSqlite);
+
+  test(
+      'busy clears on the error path too, and the grid shows no phantom rows',
+      () async {
+    final db = newDatabase();
+    final controller = _controller(db);
+
+    await controller.load(actingRoleId: _adminRole);
+    expect(controller.state.status, InventoryStatus.ready);
+    expect(controller.state.busy, isFalse);
+
+    final failure = await controller.createItem(
+      const ItemDraft(
+        tradeName: 'بانادول',
+        categoryId: 'cat_default',
+      ),
+      actingUserId: _admin,
+      actingRoleId: _adminRole,
+    );
+    expect(failure, isNotNull,
+        reason: 'an item without a base unit is rejected');
+    expect(controller.state.busy, isFalse,
+        reason: 'a failed save must release the UI spinner');
+    expect(controller.state.status, InventoryStatus.ready);
+    expect(controller.state.total, 0,
+        reason: 'the rejected create must not leak into the grid');
+  });
+
+  test('busy clears after a valid create and the new row is shown', () async {
+    final db = newDatabase();
+    final controller = _controller(db);
+
+    await controller.load(actingRoleId: _adminRole);
+    final failure = await controller.createItem(
+      _draft,
+      actingUserId: _admin,
+      actingRoleId: _adminRole,
+    );
+    expect(failure, isNull);
+    expect(controller.state.busy, isFalse,
+        reason: 'a successful save must release the UI spinner');
+    expect(controller.state.status, InventoryStatus.ready);
+    expect(controller.state.total, 1);
+  });
+}

@@ -17,6 +17,8 @@ const Set<String> kRequiredTablesAfterRestore = {
   'users', 'roles', 'role_permissions', 'permissions',
   'items', 'batches', 'stock_movements', 'item_units', 'units',
   'categories', 'sub_categories', 'manufacturers', 'therapeutic_groups',
+  'active_ingredients', 'item_active_ingredients',
+  'indications', 'item_indications',
   'suppliers', 'purchase_invoices', 'purchase_invoice_items',
   'purchase_bonuses', 'customers', 'customer_payments',
   'prescriptions', 'prescription_items',

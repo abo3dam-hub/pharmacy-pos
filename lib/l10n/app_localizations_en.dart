@@ -330,6 +330,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardProfitToday => 'Today\'s profit';
 
   @override
+  String get dashboardKpis => 'Overview';
+
+  @override
+  String get dashboardUnitsSold => 'Units sold today';
+
+  @override
+  String get dashboardActiveItems => 'Active products';
+
+  @override
+  String get dashboardStockValue => 'Stock value';
+
+  @override
+  String get dashboardLowStockEmpty => 'No low-stock items — well stocked.';
+
+  @override
+  String get dashboardNearExpiry => 'Near expiry';
+
+  @override
+  String get dashboardNearExpiryEmpty => 'No batches expiring soon.';
+
+  @override
+  String get dashboardRecentSales => 'Recent sales';
+
+  @override
+  String get dashboardRecentPurchases => 'Recent purchases';
+
+  @override
+  String get dashboardRecentEmpty => 'None yet.';
+
+  @override
+  String get dashboardError => 'Could not load the dashboard.';
+
+  @override
+  String get dashboardRetry => 'Try again';
+
+  @override
   String get inventoryLowStock => 'Low stock';
 
   @override
@@ -511,16 +547,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemHasExpiry => 'Has expiry date';
 
   @override
-  String get itemPrintLabel => 'Print barcode label';
-
-  @override
-  String get itemIsOtc => 'Over the counter';
-
-  @override
   String get itemIsControlled => 'Controlled drug';
-
-  @override
-  String get itemScaleAlert => 'Scale barcode alert';
 
   @override
   String get itemLockPriceAutoUpdate => 'Lock auto price update';
@@ -753,6 +780,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bulkSelectHint => 'Select at least one item';
 
   @override
+  String get bulkPriceScopeTitle => 'Apply to';
+
+  @override
+  String get bulkPriceScopeAll => 'All products';
+
+  @override
+  String get bulkPriceScopeManufacturer => 'Products of a manufacturer';
+
+  @override
+  String get bulkPriceScopeSupplier => 'Products from a supplier';
+
+  @override
+  String bulkPriceScopeManual(int count) {
+    return '$count selected products';
+  }
+
+  @override
   String get categoriesTitle => 'Categories';
 
   @override
@@ -820,6 +864,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get unitAbbreviation => 'Abbreviation';
+
+  @override
+  String get activeIngredientName => 'Active ingredient';
+
+  @override
+  String get indicationName => 'Indication';
+
+  @override
+  String get activeIngredientsAdd => 'Add active ingredient';
+
+  @override
+  String get activeIngredientsEditTitle => 'Edit active ingredient';
+
+  @override
+  String get activeIngredientsEmpty => 'No active ingredients';
+
+  @override
+  String get indicationsAdd => 'Add indication';
+
+  @override
+  String get indicationsEditTitle => 'Edit indication';
+
+  @override
+  String get indicationsEmpty => 'No indications';
+
+  @override
+  String get itemActiveIngredients => 'Active ingredients';
+
+  @override
+  String get itemIndications => 'Indications';
+
+  @override
+  String get inventoryTabActiveIngredients => 'Active ingredients';
+
+  @override
+  String get inventoryTabIndications => 'Indications';
 
   @override
   String get masterDataNameEn => 'Name (English)';

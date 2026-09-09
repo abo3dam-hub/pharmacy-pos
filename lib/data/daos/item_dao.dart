@@ -2,10 +2,13 @@ import 'package:drift/drift.dart';
 
 import '../../core/data_grid/page_request.dart';
 import '../../core/util/ids.dart';
+import '../../core/util/smart_search.dart';
 import '../../shared/database/app_database.dart';
+import 'smart_search_dao.dart';
 
 /// Master-data DAO for items (§4.2). All queries are paginated/filtered in
-/// SQL; barcode lookup is index-backed.
+/// SQL; barcode lookup is index-backed. Text search is Arabic-normalized and
+/// spans product fields plus supplier/ingredient/indication names (§P16).
 class ItemDao {
   const ItemDao(this._db);
 
@@ -16,18 +19,24 @@ class ItemDao {
     String? categoryId,
     String? manufacturerId,
     bool? onlyActive,
+    Set<String> relatedItemIds = const {},
   }) {
     final conds = <Expression<bool>>[];
     final q = search.trim();
     if (q.isNotEmpty) {
-      final like = '%${_escapeLike(q)}%';
-      conds.add([
-        _db.items.tradeName.like(like),
-        _db.items.tradeNameEn.like(like),
-        _db.items.scientificName.like(like),
-        _db.items.primaryBarcode.like(like),
-        _db.items.secondaryBarcode.like(like),
-      ].reduce((a, b) => a | b));
+      final like = SmartSearch.likePattern(q);
+      final textMatches = <Expression<bool>>[
+        SmartSearch.normalizeExpr(_db.items.tradeName).like(like),
+        SmartSearch.normalizeExpr(_db.items.tradeNameEn).like(like),
+        SmartSearch.normalizeExpr(_db.items.scientificName).like(like),
+        SmartSearch.normalizeExpr(_db.items.activeIngredient).like(like),
+        SmartSearch.normalizeExpr(_db.items.primaryBarcode).like(like),
+        SmartSearch.normalizeExpr(_db.items.secondaryBarcode).like(like),
+      ];
+      if (relatedItemIds.isNotEmpty) {
+        textMatches.add(_db.items.id.isIn(relatedItemIds));
+      }
+      conds.add(textMatches.reduce((a, b) => a | b));
     }
     if (categoryId != null) conds.add(_db.items.categoryId.equals(categoryId));
     if (manufacturerId != null) {
@@ -45,10 +54,12 @@ class ItemDao {
     String? manufacturerId,
     bool? onlyActive,
   }) async {
+    final related = await SmartSearchDao(_db).matchingItemIds(page.search);
     final filter = _filter(page.search,
         categoryId: categoryId,
         manufacturerId: manufacturerId,
-        onlyActive: onlyActive);
+        onlyActive: onlyActive,
+        relatedItemIds: related);
 
     final totalExpr = _db.items.id.count();
     final countQuery = _db.selectOnly(_db.items)..addColumns([totalExpr]);
@@ -122,9 +133,6 @@ class ItemDao {
     };
     return ascending ? OrderingTerm.asc(expr) : OrderingTerm.desc(expr);
   }
-
-  static String _escapeLike(String value) =>
-      value.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');
 
   /// Convenience id generation for new items.
   static String newItemId() => newId('item');

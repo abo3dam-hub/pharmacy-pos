@@ -15,6 +15,7 @@ const List<CurrencyOption> kSupportedCurrencies = [
   CurrencyOption('LYD', 'دينار ليبي'),
   CurrencyOption('MAD', 'درهم مغربي'),
   CurrencyOption('TND', 'دينار تونسي'),
+  CurrencyOption('SYP', 'ليرة سورية'),
   CurrencyOption('USD', 'دولار أمريكي'),
   CurrencyOption('EUR', 'يورو'),
   CurrencyOption('GBP', 'جنيه إسترليني'),

@@ -22,6 +22,14 @@ class ItemSupplierDao {
     return [for (final row in rows) row.supplierId];
   }
 
+  /// Item ids linked to one supplier (used to resolve bulk price scopes).
+  Future<List<String>> itemIdsForSupplier(String supplierId) {
+    return (_db.select(_db.itemSuppliers)
+          ..where((r) => r.supplierId.equals(supplierId)))
+        .map((r) => r.itemId)
+        .get();
+  }
+
   /// Replaces the item's supplier links inside one transaction. Input ids are
   /// de-duplicated; `INSERT OR IGNORE` keeps the schema's unique key intact.
   Future<void> setForItem(String itemId, List<String> supplierIds) async {
