@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pharmacy_pos/core/config/app_config.dart';
 import 'package:pharmacy_pos/domain/services/backup_service.dart';
+import 'package:pharmacy_pos/features/backup/domain/entities/backup_manifest.dart';
 import 'package:pharmacy_pos/shared/database/app_database.dart';
 import 'package:pharmacy_pos/shared/models/enums.dart';
 
@@ -85,7 +86,7 @@ void main() {
     final verification = await service.verifyRestore(backupPath,
         expectedChecksum: checksum);
     expect(verification.ok, isTrue, reason: 'PRAGMA integrity_check == ok');
-    expect(verification.schemaVersion, 10,
+    expect(verification.schemaVersion, kCurrentSupportedSchemaVersion,
         reason: 'fresh DB is created at the current schema version');
     expect(verification.latestChecksumMatches, isTrue);
 

@@ -52,6 +52,19 @@ class SmartSearchDao {
       itemIds.addAll({for (final l in links) l.itemId});
     }
 
+    // Manufacturers are a direct FK on items (no junction), so resolve the
+    // matching manufacturer ids and collect the items that reference them.
+    final manufacturerRows = await (_db.select(_db.manufacturers)
+          ..where((m) => SmartSearch.normalizeExpr(m.name).like(like)))
+        .get();
+    if (manufacturerRows.isNotEmpty) {
+      final ids = {for (final r in manufacturerRows) r.id};
+      final links = await (_db.select(_db.items)
+            ..where((i) => i.manufacturerId.isIn(ids)))
+          .get();
+      itemIds.addAll({for (final l in links) l.id});
+    }
+
     return itemIds;
   }
 }

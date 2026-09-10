@@ -43,8 +43,8 @@ Future<void> seedDefaults(AppDatabase db) async {
     batch.insertAll(db.units, [
       UnitsCompanion.insert(
         id: 'unit_strip',
-        name: 'شريط',
-        nameEn: const Value('Strip'),
+        name: 'ظرف',
+        nameEn: const Value('Sachet'),
         createdAt: now,
         updatedAt: now,
       ),
@@ -278,11 +278,13 @@ Future<void> seedDefaults(AppDatabase db) async {
         updatedAt: now,
       ));
 
-  // Default partial-sale markup (10% = 1000 bp) — Phase 6 Design Lock §7.3.
+  // Default partial-sale markup (20% = 2000 bp) — Phase 17 (§P17): changing
+  // the default markup from the historical 10% to 20% requires every default
+  // the product form sees to use 2000 bp.
   await db.into(db.appSettings).insert(
         AppSettingsCompanion.insert(
           key: 'partial_sale_markup_basis_points',
-          value: '1000',
+          value: '2000',
           updatedAt: now,
         ),
       );

@@ -14,7 +14,7 @@ class InventoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return DefaultTabController(
-      length: 7,
+      length: 6,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -28,7 +28,6 @@ class InventoryPage extends StatelessWidget {
                 Tab(text: l10n.inventoryTabItems),
                 Tab(text: l10n.inventoryTabCategories),
                 Tab(text: l10n.inventoryTabManufacturers),
-                Tab(text: l10n.inventoryTabGroups),
                 Tab(text: l10n.inventoryTabUnits),
                 Tab(text: l10n.inventoryTabActiveIngredients),
                 Tab(text: l10n.inventoryTabIndications),
@@ -41,7 +40,6 @@ class InventoryPage extends StatelessWidget {
                 ItemsTab(),
                 CategoriesTab(),
                 ManufacturersTab(),
-                GroupsTab(),
                 UnitsTab(),
                 ActiveIngredientsTab(),
                 IndicationsTab(),

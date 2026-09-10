@@ -5,7 +5,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../domain/repositories/inventory_repository.dart';
 
-enum MasterDataKind { category, subCategory, manufacturer, group, unit, activeIngredient, indication }
+enum MasterDataKind { category, manufacturer, unit, activeIngredient, indication }
 
 /// Master-data form result.
 class MasterDataFormResult {
@@ -14,8 +14,8 @@ class MasterDataFormResult {
   final MasterDataDraft draft;
 }
 
-/// Generic create/edit dialog for categories (and sub-categories),
-/// manufacturers, therapeutic groups and units (§4.1–4.5).
+/// Generic create/edit dialog for categories, manufacturers and units (§4.1,
+/// §4.3, §4.5).
 Future<MasterDataFormResult?> showMasterDataFormDialog(
   BuildContext context, {
   required MasterDataKind kind,
@@ -100,12 +100,6 @@ class _MasterDataFormDialogState extends State<_MasterDataFormDialog> {
         ..showSnackBar(SnackBar(content: Text(l10n.inventoryRequiredName)));
       return;
     }
-    if (widget.kind == MasterDataKind.subCategory && _categoryId == null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(l10n.inventorySelectCategory)));
-      return;
-    }
     Navigator.of(context).pop(MasterDataFormResult(
       MasterDataDraft(
         name: _name.text.trim(),
@@ -126,7 +120,6 @@ class _MasterDataFormDialogState extends State<_MasterDataFormDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final showSubFields = widget.kind == MasterDataKind.subCategory;
     final showManufacturerFields = widget.kind == MasterDataKind.manufacturer;
     final showAbbreviation = widget.kind == MasterDataKind.unit;
     return AlertDialog(
@@ -140,34 +133,18 @@ class _MasterDataFormDialogState extends State<_MasterDataFormDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (showSubFields) ...[
-                  DropdownButtonFormField<String>(
-                    initialValue: _categoryId,
-                    decoration: InputDecoration(labelText: l10n.itemCategory),
-                    items: [
-                      for (final c in widget.categories)
-                        DropdownMenuItem(value: c.id, child: Text(c.name)),
-                    ],
-                    onChanged: (v) => setState(() => _categoryId = v),
-                  ),
-                  const SizedBox(height: AppSpacing.m),
-                ],
                 TextFormField(
                   controller: _name,
                   decoration: InputDecoration(
-                    labelText: showSubFields
-                        ? l10n.subCategoryName
-                        : (widget.kind == MasterDataKind.manufacturer
-                            ? l10n.manufacturerName
-                            : widget.kind == MasterDataKind.group
-                                ? l10n.groupName
-                                : widget.kind == MasterDataKind.unit
-                                    ? l10n.unitName
-                                    : widget.kind == MasterDataKind.activeIngredient
-                                        ? l10n.activeIngredientName
-                                        : widget.kind == MasterDataKind.indication
-                                            ? l10n.indicationName
-                                            : l10n.categoryName),
+                    labelText: widget.kind == MasterDataKind.manufacturer
+                        ? l10n.manufacturerName
+                        : widget.kind == MasterDataKind.unit
+                            ? l10n.unitName
+                            : widget.kind == MasterDataKind.activeIngredient
+                                ? l10n.activeIngredientName
+                                : widget.kind == MasterDataKind.indication
+                                    ? l10n.indicationName
+                                    : l10n.categoryName,
                   ),
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? l10n.inventoryRequiredName

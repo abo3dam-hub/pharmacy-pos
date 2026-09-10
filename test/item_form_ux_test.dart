@@ -7,18 +7,20 @@ import 'package:pharmacy_pos/core/widgets/app_shell.dart';
 import 'package:pharmacy_pos/features/inventory/domain/repositories/inventory_repository.dart';
 import 'package:pharmacy_pos/features/inventory/presentation/widgets/item_dialog.dart';
 import 'package:pharmacy_pos/features/inventory/presentation/widgets/master_data_dialog.dart';
+import 'package:pharmacy_pos/features/suppliers/domain/repositories/supplier_repository.dart';
 import 'package:pharmacy_pos/l10n/app_localizations.dart';
 import 'package:pharmacy_pos/shared/database/app_database.dart';
 
-/// UI regression tests for the v1.1 product-management UX fixes:
+/// Phase 17 product-master UX regression tests:
 ///   1. desktop rail is scrollable so late sections stay reachable,
-///   2. the item form guides the user with specific messages instead of the
+///   2. the item form guides the user with targeted messages instead of the
 ///      generic save error when units are missing/invalid,
-///   3. packaging (commercial unit) dropdown + documented form order,
+///   3. التعبئة التجارية / الأجزاء / عدد الأجزاء labels and section order,
 ///   4. many-to-many supplier chips flow into the draft,
 ///   5. inline master-data creation auto-selects the created row,
-///   6. subcategories are filtered by the chosen category (no inline add),
-///   7. partial-sale switch auto-fills the default markup and validates parts.
+///   6. active-ingredient strength fields flow into the draft,
+///   7. partial-sale switch auto-fills the default 20% markup, validates parts,
+///      and persists the auto/manual سعر بيع الجزء model.
 Widget harness(Widget home) {
   return MaterialApp(
     theme: AppTheme.light(),
@@ -31,16 +33,14 @@ Widget harness(Widget home) {
 
 const _category = CategoryRow(
     id: 'cat1', name: 'أدوية', isActive: true, createdAt: 0, updatedAt: 0);
-const _category2 = CategoryRow(
-    id: 'cat2', name: 'مستلزمات', isActive: true, createdAt: 0, updatedAt: 0);
 const _manufacturer = ManufacturerRow(
     id: 'manu1', name: 'شركة المصنع', isActive: true, createdAt: 0, updatedAt: 0);
-const _group = TherapeuticGroupRow(
-    id: 'group1', name: 'مسكنات', isActive: true, createdAt: 0, updatedAt: 0);
-const _strip = UnitRow(
-    id: 'unit_strip', name: 'شريط', isActive: true, createdAt: 0, updatedAt: 0);
+const _part = UnitRow(
+    id: 'unit_part', name: 'ظرف', isActive: true, createdAt: 0, updatedAt: 0);
 const _box = UnitRow(
     id: 'unit_box', name: 'علبة', isActive: true, createdAt: 0, updatedAt: 0);
+const _ingredient = ActiveIngredientRow(
+    id: 'ing1', name: 'باراسيتامول', isActive: true, createdAt: 0, updatedAt: 0);
 
 SupplierRow _supplier(String id, String name) => SupplierRow(
     id: id,
@@ -59,8 +59,7 @@ Finder _fieldByLabel(String labelPart) => find.byWidgetPredicate(
     (w) =>
         w is TextField && (w.decoration?.labelText ?? '').contains(labelPart));
 
-/// Exact label match for combobox/tapping targets (label parts are ambiguous:
-/// "التصنيف" also matches "التصنيف الفرعي").
+/// Exact label match for combobox/tapping targets.
 Finder _comboByLabel(String label) => find.byWidgetPredicate(
     (w) => w is TextField && (w.decoration?.labelText ?? '') == label);
 
@@ -97,48 +96,58 @@ Future<void> _tapSave(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-/// Opens the item form dialog via a real button (exercising localization and
-/// navigation); [onResult] receives the returned draft on save.
+/// Opens the item form dialog via a real button; [onResult] receives the
+/// returned draft on save.
 Future<void> _openDialog(
   WidgetTester tester, {
   required void Function(ItemFormResult? result) onResult,
   ItemDraft? initial,
   List<CategoryRow> categories = const [_category],
-  List<SubCategoryRow> subCategories = const [],
   List<ManufacturerRow> manufacturers = const [_manufacturer],
-  List<TherapeuticGroupRow> groups = const [_group],
-  List<UnitRow> units = const [_strip, _box],
-  List<SupplierRow> suppliers = const [],
-  Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
-      onCreateMasterData,
+List<UnitRow> units = const [_part, _box],
+    List<SupplierRow> suppliers = const [],
+    List<ActiveIngredientRow> activeIngredients = const [_ingredient],
+    Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
+        onCreateMasterData,
 }) async {
-  await tester.pumpWidget(harness(Scaffold(
-    body: Builder(
-      builder: (context) => Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            final result = await showItemFormDialog(
-              context,
-              title: 'منتج جديد',
-              initial: initial,
-              categories: categories,
-              subCategories: subCategories,
-              manufacturers: manufacturers,
-              groups: groups,
-              units: units,
-              suppliers: suppliers,
-              onCreateMasterData: onCreateMasterData,
-            );
-            onResult(result);
-          },
-          child: const Text('افتح النموذج'),
+    await tester.pumpWidget(harness(Scaffold(
+      body: Builder(
+        builder: (context) => Center(
+          child: ElevatedButton(
+            onPressed: () async {
+              final result = await showItemFormDialog(
+                context,
+                title: 'منتج جديد',
+                initial: initial,
+                categories: categories,
+                manufacturers: manufacturers,
+                units: units,
+                suppliers: suppliers,
+                activeIngredients: activeIngredients,
+                onCreateMasterData: onCreateMasterData,
+                onCreateSupplier: _factorySupplier,
+              );
+              onResult(result);
+            },
+            child: const Text('افتح النموذج'),
+          ),
         ),
       ),
-    ),
-  )));
-  await tester.tap(find.text('افتح النموذج'));
-  await tester.pumpAndSettle();
-}
+    )));
+    await tester.tap(find.text('افتح النموذج'));
+    await tester.pumpAndSettle();
+  }
+
+  Future<SupplierRow?> _factorySupplier(SupplierDraft draft) async =>
+      SupplierRow(
+          id: 'sup_new',
+          name: draft.name,
+          openingBalanceMicros: 0,
+          balanceMicros: 0,
+          creditLimitMicros: 0,
+          isActive: true,
+          createdAt: 1,
+          updatedAt: 1);
 
 void main() {
   testWidgets('desktop rail is scrollable; settings stays reachable',
@@ -154,8 +163,6 @@ void main() {
     expect(rail.scrollable, isTrue,
         reason: '12 destinations overflow short viewports; the rail must scroll');
 
-    // With `scrollable: true` the late destinations are reachable by scrolling
-    // the rail even at 560px of height.
     final scrollable = find.descendant(
       of: find.byType(NavigationRail),
       matching: find.byType(Scrollable),
@@ -170,8 +177,8 @@ void main() {
   });
 
   testWidgets(
-      'membership save with missing units shows targeted guidance, then '
-      'auto-suggests the packaging unit and saves the relation', (tester) async {
+      'missing/invalid parts guidance is targeted and the parts relation saves',
+      (tester) async {
     tester.view.physicalSize = const Size(1100, 1500);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
@@ -182,39 +189,38 @@ void main() {
     await _enterTradeName(tester, 'بانادول');
     await _selectCombo(tester, 'التصنيف', 'أدوية');
 
-    // No units selected → targeted guidance (was the generic save-error
+    // No parts unit selected → targeted guidance (was the generic save-error
     // regression) and the dialog must stay open.
     await _tapSave(tester);
-    expect(find.text('اختر الوحدة الأساسية'), findsOneWidget,
-        reason: 'missing base unit guidance must surface, not a generic error');
+    expect(find.text('اختر الأجزاء'), findsOneWidget,
+        reason: 'missing parts-unit guidance must surface, not a generic error');
     expect(find.byType(AlertDialog), findsOneWidget);
 
-    // Select the base unit → packaging is auto-suggested.
-    await _selectCombo(tester, 'الوحدة الأساسية', 'شريط');
+    // Select the parts unit → packaging is auto-suggested.
+    await _selectCombo(tester, 'الأجزاء', 'ظرف');
     await tester.pumpAndSettle();
 
-    // units-per-large = 0 is rejected with a targeted message.
-    await tester.enterText(_fieldByLabel('عدد الوحدات الصغرى في الكبرى'), '0');
+    // parts = 0 is rejected with a targeted message.
+    await tester.enterText(_fieldByLabel('عدد الأجزاء'), '0');
     await tester.pumpAndSettle();
     await _tapSave(tester);
-    expect(find.text('عدد الوحدات الأساسية في شكل التعبئة يجب أن يكون أكبر من صفر'),
-        findsOneWidget);
+    expect(find.text('عدد الأجزاء يجب أن يكون أكبر من صفر'), findsOneWidget);
 
     // Valid values → the draft carries the unit relation.
-    await tester.enterText(_fieldByLabel('عدد الوحدات الصغرى في الكبرى'), '10');
+    await tester.enterText(_fieldByLabel('عدد الأجزاء'), '10');
     await tester.pumpAndSettle();
     await _tapSave(tester);
 
     expect(submitted, isNotNull);
     final relation = submitted!.draft.units;
     expect(relation, isNotNull);
-    expect(relation!.baseUnitId, 'unit_strip');
-    expect(relation.largeUnitId, 'unit_strip',
-        reason: 'packaging is auto-suggested from the base unit when unset');
+    expect(relation!.baseUnitId, 'unit_part');
+    expect(relation.largeUnitId, 'unit_part',
+        reason: 'packaging is auto-suggested from the parts unit when unset');
     expect(relation.unitsPerLarge, 10);
   });
 
-  testWidgets('form order and packaging label match the product mockup',
+  testWidgets('labels and section order match the Phase 17 product master',
       (tester) async {
     tester.view.physicalSize = const Size(1100, 1500);
     tester.view.devicePixelRatio = 1.0;
@@ -222,18 +228,19 @@ void main() {
 
     await _openDialog(tester, onResult: (_) {});
 
-    // Packaging (commercial unit) label is used for the large-unit field.
-    expect(find.text('شكل التعبئة (الوحدة التجارية)'), findsOneWidget);
+    // Phase 17 packaging/parts labels are used (no legacy unit naming).
+    expect(find.text('التعبئة التجارية'), findsOneWidget);
+    expect(find.text('الأجزاء'), findsOneWidget);
+    expect(find.text('عدد الأجزاء'), findsOneWidget);
 
     double y(String text) => tester.getTopLeft(find.text(text)).dy;
 
-    // Documented order: suppliers → units → prices → partial-sale.
-    expect(y('الموردون'), lessThan(y('علاقة الوحدات')),
-        reason: 'suppliers section precedes the units relation');
-    expect(y('علاقة الوحدات'), lessThan(y('التكلفة / سعر البيع')),
-        reason: 'units relation precedes prices');
-    expect(y('التكلفة / سعر البيع'), lessThan(y('إعدادات البيع الجزئي')),
-        reason: 'prices precede the partial-sale section');
+    // Documented order: classification → parts/pricing → stock.
+    expect(y('التصنيف والمعلومات الدوائية'),
+        lessThan(y('التكلفة / السعر / الأجزاء')));
+    expect(y('الموردون'), lessThan(y('التكلفة / السعر / الأجزاء')));
+    expect(y('التكلفة / السعر / الأجزاء'), lessThan(y('الرصيد')),
+        reason: 'pricing section precedes the stock section');
   });
 
   testWidgets('supplier chips toggle a many-to-many selection in the draft',
@@ -253,7 +260,7 @@ void main() {
     await _selectCombo(tester, 'التصنيف', 'أدوية');
     await _tapChip(tester, 'مورد الأول');
     await _tapChip(tester, 'مورد الثاني');
-    await _selectCombo(tester, 'الوحدة الأساسية', 'شريط');
+    await _selectCombo(tester, 'الأجزاء', 'ظرف');
     await _tapSave(tester);
 
     final withBoth = submitted;
@@ -271,7 +278,7 @@ void main() {
         tradeName: 'منتج بمورد واحد',
         categoryId: 'cat1',
         units: ItemUnitRelation(
-            baseUnitId: 'unit_strip', largeUnitId: 'unit_box', unitsPerLarge: 10),
+            baseUnitId: 'unit_part', largeUnitId: 'unit_box', unitsPerLarge: 10),
         supplierIds: ['sup_a', 'sup_b'],
       ),
     );
@@ -297,9 +304,8 @@ void main() {
           id: 'cat_new', name: draft.name, isActive: true, createdAt: 1, updatedAt: 1),
     );
 
-    // Inline "+" exists for category / manufacturer / group / base unit /
-    // packaging unit / active ingredient / indication — but never for the
-    // filtered subcategory.
+    // Inline "+" exists for category / manufacturer / packaging / parts units /
+    // active ingredient / indication / supplier.
     expect(find.byIcon(Icons.add_circle_outline), findsNWidgets(7));
     await tester.tap(find.byIcon(Icons.add_circle_outline).at(0));
     await tester.pumpAndSettle();
@@ -311,7 +317,7 @@ void main() {
 
     // Back on the item form the created category is shown, then saved.
     await _enterTradeName(tester, 'منتج بتصنيف جديد');
-    await _selectCombo(tester, 'الوحدة الأساسية', 'شريط');
+    await _selectCombo(tester, 'الأجزاء', 'ظرف');
     await _tapSave(tester);
 
     final saved = submitted;
@@ -320,38 +326,32 @@ void main() {
         reason: 'the inline-created category is auto-selected');
   });
 
-  testWidgets('subcategory dropdown is filtered by the chosen category',
+  testWidgets('active-ingredient strength flows into the draft',
       (tester) async {
     tester.view.physicalSize = const Size(1100, 1500);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await _openDialog(
-      tester,
-      onResult: (_) {},
-      categories: [_category, _category2],
-      subCategories: const [
-        SubCategoryRow(id: 'sub1', categoryId: 'cat1', name: 'مضادات حيوية',
-            isActive: true, createdAt: 0, updatedAt: 0),
-        SubCategoryRow(id: 'sub2', categoryId: 'cat2', name: 'ضمادات',
-            isActive: true, createdAt: 0, updatedAt: 0),
-      ],
-    );
+    ItemFormResult? submitted;
+    await _openDialog(tester, onResult: (r) => submitted = r);
 
+    await _enterTradeName(tester, 'منتج بالعيار');
     await _selectCombo(tester, 'التصنيف', 'أدوية');
+    await _tapChip(tester, 'باراسيتامول');
+    await tester.enterText(_fieldByLabel('العيار'), '500 ملغ');
+    await tester.pumpAndSettle();
+    await _selectCombo(tester, 'الأجزاء', 'ظرف');
+    await _tapSave(tester);
 
-    final subField = _comboByLabel('التصنيف الفرعي');
-    await tester.ensureVisible(subField);
-    await tester.pumpAndSettle();
-    await tester.tap(subField);
-    await tester.pumpAndSettle();
-    expect(find.text('مضادات حيوية'), findsOneWidget,
-        reason: 'subcategory of the chosen category is listed');
-    expect(find.text('ضمادات'), findsNothing,
-        reason: 'subcategories of other categories are hidden');
+    final saved = submitted;
+    expect(saved, isNotNull);
+    if (saved == null) return;
+    final d = saved.draft;
+    expect(d.activeIngredientIds, ['ing1']);
+    expect(d.activeIngredientStrengths, {'ing1': '500 ملغ'});
   });
 
-  testWidgets('partial-sale switch auto-fills the default markup and validates',
+  testWidgets('partial-sale default 20% markup, validation and part price',
       (tester) async {
     tester.view.physicalSize = const Size(1100, 1500);
     tester.view.devicePixelRatio = 1.0;
@@ -362,27 +362,26 @@ void main() {
 
     await _enterTradeName(tester, 'منتج جزئي');
     await _selectCombo(tester, 'التصنيف', 'أدوية');
-    await _selectCombo(tester, 'الوحدة الأساسية', 'شريط');
+    await _selectCombo(tester, 'الأجزاء', 'ظرف');
+    await tester.enterText(_fieldByLabel('عدد الأجزاء'), '2');
+    await tester.pumpAndSettle();
 
-    // Enable partial selling → default 10% markup is auto-filled.
+    // Enable partial selling → default 20% markup is auto-filled.
     await tester.tap(find.byType(Switch).first);
     await tester.pumpAndSettle();
-    expect(find.text('10'), findsOneWidget,
-        reason: 'enabling partial sale pre-fills the default 10% markup');
+    expect(find.text('20'), findsOneWidget,
+        reason: 'enabling partial sale pre-fills the default 20% markup');
 
-    // The sellable-part unit must be chosen before the parts checks run.
-    await _selectCombo(tester, 'وحدة البيع الجزئي', 'شريط');
-
-    // parts == 1 is rejected with a targeted message.
-    await tester.enterText(_fieldByLabel('عدد الأجزاء في العبوة الكاملة'), '1');
+    // Parts == 1 is rejected with a targeted message.
+    await tester.enterText(_fieldByLabel('عدد الأجزاء'), '1');
     await tester.pumpAndSettle();
     await _tapSave(tester);
-    expect(find.text('عدد الأجزاء في العبوة الكاملة يجب أن يكون أكبر من 1'),
+    expect(find.text('عدد الأجزاء في العبوة يجب أن يكون أكبر من 1'),
         findsOneWidget);
 
-    // Valid partial-sale config persists the default markup in basis points.
-    await tester.enterText(_fieldByLabel('عدد الأجزاء في العبوة الكاملة'), '2');
-    await tester.enterText(_fieldByLabel('عدد الوحدات الأساسية في الجزء'), '1');
+    // Valid partial-sale config persists the default markup as 2000 bps and
+    // keeps the auto derived part price (no manual override).
+    await tester.enterText(_fieldByLabel('عدد الأجزاء'), '2');
     await tester.pumpAndSettle();
     await _tapSave(tester);
 
@@ -390,10 +389,39 @@ void main() {
     expect(saved, isNotNull);
     final d = saved!.draft;
     expect(d.partialSaleEnabled, isTrue);
-    expect(d.sellablePartUnitId, 'unit_strip');
+    expect(d.sellablePartUnitId, 'unit_part',
+        reason: 'the parts unit is the sellable part unit');
     expect(d.partsPerFullProduct, 2);
     expect(d.sellablePartBaseQuantity, 1);
-    expect(d.partialSaleMarkupBasisPoints, 1000,
+    expect(d.partialSaleMarkupBasisPoints, 2000,
         reason: 'the auto-filled default markup is persisted');
+    expect(d.partialSalePriceMicros, isNull,
+        reason: 'no manual part price was entered');
+
+    // A manually typed part price becomes the persisted override.
+    submitted = null;
+    await _openDialog(
+      tester,
+      onResult: (r) => submitted = r,
+      initial: const ItemDraft(
+        tradeName: 'منتج جزئي يدوي',
+        categoryId: 'cat1',
+        units: ItemUnitRelation(
+            baseUnitId: 'unit_part', largeUnitId: 'unit_box', unitsPerLarge: 2),
+      ),
+    );
+    await _enterTradeName(tester, 'منتج جزئي يدوي');
+    await _selectCombo(tester, 'التصنيف', 'أدوية');
+    await _selectCombo(tester, 'الأجزاء', 'ظرف');
+    await tester.tap(find.byType(Switch).first);
+    await tester.pumpAndSettle();
+    await tester.enterText(_fieldByLabel('سعر بيع الجزء'), '5.00');
+    await tester.pumpAndSettle();
+    await _tapSave(tester);
+
+    final manual = submitted;
+    expect(manual, isNotNull);
+    expect(manual!.draft.partialSalePriceMicros, isNotNull,
+        reason: 'a manual سعر بيع الجزء is persisted as the override');
   });
 }

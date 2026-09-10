@@ -33,6 +33,7 @@ class PosCatalogDao {
         SmartSearch.normalizeExpr(_db.items.tradeNameEn).like(like),
         SmartSearch.normalizeExpr(_db.items.scientificName).like(like),
         SmartSearch.normalizeExpr(_db.items.activeIngredient).like(like),
+        SmartSearch.normalizeExpr(_db.items.equivalentDrug).like(like),
         SmartSearch.normalizeExpr(_db.items.primaryBarcode).like(like),
         SmartSearch.normalizeExpr(_db.items.secondaryBarcode).like(like),
       ];
@@ -62,13 +63,22 @@ final orderCol = switch (request.orderBy) {
   _ => _db.items.tradeName,
 };
 
-final query = _db.select(_db.items)
-      ..orderBy([
+final query = _db.select(_db.items);
+    // Relevance-first ordering when searching by default order: exact name →
+    // prefix → contains → everything else, so the best matches lead the page.
+    if (q.isNotEmpty && request.orderBy == null) {
+      query.orderBy([
+        (i) => OrderingTerm.asc(_relevance(q)),
+        (i) => OrderingTerm.asc(_db.items.tradeName),
+      ]);
+    } else {
+      query.orderBy([
         (i) => request.ascending
             ? OrderingTerm.asc(orderCol)
             : OrderingTerm.desc(orderCol),
-      ])
-      ..limit(request.pageSize, offset: request.offset);
+      ]);
+    }
+    query.limit(request.pageSize, offset: request.offset);
     if (composite != null) {
       query.where((i) => composite);
     }
@@ -76,6 +86,21 @@ final query = _db.select(_db.items)
 
     final items = await hydrate(rows);
     return PageResult(items: items, total: total, request: request);
+  }
+
+  /// Relevance tier for a query, evaluated in SQL: 0 = exact normalized
+  /// trade-name match, 1 = prefix, 2 = contains, 3 = any other field.
+  Expression<int> _relevance(String query) {
+    final normalized = SmartSearch.normalize(query);
+    final name = SmartSearch.normalizeExpr(_db.items.tradeName);
+    return CaseWhenExpression<int>(
+      cases: [
+        CaseWhen(name.equals(normalized), then: const Constant(0)),
+        CaseWhen(name.like('$normalized%'), then: const Constant(1)),
+        CaseWhen(name.like('%$normalized%'), then: const Constant(2)),
+      ],
+      orElse: const Constant(3),
+    );
   }
 
   /// Indexed barcode lookup: primary barcode (unique) then secondary (unique).
@@ -255,6 +280,7 @@ final query = _db.select(_db.items)
       partsPerFullProduct: r.partsPerFullProduct,
       sellablePartBaseQuantity: r.sellablePartBaseQuantity,
       partialSaleMarkupBasisPoints: r.partialSaleMarkupBasisPoints,
+      partialSalePriceMicros: r.partialSalePriceMicros,
     );
   }
 

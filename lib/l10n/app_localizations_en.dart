@@ -315,7 +315,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unitBoxes => 'Boxes';
 
   @override
-  String get unitStrips => 'Strips';
+  String get unitStrips => 'Sachets';
 
   @override
   String get dashboardTodayOrders => 'Today\'s orders';
@@ -447,9 +447,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryTabManufacturers => 'Manufacturers';
 
   @override
-  String get inventoryTabGroups => 'Therapeutic Groups';
-
-  @override
   String get inventoryTabUnits => 'Units';
 
   @override
@@ -517,13 +514,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemTradeNameEn => 'Trade name (English)';
 
   @override
-  String get itemSubCategory => 'Sub-category';
-
-  @override
   String get itemManufacturer => 'Manufacturer';
-
-  @override
-  String get itemGroup => 'Therapeutic group';
 
   @override
   String get itemPharmaForm => 'Pharmaceutical form';
@@ -562,9 +553,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemSellingPrice => 'Selling price';
 
   @override
-  String get itemSubUnitPrice => 'Sub-unit price';
-
-  @override
   String get itemWholesalePrice => 'Wholesale price';
 
   @override
@@ -598,16 +586,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemUnitsRelation => 'Unit relation';
 
   @override
-  String get itemBaseUnit => 'Base unit';
+  String get itemBaseUnit => 'Parts';
 
   @override
   String get itemLargeUnit => 'Large unit';
 
   @override
-  String get itemPackagingUnit => 'Packaging (commercial unit)';
+  String get itemPackagingUnit => 'Commercial packaging';
 
   @override
-  String get itemUnitsPerLarge => 'Base units per large unit';
+  String get itemUnitsPerLarge => 'Number of parts';
 
   @override
   String get itemSuppliers => 'Suppliers';
@@ -616,17 +604,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemAddNew => 'Add new';
 
   @override
-  String get inventoryUnitsRequired => 'Select the base unit and packaging';
+  String get inventoryUnitsRequired => 'Parts and packaging are required';
 
   @override
-  String get inventorySelectBaseUnit => 'Select the base unit';
+  String get inventorySelectBaseUnit => 'Select the parts';
 
   @override
-  String get inventorySelectLargeUnit => 'Select the packaging (large) unit';
+  String get inventorySelectLargeUnit => 'Select the commercial packaging';
 
   @override
   String get inventoryUnitsPerLargeInvalid =>
-      'Base units per packaging unit must be greater than zero';
+      'Number of parts must be greater than zero';
+
+  @override
+  String get itemClassificationSection => 'Classification & drug info';
+
+  @override
+  String get itemPricePartsSection => 'Cost / Price / Parts';
 
   @override
   String get itemCurrentStock => 'Current stock';
@@ -809,15 +803,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categoriesEditTitle => 'Edit category';
 
   @override
-  String get subCategoriesAddTitle => 'Add sub-category';
-
-  @override
-  String get subCategoriesEditTitle => 'Edit sub-category';
-
-  @override
-  String get addSubCategory => 'Add sub-category';
-
-  @override
   String get categoriesEmpty => 'No categories';
 
   @override
@@ -825,9 +810,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get categoryNameEn => 'Category name (English)';
-
-  @override
-  String get subCategoryName => 'Sub-category name';
 
   @override
   String get manufacturerName => 'Manufacturer name';
@@ -891,6 +873,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get itemActiveIngredients => 'Active ingredients';
+
+  @override
+  String get activeIngredientStrength => 'Strength';
 
   @override
   String get itemIndications => 'Indications';
@@ -1532,32 +1517,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get partialSaleEnabled => 'Allow Partial Selling';
 
   @override
-  String get partialSaleSellablePart => 'Sellable Part Unit';
-
-  @override
-  String get partialSalePartsPerFull => 'Parts Per Full Product';
-
-  @override
-  String get partialSaleBaseQuantity => 'Base Units Per Part';
+  String get partialSalePartsPerFull => 'Parts Per Box';
 
   @override
   String get partialSaleMarkupPercent => 'Markup %';
 
   @override
-  String get partialSaleUnitRequired => 'Select the sellable-part unit';
+  String get partialSalePartPrice => 'Part selling price';
+
+  @override
+  String get partialSaleRestoreAuto => 'Restore automatic price';
+
+  @override
+  String get partialSalePartPriceInvalid => 'Enter a valid part price';
 
   @override
   String get partialSalePartsRequired => 'Enter parts per full product';
 
   @override
-  String get partialSalePartsInvalid =>
-      'Parts per full product must be greater than 1';
-
-  @override
-  String get partialSaleBaseRequired => 'Enter base units per part';
-
-  @override
-  String get partialSaleBaseInvalid => 'Base units per part must be at least 1';
+  String get partialSalePartsInvalid => 'Parts per box must be greater than 1';
 
   @override
   String get partialSaleMarkupInvalid => 'Markup must be between 0 and 100%';
@@ -1586,7 +1564,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get posUnitBox => 'Box';
 
   @override
-  String get posUnitStrip => 'Strips';
+  String get posUnitStrip => 'Sachets';
 
   @override
   String get posUnitUnit => 'Unit';

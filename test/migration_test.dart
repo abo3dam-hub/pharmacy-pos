@@ -10,14 +10,14 @@ import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 import 'helpers.dart';
 
-/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5/9/10) for
-/// v1→v10 upgrade — implementers must keep this mirror in lockstep with
+/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5/9/10/16/17)
+/// for v1→v11 upgrade — implementers must keep this mirror in lockstep with
 /// `AppDatabase._migrate` in `app_database.dart`.
 class _V1Database extends AppDatabase {
   _V1Database(super.e);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -141,6 +141,28 @@ class _V1Database extends AppDatabase {
             await m.createTable(indications);
             await m.createTable(itemIndications);
           }
+          if (from < 11) {
+            final strengthPresent = await customSelect(
+              "SELECT COUNT(*) AS c FROM pragma_table_info('item_active_ingredients') "
+              "WHERE name = 'strength'",
+            ).getSingle();
+            if (strengthPresent.read<int>('c') == 0) {
+              await m.addColumn(
+                  itemActiveIngredients, itemActiveIngredients.strength);
+            }
+            final manualPartPricePresent = await customSelect(
+              "SELECT COUNT(*) AS c FROM pragma_table_info('items') "
+              "WHERE name = 'partial_sale_price_micros'",
+            ).getSingle();
+            if (manualPartPricePresent.read<int>('c') == 0) {
+              await m.addColumn(items, items.partialSalePriceMicros);
+            }
+            final now = DateTime.now().millisecondsSinceEpoch;
+            await customStatement(
+                "UPDATE app_settings SET value = '2000', updated_at = $now "
+                "WHERE key = 'partial_sale_markup_basis_points' "
+                "AND value = '1000'");
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -165,7 +187,7 @@ void main() {
 
     File dbFile() => File('${dir.path}/store.db');
 
-    test('fresh database creates at schema v10 with all columns', () async {
+    test('fresh database creates at schema v11 with all columns', () async {
       ensureSqlite();
       final path = dbFile().path;
 
@@ -174,11 +196,11 @@ void main() {
       final batchId = await insertBatch(db, itemId,
           quantityBase: 7, expiryDays: 90, unitCostMicros: 5000);
 
-      // Verify schema version is 10.
+      // Verify schema version is 11.
       final userVersion =
           await db.customSelect('PRAGMA user_version').getSingle();
-      expect(userVersion.data.values.first, 10,
-          reason: 'fresh DB must be schema v10');
+      expect(userVersion.data.values.first, 11,
+          reason: 'fresh DB must be schema v11');
 
       // Verify v7 Phase 9 additions: category master seeded + expenses columns.
       final categories = await db.select(db.expenseCategories).get();
@@ -217,6 +239,8 @@ void main() {
       expect(item.partsPerFullProduct, isNull);
       expect(item.sellablePartBaseQuantity, isNull);
       expect(item.partialSaleMarkupBasisPoints, isNull);
+      expect(item.partialSalePriceMicros, isNull,
+          reason: 'v11 manual part-price override column exists on fresh');
 
       // Verify app_settings table exists.
       final settings = await db.select(db.appSettings).get();
@@ -289,7 +313,7 @@ void main() {
       expect(reopenedItem.currentStockBase, 7);
       final reopenedVersion =
           await reopened.customSelect('PRAGMA user_version').getSingle();
-      expect(reopenedVersion.data.values.first, 10);
+      expect(reopenedVersion.data.values.first, 11);
 
       // Verify v8 Phase 10 additions: reversing columns on journal_entries,
       // accounting_periods table, and new system accounts.
@@ -340,6 +364,7 @@ void main() {
               id: 'iai_fresh',
               itemId: itemId,
               activeIngredientId: aiId.id,
+              strength: const Value('500 mg'),
             ),
           );
       await reopened.into(reopened.itemIndications).insert(
@@ -349,21 +374,26 @@ void main() {
               indicationId: indId.id,
             ),
           );
+      final storedAi = await (reopened.select(reopened.itemActiveIngredients)
+            ..where((l) => l.id.equals('iai_fresh')))
+          .getSingle();
+      expect(storedAi.strength, '500 mg',
+          reason: 'per-ingredient strength column persists on fresh');
       expect(await reopened.select(reopened.itemActiveIngredients).get(),
           hasLength(1), reason: 'item↔ingredient junction persists');
       await reopened.close();
     });
 
-    test('v1 → v10 migration adds all Phase 6/7.5/9/10/16 additions without data loss',
+    test('v1 → v11 migration adds all Phase 6/7.5/9/10/16/17 additions without data loss',
         () async {
       ensureSqlite();
       final path = dbFile().path;
 
-      // Create a v10 database with data (fresh createAll seeds v10 + an expense
+      // Create a v11 database with data (fresh createAll seeds v11 + an expense
       // row that must survive the simulated downgrade).
       final db = AppDatabase.fromFilePath(path);
       final itemId = await insertItem(db);
-      expect(db.schemaVersion, 10);
+      expect(db.schemaVersion, 11);
       final preNow = DateTime.now().millisecondsSinceEpoch;
       await db.into(db.expenses).insert(
             ExpensesCompanion.insert(
@@ -394,6 +424,8 @@ void main() {
       raw.execute('ALTER TABLE items DROP COLUMN parts_per_full_product');
       raw.execute('ALTER TABLE items DROP COLUMN sellable_part_base_quantity');
       raw.execute('ALTER TABLE items DROP COLUMN partial_sale_markup_basis_points');
+      // Drop v11 Phase 17 additions (manual part price override column).
+      raw.execute('ALTER TABLE items DROP COLUMN partial_sale_price_micros');
       // Drop v4 additions (prescription linkage columns).
       raw.execute('ALTER TABLE sales_invoices DROP COLUMN prescription_id');
       raw
@@ -430,15 +462,15 @@ void main() {
       raw.dispose();
       await db.close();
 
-      // Reopen under the working schema: onUpgrade(1 → 10) recreates everything.
+      // Reopen under the working schema: onUpgrade(1 → 11) recreates everything.
       final upgraded = _V1Database(NativeDatabase(File(path)));
 
-      // Verify user_version is 10 after migration.
+      // Verify user_version is 11 after migration.
       final userVersion = await upgraded
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(userVersion.data.values.first, 10,
-          reason: 'v1 → v10 migration must set user_version to 10');
+      expect(userVersion.data.values.first, 11,
+          reason: 'v1 → v11 migration must set user_version to 11');
 
       // Verify app_settings created.
       final settings = await upgraded.select(upgraded.appSettings).get();
@@ -623,6 +655,29 @@ void main() {
           .get();
       expect(indLinks, hasLength(1),
           reason: 'item_indications created on v10 upgrade');
+
+      // v11 Phase 17: per-ingredient strength column + items.partial_sale_price_micros
+      // are added on upgrade, and the default markup moves 1000 → 2000 bp.
+      final upgradedItem = await (upgraded.select(upgraded.items)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(upgradedItem.partialSalePriceMicros, isNull,
+          reason: 'v11 manual part-price column added on upgrade (NULL = auto)');
+      await (upgraded.update(upgraded.itemActiveIngredients)
+            ..where((l) => l.id.equals('iai_mig')))
+          .write(const ItemActiveIngredientsCompanion(
+              strength: Value('250 mg')));
+      final storedAi11 =
+          await (upgraded.select(upgraded.itemActiveIngredients)
+                ..where((l) => l.id.equals('iai_mig')))
+              .getSingle();
+      expect(storedAi11.strength, '250 mg',
+          reason: 'per-ingredient strength column added on v11 upgrade');
+      final markupSetting = await (upgraded.select(upgraded.appSettings)
+            ..where((s) => s.key.equals('partial_sale_markup_basis_points')))
+          .getSingleOrNull();
+      expect(markupSetting?.value, '2000',
+          reason: 'v11 bumps the untouched 10% default markup to 20%');
 
       await upgraded.close();
     });

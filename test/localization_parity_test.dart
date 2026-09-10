@@ -77,11 +77,8 @@ void main() {
       'inventorySelectBaseUnit',
       'inventorySelectLargeUnit',
       'inventoryUnitsPerLargeInvalid',
-      'partialSaleUnitRequired',
       'partialSalePartsRequired',
       'partialSalePartsInvalid',
-      'partialSaleBaseRequired',
-      'partialSaleBaseInvalid',
       'partialSaleMarkupInvalid',
     ];
     final ar = readArb('app_ar.arb');

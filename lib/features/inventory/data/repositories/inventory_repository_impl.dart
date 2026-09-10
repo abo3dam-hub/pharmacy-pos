@@ -105,7 +105,8 @@ class InventoryRepositoryImpl implements InventoryRepository {
               .insert(_toInsertCompanion(withSummary, id: id, at: now));
           await _applyUnits(draft.units, itemId: id);
           await _itemSupplierDao.setForItem(id, draft.supplierIds);
-          await _itemActiveIngredientDao.setForItem(id, draft.activeIngredientIds);
+          await _itemActiveIngredientDao.setForItem(id, draft.activeIngredientIds,
+              strengths: draft.activeIngredientStrengths);
           await _itemIndicationDao.setForItem(id, draft.indicationIds);
         }));
     final row = await _itemDao.byId(id);
@@ -128,7 +129,8 @@ class InventoryRepositoryImpl implements InventoryRepository {
             await _applyUnits(draft.units, itemId: id);
           }
           await _itemSupplierDao.setForItem(id, draft.supplierIds);
-          await _itemActiveIngredientDao.setForItem(id, draft.activeIngredientIds);
+          await _itemActiveIngredientDao.setForItem(id, draft.activeIngredientIds,
+              strengths: draft.activeIngredientStrengths);
           await _itemIndicationDao.setForItem(id, draft.indicationIds);
         }));
     final row = await _itemDao.byId(id);
@@ -226,6 +228,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       partsPerFullProduct: Value(d.partsPerFullProduct),
       sellablePartBaseQuantity: Value(d.sellablePartBaseQuantity),
       partialSaleMarkupBasisPoints: Value(d.partialSaleMarkupBasisPoints),
+      partialSalePriceMicros: Value(d.partialSalePriceMicros),
       createdAt: at,
       updatedAt: at,
     );
@@ -272,6 +275,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       partsPerFullProduct: Value(d.partsPerFullProduct),
       sellablePartBaseQuantity: Value(d.sellablePartBaseQuantity),
       partialSaleMarkupBasisPoints: Value(d.partialSaleMarkupBasisPoints),
+      partialSalePriceMicros: Value(d.partialSalePriceMicros),
       updatedAt: Value(at),
     );
   }
@@ -590,6 +594,11 @@ class InventoryRepositoryImpl implements InventoryRepository {
   @override
   Future<List<String>> activeIngredientIdsForItem(String itemId) =>
       _itemActiveIngredientDao.activeIngredientIdsForItem(itemId);
+
+  @override
+  Future<List<ItemActiveIngredientRow>> activeIngredientRelationsForItem(
+          String itemId) =>
+      _itemActiveIngredientDao.forItem(itemId);
 
   @override
   Future<List<String>> indicationIdsForItem(String itemId) =>

@@ -3315,6 +3315,16 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
         type: DriftSqlType.int,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _partialSalePriceMicrosMeta =
+      const VerificationMeta('partialSalePriceMicros');
+  @override
+  late final GeneratedColumn<int> partialSalePriceMicros = GeneratedColumn<int>(
+    'partial_sale_price_micros',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _usageInstructionsMeta = const VerificationMeta(
     'usageInstructions',
   );
@@ -3426,6 +3436,7 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
     partsPerFullProduct,
     sellablePartBaseQuantity,
     partialSaleMarkupBasisPoints,
+    partialSalePriceMicros,
     usageInstructions,
     generalNotes,
     licenseNumber,
@@ -3766,6 +3777,15 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
         ),
       );
     }
+    if (data.containsKey('partial_sale_price_micros')) {
+      context.handle(
+        _partialSalePriceMicrosMeta,
+        partialSalePriceMicros.isAcceptableOrUnknown(
+          data['partial_sale_price_micros']!,
+          _partialSalePriceMicrosMeta,
+        ),
+      );
+    }
     if (data.containsKey('usage_instructions')) {
       context.handle(
         _usageInstructionsMeta,
@@ -3976,6 +3996,10 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
         DriftSqlType.int,
         data['${effectivePrefix}partial_sale_markup_basis_points'],
       ),
+      partialSalePriceMicros: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}partial_sale_price_micros'],
+      ),
       usageInstructions: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}usage_instructions'],
@@ -4075,6 +4099,14 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
   /// Markup applied to partial-base price, in basis points (1000 = 10%).
   /// NULL when partial sale is disabled.
   final int? partialSaleMarkupBasisPoints;
+
+  /// Manual override for the retail price of ONE sellable part (سعر بيع
+  /// الجزء), in integer micro-units. NULL = automatic mode: the part price is
+  /// derived from `sellingPriceMicros ÷ partsPerFullProduct × (1 + markup)`.
+  /// Non-NULL persists a pharmacist-set part price until the user explicitly
+  /// returns to automatic mode (§P17) — the override survives save, reload and
+  /// restart. Only meaningful when [partialSaleEnabled] is true.
+  final int? partialSalePriceMicros;
   final String? usageInstructions;
   final String? generalNotes;
   final String? licenseNumber;
@@ -4120,6 +4152,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     this.partsPerFullProduct,
     this.sellablePartBaseQuantity,
     this.partialSaleMarkupBasisPoints,
+    this.partialSalePriceMicros,
     this.usageInstructions,
     this.generalNotes,
     this.licenseNumber,
@@ -4210,6 +4243,9 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
         partialSaleMarkupBasisPoints,
       );
     }
+    if (!nullToAbsent || partialSalePriceMicros != null) {
+      map['partial_sale_price_micros'] = Variable<int>(partialSalePriceMicros);
+    }
     if (!nullToAbsent || usageInstructions != null) {
       map['usage_instructions'] = Variable<String>(usageInstructions);
     }
@@ -4298,6 +4334,9 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           partialSaleMarkupBasisPoints == null && nullToAbsent
           ? const Value.absent()
           : Value(partialSaleMarkupBasisPoints),
+      partialSalePriceMicros: partialSalePriceMicros == null && nullToAbsent
+          ? const Value.absent()
+          : Value(partialSalePriceMicros),
       usageInstructions: usageInstructions == null && nullToAbsent
           ? const Value.absent()
           : Value(usageInstructions),
@@ -4379,6 +4418,9 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       partialSaleMarkupBasisPoints: serializer.fromJson<int?>(
         json['partialSaleMarkupBasisPoints'],
       ),
+      partialSalePriceMicros: serializer.fromJson<int?>(
+        json['partialSalePriceMicros'],
+      ),
       usageInstructions: serializer.fromJson<String?>(
         json['usageInstructions'],
       ),
@@ -4441,6 +4483,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       'partialSaleMarkupBasisPoints': serializer.toJson<int?>(
         partialSaleMarkupBasisPoints,
       ),
+      'partialSalePriceMicros': serializer.toJson<int?>(partialSalePriceMicros),
       'usageInstructions': serializer.toJson<String?>(usageInstructions),
       'generalNotes': serializer.toJson<String?>(generalNotes),
       'licenseNumber': serializer.toJson<String?>(licenseNumber),
@@ -4489,6 +4532,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     Value<int?> partsPerFullProduct = const Value.absent(),
     Value<int?> sellablePartBaseQuantity = const Value.absent(),
     Value<int?> partialSaleMarkupBasisPoints = const Value.absent(),
+    Value<int?> partialSalePriceMicros = const Value.absent(),
     Value<String?> usageInstructions = const Value.absent(),
     Value<String?> generalNotes = const Value.absent(),
     Value<String?> licenseNumber = const Value.absent(),
@@ -4563,6 +4607,9 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     partialSaleMarkupBasisPoints: partialSaleMarkupBasisPoints.present
         ? partialSaleMarkupBasisPoints.value
         : this.partialSaleMarkupBasisPoints,
+    partialSalePriceMicros: partialSalePriceMicros.present
+        ? partialSalePriceMicros.value
+        : this.partialSalePriceMicros,
     usageInstructions: usageInstructions.present
         ? usageInstructions.value
         : this.usageInstructions,
@@ -4682,6 +4729,9 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       partialSaleMarkupBasisPoints: data.partialSaleMarkupBasisPoints.present
           ? data.partialSaleMarkupBasisPoints.value
           : this.partialSaleMarkupBasisPoints,
+      partialSalePriceMicros: data.partialSalePriceMicros.present
+          ? data.partialSalePriceMicros.value
+          : this.partialSalePriceMicros,
       usageInstructions: data.usageInstructions.present
           ? data.usageInstructions.value
           : this.usageInstructions,
@@ -4740,6 +4790,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           ..write(
             'partialSaleMarkupBasisPoints: $partialSaleMarkupBasisPoints, ',
           )
+          ..write('partialSalePriceMicros: $partialSalePriceMicros, ')
           ..write('usageInstructions: $usageInstructions, ')
           ..write('generalNotes: $generalNotes, ')
           ..write('licenseNumber: $licenseNumber, ')
@@ -4790,6 +4841,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     partsPerFullProduct,
     sellablePartBaseQuantity,
     partialSaleMarkupBasisPoints,
+    partialSalePriceMicros,
     usageInstructions,
     generalNotes,
     licenseNumber,
@@ -4841,6 +4893,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           other.sellablePartBaseQuantity == this.sellablePartBaseQuantity &&
           other.partialSaleMarkupBasisPoints ==
               this.partialSaleMarkupBasisPoints &&
+          other.partialSalePriceMicros == this.partialSalePriceMicros &&
           other.usageInstructions == this.usageInstructions &&
           other.generalNotes == this.generalNotes &&
           other.licenseNumber == this.licenseNumber &&
@@ -4888,6 +4941,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
   final Value<int?> partsPerFullProduct;
   final Value<int?> sellablePartBaseQuantity;
   final Value<int?> partialSaleMarkupBasisPoints;
+  final Value<int?> partialSalePriceMicros;
   final Value<String?> usageInstructions;
   final Value<String?> generalNotes;
   final Value<String?> licenseNumber;
@@ -4934,6 +4988,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     this.partsPerFullProduct = const Value.absent(),
     this.sellablePartBaseQuantity = const Value.absent(),
     this.partialSaleMarkupBasisPoints = const Value.absent(),
+    this.partialSalePriceMicros = const Value.absent(),
     this.usageInstructions = const Value.absent(),
     this.generalNotes = const Value.absent(),
     this.licenseNumber = const Value.absent(),
@@ -4981,6 +5036,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     this.partsPerFullProduct = const Value.absent(),
     this.sellablePartBaseQuantity = const Value.absent(),
     this.partialSaleMarkupBasisPoints = const Value.absent(),
+    this.partialSalePriceMicros = const Value.absent(),
     this.usageInstructions = const Value.absent(),
     this.generalNotes = const Value.absent(),
     this.licenseNumber = const Value.absent(),
@@ -5032,6 +5088,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     Expression<int>? partsPerFullProduct,
     Expression<int>? sellablePartBaseQuantity,
     Expression<int>? partialSaleMarkupBasisPoints,
+    Expression<int>? partialSalePriceMicros,
     Expression<String>? usageInstructions,
     Expression<String>? generalNotes,
     Expression<String>? licenseNumber,
@@ -5096,6 +5153,8 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
         'sellable_part_base_quantity': sellablePartBaseQuantity,
       if (partialSaleMarkupBasisPoints != null)
         'partial_sale_markup_basis_points': partialSaleMarkupBasisPoints,
+      if (partialSalePriceMicros != null)
+        'partial_sale_price_micros': partialSalePriceMicros,
       if (usageInstructions != null) 'usage_instructions': usageInstructions,
       if (generalNotes != null) 'general_notes': generalNotes,
       if (licenseNumber != null) 'license_number': licenseNumber,
@@ -5145,6 +5204,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     Value<int?>? partsPerFullProduct,
     Value<int?>? sellablePartBaseQuantity,
     Value<int?>? partialSaleMarkupBasisPoints,
+    Value<int?>? partialSalePriceMicros,
     Value<String?>? usageInstructions,
     Value<String?>? generalNotes,
     Value<String?>? licenseNumber,
@@ -5197,6 +5257,8 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
           sellablePartBaseQuantity ?? this.sellablePartBaseQuantity,
       partialSaleMarkupBasisPoints:
           partialSaleMarkupBasisPoints ?? this.partialSaleMarkupBasisPoints,
+      partialSalePriceMicros:
+          partialSalePriceMicros ?? this.partialSalePriceMicros,
       usageInstructions: usageInstructions ?? this.usageInstructions,
       generalNotes: generalNotes ?? this.generalNotes,
       licenseNumber: licenseNumber ?? this.licenseNumber,
@@ -5334,6 +5396,11 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
         partialSaleMarkupBasisPoints.value,
       );
     }
+    if (partialSalePriceMicros.present) {
+      map['partial_sale_price_micros'] = Variable<int>(
+        partialSalePriceMicros.value,
+      );
+    }
     if (usageInstructions.present) {
       map['usage_instructions'] = Variable<String>(usageInstructions.value);
     }
@@ -5401,6 +5468,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
           ..write(
             'partialSaleMarkupBasisPoints: $partialSaleMarkupBasisPoints, ',
           )
+          ..write('partialSalePriceMicros: $partialSalePriceMicros, ')
           ..write('usageInstructions: $usageInstructions, ')
           ..write('generalNotes: $generalNotes, ')
           ..write('licenseNumber: $licenseNumber, ')
@@ -6183,8 +6251,24 @@ class $ItemActiveIngredientsTable extends ItemActiveIngredients
         type: DriftSqlType.string,
         requiredDuringInsert: true,
       );
+  static const VerificationMeta _strengthMeta = const VerificationMeta(
+    'strength',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, itemId, activeIngredientId];
+  late final GeneratedColumn<String> strength = GeneratedColumn<String>(
+    'strength',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    itemId,
+    activeIngredientId,
+    strength,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -6221,6 +6305,12 @@ class $ItemActiveIngredientsTable extends ItemActiveIngredients
     } else if (isInserting) {
       context.missing(_activeIngredientIdMeta);
     }
+    if (data.containsKey('strength')) {
+      context.handle(
+        _strengthMeta,
+        strength.isAcceptableOrUnknown(data['strength']!, _strengthMeta),
+      );
+    }
     return context;
   }
 
@@ -6249,6 +6339,10 @@ class $ItemActiveIngredientsTable extends ItemActiveIngredients
         DriftSqlType.string,
         data['${effectivePrefix}active_ingredient_id'],
       )!,
+      strength: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}strength'],
+      ),
     );
   }
 
@@ -6263,10 +6357,17 @@ class ItemActiveIngredientRow extends DataClass
   final String id;
   final String itemId;
   final String activeIngredientId;
+
+  /// Per-ingredient strength (العيار), e.g. `"400 mg"`, `"50/500 mg"`,
+  /// `"12.5 mg"`. One value per (item, ingredient) relation — never a blob
+  /// of several strengths — so combined preparations can carry a different
+  /// strength per component. NULL when the strength is unspecified.
+  final String? strength;
   const ItemActiveIngredientRow({
     required this.id,
     required this.itemId,
     required this.activeIngredientId,
+    this.strength,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -6274,6 +6375,9 @@ class ItemActiveIngredientRow extends DataClass
     map['id'] = Variable<String>(id);
     map['item_id'] = Variable<String>(itemId);
     map['active_ingredient_id'] = Variable<String>(activeIngredientId);
+    if (!nullToAbsent || strength != null) {
+      map['strength'] = Variable<String>(strength);
+    }
     return map;
   }
 
@@ -6282,6 +6386,9 @@ class ItemActiveIngredientRow extends DataClass
       id: Value(id),
       itemId: Value(itemId),
       activeIngredientId: Value(activeIngredientId),
+      strength: strength == null && nullToAbsent
+          ? const Value.absent()
+          : Value(strength),
     );
   }
 
@@ -6296,6 +6403,7 @@ class ItemActiveIngredientRow extends DataClass
       activeIngredientId: serializer.fromJson<String>(
         json['activeIngredientId'],
       ),
+      strength: serializer.fromJson<String?>(json['strength']),
     );
   }
   @override
@@ -6305,6 +6413,7 @@ class ItemActiveIngredientRow extends DataClass
       'id': serializer.toJson<String>(id),
       'itemId': serializer.toJson<String>(itemId),
       'activeIngredientId': serializer.toJson<String>(activeIngredientId),
+      'strength': serializer.toJson<String?>(strength),
     };
   }
 
@@ -6312,10 +6421,12 @@ class ItemActiveIngredientRow extends DataClass
     String? id,
     String? itemId,
     String? activeIngredientId,
+    Value<String?> strength = const Value.absent(),
   }) => ItemActiveIngredientRow(
     id: id ?? this.id,
     itemId: itemId ?? this.itemId,
     activeIngredientId: activeIngredientId ?? this.activeIngredientId,
+    strength: strength.present ? strength.value : this.strength,
   );
   ItemActiveIngredientRow copyWithCompanion(
     ItemActiveIngredientsCompanion data,
@@ -6326,6 +6437,7 @@ class ItemActiveIngredientRow extends DataClass
       activeIngredientId: data.activeIngredientId.present
           ? data.activeIngredientId.value
           : this.activeIngredientId,
+      strength: data.strength.present ? data.strength.value : this.strength,
     );
   }
 
@@ -6334,20 +6446,22 @@ class ItemActiveIngredientRow extends DataClass
     return (StringBuffer('ItemActiveIngredientRow(')
           ..write('id: $id, ')
           ..write('itemId: $itemId, ')
-          ..write('activeIngredientId: $activeIngredientId')
+          ..write('activeIngredientId: $activeIngredientId, ')
+          ..write('strength: $strength')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, itemId, activeIngredientId);
+  int get hashCode => Object.hash(id, itemId, activeIngredientId, strength);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ItemActiveIngredientRow &&
           other.id == this.id &&
           other.itemId == this.itemId &&
-          other.activeIngredientId == this.activeIngredientId);
+          other.activeIngredientId == this.activeIngredientId &&
+          other.strength == this.strength);
 }
 
 class ItemActiveIngredientsCompanion
@@ -6355,17 +6469,20 @@ class ItemActiveIngredientsCompanion
   final Value<String> id;
   final Value<String> itemId;
   final Value<String> activeIngredientId;
+  final Value<String?> strength;
   final Value<int> rowid;
   const ItemActiveIngredientsCompanion({
     this.id = const Value.absent(),
     this.itemId = const Value.absent(),
     this.activeIngredientId = const Value.absent(),
+    this.strength = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ItemActiveIngredientsCompanion.insert({
     required String id,
     required String itemId,
     required String activeIngredientId,
+    this.strength = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        itemId = Value(itemId),
@@ -6374,6 +6491,7 @@ class ItemActiveIngredientsCompanion
     Expression<String>? id,
     Expression<String>? itemId,
     Expression<String>? activeIngredientId,
+    Expression<String>? strength,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -6381,6 +6499,7 @@ class ItemActiveIngredientsCompanion
       if (itemId != null) 'item_id': itemId,
       if (activeIngredientId != null)
         'active_ingredient_id': activeIngredientId,
+      if (strength != null) 'strength': strength,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -6389,12 +6508,14 @@ class ItemActiveIngredientsCompanion
     Value<String>? id,
     Value<String>? itemId,
     Value<String>? activeIngredientId,
+    Value<String?>? strength,
     Value<int>? rowid,
   }) {
     return ItemActiveIngredientsCompanion(
       id: id ?? this.id,
       itemId: itemId ?? this.itemId,
       activeIngredientId: activeIngredientId ?? this.activeIngredientId,
+      strength: strength ?? this.strength,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -6411,6 +6532,9 @@ class ItemActiveIngredientsCompanion
     if (activeIngredientId.present) {
       map['active_ingredient_id'] = Variable<String>(activeIngredientId.value);
     }
+    if (strength.present) {
+      map['strength'] = Variable<String>(strength.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -6423,6 +6547,7 @@ class ItemActiveIngredientsCompanion
           ..write('id: $id, ')
           ..write('itemId: $itemId, ')
           ..write('activeIngredientId: $activeIngredientId, ')
+          ..write('strength: $strength, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -31333,6 +31458,7 @@ typedef $$ItemsTableCreateCompanionBuilder =
       Value<int?> partsPerFullProduct,
       Value<int?> sellablePartBaseQuantity,
       Value<int?> partialSaleMarkupBasisPoints,
+      Value<int?> partialSalePriceMicros,
       Value<String?> usageInstructions,
       Value<String?> generalNotes,
       Value<String?> licenseNumber,
@@ -31381,6 +31507,7 @@ typedef $$ItemsTableUpdateCompanionBuilder =
       Value<int?> partsPerFullProduct,
       Value<int?> sellablePartBaseQuantity,
       Value<int?> partialSaleMarkupBasisPoints,
+      Value<int?> partialSalePriceMicros,
       Value<String?> usageInstructions,
       Value<String?> generalNotes,
       Value<String?> licenseNumber,
@@ -31585,6 +31712,11 @@ class $$ItemsTableFilterComposer extends Composer<_$AppDatabase, $ItemsTable> {
 
   ColumnFilters<int> get partialSaleMarkupBasisPoints => $composableBuilder(
     column: $table.partialSaleMarkupBasisPoints,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get partialSalePriceMicros => $composableBuilder(
+    column: $table.partialSalePriceMicros,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -31818,6 +31950,11 @@ class $$ItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get partialSalePriceMicros => $composableBuilder(
+    column: $table.partialSalePriceMicros,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get usageInstructions => $composableBuilder(
     column: $table.usageInstructions,
     builder: (column) => ColumnOrderings(column),
@@ -32040,6 +32177,11 @@ class $$ItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get partialSalePriceMicros => $composableBuilder(
+    column: $table.partialSalePriceMicros,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get usageInstructions => $composableBuilder(
     column: $table.usageInstructions,
     builder: (column) => column,
@@ -32131,6 +32273,7 @@ class $$ItemsTableTableManager
                 Value<int?> partsPerFullProduct = const Value.absent(),
                 Value<int?> sellablePartBaseQuantity = const Value.absent(),
                 Value<int?> partialSaleMarkupBasisPoints = const Value.absent(),
+                Value<int?> partialSalePriceMicros = const Value.absent(),
                 Value<String?> usageInstructions = const Value.absent(),
                 Value<String?> generalNotes = const Value.absent(),
                 Value<String?> licenseNumber = const Value.absent(),
@@ -32177,6 +32320,7 @@ class $$ItemsTableTableManager
                 partsPerFullProduct: partsPerFullProduct,
                 sellablePartBaseQuantity: sellablePartBaseQuantity,
                 partialSaleMarkupBasisPoints: partialSaleMarkupBasisPoints,
+                partialSalePriceMicros: partialSalePriceMicros,
                 usageInstructions: usageInstructions,
                 generalNotes: generalNotes,
                 licenseNumber: licenseNumber,
@@ -32225,6 +32369,7 @@ class $$ItemsTableTableManager
                 Value<int?> partsPerFullProduct = const Value.absent(),
                 Value<int?> sellablePartBaseQuantity = const Value.absent(),
                 Value<int?> partialSaleMarkupBasisPoints = const Value.absent(),
+                Value<int?> partialSalePriceMicros = const Value.absent(),
                 Value<String?> usageInstructions = const Value.absent(),
                 Value<String?> generalNotes = const Value.absent(),
                 Value<String?> licenseNumber = const Value.absent(),
@@ -32271,6 +32416,7 @@ class $$ItemsTableTableManager
                 partsPerFullProduct: partsPerFullProduct,
                 sellablePartBaseQuantity: sellablePartBaseQuantity,
                 partialSaleMarkupBasisPoints: partialSaleMarkupBasisPoints,
+                partialSalePriceMicros: partialSalePriceMicros,
                 usageInstructions: usageInstructions,
                 generalNotes: generalNotes,
                 licenseNumber: licenseNumber,
@@ -32723,6 +32869,7 @@ typedef $$ItemActiveIngredientsTableCreateCompanionBuilder =
       required String id,
       required String itemId,
       required String activeIngredientId,
+      Value<String?> strength,
       Value<int> rowid,
     });
 typedef $$ItemActiveIngredientsTableUpdateCompanionBuilder =
@@ -32730,6 +32877,7 @@ typedef $$ItemActiveIngredientsTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> itemId,
       Value<String> activeIngredientId,
+      Value<String?> strength,
       Value<int> rowid,
     });
 
@@ -32754,6 +32902,11 @@ class $$ItemActiveIngredientsTableFilterComposer
 
   ColumnFilters<String> get activeIngredientId => $composableBuilder(
     column: $table.activeIngredientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get strength => $composableBuilder(
+    column: $table.strength,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -32781,6 +32934,11 @@ class $$ItemActiveIngredientsTableOrderingComposer
     column: $table.activeIngredientId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get strength => $composableBuilder(
+    column: $table.strength,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ItemActiveIngredientsTableAnnotationComposer
@@ -32802,6 +32960,9 @@ class $$ItemActiveIngredientsTableAnnotationComposer
     column: $table.activeIngredientId,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get strength =>
+      $composableBuilder(column: $table.strength, builder: (column) => column);
 }
 
 class $$ItemActiveIngredientsTableTableManager
@@ -32853,11 +33014,13 @@ class $$ItemActiveIngredientsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> itemId = const Value.absent(),
                 Value<String> activeIngredientId = const Value.absent(),
+                Value<String?> strength = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ItemActiveIngredientsCompanion(
                 id: id,
                 itemId: itemId,
                 activeIngredientId: activeIngredientId,
+                strength: strength,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -32865,11 +33028,13 @@ class $$ItemActiveIngredientsTableTableManager
                 required String id,
                 required String itemId,
                 required String activeIngredientId,
+                Value<String?> strength = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ItemActiveIngredientsCompanion.insert(
                 id: id,
                 itemId: itemId,
                 activeIngredientId: activeIngredientId,
+                strength: strength,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

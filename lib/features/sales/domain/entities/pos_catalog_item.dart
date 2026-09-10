@@ -34,6 +34,7 @@ class PosCatalogItem {
     this.partsPerFullProduct,
     this.sellablePartBaseQuantity,
     this.partialSaleMarkupBasisPoints,
+    this.partialSalePriceMicros,
     this.isRxLinked = false,
     this.rxRemainingBase,
   });
@@ -73,13 +74,19 @@ class PosCatalogItem {
   final String? pharmaForm;
   final String? sizeVolume;
 
-  // ── Partial-sale configuration (Phase 6 Design Lock) ──────────────────
+  /// Partial-sale configuration (Phase 6 Design Lock) ──────────────────
   final bool partialSaleEnabled;
   final String? sellablePartUnitId;
   final String? sellablePartUnitName;
   final int? partsPerFullProduct;
   final int? sellablePartBaseQuantity;
   final int? partialSaleMarkupBasisPoints;
+
+  /// Manual override for the retail price of ONE part (سعر بيع الجزء), in
+  /// micro-units. NULL = automatic mode (derived from the approved formula).
+  /// Persisted on the item so a pharmacist-set part price survives reload and
+  /// restart until it is explicitly reverted (§P17).
+  final int? partialSalePriceMicros;
 
   /// When this item is currently linked to a prescription item of the active
   /// prescription, the remaining (not-yet-dispensed) base quantity on it.

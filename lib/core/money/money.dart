@@ -16,7 +16,11 @@ class Money implements Comparable<Money> {
   /// Creates a [Money] from a decimal string such as `"1250.50"`.
   ///
   /// At most [scale] decimal places are allowed; more fractional digits are
-  /// rounded half-up.
+  /// rounded half-up. ASCII grouping commas (e.g. `"10,000.50"`) are accepted
+  /// so that values rendered by [format] round-trip back into [parse] — the
+  /// documented `"956,000.00"` bug cure (§P17: edit forms failing with the
+  /// generic save error because the seeded `format()` output could not be
+  /// parsed back).
   factory Money.parse(String value) {
     final normalize = value.trim();
     if (normalize.isEmpty) {
@@ -38,6 +42,21 @@ class Money implements Comparable<Money> {
       if (minorPart.contains('.')) {
         throw FormatException('Invalid Money string: $value');
       }
+    }
+    // Accept the ASCII thousand-group separators emitted by [format] (e.g.
+    // `1,250.50`). Each comma must sit at the head of a 3-digit group in the
+    // major part; anything else (`12,50`, `,250`) is rejected. Without this,
+    // form fields seeded from `Money.fromUnits(...).format()` could never be
+    // re-parsed on save — the round-trip surfaced as a generic save error.
+    if (majorPart.contains(',')) {
+      final groups = majorPart.split(',');
+      final validGrouping = groups.length >= 2 &&
+          groups.first.isNotEmpty &&
+          groups.skip(1).every((g) => g.length == 3 && _isDigits(g));
+      if (!validGrouping) {
+        throw FormatException('Invalid Money string: $value');
+      }
+      majorPart = groups.join();
     }
     final major = int.tryParse(majorPart);
     if (major == null || (minorPart.isNotEmpty && !_isDigits(minorPart))) {

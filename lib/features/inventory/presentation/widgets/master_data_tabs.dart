@@ -77,45 +77,6 @@ class _CategoriesTabState extends ConsumerState<CategoriesTab> {
     if (failure != null) _showFailure(failure);
   }
 
-  Future<void> _addSubCategory(CategoryRow parent) async {
-    final l10n = AppLocalizations.of(context);
-    final result = await showMasterDataFormDialog(
-      context,
-      kind: MasterDataKind.subCategory,
-      title: l10n.subCategoriesAddTitle,
-      initial: MasterDataDraft(name: '', categoryId: parent.id),
-      categories: ref.read(masterDataControllerProvider).categories,
-    );
-    if (result == null || !mounted) return;
-    final failure = await ref.read(masterDataControllerProvider.notifier)
-        .createSubCategory(result.draft,
-            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure == null && mounted) _saved();
-    if (failure != null) _showFailure(failure);
-  }
-
-  Future<void> _editSubCategory(SubCategoryRow row) async {
-    final l10n = AppLocalizations.of(context);
-    final result = await showMasterDataFormDialog(
-      context,
-      kind: MasterDataKind.subCategory,
-      title: l10n.subCategoriesEditTitle,
-      initial: MasterDataDraft(
-        name: row.name,
-        nameEn: row.nameEn,
-        description: row.description,
-        categoryId: row.categoryId,
-      ),
-      categories: ref.read(masterDataControllerProvider).categories,
-    );
-    if (result == null || !mounted) return;
-    final failure = await ref.read(masterDataControllerProvider.notifier)
-        .updateSubCategory(row.id, result.draft,
-            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure == null && mounted) _saved();
-    if (failure != null) _showFailure(failure);
-  }
-
   Future<void> _toggleCategory(CategoryRow row) async {
     final l10n = AppLocalizations.of(context);
     final activating = !row.isActive;
@@ -172,7 +133,6 @@ class _CategoriesTabState extends ConsumerState<CategoriesTab> {
                     columns: [
                       DataColumn(label: Text(l10n.categoryName)),
                       DataColumn(label: Text(l10n.categoryNameEn)),
-                      DataColumn(label: Text(l10n.itemSubCategory)),
                       DataColumn(label: Text(l10n.userStatusActive)),
                       DataColumn(label: Text('')),
                     ],
@@ -181,17 +141,10 @@ class _CategoriesTabState extends ConsumerState<CategoriesTab> {
                         DataRow(cells: [
                           DataCell(Text(c.name)),
                           DataCell(Text(c.nameEn ?? '')),
-                          DataCell(
-                            _subCategoryChips(
-                              state.subsOf(c.id),
-                              onEdit: _editSubCategory,
-                            ),
-                          ),
                           DataCell(_ActiveStatusChipBox(active: c.isActive)),
                           DataCell(_MasterActions(
                             canEdit: _canEdit,
                             onEdit: () => _editCategory(c),
-                            onAddSub: () => _addSubCategory(c),
                             onToggle: () => _toggleCategory(c),
                             active: c.isActive,
                           )),
@@ -200,28 +153,6 @@ class _CategoriesTabState extends ConsumerState<CategoriesTab> {
                   ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _subCategoryChips(
-    List<SubCategoryRow> subs, {
-    required Future<void> Function(SubCategoryRow) onEdit,
-  }) {
-    if (subs.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Wrap(
-      spacing: AppSpacing.xs,
-      runSpacing: AppSpacing.xs,
-      children: [
-        for (final s in subs)
-          ActionChip(
-            avatar: const Icon(Icons.folder_open_outlined, size: 14),
-            label: Text(s.name),
-            visualDensity: VisualDensity.compact,
-            onPressed: _canEdit ? () => onEdit(s) : null,
-          ),
       ],
     );
   }
@@ -340,125 +271,6 @@ class _ManufacturersTabState extends ConsumerState<ManufacturersTab> {
                             onEdit: () => _edit(m),
                             onToggle: () => _toggle(m, !m.isActive),
                             active: m.isActive,
-                          )),
-                        ]),
-                    ],
-                  ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// §4.2 — therapeutic groups registry.
-class GroupsTab extends ConsumerStatefulWidget {
-  const GroupsTab({super.key});
-
-  @override
-  ConsumerState<GroupsTab> createState() => _GroupsTabState();
-}
-
-class _GroupsTabState extends ConsumerState<GroupsTab> {
-  bool get _canEdit =>
-      ref.read(authControllerProvider).permissions.contains(Perm.inventoryEdit);
-  String? get _actingUserId => ref.read(authControllerProvider).user?.id;
-  String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
-
-  void _snack(bool ok) {
-    final l10n = AppLocalizations.of(context);
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(ok ? l10n.masterDataSavedMessage : l10n.authSaveError),
-      ));
-  }
-
-  Future<void> _add() async {
-    final l10n = AppLocalizations.of(context);
-    final result = await showMasterDataFormDialog(
-      context,
-      kind: MasterDataKind.group,
-      title: l10n.groupsAdd,
-    );
-    if (result == null || !mounted) return;
-    final failure = await ref.read(masterDataControllerProvider.notifier)
-        .createGroup(result.draft,
-            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
-    _snack(true);
-  }
-
-  Future<void> _edit(TherapeuticGroupRow row) async {
-    final l10n = AppLocalizations.of(context);
-    final result = await showMasterDataFormDialog(
-      context,
-      kind: MasterDataKind.group,
-      title: l10n.groupsEditTitle,
-      initial: MasterDataDraft(
-        name: row.name,
-        description: row.description,
-      ),
-    );
-    if (result == null || !mounted) return;
-    final failure = await ref.read(masterDataControllerProvider.notifier)
-        .updateGroup(row.id, result.draft,
-            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
-    _snack(true);
-  }
-
-  Future<void> _toggle(TherapeuticGroupRow row, bool active) async {
-    final failure = await ref.read(masterDataControllerProvider.notifier)
-        .setGroupActive(row.id, active,
-            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
-    _snack(true);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final state = ref.watch(masterDataControllerProvider);
-    final header = _tabHeader(
-      context: context,
-      l10n: l10n,
-      title: l10n.inventoryTabGroups,
-      canEdit: _canEdit,
-      onAdd: _add,
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        header,
-        Expanded(
-          child: LoadingOverlay(
-            visible: state.status == MasterDataStatus.loading,
-            label: l10n.commonLoading,
-            child: state.status == MasterDataStatus.error
-                ? Center(
-                    child: Text(l10n.commonError,
-                        style: context.appTypography.labelSmall),
-                  )
-                : AppDataTable(
-                    emptyMessage: l10n.groupsEmpty,
-                    columns: [
-                      DataColumn(label: Text(l10n.groupName)),
-                      DataColumn(label: Text(l10n.userNotes)),
-                      DataColumn(label: Text(l10n.userStatusActive)),
-                      DataColumn(label: Text('')),
-                    ],
-                    rows: [
-                      for (final g in state.groups)
-                        DataRow(cells: [
-                          DataCell(Text(g.name)),
-                          DataCell(Text(g.description ?? '')),
-                          DataCell(_ActiveStatusChipBox(active: g.isActive)),
-                          DataCell(_MasterActions(
-                            canEdit: _canEdit,
-                            onEdit: () => _edit(g),
-                            onToggle: () => _toggle(g, !g.isActive),
-                            active: g.isActive,
                           )),
                         ]),
                     ],
@@ -828,17 +640,15 @@ class _IndicationsTabState extends ConsumerState<IndicationsTab> {
 
 /// Per-row action buttons for master-data grids.
 class _MasterActions extends StatelessWidget {
-const _MasterActions({
+  const _MasterActions({
     required this.canEdit,
     required this.onEdit,
-    this.onAddSub,
     this.onToggle,
     this.active = true,
   });
 
   final bool canEdit;
   final VoidCallback onEdit;
-  final VoidCallback? onAddSub;
   final VoidCallback? onToggle;
   final bool active;
 
@@ -855,14 +665,6 @@ const _MasterActions({
           constraints: const BoxConstraints.tightFor(width: 32, height: 32),
           onPressed: onEdit,
         ),
-        if (onAddSub != null)
-          IconButton(
-            icon: const Icon(Icons.create_new_folder_outlined),
-            tooltip: AppLocalizations.of(context).addSubCategory,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints.tightFor(width: 32, height: 32),
-            onPressed: onAddSub,
-          ),
         if (onToggle != null)
           IconButton(
             icon: Icon(active ? Icons.block : Icons.check_circle_outline),

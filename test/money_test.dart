@@ -52,6 +52,23 @@ void main() {
       expect(Money.parse('1250.50').format(0), '1,251');
     });
 
+    test('parse accepts the grouping separators that format emits', () {
+      // Regression (Phase 17): editing an item whose price the form seeded
+      // from `Money.fromUnits(x).format()` (e.g. `10,000.00`) previously
+      // failed in `Money.parse` → the dialog surfaced the generic save error.
+      expect(Money.parse('1,250.50'), const Money.fromUnits(12505000));
+      expect(Money.parse('10,000.00'), Money.fromUnits(100000000));
+      expect(Money.parse('1,234'), Money.fromMajor(1234));
+      expect(Money.parse('-1,234.50'), const Money.fromUnits(-12345000));
+    });
+
+    test('parse rejects invalid grouping separators', () {
+      expect(() => Money.parse('12,50'), throwsFormatException);
+      expect(() => Money.parse(',250'), throwsFormatException);
+      expect(() => Money.parse('1,250,0'), throwsFormatException);
+      expect(() => Money.parse('1,25,000'), throwsFormatException);
+    });
+
     test('formatArabicDigits renders Western/Latin glyphs per §23', () {
       expect(Money.parse('1234.50').formatArabicDigits(), '1,234.50');
       expect(Money.parse('1234.50').formatArabicDigits(4), '1,234.5000');

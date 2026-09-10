@@ -98,9 +98,14 @@ class PosLinePricer {
     return _summarize(line, saleLines);
   }
 
-  /// Partial selling price per sellable part for the given configured item —
-  /// computed through the single approved formula (Design Lock §6).
+  /// Partial selling price per sellable part for the given configured item.
+  ///
+  /// A pharmacist-set manual price (a persisted [PosCatalogItem.partialSalePriceMicros]
+  /// from سعر بيع الجزء) takes precedence until it is cleared; otherwise the
+  /// price comes from the single approved formula (Design Lock §6).
   int partialSellingPricePerPart(PosCatalogItem item) {
+    final manual = item.partialSalePriceMicros;
+    if (manual != null) return manual;
     return _partialPrices.calculatePartialPrice(
       sellingPriceMicros: item.sellingPriceMicros,
       partsPerFullProduct: item.partsPerFullProduct!,

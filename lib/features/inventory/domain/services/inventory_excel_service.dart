@@ -20,7 +20,10 @@ class InventoryExcelService {
 
   static const String _sheetName = 'products';
 
-  /// Column keys (header text) shared by export and import.
+  /// Column keys (header text) shared by export and import. Phase 17 product
+  /// model: التعبئة التجارية / الأجزاء / عدد الأجزاء replace the old unit
+  /// naming; sub-category, therapeutic group and sub-unit price columns are
+  /// gone from the template.
   static const List<String> headers = [
     'الرمز الشريطي الرئيسي',
     'الرمز الشريطي الثانوي',
@@ -29,16 +32,13 @@ class InventoryExcelService {
     'الاسم العلمي',
     'المادة الفعالة',
     'التصنيف',
-    'التصنيف الفرعي',
     'الشركة المصنعة',
-    'المجموعة العلاجية',
     'الموقع',
     'له تاريخ صلاحية',
-    'الوحدة الأساسية',
-    'الوحدة الكبيرة',
-    'كمية التعبئة',
+    'الأجزاء',
+    'التعبئة التجارية',
+    'عدد الأجزاء',
     'سعر البيع',
-    'سعر الصندوق',
     'سعر الجملة',
     'سعر الجملة النصف',
     'ضريبة %',
@@ -56,23 +56,20 @@ class InventoryExcelService {
     'الاسم العلمي': 4,
     'المادة الفعالة': 5,
     'التصنيف': 6,
-    'التصنيف الفرعي': 7,
-    'الشركة المصنعة': 8,
-    'المجموعة العلاجية': 9,
-    'الموقع': 10,
-    'له تاريخ صلاحية': 11,
-    'الوحدة الأساسية': 12,
-    'الوحدة الكبيرة': 13,
-    'كمية التعبئة': 14,
-    'سعر البيع': 15,
-    'سعر الصندوق': 16,
-    'سعر الجملة': 17,
-    'سعر الجملة النصف': 18,
-    'ضريبة %': 19,
-    'سعر التكلفة': 20,
-    'الحد الأدنى': 21,
-    'الحد الأقصى': 22,
-    'المخزون الحالي': 23,
+    'الشركة المصنعة': 7,
+    'الموقع': 8,
+    'له تاريخ صلاحية': 9,
+    'الأجزاء': 10,
+    'التعبئة التجارية': 11,
+    'عدد الأجزاء': 12,
+    'سعر البيع': 13,
+    'سعر الجملة': 14,
+    'سعر الجملة النصف': 15,
+    'ضريبة %': 16,
+    'سعر التكلفة': 17,
+    'الحد الأدنى': 18,
+    'الحد الأقصى': 19,
+    'المخزون الحالي': 20,
   };
 
   // ----- Export -----
@@ -95,16 +92,13 @@ class InventoryExcelService {
         TextCellValue(item.scientificName ?? ''),
         TextCellValue(item.activeIngredient ?? ''),
         TextCellValue(v.categoryName ?? ''),
-        TextCellValue(''),
         TextCellValue(v.manufacturerName ?? ''),
-        TextCellValue(v.groupName ?? ''),
         TextCellValue(item.shelfLocation ?? ''),
         BoolCellValue(item.hasExpiry),
         TextCellValue(v.baseUnitName ?? ''),
         TextCellValue(v.largeUnitName ?? ''),
         IntCellValue(units?.unitsPerLarge ?? 1),
         TextCellValue(Money.fromUnits(item.sellingPriceMicros).format()),
-        TextCellValue(Money.fromUnits(item.subUnitPriceMicros).format()),
         TextCellValue(Money.fromUnits(item.wholesalePriceMicros).format()),
         TextCellValue(Money.fromUnits(item.halfWholesalePriceMicros).format()),
         IntCellValue(item.vatRateBasisPoints ~/ 100),
@@ -134,8 +128,6 @@ class InventoryExcelService {
     final byCategoryName = {for (final c in categories) c.name.trim(): c};
     final manufacturers = await _repo.manufacturers();
     final byManufacturerName = {for (final m in manufacturers) m.name.trim(): m};
-    final groups = await _repo.therapeuticGroups();
-    final byGroupName = {for (final g in groups) g.name.trim(): g};
     final unitList = await _repo.units();
     final byUnitName = {
       for (final u in unitList) u.name: u,
@@ -172,20 +164,6 @@ class InventoryExcelService {
         }
       }
 
-      SubCategoryRow? subCategory;
-      if (category != null) {
-        final subName = at(_colIndex['التصنيف الفرعي']!);
-        if (subName.isNotEmpty) {
-          final subs = await _repo.subCategories(category.id);
-          subCategory = subs
-              .firstWhereOrNull((s) => s.name == subName || s.nameEn == subName);
-          if (subCategory == null) {
-            issues.add('الصف ${r + 1}: التصنيف الفرعي "$subName" غير معروف');
-            continue;
-          }
-        }
-      }
-
       final manufacturerName = at(_colIndex['الشركة المصنعة']!);
       final manufacturer = manufacturerName.isNotEmpty
           ? byManufacturerName[manufacturerName]
@@ -195,15 +173,8 @@ class InventoryExcelService {
         continue;
       }
 
-      final groupName = at(_colIndex['المجموعة العلاجية']!);
-      final group = groupName.isNotEmpty ? byGroupName[groupName] : null;
-      if (groupName.isNotEmpty && group == null) {
-        issues.add('الصف ${r + 1}: المجموعة "$groupName" غير معروفة');
-        continue;
-      }
-
-      final baseName = at(_colIndex['الوحدة الأساسية']!);
-      final largeName = at(_colIndex['الوحدة الكبيرة']!);
+      final baseName = at(_colIndex['الأجزاء']!);
+      final largeName = at(_colIndex['التعبئة التجارية']!);
       final baseUnit = baseName.isEmpty ? null : byUnitName[baseName];
       final largeUnit = largeName.isEmpty ? null : byUnitName[largeName];
       if (baseName.isNotEmpty && (baseUnit == null || largeUnit == null)) {
@@ -221,7 +192,8 @@ class InventoryExcelService {
               ? ItemUnitRelation(
                   baseUnitId: baseUnit.id,
                   largeUnitId: largeUnit.id,
-                  unitsPerLarge: _parseInt(at(_colIndex['كمية التعبئة']!)) ?? 1,
+                  unitsPerLarge:
+                      _parseInt(at(_colIndex['عدد الأجزاء']!)) ?? 1,
                 )
               : existingUnits == null
                   ? null
@@ -236,7 +208,6 @@ class InventoryExcelService {
       }
 
       final selling = _parseMoney(at(_colIndex['سعر البيع']!));
-      final sub = _parseMoney(at(_colIndex['سعر الصندوق']!));
       final wholesale = _parseMoney(at(_colIndex['سعر الجملة']!));
       final half = _parseMoney(at(_colIndex['سعر الجملة النصف']!));
       final cost = _parseMoney(at(_colIndex['سعر التكلفة']!));
@@ -263,13 +234,13 @@ class InventoryExcelService {
         scientificName: _orNull(at(_colIndex['الاسم العلمي']!)),
         activeIngredient: _orNull(at(_colIndex['المادة الفعالة']!)),
         categoryId: categoryId,
-        subCategoryId: subCategory?.id ?? existing?.subCategoryId,
-        therapeuticGroupId: group?.id ?? existing?.therapeuticGroupId,
+        subCategoryId: existing?.subCategoryId,
+        therapeuticGroupId: existing?.therapeuticGroupId,
         manufacturerId: manufacturer?.id ?? existing?.manufacturerId,
         shelfLocation: _orNull(at(_colIndex['الموقع']!)),
         hasExpiry: _cellBool(values, _colIndex['له تاريخ صلاحية']!),
         sellingPriceMicros: selling,
-        subUnitPriceMicros: sub ?? existing?.subUnitPriceMicros ?? selling,
+        subUnitPriceMicros: existing?.subUnitPriceMicros ?? selling,
         wholesalePriceMicros:
             wholesale ?? existing?.wholesalePriceMicros ?? selling,
         halfWholesalePriceMicros:
@@ -370,13 +341,4 @@ class ImportRow {
   final ItemDraft draft;
   final int rowNumber;
   final String? barcode;
-}
-
-extension _ListFirstWhereOrNull<T> on List<T> {
-  T? firstWhereOrNull(bool Function(T) test) {
-    for (final e in this) {
-      if (test(e)) return e;
-    }
-    return null;
-  }
 }

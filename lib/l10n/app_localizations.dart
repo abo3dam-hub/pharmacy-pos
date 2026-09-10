@@ -701,7 +701,7 @@ abstract class AppLocalizations {
   /// No description provided for @unitStrips.
   ///
   /// In ar, this message translates to:
-  /// **'شرائط'**
+  /// **'ظروف'**
   String get unitStrips;
 
   /// No description provided for @dashboardTodayOrders.
@@ -962,12 +962,6 @@ abstract class AppLocalizations {
   /// **'المصنعون'**
   String get inventoryTabManufacturers;
 
-  /// No description provided for @inventoryTabGroups.
-  ///
-  /// In ar, this message translates to:
-  /// **'المجموعات العلاجية'**
-  String get inventoryTabGroups;
-
   /// No description provided for @inventoryTabUnits.
   ///
   /// In ar, this message translates to:
@@ -1094,23 +1088,11 @@ abstract class AppLocalizations {
   /// **'الاسم التجاري (إنجليزي)'**
   String get itemTradeNameEn;
 
-  /// No description provided for @itemSubCategory.
-  ///
-  /// In ar, this message translates to:
-  /// **'التصنيف الفرعي'**
-  String get itemSubCategory;
-
   /// No description provided for @itemManufacturer.
   ///
   /// In ar, this message translates to:
   /// **'المصنع'**
   String get itemManufacturer;
-
-  /// No description provided for @itemGroup.
-  ///
-  /// In ar, this message translates to:
-  /// **'المجموعة العلاجية'**
-  String get itemGroup;
 
   /// No description provided for @itemPharmaForm.
   ///
@@ -1184,12 +1166,6 @@ abstract class AppLocalizations {
   /// **'سعر البيع'**
   String get itemSellingPrice;
 
-  /// No description provided for @itemSubUnitPrice.
-  ///
-  /// In ar, this message translates to:
-  /// **'سعر الوحدة الفرعية'**
-  String get itemSubUnitPrice;
-
   /// No description provided for @itemWholesalePrice.
   ///
   /// In ar, this message translates to:
@@ -1259,7 +1235,7 @@ abstract class AppLocalizations {
   /// No description provided for @itemBaseUnit.
   ///
   /// In ar, this message translates to:
-  /// **'الوحدة الأساسية'**
+  /// **'الأجزاء'**
   String get itemBaseUnit;
 
   /// No description provided for @itemLargeUnit.
@@ -1271,13 +1247,13 @@ abstract class AppLocalizations {
   /// No description provided for @itemPackagingUnit.
   ///
   /// In ar, this message translates to:
-  /// **'شكل التعبئة (الوحدة التجارية)'**
+  /// **'التعبئة التجارية'**
   String get itemPackagingUnit;
 
   /// No description provided for @itemUnitsPerLarge.
   ///
   /// In ar, this message translates to:
-  /// **'عدد الوحدات الصغرى في الكبرى'**
+  /// **'عدد الأجزاء'**
   String get itemUnitsPerLarge;
 
   /// No description provided for @itemSuppliers.
@@ -1295,26 +1271,38 @@ abstract class AppLocalizations {
   /// No description provided for @inventoryUnitsRequired.
   ///
   /// In ar, this message translates to:
-  /// **'يجب تحديد الوحدة الأساسية وشكل التعبئة'**
+  /// **'يجب تحديد الأجزاء وشكل التعبئة'**
   String get inventoryUnitsRequired;
 
   /// No description provided for @inventorySelectBaseUnit.
   ///
   /// In ar, this message translates to:
-  /// **'اختر الوحدة الأساسية'**
+  /// **'اختر الأجزاء'**
   String get inventorySelectBaseUnit;
 
   /// No description provided for @inventorySelectLargeUnit.
   ///
   /// In ar, this message translates to:
-  /// **'اختر شكل التعبئة (الوحدة الكبيرة)'**
+  /// **'اختر التعبئة التجارية'**
   String get inventorySelectLargeUnit;
 
   /// No description provided for @inventoryUnitsPerLargeInvalid.
   ///
   /// In ar, this message translates to:
-  /// **'عدد الوحدات الأساسية في شكل التعبئة يجب أن يكون أكبر من صفر'**
+  /// **'عدد الأجزاء يجب أن يكون أكبر من صفر'**
   String get inventoryUnitsPerLargeInvalid;
+
+  /// No description provided for @itemClassificationSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيف والمعلومات الدوائية'**
+  String get itemClassificationSection;
+
+  /// No description provided for @itemPricePartsSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'التكلفة / السعر / الأجزاء'**
+  String get itemPricePartsSection;
 
   /// No description provided for @itemCurrentStock.
   ///
@@ -1664,24 +1652,6 @@ abstract class AppLocalizations {
   /// **'تعديل تصنيف'**
   String get categoriesEditTitle;
 
-  /// No description provided for @subCategoriesAddTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'إضافة تصنيف فرعي'**
-  String get subCategoriesAddTitle;
-
-  /// No description provided for @subCategoriesEditTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'تعديل تصنيف فرعي'**
-  String get subCategoriesEditTitle;
-
-  /// No description provided for @addSubCategory.
-  ///
-  /// In ar, this message translates to:
-  /// **'إضافة تصنيف فرعي'**
-  String get addSubCategory;
-
   /// No description provided for @categoriesEmpty.
   ///
   /// In ar, this message translates to:
@@ -1699,12 +1669,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'اسم التصنيف (إنجليزي)'**
   String get categoryNameEn;
-
-  /// No description provided for @subCategoryName.
-  ///
-  /// In ar, this message translates to:
-  /// **'اسم التصنيف الفرعي'**
-  String get subCategoryName;
 
   /// No description provided for @manufacturerName.
   ///
@@ -1831,6 +1795,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'المواد الفعالة'**
   String get itemActiveIngredients;
+
+  /// No description provided for @activeIngredientStrength.
+  ///
+  /// In ar, this message translates to:
+  /// **'العيار'**
+  String get activeIngredientStrength;
 
   /// No description provided for @itemIndications.
   ///
@@ -3062,23 +3032,11 @@ abstract class AppLocalizations {
   /// **'السماح بالبيع الجزئي'**
   String get partialSaleEnabled;
 
-  /// No description provided for @partialSaleSellablePart.
-  ///
-  /// In ar, this message translates to:
-  /// **'وحدة البيع الجزئي'**
-  String get partialSaleSellablePart;
-
   /// No description provided for @partialSalePartsPerFull.
   ///
   /// In ar, this message translates to:
-  /// **'عدد الأجزاء في العبوة الكاملة'**
+  /// **'عدد الأجزاء في العبوة'**
   String get partialSalePartsPerFull;
-
-  /// No description provided for @partialSaleBaseQuantity.
-  ///
-  /// In ar, this message translates to:
-  /// **'عدد الوحدات الأساسية في الجزء'**
-  String get partialSaleBaseQuantity;
 
   /// No description provided for @partialSaleMarkupPercent.
   ///
@@ -3086,11 +3044,23 @@ abstract class AppLocalizations {
   /// **'نسبة الزيادة %'**
   String get partialSaleMarkupPercent;
 
-  /// No description provided for @partialSaleUnitRequired.
+  /// No description provided for @partialSalePartPrice.
   ///
   /// In ar, this message translates to:
-  /// **'اختر وحدة البيع الجزئي'**
-  String get partialSaleUnitRequired;
+  /// **'سعر بيع الجزء'**
+  String get partialSalePartPrice;
+
+  /// No description provided for @partialSaleRestoreAuto.
+  ///
+  /// In ar, this message translates to:
+  /// **'استعادة الحساب التلقائي'**
+  String get partialSaleRestoreAuto;
+
+  /// No description provided for @partialSalePartPriceInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل سعر جزء صالحًا'**
+  String get partialSalePartPriceInvalid;
 
   /// No description provided for @partialSalePartsRequired.
   ///
@@ -3101,20 +3071,8 @@ abstract class AppLocalizations {
   /// No description provided for @partialSalePartsInvalid.
   ///
   /// In ar, this message translates to:
-  /// **'عدد الأجزاء في العبوة الكاملة يجب أن يكون أكبر من 1'**
+  /// **'عدد الأجزاء في العبوة يجب أن يكون أكبر من 1'**
   String get partialSalePartsInvalid;
-
-  /// No description provided for @partialSaleBaseRequired.
-  ///
-  /// In ar, this message translates to:
-  /// **'أدخل عدد الوحدات الأساسية في الجزء'**
-  String get partialSaleBaseRequired;
-
-  /// No description provided for @partialSaleBaseInvalid.
-  ///
-  /// In ar, this message translates to:
-  /// **'عدد الوحدات الأساسية في الجزء يجب أن يكون 1 على الأقل'**
-  String get partialSaleBaseInvalid;
 
   /// No description provided for @partialSaleMarkupInvalid.
   ///
@@ -3167,7 +3125,7 @@ abstract class AppLocalizations {
   /// No description provided for @posUnitStrip.
   ///
   /// In ar, this message translates to:
-  /// **'شرائط'**
+  /// **'ظروف'**
   String get posUnitStrip;
 
   /// No description provided for @posUnitUnit.

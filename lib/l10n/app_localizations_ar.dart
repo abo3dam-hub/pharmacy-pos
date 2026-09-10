@@ -314,7 +314,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unitBoxes => 'علب';
 
   @override
-  String get unitStrips => 'شرائط';
+  String get unitStrips => 'ظروف';
 
   @override
   String get dashboardTodayOrders => 'طلبات اليوم';
@@ -447,9 +447,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get inventoryTabManufacturers => 'المصنعون';
 
   @override
-  String get inventoryTabGroups => 'المجموعات العلاجية';
-
-  @override
   String get inventoryTabUnits => 'الوحدات';
 
   @override
@@ -517,13 +514,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get itemTradeNameEn => 'الاسم التجاري (إنجليزي)';
 
   @override
-  String get itemSubCategory => 'التصنيف الفرعي';
-
-  @override
   String get itemManufacturer => 'المصنع';
-
-  @override
-  String get itemGroup => 'المجموعة العلاجية';
 
   @override
   String get itemPharmaForm => 'الشكل الصيدلاني';
@@ -562,9 +553,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get itemSellingPrice => 'سعر البيع';
 
   @override
-  String get itemSubUnitPrice => 'سعر الوحدة الفرعية';
-
-  @override
   String get itemWholesalePrice => 'سعر الجملة';
 
   @override
@@ -598,16 +586,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get itemUnitsRelation => 'علاقة الوحدات';
 
   @override
-  String get itemBaseUnit => 'الوحدة الأساسية';
+  String get itemBaseUnit => 'الأجزاء';
 
   @override
   String get itemLargeUnit => 'الوحدة الكبيرة';
 
   @override
-  String get itemPackagingUnit => 'شكل التعبئة (الوحدة التجارية)';
+  String get itemPackagingUnit => 'التعبئة التجارية';
 
   @override
-  String get itemUnitsPerLarge => 'عدد الوحدات الصغرى في الكبرى';
+  String get itemUnitsPerLarge => 'عدد الأجزاء';
 
   @override
   String get itemSuppliers => 'الموردون';
@@ -616,17 +604,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get itemAddNew => 'إضافة جديد';
 
   @override
-  String get inventoryUnitsRequired => 'يجب تحديد الوحدة الأساسية وشكل التعبئة';
+  String get inventoryUnitsRequired => 'يجب تحديد الأجزاء وشكل التعبئة';
 
   @override
-  String get inventorySelectBaseUnit => 'اختر الوحدة الأساسية';
+  String get inventorySelectBaseUnit => 'اختر الأجزاء';
 
   @override
-  String get inventorySelectLargeUnit => 'اختر شكل التعبئة (الوحدة الكبيرة)';
+  String get inventorySelectLargeUnit => 'اختر التعبئة التجارية';
 
   @override
   String get inventoryUnitsPerLargeInvalid =>
-      'عدد الوحدات الأساسية في شكل التعبئة يجب أن يكون أكبر من صفر';
+      'عدد الأجزاء يجب أن يكون أكبر من صفر';
+
+  @override
+  String get itemClassificationSection => 'التصنيف والمعلومات الدوائية';
+
+  @override
+  String get itemPricePartsSection => 'التكلفة / السعر / الأجزاء';
 
   @override
   String get itemCurrentStock => 'الرصيد الحالي';
@@ -809,15 +803,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get categoriesEditTitle => 'تعديل تصنيف';
 
   @override
-  String get subCategoriesAddTitle => 'إضافة تصنيف فرعي';
-
-  @override
-  String get subCategoriesEditTitle => 'تعديل تصنيف فرعي';
-
-  @override
-  String get addSubCategory => 'إضافة تصنيف فرعي';
-
-  @override
   String get categoriesEmpty => 'لا توجد تصنيفات';
 
   @override
@@ -825,9 +810,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get categoryNameEn => 'اسم التصنيف (إنجليزي)';
-
-  @override
-  String get subCategoryName => 'اسم التصنيف الفرعي';
 
   @override
   String get manufacturerName => 'اسم المصنع';
@@ -891,6 +873,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get itemActiveIngredients => 'المواد الفعالة';
+
+  @override
+  String get activeIngredientStrength => 'العيار';
 
   @override
   String get itemIndications => 'الاستطبابات';
@@ -1529,33 +1514,26 @@ class AppLocalizationsAr extends AppLocalizations {
   String get partialSaleEnabled => 'السماح بالبيع الجزئي';
 
   @override
-  String get partialSaleSellablePart => 'وحدة البيع الجزئي';
-
-  @override
-  String get partialSalePartsPerFull => 'عدد الأجزاء في العبوة الكاملة';
-
-  @override
-  String get partialSaleBaseQuantity => 'عدد الوحدات الأساسية في الجزء';
+  String get partialSalePartsPerFull => 'عدد الأجزاء في العبوة';
 
   @override
   String get partialSaleMarkupPercent => 'نسبة الزيادة %';
 
   @override
-  String get partialSaleUnitRequired => 'اختر وحدة البيع الجزئي';
+  String get partialSalePartPrice => 'سعر بيع الجزء';
+
+  @override
+  String get partialSaleRestoreAuto => 'استعادة الحساب التلقائي';
+
+  @override
+  String get partialSalePartPriceInvalid => 'أدخل سعر جزء صالحًا';
 
   @override
   String get partialSalePartsRequired => 'أدخل عدد الأجزاء في العبوة الكاملة';
 
   @override
   String get partialSalePartsInvalid =>
-      'عدد الأجزاء في العبوة الكاملة يجب أن يكون أكبر من 1';
-
-  @override
-  String get partialSaleBaseRequired => 'أدخل عدد الوحدات الأساسية في الجزء';
-
-  @override
-  String get partialSaleBaseInvalid =>
-      'عدد الوحدات الأساسية في الجزء يجب أن يكون 1 على الأقل';
+      'عدد الأجزاء في العبوة يجب أن يكون أكبر من 1';
 
   @override
   String get partialSaleMarkupInvalid => 'نسبة الزيادة يجب أن تكون بين 0 و100';
@@ -1584,7 +1562,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get posUnitBox => 'علبة';
 
   @override
-  String get posUnitStrip => 'شرائط';
+  String get posUnitStrip => 'ظروف';
 
   @override
   String get posUnitUnit => 'وحدة';

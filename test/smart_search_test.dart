@@ -128,4 +128,70 @@ void main() {
     );
     expect(otherInStock.items, hasLength(1));
   });
+
+  test('ItemDao and PosCatalogDao match by equivalent drug and manufacturer',
+      () async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await awaitCategory(db);
+    await db.into(db.manufacturers).insert(ManufacturersCompanion.insert(
+          id: 'manu_pharma',
+          name: 'فارما العالمية',
+          isActive: const Value(true),
+          createdAt: now,
+          updatedAt: now,
+        ));
+    await db.into(db.items).insert(ItemsCompanion.insert(
+          id: 'item_equiv',
+          tradeName: 'بانادول اكسترا',
+          scientificName: const Value('Paracetamol + Caffeine'),
+          equivalentDrug: const Value('Panadol Extra'),
+          categoryId: 'cat_test_default',
+          manufacturerId: const Value('manu_pharma'),
+          currentStockBase: const Value(3),
+          createdAt: now,
+          updatedAt: now,
+        ));
+
+    final byEquivalent = await itemDao.search(
+      const PageRequest(page: 1, pageSize: 10, search: 'Panadol'),
+    );
+    expect(byEquivalent.items.map((i) => i.id), contains('item_equiv'));
+
+    final byManufacturerItem = await itemDao.search(
+      const PageRequest(page: 1, pageSize: 10, search: 'فارما العالميه'),
+    );
+    expect(byManufacturerItem.items.map((i) => i.id), contains('item_equiv'),
+        reason: 'manufacturer name search is alef-normalized and hits items');
+
+    final byManufacturerPos = await catalog.search(
+      const PageRequest(page: 1, pageSize: 10, search: 'فارما'),
+    );
+    expect(byManufacturerPos.items.map((i) => i.id), contains('item_equiv'));
+  });
+
+  test('relevance ranks exact/prefix trade-name matches first', () async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await awaitCategory(db);
+    Future<void> insert(String id, String name) async {
+      await db.into(db.items).insert(ItemsCompanion.insert(
+            id: id,
+            tradeName: name,
+            categoryId: 'cat_test_default',
+            currentStockBase: const Value(1),
+            createdAt: now,
+            updatedAt: now,
+          ));
+    }
+
+    await insert('item_exact', 'سولبادين');
+    await insert('item_prefix', 'سولبادين اقراص');
+    await insert('item_other', 'مسكن قوي مذاب في الماء للسولبادين');
+
+    final result = await itemDao.search(
+      const PageRequest(page: 1, pageSize: 10, search: 'سولبادين'),
+    );
+    expect(result.items.map((i) => i.id).take(2),
+        ['item_exact', 'item_prefix'],
+        reason: 'exact then prefix trade-name matches lead the search page');
+  });
 }

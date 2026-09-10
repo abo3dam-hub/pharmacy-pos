@@ -18,6 +18,12 @@ class ItemActiveIngredients extends Table {
   TextColumn get activeIngredientId =>
       text().references(ActiveIngredients, #id)();
 
+  /// Per-ingredient strength (العيار), e.g. `"400 mg"`, `"50/500 mg"`,
+  /// `"12.5 mg"`. One value per (item, ingredient) relation — never a blob
+  /// of several strengths — so combined preparations can carry a different
+  /// strength per component. NULL when the strength is unspecified.
+  TextColumn get strength => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 

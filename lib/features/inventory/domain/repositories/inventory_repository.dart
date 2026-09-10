@@ -97,14 +97,16 @@ class ItemDraft {
     this.generalNotes,
     this.licenseNumber,
     this.units,
-    this.supplierIds = const [],
+this.supplierIds = const [],
     this.activeIngredientIds = const [],
+    this.activeIngredientStrengths = const {},
     this.indicationIds = const [],
     this.partialSaleEnabled = false,
     this.sellablePartUnitId,
     this.partsPerFullProduct,
     this.sellablePartBaseQuantity,
     this.partialSaleMarkupBasisPoints,
+    this.partialSalePriceMicros,
   });
 
   final String? primaryBarcode;
@@ -143,6 +145,10 @@ class ItemDraft {
   final ItemUnitRelation? units;
   final List<String> supplierIds;
   final List<String> activeIngredientIds;
+
+  /// Per-ingredient strength (العيار) keyed by active-ingredient id, e.g.
+  /// `{'ai_1': '400 mg'}`. Only entries the pharmacist filled are present.
+  final Map<String, String> activeIngredientStrengths;
   final List<String> indicationIds;
   final bool partialSaleEnabled;
   final String? sellablePartUnitId;
@@ -150,12 +156,18 @@ class ItemDraft {
   final int? sellablePartBaseQuantity;
   final int? partialSaleMarkupBasisPoints;
 
+  /// Manual retail price of ONE sellable part (سعر بيع الجزء) in micro-units,
+  /// or NULL for the automatic derived price. The override persists until the
+  /// pharmacist explicitly returns to automatic mode (§P17).
+  final int? partialSalePriceMicros;
+
   /// Rebuilds a draft from a persisted row (bulk edits, Excel import).
   factory ItemDraft.fromRow(
     ItemRow row, {
     ItemUnitRelation? units,
     List<String> supplierIds = const [],
     List<String> activeIngredientIds = const [],
+    Map<String, String> activeIngredientStrengths = const {},
     List<String> indicationIds = const [],
   }) =>
       ItemDraft(
@@ -195,12 +207,14 @@ class ItemDraft {
         units: units,
         supplierIds: supplierIds,
         activeIngredientIds: activeIngredientIds,
+        activeIngredientStrengths: activeIngredientStrengths,
         indicationIds: indicationIds,
         partialSaleEnabled: row.partialSaleEnabled,
         sellablePartUnitId: row.sellablePartUnitId,
         partsPerFullProduct: row.partsPerFullProduct,
         sellablePartBaseQuantity: row.sellablePartBaseQuantity,
         partialSaleMarkupBasisPoints: row.partialSaleMarkupBasisPoints,
+        partialSalePriceMicros: row.partialSalePriceMicros,
       );
 
   ItemDraft copyWith({
@@ -211,6 +225,7 @@ class ItemDraft {
     List<String>? supplierIds,
     List<String>? activeIngredientIds,
     List<String>? indicationIds,
+    Map<String, String>? activeIngredientStrengths,
     String? activeIngredient,
   }) =>
       ItemDraft(
@@ -250,12 +265,15 @@ class ItemDraft {
         units: units,
         supplierIds: supplierIds ?? this.supplierIds,
         activeIngredientIds: activeIngredientIds ?? this.activeIngredientIds,
+        activeIngredientStrengths:
+            activeIngredientStrengths ?? this.activeIngredientStrengths,
         indicationIds: indicationIds ?? this.indicationIds,
         partialSaleEnabled: partialSaleEnabled,
         sellablePartUnitId: sellablePartUnitId,
         partsPerFullProduct: partsPerFullProduct,
         sellablePartBaseQuantity: sellablePartBaseQuantity,
         partialSaleMarkupBasisPoints: partialSaleMarkupBasisPoints,
+        partialSalePriceMicros: partialSalePriceMicros,
       );
 }
 
@@ -354,6 +372,8 @@ abstract class InventoryRepository {
 
   // Per-item taxonomy relations
   Future<List<String>> activeIngredientIdsForItem(String itemId);
+  Future<List<ItemActiveIngredientRow>> activeIngredientRelationsForItem(
+      String itemId);
   Future<List<String>> indicationIdsForItem(String itemId);
 
   // Batches & ledger (§4.8, §4.9)

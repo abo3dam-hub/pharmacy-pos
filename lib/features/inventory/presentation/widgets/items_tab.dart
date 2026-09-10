@@ -24,6 +24,7 @@ import '../../application/inventory_controller.dart';
 import '../../application/master_data_controller.dart';
 import '../../domain/entities/inventory_item.dart';
 import '../../domain/repositories/inventory_repository.dart';
+import '../../domain/services/compound_stock_text.dart';
 import '../widgets/bulk_dialog.dart';
 import '../widgets/item_dialog.dart';
 import '../widgets/master_data_dialog.dart';
@@ -118,9 +119,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       context,
       title: l10n.inventoryItemAddTitle,
       categories: master.categories,
-      subCategories: master.subCategories,
       manufacturers: master.manufacturers,
-      groups: master.groups,
       units: master.units,
       suppliers: _suppliers,
       activeIngredients: master.activeIngredients,
@@ -149,14 +148,23 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
     if (master.status != MasterDataStatus.ready) return;
     List<String> supplierIds = const [];
     List<String> activeIngredientIds = const [];
+    Map<String, String> activeIngredientStrengths = const {};
     List<String> indicationIds = const [];
     try {
       supplierIds = await ref
           .read(inventoryRepositoryProvider)
           .supplierIdsForItem(view.item.id);
-      activeIngredientIds = await ref
+      final ingredientRelations = await ref
           .read(inventoryRepositoryProvider)
-          .activeIngredientIdsForItem(view.item.id);
+          .activeIngredientRelationsForItem(view.item.id);
+      activeIngredientIds = [
+        for (final r in ingredientRelations) r.activeIngredientId,
+      ];
+      activeIngredientStrengths = {
+        for (final r in ingredientRelations)
+          if (r.strength != null && r.strength!.trim().isNotEmpty)
+            r.activeIngredientId: r.strength!,
+      };
       indicationIds = await ref
           .read(inventoryRepositoryProvider)
           .indicationIdsForItem(view.item.id);
@@ -174,6 +182,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
             ),
       supplierIds: supplierIds,
       activeIngredientIds: activeIngredientIds,
+      activeIngredientStrengths: activeIngredientStrengths,
       indicationIds: indicationIds,
     );
     final defaultMarkup = await _partialSaleMarkupDefault();
@@ -183,9 +192,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       title: l10n.inventoryItemEditTitle,
       initial: initial,
       categories: master.categories,
-      subCategories: master.subCategories,
       manufacturers: master.manufacturers,
-      groups: master.groups,
       units: master.units,
       suppliers: _suppliers,
       activeIngredients: master.activeIngredients,
@@ -212,7 +219,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
     final value = await ref
         .read(settingsDaoProvider)
         .getInt('partial_sale_markup_basis_points');
-    return value ?? 1000;
+    return value ?? 2000;
   }
 
   /// Inline master-data creation used by the product form: persists via the
@@ -224,11 +231,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
     final failure = switch (kind) {
       MasterDataKind.category => await mc.createCategory(draft,
           actingUserId: _actingUserId, actingRoleId: _actingRoleId),
-      MasterDataKind.subCategory => await mc.createSubCategory(draft,
-          actingUserId: _actingUserId, actingRoleId: _actingRoleId),
       MasterDataKind.manufacturer => await mc.createManufacturer(draft,
-          actingUserId: _actingUserId, actingRoleId: _actingRoleId),
-      MasterDataKind.group => await mc.createGroup(draft,
           actingUserId: _actingUserId, actingRoleId: _actingRoleId),
       MasterDataKind.unit => await mc.createUnit(draft,
           actingUserId: _actingUserId, actingRoleId: _actingRoleId),
@@ -246,12 +249,8 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
     switch (kind) {
       case MasterDataKind.category:
         return _firstByName(state.categories, name);
-      case MasterDataKind.subCategory:
-        return _firstSubCategoryByName(state.subCategories, draft, name);
       case MasterDataKind.manufacturer:
         return _firstByName(state.manufacturers, name);
-      case MasterDataKind.group:
-        return _firstByName(state.groups, name);
       case MasterDataKind.unit:
         return _firstByName(state.units, name);
       case MasterDataKind.activeIngredient:
@@ -264,16 +263,6 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
   T? _firstByName<T extends Object>(List<T> rows, String name) {
     for (final row in rows) {
       if ((row as dynamic).name?.trim() == name) return row;
-    }
-    return null;
-  }
-
-  SubCategoryRow? _firstSubCategoryByName(
-      List<SubCategoryRow> rows, MasterDataDraft draft, String name) {
-    for (final row in rows) {
-      if (row.categoryId == draft.categoryId && row.name.trim() == name) {
-        return row;
-      }
     }
     return null;
   }
@@ -602,11 +591,17 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
   }
 
   String _stockText(InventoryItemView row) {
-    final qty = row.onHand;
-    if (qty.unitsPerLarge > 1 && qty.boxes > 0) {
-      return '${row.onHand.boxes}×${row.onHand.unitsPerLarge}+${row.onHand.fractions}';
-    }
-    return '${row.item.currentStockBase}';
+    return compoundStockText(
+      baseUnits: row.item.currentStockBase,
+      quantity: row.onHand,
+      largeUnitName: row.largeUnitName,
+      partUnitName: row.baseUnitName,
+      unitsPerLarge: row.units?.unitsPerLarge,
+      partsPerFullProduct: row.item.partialSaleEnabled
+          ? row.item.partsPerFullProduct
+          : null,
+      sellablePartBaseQuantity: row.item.sellablePartBaseQuantity,
+    );
   }
 
   Widget _buildCards(

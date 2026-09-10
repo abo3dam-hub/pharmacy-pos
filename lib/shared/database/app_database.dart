@@ -108,7 +108,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -276,6 +276,37 @@ class AppDatabase extends _$AppDatabase {
       await m.createTable(itemActiveIngredients);
       await m.createTable(indications);
       await m.createTable(itemIndications);
+    }
+    if (from < 11) {
+      // Phase 17 product-master redesign:
+      //  * per-ingredient strength (العيار) on the item↔ingredient junction,
+      //  * an explicit persisted manual part price (سعر بيع الجزء) that
+      //    survives save/reload/restart; NULL = automatic (derived).
+      // The partial-sale default markup moves 10% → 20% (1000 → 2000 bp) for
+      // stores that never changed it (value still '1000'); deliberately-set
+      // values are preserved.
+      // Stores migrating from <10 create the junction tables from the *current*
+      // schema (strength already present), so guard the column adds.
+      final strengthPresent = await customSelect(
+        "SELECT COUNT(*) AS c FROM pragma_table_info('item_active_ingredients') "
+        "WHERE name = 'strength'",
+      ).getSingle();
+      if (strengthPresent.read<int>('c') == 0) {
+        await m.addColumn(
+            itemActiveIngredients, itemActiveIngredients.strength);
+      }
+      final manualPartPricePresent = await customSelect(
+        "SELECT COUNT(*) AS c FROM pragma_table_info('items') "
+        "WHERE name = 'partial_sale_price_micros'",
+      ).getSingle();
+      if (manualPartPricePresent.read<int>('c') == 0) {
+        await m.addColumn(items, items.partialSalePriceMicros);
+      }
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await customStatement(
+          "UPDATE app_settings SET value = '2000', updated_at = $now "
+          "WHERE key = 'partial_sale_markup_basis_points' "
+          "AND value = '1000'");
     }
   }
 }

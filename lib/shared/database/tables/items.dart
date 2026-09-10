@@ -105,6 +105,14 @@ class Items extends Table {
   /// NULL when partial sale is disabled.
   IntColumn get partialSaleMarkupBasisPoints => integer().nullable()();
 
+  /// Manual override for the retail price of ONE sellable part (سعر بيع
+  /// الجزء), in integer micro-units. NULL = automatic mode: the part price is
+  /// derived from `sellingPriceMicros ÷ partsPerFullProduct × (1 + markup)`.
+  /// Non-NULL persists a pharmacist-set part price until the user explicitly
+  /// returns to automatic mode (§P17) — the override survives save, reload and
+  /// restart. Only meaningful when [partialSaleEnabled] is true.
+  IntColumn get partialSalePriceMicros => integer().nullable()();
+
   TextColumn get usageInstructions => text().nullable()();
   TextColumn get generalNotes => text().nullable()();
   TextColumn get licenseNumber => text().nullable()();

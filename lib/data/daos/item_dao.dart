@@ -30,6 +30,7 @@ class ItemDao {
         SmartSearch.normalizeExpr(_db.items.tradeNameEn).like(like),
         SmartSearch.normalizeExpr(_db.items.scientificName).like(like),
         SmartSearch.normalizeExpr(_db.items.activeIngredient).like(like),
+        SmartSearch.normalizeExpr(_db.items.equivalentDrug).like(like),
         SmartSearch.normalizeExpr(_db.items.primaryBarcode).like(like),
         SmartSearch.normalizeExpr(_db.items.secondaryBarcode).like(like),
       ];
@@ -68,9 +69,18 @@ class ItemDao {
 
     final query = _db.select(_db.items);
     if (filter != null) query.where((i) => filter);
-    query
-      ..orderBy([(i) => _order(page.orderBy, page.ascending)])
-      ..limit(page.pageSize, offset: page.offset);
+    final q = page.search.trim();
+    if (q.isNotEmpty && page.orderBy == null) {
+      // Relevance-first ordering: exact name → prefix → contains → everything
+      // else, so the best matches lead the first page.
+      query.orderBy([
+        (i) => OrderingTerm.asc(_relevance(q)),
+        (i) => OrderingTerm.asc(_db.items.tradeName),
+      ]);
+    } else {
+      query.orderBy([(i) => _order(page.orderBy, page.ascending)]);
+    }
+    query.limit(page.pageSize, offset: page.offset);
     final items = await query.get();
 
     return PageResult(
@@ -122,6 +132,21 @@ class ItemDao {
           updatedAt: Value(DateTime.now().millisecondsSinceEpoch),
         ),
       );
+
+  /// Relevance tier for a query, evaluated in SQL: 0 = exact normalized
+  /// trade-name match, 1 = prefix, 2 = contains, 3 = any other field.
+  Expression<int> _relevance(String query) {
+    final normalized = SmartSearch.normalize(query);
+    final name = SmartSearch.normalizeExpr(_db.items.tradeName);
+    return CaseWhenExpression<int>(
+      cases: [
+        CaseWhen(name.equals(normalized), then: const Constant(0)),
+        CaseWhen(name.like('$normalized%'), then: const Constant(1)),
+        CaseWhen(name.like('%$normalized%'), then: const Constant(2)),
+      ],
+      orElse: const Constant(3),
+    );
+  }
 
   OrderingTerm _order(String? column, bool ascending) {
     final expr = switch (column) {

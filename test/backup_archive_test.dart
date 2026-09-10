@@ -69,7 +69,7 @@ void main() {
       destinationDir: p.join(work.path, 'extracted'),
     );
     expect(extracted.manifest.formatVersion, kBackupFormatVersion);
-    expect(extracted.manifest.schemaVersion, 10);
+    expect(extracted.manifest.schemaVersion, kCurrentSupportedSchemaVersion);
     expect(extracted.manifest.databaseFileName,
         BackupArchiveLayout.databaseFileName);
     // The extracted database opens and is intact.
