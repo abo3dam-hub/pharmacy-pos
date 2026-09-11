@@ -1802,6 +1802,24 @@ abstract class AppLocalizations {
   /// **'العيار'**
   String get activeIngredientStrength;
 
+  /// No description provided for @itemActiveIngredientsSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث عن مادة فعالة…'**
+  String get itemActiveIngredientsSearch;
+
+  /// No description provided for @itemActiveIngredientsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث وأضف المواد الفعالة مع قوة كل منها (العيار)'**
+  String get itemActiveIngredientsHint;
+
+  /// No description provided for @itemActiveIngredientsRemove.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزالة المادة الفعالة'**
+  String get itemActiveIngredientsRemove;
+
   /// No description provided for @itemIndications.
   ///
   /// In ar, this message translates to:

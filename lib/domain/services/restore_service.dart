@@ -16,7 +16,7 @@ import 'backup_archive_service.dart';
 const Set<String> kRequiredTablesAfterRestore = {
   'users', 'roles', 'role_permissions', 'permissions',
   'items', 'batches', 'stock_movements', 'item_units', 'units',
-  'categories', 'sub_categories', 'manufacturers', 'therapeutic_groups',
+  'categories', 'manufacturers',
   'active_ingredients', 'item_active_ingredients',
   'indications', 'item_indications',
   'suppliers', 'purchase_invoices', 'purchase_invoice_items',

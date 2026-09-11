@@ -153,7 +153,7 @@ Future<String> _seedNamedSellableItem(
           tradeName: name,
           tradeNameEn: Value(name),
           scientificName: Value(name),
-          categoryId: 'cat_test_default',
+          categoryId: const Value('cat_test_default'),
           sellingPriceMicros: const Value(10000),
           vatRateBasisPoints: const Value(0),
           isActive: const Value(true),

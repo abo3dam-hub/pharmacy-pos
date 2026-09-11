@@ -19,6 +19,14 @@ class ItemIndicationDao {
     return [for (final row in rows) row.indicationId];
   }
 
+  /// Batch relation load for a set of item ids (Excel export, inventory grid).
+  Future<List<ItemIndicationRow>> forItemIds(Set<String> itemIds) {
+    if (itemIds.isEmpty) return Future.value(const []);
+    return (_db.select(_db.itemIndications)
+          ..where((r) => r.itemId.isIn(itemIds)))
+        .get();
+  }
+
   Future<void> setForItem(String itemId, List<String> indicationIds) async {
     final ids = indicationIds.toSet().toList();
     await _db.transaction(() async {

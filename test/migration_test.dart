@@ -10,14 +10,14 @@ import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 import 'helpers.dart';
 
-/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5/9/10/16/17)
-/// for v1→v11 upgrade — implementers must keep this mirror in lockstep with
+/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5/9/10/16/17/18)
+/// for v1→v12 upgrade — implementers must keep this mirror in lockstep with
 /// `AppDatabase._migrate` in `app_database.dart`.
 class _V1Database extends AppDatabase {
   _V1Database(super.e);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -163,6 +163,23 @@ class _V1Database extends AppDatabase {
                 "WHERE key = 'partial_sale_markup_basis_points' "
                 "AND value = '1000'");
           }
+          if (from < 12) {
+            // Phase 18 product-master contract:
+            //  * `items.category_id` becomes optional (trade name is the only
+            //    required product field),
+            //  * the Product Master loses `sub_category_id` /
+            //    `therapeutic_group_id` + their indexes, and the
+            //    `sub_categories` / `therapeutic_groups` tables are dropped —
+            //    smart alternatives now run off the relational
+            //    `item_active_ingredients`/`item_indications` junctions.
+            // Aligning `_V1Database` with the real `AppDatabase._migrate`.
+            await customStatement('DROP INDEX IF EXISTS idx_items_sub_category');
+            await customStatement(
+                'DROP INDEX IF EXISTS idx_items_therapeutic_group');
+            await m.alterTable(TableMigration(items));
+            await customStatement('DROP TABLE IF EXISTS sub_categories');
+            await customStatement('DROP TABLE IF EXISTS therapeutic_groups');
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -187,7 +204,7 @@ void main() {
 
     File dbFile() => File('${dir.path}/store.db');
 
-    test('fresh database creates at schema v11 with all columns', () async {
+    test('fresh database creates at schema v12 with all columns', () async {
       ensureSqlite();
       final path = dbFile().path;
 
@@ -196,11 +213,11 @@ void main() {
       final batchId = await insertBatch(db, itemId,
           quantityBase: 7, expiryDays: 90, unitCostMicros: 5000);
 
-      // Verify schema version is 11.
+      // Verify schema version is 12.
       final userVersion =
           await db.customSelect('PRAGMA user_version').getSingle();
-      expect(userVersion.data.values.first, 11,
-          reason: 'fresh DB must be schema v11');
+      expect(userVersion.data.values.first, 12,
+          reason: 'fresh DB must be schema v12');
 
       // Verify v7 Phase 9 additions: category master seeded + expenses columns.
       final categories = await db.select(db.expenseCategories).get();
@@ -313,7 +330,8 @@ void main() {
       expect(reopenedItem.currentStockBase, 7);
       final reopenedVersion =
           await reopened.customSelect('PRAGMA user_version').getSingle();
-      expect(reopenedVersion.data.values.first, 11);
+      expect(reopenedVersion.data.values.first, 12,
+          reason: 'reopened DB stays on schema v12');
 
       // Verify v8 Phase 10 additions: reversing columns on journal_entries,
       // accounting_periods table, and new system accounts.
@@ -381,19 +399,52 @@ void main() {
           reason: 'per-ingredient strength column persists on fresh');
       expect(await reopened.select(reopened.itemActiveIngredients).get(),
           hasLength(1), reason: 'item↔ingredient junction persists');
+
+      // v12 Phase 18 product-master contract on a fresh install:
+      //  * the `sub_categories` / `therapeutic_groups` tables are never
+      //    created,
+      //  * `items.category_id` is optional — a product with only a trade name
+      //    can be saved.
+      final v12Tables = await reopened
+          .customSelect("SELECT name FROM sqlite_master WHERE type = 'table'")
+          .get();
+      final v12TableNames =
+          v12Tables.map((r) => r.data['name'] as String).toSet();
+      expect(v12TableNames, isNot(contains('sub_categories')),
+          reason: 'v12 never creates sub_categories on fresh install');
+      expect(v12TableNames, isNot(contains('therapeutic_groups')),
+          reason: 'v12 never creates therapeutic_groups on fresh install');
+      final categoryColumn = await reopened
+          .customSelect(
+              "SELECT \"notnull\" FROM pragma_table_info('items') "
+              "WHERE name = 'category_id'")
+          .getSingle();
+      expect(categoryColumn.data['notnull'], 0,
+          reason: 'v12 relaxes items.category_id (trade name is required only)');
+      final noCategory = await reopened.into(reopened.items).insertReturning(
+            ItemsCompanion.insert(
+              id: 'item_no_cat_fresh',
+              tradeName: 'منتج بلا تصنيف',
+              createdAt: DateTime.now().millisecondsSinceEpoch,
+              updatedAt: DateTime.now().millisecondsSinceEpoch,
+            ),
+          );
+      expect(noCategory.categoryId, isNull,
+          reason: 'a product with only a trade name saves on v12');
+
       await reopened.close();
     });
 
-    test('v1 → v11 migration adds all Phase 6/7.5/9/10/16/17 additions without data loss',
+    test('v1 → v12 migration adds all Phase 6/7.5/9/10/16/17/18 additions without data loss',
         () async {
       ensureSqlite();
       final path = dbFile().path;
 
-      // Create a v11 database with data (fresh createAll seeds v11 + an expense
-      // row that must survive the simulated downgrade).
+      // Create a v12 database with data (fresh createAll seeds v11 features +
+      // an expense row that must survive the simulated downgrade).
       final db = AppDatabase.fromFilePath(path);
       final itemId = await insertItem(db);
-      expect(db.schemaVersion, 11);
+      expect(db.schemaVersion, 12);
       final preNow = DateTime.now().millisecondsSinceEpoch;
       await db.into(db.expenses).insert(
             ExpensesCompanion.insert(
@@ -462,15 +513,15 @@ void main() {
       raw.dispose();
       await db.close();
 
-      // Reopen under the working schema: onUpgrade(1 → 11) recreates everything.
+      // Reopen under the working schema: onUpgrade(1 → 12) recreates everything.
       final upgraded = _V1Database(NativeDatabase(File(path)));
 
-      // Verify user_version is 11 after migration.
+      // Verify user_version is 12 after migration.
       final userVersion = await upgraded
           .customSelect('PRAGMA user_version')
           .getSingle();
-      expect(userVersion.data.values.first, 11,
-          reason: 'v1 → v11 migration must set user_version to 11');
+      expect(userVersion.data.values.first, 12,
+          reason: 'v1 → v12 migration must set user_version to 12');
 
       // Verify app_settings created.
       final settings = await upgraded.select(upgraded.appSettings).get();
@@ -678,6 +729,44 @@ void main() {
           .getSingleOrNull();
       expect(markupSetting?.value, '2000',
           reason: 'v11 bumps the untouched 10% default markup to 20%');
+
+      // v12 Phase 18 product-master contract on upgrade:
+      //  * `sub_categories` / `therapeutic_groups` are dropped,
+      //  * `items.category_id` is relaxed to optional,
+      //  * a product with only a trade name saves after the rebuild.
+      final upgradedTables = await upgraded
+          .customSelect("SELECT name FROM sqlite_master WHERE type = 'table'")
+          .get();
+      final upgradedTableNames =
+          upgradedTables.map((r) => r.data['name'] as String).toSet();
+      expect(upgradedTableNames, isNot(contains('sub_categories')),
+          reason: 'v12 drops sub_categories on upgrade');
+      expect(upgradedTableNames, isNot(contains('therapeutic_groups')),
+          reason: 'v12 drops therapeutic_groups on upgrade');
+      final upgradedCategoryColumn = await upgraded
+          .customSelect(
+              "SELECT \"notnull\" FROM pragma_table_info('items') "
+              "WHERE name = 'category_id'")
+          .getSingle();
+      expect(upgradedCategoryColumn.data['notnull'], 0,
+          reason: 'v12 relaxes items.category_id on upgrade');
+      final migratedItem = await (upgraded.select(upgraded.items)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(migratedItem.id, itemId,
+          reason: 'item row survives the v12 items rebuild');
+      expect(migratedItem.tradeName, isNotEmpty);
+      final noCatUpgraded =
+          await upgraded.into(upgraded.items).insertReturning(
+                ItemsCompanion.insert(
+                  id: 'item_no_cat_upgrade',
+                  tradeName: 'منتج بلا تصنيف بعد الترقية',
+                  createdAt: DateTime.now().millisecondsSinceEpoch,
+                  updatedAt: DateTime.now().millisecondsSinceEpoch,
+                ),
+              );
+      expect(noCatUpgraded.categoryId, isNull,
+          reason: 'trade-name-only product saves after v12 upgrade');
 
       await upgraded.close();
     });

@@ -6,7 +6,6 @@ import 'package:pharmacy_pos/data/daos/item_dao.dart';
 import 'package:pharmacy_pos/data/daos/item_supplier_dao.dart';
 import 'package:pharmacy_pos/data/daos/manufacturer_dao.dart';
 import 'package:pharmacy_pos/data/daos/stock_movement_dao.dart';
-import 'package:pharmacy_pos/data/daos/therapeutic_group_dao.dart';
 import 'package:pharmacy_pos/data/daos/active_ingredient_dao.dart';
 import 'package:pharmacy_pos/data/daos/indication_dao.dart';
 import 'package:pharmacy_pos/data/daos/item_active_ingredient_dao.dart';
@@ -18,6 +17,7 @@ import 'package:pharmacy_pos/domain/services/stock_service.dart';
 import 'package:pharmacy_pos/features/inventory/data/repositories/inventory_repository_impl.dart';
 import 'package:pharmacy_pos/features/inventory/domain/repositories/inventory_repository.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/bulk_use_cases.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/categories_use_cases.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/create_item.dart';
 import 'package:pharmacy_pos/shared/database/app_database.dart';
 
@@ -32,9 +32,8 @@ const _adminRole = 'role_admin';
     db,
     ItemDao(db),
     CategoryDao(db),
-    ManufacturerDao(db),
-    TherapeuticGroupDao(db),
-    UnitDao(db),
+ManufacturerDao(db),
+      UnitDao(db),
     BatchDao(db),
     StockMovementDao(db),
     ItemSupplierDao(db),
@@ -81,19 +80,21 @@ void main() {
     expect(row.id, isNotEmpty);
   });
 
-  test('save 2: create WITHOUT units is rejected by the repository', () async {
+  test('save 2: create WITHOUT units succeeds (Phase 18 contract)', () async {
     final db = newDatabase();
     final create =
         CreateItemUseCase(_repo(db).repository, const PermissionService(), const AuditService());
-    final draft = ItemDraft(
-      tradeName: 'منتج بدون وحدة',
-      primaryBarcode: '9990001112223',
-      categoryId: 'cat_default',
+    final row = await create(
+      ItemDraft(
+        tradeName: 'منتج بدون وحدة',
+        primaryBarcode: '9990001112223',
+        categoryId: 'cat_default',
+      ),
+      actingUserId: _admin,
+      actingRoleId: _adminRole,
     );
-    expect(
-      () => create(draft, actingUserId: _admin, actingRoleId: _adminRole),
-      throwsA(isA<ValidationException>()),
-    );
+    expect(row.id, isNotEmpty,
+        reason: 'units are optional — a product with only a trade name saves');
   });
 
   test('save 3: base unit == packaging unit (unitsPerLarge 1) succeeds', () async {
@@ -150,6 +151,50 @@ void main() {
     expect(
       () => create(
         _draft(tradeName: 'ثانٍ', barcode: '6661112223334'),
+        actingUserId: _admin,
+        actingRoleId: _adminRole,
+      ),
+      throwsA(isA<DuplicateException>()),
+    );
+  });
+
+  test('save 8: duplicate unique barcode on UPDATE maps to DuplicateException', () async {
+    final db = newDatabase();
+    final repo = _repo(db).repository;
+    final create =
+        CreateItemUseCase(repo, const PermissionService(), const AuditService());
+    final first = await create(
+      _draft(tradeName: 'الأول', barcode: '6661112224000'),
+      actingUserId: _admin,
+      actingRoleId: _adminRole,
+    );
+    await create(
+      _draft(tradeName: 'الثاني', barcode: '6661112224001'),
+      actingUserId: _admin,
+      actingRoleId: _adminRole,
+    );
+    expect(
+      () => repo.updateItem(
+        first.id,
+        _draft(tradeName: 'الأول', barcode: '6661112224001'),
+      ),
+      throwsA(isA<DuplicateException>()),
+    );
+  });
+
+  test('save 9: duplicate master-data name maps to DuplicateException, not a generic save error', () async {
+    final db = newDatabase();
+    final repo = _repo(db).repository;
+    final save =
+        SaveCategoryUseCase(repo, const PermissionService(), const AuditService());
+    await save.create(
+      const MasterDataDraft(name: 'مسكنات'),
+      actingUserId: _admin,
+      actingRoleId: _adminRole,
+    );
+    expect(
+      () => save.create(
+        const MasterDataDraft(name: 'مسكنات'),
         actingUserId: _admin,
         actingRoleId: _adminRole,
       ),

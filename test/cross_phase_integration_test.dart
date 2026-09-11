@@ -1492,7 +1492,7 @@ void main() {
             ItemsCompanion.insert(
               id: 'item_pi_check',
               tradeName: 'اختبار',
-              categoryId: 'cat_test_default',
+              categoryId: const Value('cat_test_default'),
               createdAt: now,
               updatedAt: now,
             ),

@@ -76,7 +76,8 @@ class ImportItemsUseCase {
     var updated = 0;
 
     for (final row in parsed.rows) {
-      final existingId = row.barcode == null ? null : await _findByScanned(row.barcode!);
+      final existingId = row.existingItemId ??
+          (row.barcode == null ? null : await _findByScanned(row.barcode!));
       try {
         if (existingId != null) {
           final supplierIds = await _repo.supplierIdsForItem(existingId);

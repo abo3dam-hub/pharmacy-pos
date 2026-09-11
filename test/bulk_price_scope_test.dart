@@ -13,7 +13,6 @@ import 'package:pharmacy_pos/data/daos/item_indication_dao.dart';
 import 'package:pharmacy_pos/data/daos/item_supplier_dao.dart';
 import 'package:pharmacy_pos/data/daos/manufacturer_dao.dart';
 import 'package:pharmacy_pos/data/daos/stock_movement_dao.dart';
-import 'package:pharmacy_pos/data/daos/therapeutic_group_dao.dart';
 import 'package:pharmacy_pos/data/daos/unit_dao.dart';
 import 'package:pharmacy_pos/domain/services/audit_service.dart';
 import 'package:pharmacy_pos/domain/services/permission_service.dart';
@@ -58,7 +57,7 @@ void main() {
             tradeName: id,
             tradeNameEn: Value(id),
             scientificName: Value(id),
-            categoryId: 'cat_test_default',
+            categoryId: const Value('cat_test_default'),
             manufacturerId: Value(manufacturerId),
             sellingPriceMicros: Value(sellingPriceMicros),
             createdAt: now,
@@ -82,7 +81,6 @@ void main() {
       ItemDao(db),
       CategoryDao(db),
       ManufacturerDao(db),
-      TherapeuticGroupDao(db),
       UnitDao(db),
       BatchDao(db),
       StockMovementDao(db),

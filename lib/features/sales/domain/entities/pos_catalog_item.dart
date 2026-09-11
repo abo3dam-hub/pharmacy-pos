@@ -10,7 +10,7 @@ class PosCatalogItem {
     this.tradeNameEn,
     this.scientificName,
     this.activeIngredient,
-    this.therapeuticGroupId,
+    this.relationalIngredientNames = const [],
     this.primaryBarcode,
     this.secondaryBarcode,
     required this.isControlledDrug,
@@ -45,7 +45,12 @@ class PosCatalogItem {
   final String? tradeNameEn;
   final String? scientificName;
   final String? activeIngredient;
-  final String? therapeuticGroupId;
+
+  /// Names of the active ingredients linked through `item_active_ingredients`
+  /// (§4.2b) — the relational complement of the legacy flat `activeIngredient`
+  /// column. Used (with the flat column) by the smart-alternatives tier
+  /// engine so items created with only relational ingredients still rank.
+  final List<String> relationalIngredientNames;
   final String? primaryBarcode;
   final String? secondaryBarcode;
   final bool isControlledDrug;

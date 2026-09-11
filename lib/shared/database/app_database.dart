@@ -45,18 +45,14 @@ import 'tables/roles.dart';
 import 'tables/sales_invoice_items.dart';
 import 'tables/sales_invoices.dart';
 import 'tables/stock_movements.dart';
-import 'tables/sub_categories.dart';
 import 'tables/suppliers.dart';
-import 'tables/therapeutic_groups.dart';
 import 'tables/units.dart';
 import 'tables/users.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(tables: [
   Manufacturers,
-  TherapeuticGroups,
   Categories,
-  SubCategories,
   Units,
   ItemUnits,
   Items,
@@ -108,7 +104,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -307,6 +303,23 @@ class AppDatabase extends _$AppDatabase {
           "UPDATE app_settings SET value = '2000', updated_at = $now "
           "WHERE key = 'partial_sale_markup_basis_points' "
           "AND value = '1000'");
+    }
+    if (from < 12) {
+      // Phase 18 product-master contract:
+      //  * `items.category_id` becomes optional (trade name is the only
+      //    required product field).
+      //  * `sub_category_id` / `therapeutic_group_id` (and their indexes) are
+      //    removed from the Product Master — smart alternatives uses the
+      //    relational `item_active_ingredients`/`item_indications` model, and
+      //    no feature uses sub-categories / therapeutic groups anymore.
+      // SQLite cannot relax a NOT NULL constraint in place, so `items` is
+      // rebuilt in its target shape. `alterTable` toggles `PRAGMA foreign_keys`
+      // off around the rebuild and re-creates the surviving indexes.
+      await customStatement('DROP INDEX IF EXISTS idx_items_sub_category');
+      await customStatement('DROP INDEX IF EXISTS idx_items_therapeutic_group');
+      await m.alterTable(TableMigration(items));
+      await customStatement('DROP TABLE IF EXISTS sub_categories');
+      await customStatement('DROP TABLE IF EXISTS therapeutic_groups');
     }
   }
 }

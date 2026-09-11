@@ -10,8 +10,9 @@ import '../repositories/inventory_repository.dart';
 ///
 /// Export writes the full §5 profile plus live stock snapshot. Import accepts
 /// the same header layout; master-data entities are matched by *name*
-/// (categories, sub-categories, manufacturers, therapeutic groups, units) and
-/// items are matched by primary barcode (create or update).
+/// (categories, manufacturers, active ingredients, indications, units) and
+/// items are matched by primary barcode, falling back to trade name (create or
+/// update). The only hard requirement per row is a non-empty trade name.
 /// The sheet keeps a fixed Arabic header row for every target.
 class InventoryExcelService {
   const InventoryExcelService(this._repo);
@@ -20,10 +21,10 @@ class InventoryExcelService {
 
   static const String _sheetName = 'products';
 
-  /// Column keys (header text) shared by export and import. Phase 17 product
-  /// model: التعبئة التجارية / الأجزاء / عدد الأجزاء replace the old unit
-  /// naming; sub-category, therapeutic group and sub-unit price columns are
-  /// gone from the template.
+  /// Column keys (header text) shared by export and import. Phase 18 template:
+  /// التعبئة التجارية / الأجزاء / عدد الأجزاء for units; the relational
+  /// فعالة list (name:strength pairs, ';' separated) and الاستطبابات take the
+  /// place of the removed sub-category / therapeutic-group columns.
   static const List<String> headers = [
     'الرمز الشريطي الرئيسي',
     'الرمز الشريطي الثانوي',
@@ -31,8 +32,10 @@ class InventoryExcelService {
     'الاسم التجاري (EN)',
     'الاسم العلمي',
     'المادة الفعالة',
+    'المواد الفعالة',
     'التصنيف',
     'الشركة المصنعة',
+    'الاستطبابات',
     'الموقع',
     'له تاريخ صلاحية',
     'الأجزاء',
@@ -55,21 +58,23 @@ class InventoryExcelService {
     'الاسم التجاري (EN)': 3,
     'الاسم العلمي': 4,
     'المادة الفعالة': 5,
-    'التصنيف': 6,
-    'الشركة المصنعة': 7,
-    'الموقع': 8,
-    'له تاريخ صلاحية': 9,
-    'الأجزاء': 10,
-    'التعبئة التجارية': 11,
-    'عدد الأجزاء': 12,
-    'سعر البيع': 13,
-    'سعر الجملة': 14,
-    'سعر الجملة النصف': 15,
-    'ضريبة %': 16,
-    'سعر التكلفة': 17,
-    'الحد الأدنى': 18,
-    'الحد الأقصى': 19,
-    'المخزون الحالي': 20,
+    'المواد الفعالة': 6,
+    'التصنيف': 7,
+    'الشركة المصنعة': 8,
+    'الاستطبابات': 9,
+    'الموقع': 10,
+    'له تاريخ صلاحية': 11,
+    'الأجزاء': 12,
+    'التعبئة التجارية': 13,
+    'عدد الأجزاء': 14,
+    'سعر البيع': 15,
+    'سعر الجملة': 16,
+    'سعر الجملة النصف': 17,
+    'ضريبة %': 18,
+    'سعر التكلفة': 19,
+    'الحد الأدنى': 20,
+    'الحد الأقصى': 21,
+    'المخزون الحالي': 22,
   };
 
   // ----- Export -----
@@ -91,8 +96,11 @@ class InventoryExcelService {
         TextCellValue(item.tradeNameEn ?? ''),
         TextCellValue(item.scientificName ?? ''),
         TextCellValue(item.activeIngredient ?? ''),
+        TextCellValue(
+            [for (final i in v.activeIngredients) _ingredientCell(i)].join('; ')),
         TextCellValue(v.categoryName ?? ''),
         TextCellValue(v.manufacturerName ?? ''),
+        TextCellValue(v.indicationNames.join('; ')),
         TextCellValue(item.shelfLocation ?? ''),
         BoolCellValue(item.hasExpiry),
         TextCellValue(v.baseUnitName ?? ''),
@@ -110,6 +118,9 @@ class InventoryExcelService {
     }
     return excel.save(fileName: 'inventory.xlsx')!;
   }
+
+  static String _ingredientCell(ItemIngredientRef ref) =>
+      (ref.strength?.isNotEmpty ?? false) ? '${ref.name}:${ref.strength}' : ref.name;
 
   // ----- Import -----
 
@@ -134,9 +145,22 @@ class InventoryExcelService {
       for (final u in unitList)
         if (u.nameEn != null && u.nameEn!.isNotEmpty) u.nameEn!: u,
     };
+    final ingredientList = await _repo.activeIngredients();
+    final byIngredientName = {
+      for (final i in ingredientList) i.name.trim(): i,
+      for (final i in ingredientList)
+        if (i.nameEn != null && i.nameEn!.isNotEmpty) i.nameEn!.trim(): i,
+    };
+    final indicationList = await _repo.indications();
+    final byIndicationName = {
+      for (final d in indicationList) d.name.trim(): d,
+      for (final d in indicationList)
+        if (d.nameEn != null && d.nameEn!.isNotEmpty) d.nameEn!.trim(): d,
+    };
 
     final issues = <String>[];
     final rows = <ImportRow>[];
+    final seenKeys = <String>{};
     for (var r = 1; r < sheet.maxRows; r++) {
       final values = sheet.row(r);
       String at(int idx) =>
@@ -145,23 +169,23 @@ class InventoryExcelService {
       final barcode = at(_colIndex['الرمز الشريطي الرئيسي']!);
       final tradeName = at(_colIndex['الاسم التجاري']!);
       if (tradeName.isEmpty) continue;
-      final existing = barcode.isNotEmpty ? await _matchingItem(barcode) : null;
+      final existing = await _matchingItem(barcode, tradeName);
 
-      // Duplicate barcode within the file.
-      if (existing == null &&
-          rows.any((row) => row.barcode == barcode && barcode.isNotEmpty)) {
-        issues.add('الصف ${r + 1}: الرمز "$barcode" مكرر داخل الملف');
+      // Duplicate matching key within the file.
+      final key = barcode.isNotEmpty ? 'b:$barcode' : 't:${tradeName.toLowerCase()}';
+      if (existing == null && seenKeys.contains(key)) {
+        issues.add('الصف ${r + 1}: ${barcode.isNotEmpty ? 'الرمز' : 'الاسم'} "$key" مكرر داخل الملف');
         continue;
       }
+      seenKeys.add(key);
 
       final categoryName = at(_colIndex['التصنيف']!);
-      CategoryRow? category;
-      if (categoryName.isNotEmpty) {
-        category = byCategoryName[categoryName];
-        if (category == null) {
-          issues.add('الصف ${r + 1}: التصنيف "$categoryName" غير معروف');
-          continue;
-        }
+      final category = categoryName.isEmpty
+          ? null
+          : byCategoryName[categoryName];
+      if (categoryName.isNotEmpty && category == null) {
+        issues.add('الصف ${r + 1}: التصنيف "$categoryName" غير معروف');
+        continue;
       }
 
       final manufacturerName = at(_colIndex['الشركة المصنعة']!);
@@ -172,6 +196,39 @@ class InventoryExcelService {
         issues.add('الصف ${r + 1}: الشركة "$manufacturerName" غير معروفة');
         continue;
       }
+
+      // Relational active ingredients encoded as `name:strength` pairs
+      // separated by ';' (strength optional, §4.2b).
+      final rawIngredients = at(_colIndex['المواد الفعالة']!);
+      final ingredientIds = <String>[];
+      final ingredientStrengths = <String, String>{};
+      var ingredientsOk = true;
+      for (final entry in _splitEntries(rawIngredients)) {
+        final (name, strength) = _splitPair(entry);
+        final ingredient = byIngredientName[name];
+        if (ingredient == null) {
+          issues.add('الصف ${r + 1}: المادة الفعالة "$name" غير معروفة');
+          ingredientsOk = false;
+          break;
+        }
+        ingredientIds.add(ingredient.id);
+        if (strength.isNotEmpty) ingredientStrengths[ingredient.id] = strength;
+      }
+      if (!ingredientsOk) continue;
+
+      final rawIndications = at(_colIndex['الاستطبابات']!);
+      final indicationIds = <String>[];
+      var indicationsOk = true;
+      for (final name in _splitEntries(rawIndications)) {
+        final indication = byIndicationName[name];
+        if (indication == null) {
+          issues.add('الصف ${r + 1}: الاستطباب "$name" غير معروف');
+          indicationsOk = false;
+          break;
+        }
+        indicationIds.add(indication.id);
+      }
+      if (!indicationsOk) continue;
 
       final baseName = at(_colIndex['الأجزاء']!);
       final largeName = at(_colIndex['التعبئة التجارية']!);
@@ -184,7 +241,7 @@ class InventoryExcelService {
       }
 
       // Unit relation: from the sheet when given, otherwise preserved for
-      // existing items (and mandatory for new ones).
+      // existing items (optional for new ones, Phase 18).
       final existingUnits =
           existing == null ? null : await _repo.itemUnitsFor(existing.id);
       final ItemUnitRelation? relation =
@@ -202,10 +259,6 @@ class InventoryExcelService {
                       largeUnitId: existingUnits.largeUnitId,
                       unitsPerLarge: existingUnits.unitsPerLarge,
                     );
-      if (existing == null && relation == null) {
-        issues.add('الصف ${r + 1}: الوحدات مطلوبة للمنتج الجديد');
-        continue;
-      }
 
       final selling = _parseMoney(at(_colIndex['سعر البيع']!));
       final wholesale = _parseMoney(at(_colIndex['سعر الجملة']!));
@@ -213,15 +266,6 @@ class InventoryExcelService {
       final cost = _parseMoney(at(_colIndex['سعر التكلفة']!));
       if (selling == null || cost == null) {
         issues.add('الصف ${r + 1}: قيم مالية غير صالحة');
-        continue;
-      }
-
-      // Category is mandatory for new items; keep the persisted one on update.
-      final categoryId = category?.id ??
-          (existing?.categoryId ??
-              (categoryName.isNotEmpty ? null : existing?.categoryId));
-      if (categoryId == null || categoryId.isEmpty) {
-        issues.add('الصف ${r + 1}: التصنيف مطلوب للمنتج الجديد');
         continue;
       }
 
@@ -233,9 +277,7 @@ class InventoryExcelService {
         tradeNameEn: _orNull(at(_colIndex['الاسم التجاري (EN)']!)),
         scientificName: _orNull(at(_colIndex['الاسم العلمي']!)),
         activeIngredient: _orNull(at(_colIndex['المادة الفعالة']!)),
-        categoryId: categoryId,
-        subCategoryId: existing?.subCategoryId,
-        therapeuticGroupId: existing?.therapeuticGroupId,
+        categoryId: category?.id ?? existing?.categoryId,
         manufacturerId: manufacturer?.id ?? existing?.manufacturerId,
         shelfLocation: _orNull(at(_colIndex['الموقع']!)),
         hasExpiry: _cellBool(values, _colIndex['له تاريخ صلاحية']!),
@@ -250,20 +292,48 @@ class InventoryExcelService {
         minimumStockBase: _parseInt(at(_colIndex['الحد الأدنى']!)) ?? 0,
         maximumStockBase: _parseInt(at(_colIndex['الحد الأقصى']!)) ?? 0,
         units: relation,
+        activeIngredientIds: ingredientIds,
+        activeIngredientStrengths: ingredientStrengths,
+        indicationIds: indicationIds,
       );
       rows.add(ImportRow(
         draft: draft,
         rowNumber: r + 1,
         barcode: barcode.isEmpty ? null : barcode,
+        existingItemId: existing?.id,
       ));
     }
     return (rows: rows, issues: issues);
   }
 
-  Future<ItemRow?> _matchingItem(String barcode) async {
+  /// Separator-tolerant splitting of a multi-value cell (';', '؛').
+  static List<String> _splitEntries(String raw) {
+    if (raw.trim().isEmpty) return const [];
+    return raw
+        .split(RegExp(r'[;؛]'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+  }
+
+  /// Splits one `name:strength` entry at the first separator (':', ':').
+  static (String, String) _splitPair(String entry) {
+    final idx = entry.indexOf(':');
+    if (idx < 0) return (entry.trim(), '');
+    return (entry.substring(0, idx).trim(), entry.substring(idx + 1).trim());
+  }
+
+  Future<ItemRow?> _matchingItem(String barcode, String tradeName) async {
     final all = await _repo.searchItems(const PageRequest(pageSize: 10000));
+    if (barcode.isNotEmpty) {
+      for (final row in all.items) {
+        if (row.primaryBarcode == barcode || row.secondaryBarcode == barcode) {
+          return row;
+        }
+      }
+    }
     for (final row in all.items) {
-      if (row.primaryBarcode == barcode || row.secondaryBarcode == barcode) {
+      if (row.tradeName.trim().toLowerCase() == tradeName.toLowerCase()) {
         return row;
       }
     }
@@ -330,15 +400,18 @@ class InventoryExcelService {
 }
 
 /// A parsed, validation-ready import row. [rowNumber] is the 1-based Excel
-/// row for error reporting; [barcode] is the matching key.
+/// row for error reporting; [barcode] is the matching key; [existingItemId] is
+/// populated when the row matched an existing item (by barcode or trade name).
 class ImportRow {
   const ImportRow({
     required this.draft,
     required this.rowNumber,
     this.barcode,
+    this.existingItemId,
   });
 
   final ItemDraft draft;
   final int rowNumber;
   final String? barcode;
+  final String? existingItemId;
 }

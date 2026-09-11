@@ -13,11 +13,9 @@ import 'helpers.dart';
 void main() {
   const expectedTables = {
     'manufacturers',
-    'therapeutic_groups',
     'active_ingredients',
     'indications',
     'categories',
-    'sub_categories',
     'units',
     'item_units',
     'items',
@@ -55,7 +53,7 @@ void main() {
 
   /// Column -> must be NOT NULL.
   const notNullColumns = <String, Map<String, bool>>{
-    'items': {'category_id': true, 'trade_name': true},
+    'items': {'trade_name': true},
     'batches': {'item_id': true, 'batch_number': true},
     'item_units': {'units_per_large': true},
     'active_ingredients': {'name': true},

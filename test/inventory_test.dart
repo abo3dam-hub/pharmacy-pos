@@ -12,7 +12,6 @@ import 'package:pharmacy_pos/data/daos/item_indication_dao.dart';
 import 'package:pharmacy_pos/data/daos/item_supplier_dao.dart';
 import 'package:pharmacy_pos/data/daos/manufacturer_dao.dart';
 import 'package:pharmacy_pos/data/daos/stock_movement_dao.dart';
-import 'package:pharmacy_pos/data/daos/therapeutic_group_dao.dart';
 import 'package:pharmacy_pos/data/daos/unit_dao.dart';
 import 'package:pharmacy_pos/domain/services/audit_service.dart';
 import 'package:pharmacy_pos/domain/services/permission_service.dart';
@@ -43,9 +42,8 @@ const _adminRole = 'role_admin';
     db,
     ItemDao(db),
     CategoryDao(db),
-    ManufacturerDao(db),
-    TherapeuticGroupDao(db),
-    UnitDao(db),
+ManufacturerDao(db),
+      UnitDao(db),
     BatchDao(db),
     StockMovementDao(db),
     ItemSupplierDao(db),

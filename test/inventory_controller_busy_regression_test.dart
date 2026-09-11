@@ -9,7 +9,6 @@ import 'package:pharmacy_pos/data/daos/item_indication_dao.dart';
 import 'package:pharmacy_pos/data/daos/item_supplier_dao.dart';
 import 'package:pharmacy_pos/data/daos/manufacturer_dao.dart';
 import 'package:pharmacy_pos/data/daos/stock_movement_dao.dart';
-import 'package:pharmacy_pos/data/daos/therapeutic_group_dao.dart';
 import 'package:pharmacy_pos/data/daos/unit_dao.dart';
 import 'package:pharmacy_pos/domain/services/audit_service.dart';
 import 'package:pharmacy_pos/domain/services/permission_service.dart';
@@ -55,9 +54,8 @@ InventoryController _controller(AppDatabase db) {
     db,
     ItemDao(db),
     CategoryDao(db),
-    ManufacturerDao(db),
-    TherapeuticGroupDao(db),
-    UnitDao(db),
+ManufacturerDao(db),
+      UnitDao(db),
     BatchDao(db),
     StockMovementDao(db),
     ItemSupplierDao(db),
@@ -99,20 +97,34 @@ void main() {
     expect(controller.state.status, InventoryStatus.ready);
     expect(controller.state.busy, isFalse);
 
+    // Phase 18 contract: units are optional — a trade-name-only product saves.
+    final okFailure = await controller.createItem(
+      const ItemDraft(tradeName: 'بانادول بدون وحدة'),
+      actingUserId: _admin,
+      actingRoleId: _adminRole,
+    );
+    expect(okFailure, isNull,
+        reason: 'an item without a base unit is valid under Phase 18');
+    expect(controller.state.total, 1);
+
+    // A duplicate barcode still fails via the unique index and must release
+    // the spinner without leaking a phantom row into the grid.
+    await insertItem(db);
+    await controller.load(actingRoleId: _adminRole);
     final failure = await controller.createItem(
       const ItemDraft(
-        tradeName: 'بانادول',
-        categoryId: 'cat_default',
+        tradeName: 'بانادول مكرر',
+        primaryBarcode: '6291041500213',
       ),
       actingUserId: _admin,
       actingRoleId: _adminRole,
     );
     expect(failure, isNotNull,
-        reason: 'an item without a base unit is rejected');
+        reason: 'a duplicate barcode is rejected by the repository');
     expect(controller.state.busy, isFalse,
         reason: 'a failed save must release the UI spinner');
     expect(controller.state.status, InventoryStatus.ready);
-    expect(controller.state.total, 0,
+    expect(controller.state.total, 2,
         reason: 'the rejected create must not leak into the grid');
   });
 

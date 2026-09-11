@@ -1,15 +1,14 @@
 import 'package:drift/drift.dart';
 import 'categories.dart';
 import 'manufacturers.dart';
-import 'sub_categories.dart';
-import 'therapeutic_groups.dart';
 import 'units.dart';
 
 /// Items / medicines master data (§4.7, §5).
 ///
-/// Every field from the specification is an explicit column. Manufacturer,
-/// main category, sub-category and therapeutic group are FKs to standalone
-/// tables — never free text. Pricing here is the *master/default* profile;
+/// Every field from the specification is an explicit column. Manufacturer and
+/// main category are FKs to standalone tables — never free text. Only the
+/// trade name is required (Phase 18): everything else, including the main
+/// category, is optional. Pricing here is the *master/default* profile;
 /// batch/purchase-specific historical cost lives on `batches` (§8).
 @DataClassName('ItemRow')
 @TableIndex(name: 'idx_items_trade_name', columns: {#tradeName})
@@ -17,8 +16,6 @@ import 'units.dart';
 @TableIndex(name: 'idx_items_scientific_name', columns: {#scientificName})
 @TableIndex(name: 'idx_items_active_ingredient', columns: {#activeIngredient})
 @TableIndex(name: 'idx_items_category', columns: {#categoryId})
-@TableIndex(name: 'idx_items_sub_category', columns: {#subCategoryId})
-@TableIndex(name: 'idx_items_therapeutic_group', columns: {#therapeuticGroupId})
 @TableIndex(name: 'idx_items_manufacturer', columns: {#manufacturerId})
 class Items extends Table {
   TextColumn get id => text()();
@@ -32,12 +29,9 @@ class Items extends Table {
   TextColumn get manufacturerId =>
       text().nullable().references(Manufacturers, #id)();
 
-  /// Main category (التصنيف الرئيسي) — NN per §4.7.
-  TextColumn get categoryId => text().references(Categories, #id)();
-  TextColumn get subCategoryId =>
-      text().nullable().references(SubCategories, #id)();
-  TextColumn get therapeuticGroupId =>
-      text().nullable().references(TherapeuticGroups, #id)();
+  /// Main category (التصنيف الرئيسي) — optional (Phase 18). Products can be
+  /// created with only a trade name.
+  TextColumn get categoryId => text().nullable().references(Categories, #id)();
   TextColumn get pharmaForm => text().nullable()();
   TextColumn get dose => text().nullable()();
   TextColumn get sizeVolume => text().nullable()();

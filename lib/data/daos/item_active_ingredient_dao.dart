@@ -21,6 +21,14 @@ class ItemActiveIngredientDao {
     return [for (final row in rows) row.activeIngredientId];
   }
 
+  /// Batch relation load for a set of item ids (Excel export, inventory grid).
+  Future<List<ItemActiveIngredientRow>> forItemIds(Set<String> itemIds) {
+    if (itemIds.isEmpty) return Future.value(const []);
+    return (_db.select(_db.itemActiveIngredients)
+          ..where((r) => r.itemId.isIn(itemIds)))
+        .get();
+  }
+
   /// Replaces the item's ingredient relations. [ingredientIds] is the ordered
   /// selection; [strengths] maps an ingredient id to its per-product strength
   /// (العيار), e.g. `{'ai_1': '400 mg'}` — omitted entries persist as NULL.

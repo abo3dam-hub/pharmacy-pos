@@ -878,6 +878,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get activeIngredientStrength => 'العيار';
 
   @override
+  String get itemActiveIngredientsSearch => 'ابحث عن مادة فعالة…';
+
+  @override
+  String get itemActiveIngredientsHint =>
+      'ابحث وأضف المواد الفعالة مع قوة كل منها (العيار)';
+
+  @override
+  String get itemActiveIngredientsRemove => 'إزالة المادة الفعالة';
+
+  @override
   String get itemIndications => 'الاستطبابات';
 
   @override

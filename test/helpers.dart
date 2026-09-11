@@ -36,7 +36,7 @@ Future<String> insertItem(
           tradeName: 'بانادول',
           tradeNameEn: Value('Panadol'),
           scientificName: Value('Paracetamol'),
-          categoryId: 'cat_test_default',
+          categoryId: const Value('cat_test_default'),
           createdAt: now,
           updatedAt: now,
         ),

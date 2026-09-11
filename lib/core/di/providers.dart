@@ -9,7 +9,6 @@ import '../../data/daos/prescription_dao.dart';
 import '../../data/daos/purchase_dao.dart';
 import '../../data/daos/supplier_dao.dart';
 import '../../data/daos/stock_movement_dao.dart';
-import '../../data/daos/therapeutic_group_dao.dart';
 import '../../data/daos/unit_dao.dart';
 import '../../domain/services/audit_service.dart';
 import '../../domain/services/base_unit_converter.dart';
@@ -134,8 +133,6 @@ final categoryDaoProvider =
     Provider<CategoryDao>((ref) => getIt<CategoryDao>());
 final manufacturerDaoProvider =
     Provider<ManufacturerDao>((ref) => getIt<ManufacturerDao>());
-final therapeuticGroupDaoProvider =
-    Provider<TherapeuticGroupDao>((ref) => getIt<TherapeuticGroupDao>());
 
 final inventoryRepositoryProvider =
     Provider<InventoryRepository>((ref) => getIt<InventoryRepository>());

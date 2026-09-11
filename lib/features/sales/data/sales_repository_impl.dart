@@ -472,11 +472,7 @@ class SalesRepositoryImpl implements SalesRepository {
     PosCatalogItem item, {
     int limit = 12,
   }) async {
-    final candidates = await _catalogDao.alternativeCandidates(
-      itemId: item.id,
-      therapeuticGroupId: item.therapeuticGroupId,
-      activeIngredient: item.activeIngredient,
-    );
+    final candidates = await _catalogDao.alternativeCandidates(itemId: item.id);
     return const SmartAlternativesService().rank(item, candidates, limit: limit);
   }
 

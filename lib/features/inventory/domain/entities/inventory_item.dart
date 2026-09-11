@@ -32,6 +32,25 @@ BatchStatus batchStatusFor(BatchRow batch, {int? atMillis}) {
   return BatchStatus.normal;
 }
 
+/// A row of the product's active-ingredient selector: the ingredient's master
+/// name plus its optional per-product strength (العيار). Represents one entry
+/// of `item_active_ingredients` (§4.2b).
+class ItemIngredientRef {
+  const ItemIngredientRef({required this.name, this.strength});
+
+  final String name;
+  final String? strength;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ItemIngredientRef &&
+      other.name == name &&
+      other.strength == strength;
+
+  @override
+  int get hashCode => Object.hash(name, strength);
+}
+
 /// Presentation-friendly item row enriched with the names of its FK lookups
 /// and its base/large unit relation (§4.7, §5). Quantity remains a single
 /// authoritative base-unit integer; display splits are derived (§7).
@@ -43,7 +62,8 @@ class InventoryItemView {
     this.largeUnitName,
     this.categoryName,
     this.manufacturerName,
-    this.groupName,
+    this.activeIngredients = const [],
+    this.indicationNames = const [],
   });
 
   final ItemRow item;
@@ -52,7 +72,12 @@ class InventoryItemView {
   final String? largeUnitName;
   final String? categoryName;
   final String? manufacturerName;
-  final String? groupName;
+
+  /// Relational active ingredients (name + per-product strength), §4.2b.
+  final List<ItemIngredientRef> activeIngredients;
+
+  /// Relational indication names from `item_indications`, §4.2c.
+  final List<String> indicationNames;
 
   int get unitsPerLarge => units?.unitsPerLarge ?? 1;
 

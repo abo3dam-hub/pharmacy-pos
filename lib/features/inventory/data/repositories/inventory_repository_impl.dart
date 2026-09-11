@@ -15,8 +15,8 @@ import '../../../../data/daos/item_indication_dao.dart';
 import '../../../../data/daos/item_supplier_dao.dart';
 import '../../../../data/daos/manufacturer_dao.dart';
 import '../../../../data/daos/stock_movement_dao.dart';
-import '../../../../data/daos/therapeutic_group_dao.dart';
 import '../../../../data/daos/unit_dao.dart';
+import '../../domain/entities/inventory_item.dart';
 import '../../../../domain/services/stock_service.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../../../shared/models/enums.dart';
@@ -31,7 +31,6 @@ class InventoryRepositoryImpl implements InventoryRepository {
     this._itemDao,
     this._categoryDao,
     this._manufacturerDao,
-    this._groupDao,
     this._unitDao,
     this._batchDao,
     this._movementDao,
@@ -47,7 +46,6 @@ class InventoryRepositoryImpl implements InventoryRepository {
   final ItemDao _itemDao;
   final CategoryDao _categoryDao;
   final ManufacturerDao _manufacturerDao;
-  final TherapeuticGroupDao _groupDao;
   final UnitDao _unitDao;
   final BatchDao _batchDao;
   final StockMovementDao _movementDao;
@@ -103,7 +101,9 @@ class InventoryRepositoryImpl implements InventoryRepository {
           await _db
               .into(_db.items)
               .insert(_toInsertCompanion(withSummary, id: id, at: now));
-          await _applyUnits(draft.units, itemId: id);
+          if (draft.units != null) {
+            await _applyUnits(draft.units, itemId: id);
+          }
           await _itemSupplierDao.setForItem(id, draft.supplierIds);
           await _itemActiveIngredientDao.setForItem(id, draft.activeIngredientIds,
               strengths: draft.activeIngredientStrengths);
@@ -124,7 +124,8 @@ class InventoryRepositoryImpl implements InventoryRepository {
           await (_db.update(_db.items)..where((i) => i.id.equals(id)))
               .write(_toUpdateCompanion(withSummary, at: now));
           // Keep the existing unit relation when the update does not carry one
-          // (e.g. bulk category/shelf edits); `createItem` still requires units.
+          // (e.g. bulk category/shelf edits); units are optional under the
+          // Phase 18 contract (trade name is the only required field).
           if (draft.units != null) {
             await _applyUnits(draft.units, itemId: id);
           }
@@ -159,9 +160,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       _itemDao.setActive(id, active);
 
   Future<void> _applyUnits(ItemUnitRelation? relation, {required String itemId}) async {
-    if (relation == null) {
-      throw ValidationException('وحدة القياس مطلوبة للمنتج');
-    }
+    if (relation == null) return;
     await _unitDao.setBaseLargeRelation(
       itemId,
       baseUnitId: relation.baseUnitId,
@@ -170,16 +169,25 @@ class InventoryRepositoryImpl implements InventoryRepository {
     );
   }
 
-  /// Maps raw SQLite constraint errors (e.g. a duplicate unique barcode) onto
-  /// the domain exception hierarchy so the UI can render a specific message
-  /// instead of a generic save error.
+  /// Maps raw SQLite constraint errors onto the domain exception hierarchy so
+  /// the UI can render a specific message instead of a generic save error:
+  ///   * SQLITE_CONSTRAINT_UNIQUE   (extended 2067) → DuplicateException (e.g.
+  ///     a barcode already used by another product, or a master-data name that
+  ///     already exists),
+  ///   * SQLITE_CONSTRAINT_FOREIGNKEY (extended 787) → ValidationException
+  ///     (a referenced master row is missing or was deleted),
+  ///   * anything else is reported as a DB failure with its own message.
   Future<T> _guarded<T>(Future<T> Function() action) async {
     try {
       return await action();
     } on SqliteException catch (e) {
-      // SQLITE_CONSTRAINT (19) / SQLITE_CONSTRAINT_UNIQUE (2067).
-      if (e.extendedResultCode == 2067 || e.resultCode == 19) {
-        throw DuplicateException('البيانات موجودة مسبقًا (ربما الباركود مستخدم بالفعل)');
+      if (e.extendedResultCode == 2067) {
+        throw DuplicateException('البيانات موجودة مسبقًا (ربما الاسم أو الباركود مستخدم بالفعل)');
+      }
+      if (e.extendedResultCode == 787) {
+        throw ValidationException(
+            'القيمة المختارة غير صالحة؛ تأكد من أن التصنيف والشركة والوحدة '
+            'والمواد الفعالة الموجودة لا تزال متاحة');
       }
       throw DatabaseException('فشل حفظ المنتج في قاعدة البيانات', cause: e);
     }
@@ -197,9 +205,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       activeIngredient: Value(d.activeIngredient),
       equivalentDrug: Value(d.equivalentDrug),
       manufacturerId: Value(d.manufacturerId),
-      categoryId: d.categoryId,
-      subCategoryId: Value(d.subCategoryId),
-      therapeuticGroupId: Value(d.therapeuticGroupId),
+      categoryId: Value(d.categoryId),
       pharmaForm: Value(d.pharmaForm),
       dose: Value(d.dose),
       sizeVolume: Value(d.sizeVolume),
@@ -245,8 +251,6 @@ class InventoryRepositoryImpl implements InventoryRepository {
       equivalentDrug: Value(d.equivalentDrug),
       manufacturerId: Value(d.manufacturerId),
       categoryId: Value(d.categoryId),
-      subCategoryId: Value(d.subCategoryId),
-      therapeuticGroupId: Value(d.therapeuticGroupId),
       pharmaForm: Value(d.pharmaForm),
       dose: Value(d.dose),
       sizeVolume: Value(d.sizeVolume),
@@ -296,29 +300,17 @@ class InventoryRepositoryImpl implements InventoryRepository {
   Future<CategoryRow?> categoryById(String id) => _categoryDao.byId(id);
 
   @override
-  Future<SubCategoryRow?> subCategoryById(String id) =>
-      (_db.select(_db.subCategories)..where((s) => s.id.equals(id)))
-          .getSingleOrNull();
-
-  @override
   Future<ManufacturerRow?> manufacturerById(String id) =>
       (_db.select(_db.manufacturers)..where((m) => m.id.equals(id)))
           .getSingleOrNull();
 
   @override
-  Future<TherapeuticGroupRow?> groupById(String id) => _groupDao.byId(id);
-
-  @override
   Future<UnitRow?> unitById(String id) => _unitDao.byId(id);
 
-  // ----- Categories & sub-categories -----
+  // ----- Categories -----
 
   @override
   Future<List<CategoryRow>> categories() => _categoryDao.all();
-
-  @override
-  Future<List<SubCategoryRow>> subCategories(String categoryId) =>
-      _categoryDao.subCategories(categoryId);
 
   @override
   Future<CategoryRow> createCategory(MasterDataDraft draft) async {
@@ -333,7 +325,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       createdAt: now,
       updatedAt: now,
     );
-    await _categoryDao.insertCategory(row);
+    await _guarded(() => _categoryDao.insertCategory(row));
     return row;
   }
 
@@ -350,59 +342,13 @@ class InventoryRepositoryImpl implements InventoryRepository {
       createdAt: existing.createdAt,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
-    await _categoryDao.updateCategory(row);
+    await _guarded(() => _categoryDao.updateCategory(row));
     return row;
   }
 
   @override
   Future<void> setCategoryActive(String id, bool active) =>
       _categoryDao.setCategoryActive(id, active);
-
-  @override
-  Future<SubCategoryRow> createSubCategory(MasterDataDraft draft) async {
-    if (draft.categoryId == null) {
-      throw ValidationException('اختر التصنيف الرئيسي أولًا');
-    }
-    final id = CategoryDao.newSubCategoryId();
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final row = SubCategoryRow(
-      id: id,
-      categoryId: draft.categoryId!,
-      name: draft.name.trim(),
-      nameEn: draft.nameEn,
-      description: draft.description,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    );
-    await _categoryDao.insertSubCategory(row);
-    return row;
-  }
-
-  @override
-  Future<SubCategoryRow> updateSubCategory(
-      String id, MasterDataDraft draft) async {
-    final existing = await (_db.select(_db.subCategories)
-          ..where((s) => s.id.equals(id)))
-        .getSingleOrNull();
-    if (existing == null) throw NotFoundException('التصنيف الفرعي رقم $id غير موجود');
-    final row = SubCategoryRow(
-      id: existing.id,
-      categoryId: draft.categoryId ?? existing.categoryId,
-      name: draft.name.trim(),
-      nameEn: draft.nameEn,
-      description: draft.description,
-      isActive: existing.isActive,
-      createdAt: existing.createdAt,
-      updatedAt: DateTime.now().millisecondsSinceEpoch,
-    );
-    await _categoryDao.updateSubCategory(row);
-    return row;
-  }
-
-  @override
-  Future<void> setSubCategoryActive(String id, bool active) =>
-      _categoryDao.setSubCategoryActive(id, active);
 
   // ----- Manufacturers -----
 
@@ -428,7 +374,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       createdAt: now,
       updatedAt: now,
     );
-    await _manufacturerDao.insert(row);
+    await _guarded(() => _manufacturerDao.insert(row));
     return row;
   }
 
@@ -450,55 +396,13 @@ class InventoryRepositoryImpl implements InventoryRepository {
       createdAt: existing.createdAt,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
-    await _manufacturerDao.update(row);
+    await _guarded(() => _manufacturerDao.update(row));
     return row;
   }
 
   @override
   Future<void> setManufacturerActive(String id, bool active) =>
       _manufacturerDao.setActive(id, active);
-
-  // ----- Therapeutic groups -----
-
-  @override
-  Future<List<TherapeuticGroupRow>> therapeuticGroups() => _groupDao.all();
-
-  @override
-  Future<TherapeuticGroupRow> createTherapeuticGroup(MasterDataDraft draft) async {
-    final id = TherapeuticGroupDao.newGroupId();
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final row = TherapeuticGroupRow(
-      id: id,
-      name: draft.name.trim(),
-      description: draft.description,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    );
-    await _groupDao.insert(row);
-    return row;
-  }
-
-  @override
-  Future<TherapeuticGroupRow> updateTherapeuticGroup(
-      String id, MasterDataDraft draft) async {
-    final existing = await _groupDao.byId(id);
-    if (existing == null) throw NotFoundException('المجموعة رقم $id غير موجودة');
-    final row = TherapeuticGroupRow(
-      id: existing.id,
-      name: draft.name.trim(),
-      description: draft.description,
-      isActive: existing.isActive,
-      createdAt: existing.createdAt,
-      updatedAt: DateTime.now().millisecondsSinceEpoch,
-    );
-    await _groupDao.update(row);
-    return row;
-  }
-
-  @override
-  Future<void> setTherapeuticGroupActive(String id, bool active) =>
-      _groupDao.setActive(id, active);
 
   // ----- Active ingredients -----
 
@@ -519,7 +423,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       createdAt: now,
       updatedAt: now,
     );
-    await _activeIngredientDao.insert(row);
+    await _guarded(() => _activeIngredientDao.insert(row));
     return row;
   }
 
@@ -537,7 +441,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       createdAt: existing.createdAt,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
-    await _activeIngredientDao.update(row);
+    await _guarded(() => _activeIngredientDao.update(row));
     return row;
   }
 
@@ -564,7 +468,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       createdAt: now,
       updatedAt: now,
     );
-    await _indicationDao.insert(row);
+    await _guarded(() => _indicationDao.insert(row));
     return row;
   }
 
@@ -581,7 +485,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       createdAt: existing.createdAt,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
-    await _indicationDao.update(row);
+    await _guarded(() => _indicationDao.update(row));
     return row;
   }
 
@@ -604,6 +508,39 @@ class InventoryRepositoryImpl implements InventoryRepository {
   Future<List<String>> indicationIdsForItem(String itemId) =>
       _itemIndicationDao.indicationIdsForItem(itemId);
 
+  @override
+  Future<Map<String, List<ItemIngredientRef>>> activeIngredientRefsForItems(
+      Set<String> itemIds) async {
+    if (itemIds.isEmpty) return const {};
+    final names = {
+      for (final r in await _activeIngredientDao.all()) r.id: r.name,
+    };
+    final relations = await _itemActiveIngredientDao.forItemIds(itemIds);
+    final out = <String, List<ItemIngredientRef>>{};
+    for (final r in relations) {
+      out.putIfAbsent(r.itemId, () => []).add(ItemIngredientRef(
+            name: names[r.activeIngredientId] ?? r.activeIngredientId,
+            strength: r.strength,
+          ));
+    }
+    return out;
+  }
+
+  @override
+  Future<Map<String, List<String>>> indicationNamesForItems(
+      Set<String> itemIds) async {
+    if (itemIds.isEmpty) return const {};
+    final names = {
+      for (final r in await _indicationDao.all()) r.id: r.name,
+    };
+    final relations = await _itemIndicationDao.forItemIds(itemIds);
+    final out = <String, List<String>>{};
+    for (final r in relations) {
+      out.putIfAbsent(r.itemId, () => []).add(names[r.indicationId] ?? r.indicationId);
+    }
+    return out;
+  }
+
   // ----- Units -----
 
   @override
@@ -623,7 +560,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       createdAt: now,
       updatedAt: now,
     );
-    await _unitDao.insert(row);
+    await _guarded(() => _unitDao.insert(row));
     return row;
   }
 
@@ -641,7 +578,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       createdAt: existing.createdAt,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
-    await _unitDao.update(row);
+    await _guarded(() => _unitDao.update(row));
     return row;
   }
 

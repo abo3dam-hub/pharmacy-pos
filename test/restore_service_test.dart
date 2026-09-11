@@ -125,7 +125,7 @@ void main() {
           id: 'item_old_only',
           primaryBarcode: Value('9999999999999'),
           tradeName: 'منتج قديم',
-          categoryId: await categoryId(old),
+          categoryId: Value(await categoryId(old)),
           createdAt: now,
           updatedAt: now,
         ));

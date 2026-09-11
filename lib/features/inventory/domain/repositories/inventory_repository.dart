@@ -1,6 +1,7 @@
 import '../../../../core/data_grid/page_request.dart';
 import '../../../../domain/services/stock_service.dart';
 import '../../../../shared/database/app_database.dart';
+import '../entities/inventory_item.dart';
 
 /// Base unit + large unit relation of an item (§4.6).
 class ItemUnitRelation {
@@ -71,9 +72,7 @@ class ItemDraft {
     this.activeIngredient,
     this.equivalentDrug,
     this.manufacturerId,
-    required this.categoryId,
-    this.subCategoryId,
-    this.therapeuticGroupId,
+    this.categoryId,
     this.pharmaForm,
     this.dose,
     this.sizeVolume,
@@ -117,9 +116,7 @@ this.supplierIds = const [],
   final String? activeIngredient;
   final String? equivalentDrug;
   final String? manufacturerId;
-  final String categoryId;
-  final String? subCategoryId;
-  final String? therapeuticGroupId;
+  final String? categoryId;
   final String? pharmaForm;
   final String? dose;
   final String? sizeVolume;
@@ -180,8 +177,6 @@ this.supplierIds = const [],
         equivalentDrug: row.equivalentDrug,
         manufacturerId: row.manufacturerId,
         categoryId: row.categoryId,
-        subCategoryId: row.subCategoryId,
-        therapeuticGroupId: row.therapeuticGroupId,
         pharmaForm: row.pharmaForm,
         dose: row.dose,
         sizeVolume: row.sizeVolume,
@@ -238,8 +233,6 @@ this.supplierIds = const [],
         equivalentDrug: equivalentDrug,
         manufacturerId: manufacturerId,
         categoryId: categoryId ?? this.categoryId,
-        subCategoryId: subCategoryId,
-        therapeuticGroupId: therapeuticGroupId,
         pharmaForm: pharmaForm,
         dose: dose,
         sizeVolume: sizeVolume,
@@ -324,20 +317,14 @@ abstract class InventoryRepository {
 
   // Named lookups for the items grid
   Future<CategoryRow?> categoryById(String id);
-  Future<SubCategoryRow?> subCategoryById(String id);
   Future<ManufacturerRow?> manufacturerById(String id);
-  Future<TherapeuticGroupRow?> groupById(String id);
   Future<UnitRow?> unitById(String id);
 
-  // Categories & sub-categories (§4.3, §4.4)
+  // Categories (§4.3)
   Future<List<CategoryRow>> categories();
-  Future<List<SubCategoryRow>> subCategories(String categoryId);
   Future<CategoryRow> createCategory(MasterDataDraft draft);
   Future<CategoryRow> updateCategory(String id, MasterDataDraft draft);
   Future<void> setCategoryActive(String id, bool active);
-  Future<SubCategoryRow> createSubCategory(MasterDataDraft draft);
-  Future<SubCategoryRow> updateSubCategory(String id, MasterDataDraft draft);
-  Future<void> setSubCategoryActive(String id, bool active);
 
   // Manufacturers (§4.1)
   Future<List<ManufacturerRow>> manufacturers();
@@ -345,12 +332,6 @@ abstract class InventoryRepository {
   Future<ManufacturerRow> createManufacturer(MasterDataDraft draft);
   Future<ManufacturerRow> updateManufacturer(String id, MasterDataDraft draft);
   Future<void> setManufacturerActive(String id, bool active);
-
-  // Therapeutic groups (§4.2)
-  Future<List<TherapeuticGroupRow>> therapeuticGroups();
-  Future<TherapeuticGroupRow> createTherapeuticGroup(MasterDataDraft draft);
-  Future<TherapeuticGroupRow> updateTherapeuticGroup(String id, MasterDataDraft draft);
-  Future<void> setTherapeuticGroupActive(String id, bool active);
 
   // Units (§4.5)
   Future<List<UnitRow>> units({bool? activeOnly});
@@ -375,6 +356,13 @@ abstract class InventoryRepository {
   Future<List<ItemActiveIngredientRow>> activeIngredientRelationsForItem(
       String itemId);
   Future<List<String>> indicationIdsForItem(String itemId);
+
+  /// Batch projections used by the grid and the Excel export so relational
+  /// taxonomy is resolved in one round trip per page.
+  Future<Map<String, List<ItemIngredientRef>>> activeIngredientRefsForItems(
+      Set<String> itemIds);
+  Future<Map<String, List<String>>> indicationNamesForItems(
+      Set<String> itemIds);
 
   // Batches & ledger (§4.8, §4.9)
   Future<List<BatchRow>> batchesForItem(String itemId);

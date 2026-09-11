@@ -206,10 +206,7 @@ class BulkUpdateItemsUseCase {
 
     switch (input.operation) {
       case BulkOperation.changeCategory:
-        return draft.copyWith(
-            tradeName: row.tradeName,
-            categoryId: input.categoryId,
-            subCategoryId: null);
+        return draft.copyWith(tradeName: row.tradeName, categoryId: input.categoryId);
       case BulkOperation.changeShelfLocation:
         return draft.copyWith(shelfLocation: input.shelfLocation);
       case BulkOperation.adjustPricePercent:
@@ -229,8 +226,6 @@ class BulkUpdateItemsUseCase {
       equivalentDrug: draft.equivalentDrug,
       manufacturerId: draft.manufacturerId,
       categoryId: draft.categoryId,
-      subCategoryId: draft.subCategoryId,
-      therapeuticGroupId: draft.therapeuticGroupId,
       pharmaForm: draft.pharmaForm,
       dose: draft.dose,
       sizeVolume: draft.sizeVolume,

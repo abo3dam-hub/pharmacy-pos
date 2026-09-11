@@ -563,423 +563,6 @@ class ManufacturersCompanion extends UpdateCompanion<ManufacturerRow> {
   }
 }
 
-class $TherapeuticGroupsTable extends TherapeuticGroups
-    with TableInfo<$TherapeuticGroupsTable, TherapeuticGroupRow> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $TherapeuticGroupsTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
-  );
-  static const VerificationMeta _descriptionMeta = const VerificationMeta(
-    'description',
-  );
-  @override
-  late final GeneratedColumn<String> description = GeneratedColumn<String>(
-    'description',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _isActiveMeta = const VerificationMeta(
-    'isActive',
-  );
-  @override
-  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-    'is_active',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_active" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    name,
-    description,
-    isActive,
-    createdAt,
-    updatedAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'therapeutic_groups';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<TherapeuticGroupRow> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    } else if (isInserting) {
-      context.missing(_idMeta);
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('description')) {
-      context.handle(
-        _descriptionMeta,
-        description.isAcceptableOrUnknown(
-          data['description']!,
-          _descriptionMeta,
-        ),
-      );
-    }
-    if (data.containsKey('is_active')) {
-      context.handle(
-        _isActiveMeta,
-        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
-      );
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_updatedAtMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  TherapeuticGroupRow map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return TherapeuticGroupRow(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      description: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}description'],
-      ),
-      isActive: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_active'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}updated_at'],
-      )!,
-    );
-  }
-
-  @override
-  $TherapeuticGroupsTable createAlias(String alias) {
-    return $TherapeuticGroupsTable(attachedDatabase, alias);
-  }
-}
-
-class TherapeuticGroupRow extends DataClass
-    implements Insertable<TherapeuticGroupRow> {
-  final String id;
-  final String name;
-  final String? description;
-  final bool isActive;
-  final int createdAt;
-  final int updatedAt;
-  const TherapeuticGroupRow({
-    required this.id,
-    required this.name,
-    this.description,
-    required this.isActive,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['name'] = Variable<String>(name);
-    if (!nullToAbsent || description != null) {
-      map['description'] = Variable<String>(description);
-    }
-    map['is_active'] = Variable<bool>(isActive);
-    map['created_at'] = Variable<int>(createdAt);
-    map['updated_at'] = Variable<int>(updatedAt);
-    return map;
-  }
-
-  TherapeuticGroupsCompanion toCompanion(bool nullToAbsent) {
-    return TherapeuticGroupsCompanion(
-      id: Value(id),
-      name: Value(name),
-      description: description == null && nullToAbsent
-          ? const Value.absent()
-          : Value(description),
-      isActive: Value(isActive),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-    );
-  }
-
-  factory TherapeuticGroupRow.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return TherapeuticGroupRow(
-      id: serializer.fromJson<String>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
-      description: serializer.fromJson<String?>(json['description']),
-      isActive: serializer.fromJson<bool>(json['isActive']),
-      createdAt: serializer.fromJson<int>(json['createdAt']),
-      updatedAt: serializer.fromJson<int>(json['updatedAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'name': serializer.toJson<String>(name),
-      'description': serializer.toJson<String?>(description),
-      'isActive': serializer.toJson<bool>(isActive),
-      'createdAt': serializer.toJson<int>(createdAt),
-      'updatedAt': serializer.toJson<int>(updatedAt),
-    };
-  }
-
-  TherapeuticGroupRow copyWith({
-    String? id,
-    String? name,
-    Value<String?> description = const Value.absent(),
-    bool? isActive,
-    int? createdAt,
-    int? updatedAt,
-  }) => TherapeuticGroupRow(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    description: description.present ? description.value : this.description,
-    isActive: isActive ?? this.isActive,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-  );
-  TherapeuticGroupRow copyWithCompanion(TherapeuticGroupsCompanion data) {
-    return TherapeuticGroupRow(
-      id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
-      isActive: data.isActive.present ? data.isActive.value : this.isActive,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('TherapeuticGroupRow(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('description: $description, ')
-          ..write('isActive: $isActive, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(id, name, description, isActive, createdAt, updatedAt);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is TherapeuticGroupRow &&
-          other.id == this.id &&
-          other.name == this.name &&
-          other.description == this.description &&
-          other.isActive == this.isActive &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
-}
-
-class TherapeuticGroupsCompanion extends UpdateCompanion<TherapeuticGroupRow> {
-  final Value<String> id;
-  final Value<String> name;
-  final Value<String?> description;
-  final Value<bool> isActive;
-  final Value<int> createdAt;
-  final Value<int> updatedAt;
-  final Value<int> rowid;
-  const TherapeuticGroupsCompanion({
-    this.id = const Value.absent(),
-    this.name = const Value.absent(),
-    this.description = const Value.absent(),
-    this.isActive = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  TherapeuticGroupsCompanion.insert({
-    required String id,
-    required String name,
-    this.description = const Value.absent(),
-    this.isActive = const Value.absent(),
-    required int createdAt,
-    required int updatedAt,
-    this.rowid = const Value.absent(),
-  }) : id = Value(id),
-       name = Value(name),
-       createdAt = Value(createdAt),
-       updatedAt = Value(updatedAt);
-  static Insertable<TherapeuticGroupRow> custom({
-    Expression<String>? id,
-    Expression<String>? name,
-    Expression<String>? description,
-    Expression<bool>? isActive,
-    Expression<int>? createdAt,
-    Expression<int>? updatedAt,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (description != null) 'description': description,
-      if (isActive != null) 'is_active': isActive,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  TherapeuticGroupsCompanion copyWith({
-    Value<String>? id,
-    Value<String>? name,
-    Value<String?>? description,
-    Value<bool>? isActive,
-    Value<int>? createdAt,
-    Value<int>? updatedAt,
-    Value<int>? rowid,
-  }) {
-    return TherapeuticGroupsCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description,
-      isActive: isActive ?? this.isActive,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (description.present) {
-      map['description'] = Variable<String>(description.value);
-    }
-    if (isActive.present) {
-      map['is_active'] = Variable<bool>(isActive.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<int>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<int>(updatedAt.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('TherapeuticGroupsCompanion(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('description: $description, ')
-          ..write('isActive: $isActive, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $CategoriesTable extends Categories
     with TableInfo<$CategoriesTable, CategoryRow> {
   @override
@@ -1437,528 +1020,6 @@ class CategoriesCompanion extends UpdateCompanion<CategoryRow> {
   String toString() {
     return (StringBuffer('CategoriesCompanion(')
           ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('nameEn: $nameEn, ')
-          ..write('description: $description, ')
-          ..write('isActive: $isActive, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $SubCategoriesTable extends SubCategories
-    with TableInfo<$SubCategoriesTable, SubCategoryRow> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $SubCategoriesTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<String> id = GeneratedColumn<String>(
-    'id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
-    'categoryId',
-  );
-  @override
-  late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
-    'category_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _nameEnMeta = const VerificationMeta('nameEn');
-  @override
-  late final GeneratedColumn<String> nameEn = GeneratedColumn<String>(
-    'name_en',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _descriptionMeta = const VerificationMeta(
-    'description',
-  );
-  @override
-  late final GeneratedColumn<String> description = GeneratedColumn<String>(
-    'description',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _isActiveMeta = const VerificationMeta(
-    'isActive',
-  );
-  @override
-  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
-    'is_active',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_active" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
-    'updatedAt',
-  );
-  @override
-  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
-    'updated_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    categoryId,
-    name,
-    nameEn,
-    description,
-    isActive,
-    createdAt,
-    updatedAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'sub_categories';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<SubCategoryRow> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    } else if (isInserting) {
-      context.missing(_idMeta);
-    }
-    if (data.containsKey('category_id')) {
-      context.handle(
-        _categoryIdMeta,
-        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_categoryIdMeta);
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('name_en')) {
-      context.handle(
-        _nameEnMeta,
-        nameEn.isAcceptableOrUnknown(data['name_en']!, _nameEnMeta),
-      );
-    }
-    if (data.containsKey('description')) {
-      context.handle(
-        _descriptionMeta,
-        description.isAcceptableOrUnknown(
-          data['description']!,
-          _descriptionMeta,
-        ),
-      );
-    }
-    if (data.containsKey('is_active')) {
-      context.handle(
-        _isActiveMeta,
-        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
-      );
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_createdAtMeta);
-    }
-    if (data.containsKey('updated_at')) {
-      context.handle(
-        _updatedAtMeta,
-        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_updatedAtMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {categoryId, name},
-  ];
-  @override
-  SubCategoryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return SubCategoryRow(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}id'],
-      )!,
-      categoryId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}category_id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      nameEn: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name_en'],
-      ),
-      description: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}description'],
-      ),
-      isActive: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_active'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}created_at'],
-      )!,
-      updatedAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}updated_at'],
-      )!,
-    );
-  }
-
-  @override
-  $SubCategoriesTable createAlias(String alias) {
-    return $SubCategoriesTable(attachedDatabase, alias);
-  }
-}
-
-class SubCategoryRow extends DataClass implements Insertable<SubCategoryRow> {
-  final String id;
-  final String categoryId;
-  final String name;
-  final String? nameEn;
-  final String? description;
-  final bool isActive;
-  final int createdAt;
-  final int updatedAt;
-  const SubCategoryRow({
-    required this.id,
-    required this.categoryId,
-    required this.name,
-    this.nameEn,
-    this.description,
-    required this.isActive,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['category_id'] = Variable<String>(categoryId);
-    map['name'] = Variable<String>(name);
-    if (!nullToAbsent || nameEn != null) {
-      map['name_en'] = Variable<String>(nameEn);
-    }
-    if (!nullToAbsent || description != null) {
-      map['description'] = Variable<String>(description);
-    }
-    map['is_active'] = Variable<bool>(isActive);
-    map['created_at'] = Variable<int>(createdAt);
-    map['updated_at'] = Variable<int>(updatedAt);
-    return map;
-  }
-
-  SubCategoriesCompanion toCompanion(bool nullToAbsent) {
-    return SubCategoriesCompanion(
-      id: Value(id),
-      categoryId: Value(categoryId),
-      name: Value(name),
-      nameEn: nameEn == null && nullToAbsent
-          ? const Value.absent()
-          : Value(nameEn),
-      description: description == null && nullToAbsent
-          ? const Value.absent()
-          : Value(description),
-      isActive: Value(isActive),
-      createdAt: Value(createdAt),
-      updatedAt: Value(updatedAt),
-    );
-  }
-
-  factory SubCategoryRow.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return SubCategoryRow(
-      id: serializer.fromJson<String>(json['id']),
-      categoryId: serializer.fromJson<String>(json['categoryId']),
-      name: serializer.fromJson<String>(json['name']),
-      nameEn: serializer.fromJson<String?>(json['nameEn']),
-      description: serializer.fromJson<String?>(json['description']),
-      isActive: serializer.fromJson<bool>(json['isActive']),
-      createdAt: serializer.fromJson<int>(json['createdAt']),
-      updatedAt: serializer.fromJson<int>(json['updatedAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'categoryId': serializer.toJson<String>(categoryId),
-      'name': serializer.toJson<String>(name),
-      'nameEn': serializer.toJson<String?>(nameEn),
-      'description': serializer.toJson<String?>(description),
-      'isActive': serializer.toJson<bool>(isActive),
-      'createdAt': serializer.toJson<int>(createdAt),
-      'updatedAt': serializer.toJson<int>(updatedAt),
-    };
-  }
-
-  SubCategoryRow copyWith({
-    String? id,
-    String? categoryId,
-    String? name,
-    Value<String?> nameEn = const Value.absent(),
-    Value<String?> description = const Value.absent(),
-    bool? isActive,
-    int? createdAt,
-    int? updatedAt,
-  }) => SubCategoryRow(
-    id: id ?? this.id,
-    categoryId: categoryId ?? this.categoryId,
-    name: name ?? this.name,
-    nameEn: nameEn.present ? nameEn.value : this.nameEn,
-    description: description.present ? description.value : this.description,
-    isActive: isActive ?? this.isActive,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-  );
-  SubCategoryRow copyWithCompanion(SubCategoriesCompanion data) {
-    return SubCategoryRow(
-      id: data.id.present ? data.id.value : this.id,
-      categoryId: data.categoryId.present
-          ? data.categoryId.value
-          : this.categoryId,
-      name: data.name.present ? data.name.value : this.name,
-      nameEn: data.nameEn.present ? data.nameEn.value : this.nameEn,
-      description: data.description.present
-          ? data.description.value
-          : this.description,
-      isActive: data.isActive.present ? data.isActive.value : this.isActive,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SubCategoryRow(')
-          ..write('id: $id, ')
-          ..write('categoryId: $categoryId, ')
-          ..write('name: $name, ')
-          ..write('nameEn: $nameEn, ')
-          ..write('description: $description, ')
-          ..write('isActive: $isActive, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    categoryId,
-    name,
-    nameEn,
-    description,
-    isActive,
-    createdAt,
-    updatedAt,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is SubCategoryRow &&
-          other.id == this.id &&
-          other.categoryId == this.categoryId &&
-          other.name == this.name &&
-          other.nameEn == this.nameEn &&
-          other.description == this.description &&
-          other.isActive == this.isActive &&
-          other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
-}
-
-class SubCategoriesCompanion extends UpdateCompanion<SubCategoryRow> {
-  final Value<String> id;
-  final Value<String> categoryId;
-  final Value<String> name;
-  final Value<String?> nameEn;
-  final Value<String?> description;
-  final Value<bool> isActive;
-  final Value<int> createdAt;
-  final Value<int> updatedAt;
-  final Value<int> rowid;
-  const SubCategoriesCompanion({
-    this.id = const Value.absent(),
-    this.categoryId = const Value.absent(),
-    this.name = const Value.absent(),
-    this.nameEn = const Value.absent(),
-    this.description = const Value.absent(),
-    this.isActive = const Value.absent(),
-    this.createdAt = const Value.absent(),
-    this.updatedAt = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  SubCategoriesCompanion.insert({
-    required String id,
-    required String categoryId,
-    required String name,
-    this.nameEn = const Value.absent(),
-    this.description = const Value.absent(),
-    this.isActive = const Value.absent(),
-    required int createdAt,
-    required int updatedAt,
-    this.rowid = const Value.absent(),
-  }) : id = Value(id),
-       categoryId = Value(categoryId),
-       name = Value(name),
-       createdAt = Value(createdAt),
-       updatedAt = Value(updatedAt);
-  static Insertable<SubCategoryRow> custom({
-    Expression<String>? id,
-    Expression<String>? categoryId,
-    Expression<String>? name,
-    Expression<String>? nameEn,
-    Expression<String>? description,
-    Expression<bool>? isActive,
-    Expression<int>? createdAt,
-    Expression<int>? updatedAt,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (categoryId != null) 'category_id': categoryId,
-      if (name != null) 'name': name,
-      if (nameEn != null) 'name_en': nameEn,
-      if (description != null) 'description': description,
-      if (isActive != null) 'is_active': isActive,
-      if (createdAt != null) 'created_at': createdAt,
-      if (updatedAt != null) 'updated_at': updatedAt,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  SubCategoriesCompanion copyWith({
-    Value<String>? id,
-    Value<String>? categoryId,
-    Value<String>? name,
-    Value<String?>? nameEn,
-    Value<String?>? description,
-    Value<bool>? isActive,
-    Value<int>? createdAt,
-    Value<int>? updatedAt,
-    Value<int>? rowid,
-  }) {
-    return SubCategoriesCompanion(
-      id: id ?? this.id,
-      categoryId: categoryId ?? this.categoryId,
-      name: name ?? this.name,
-      nameEn: nameEn ?? this.nameEn,
-      description: description ?? this.description,
-      isActive: isActive ?? this.isActive,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<String>(id.value);
-    }
-    if (categoryId.present) {
-      map['category_id'] = Variable<String>(categoryId.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (nameEn.present) {
-      map['name_en'] = Variable<String>(nameEn.value);
-    }
-    if (description.present) {
-      map['description'] = Variable<String>(description.value);
-    }
-    if (isActive.present) {
-      map['is_active'] = Variable<bool>(isActive.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<int>(createdAt.value);
-    }
-    if (updatedAt.present) {
-      map['updated_at'] = Variable<int>(updatedAt.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('SubCategoriesCompanion(')
-          ..write('id: $id, ')
-          ..write('categoryId: $categoryId, ')
           ..write('name: $name, ')
           ..write('nameEn: $nameEn, ')
           ..write('description: $description, ')
@@ -2982,32 +2043,10 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
   late final GeneratedColumn<String> categoryId = GeneratedColumn<String>(
     'category_id',
     aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _subCategoryIdMeta = const VerificationMeta(
-    'subCategoryId',
-  );
-  @override
-  late final GeneratedColumn<String> subCategoryId = GeneratedColumn<String>(
-    'sub_category_id',
-    aliasedName,
     true,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _therapeuticGroupIdMeta =
-      const VerificationMeta('therapeuticGroupId');
-  @override
-  late final GeneratedColumn<String> therapeuticGroupId =
-      GeneratedColumn<String>(
-        'therapeutic_group_id',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-      );
   static const VerificationMeta _pharmaFormMeta = const VerificationMeta(
     'pharmaForm',
   );
@@ -3408,8 +2447,6 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
     equivalentDrug,
     manufacturerId,
     categoryId,
-    subCategoryId,
-    therapeuticGroupId,
     pharmaForm,
     dose,
     sizeVolume,
@@ -3536,26 +2573,6 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
       context.handle(
         _categoryIdMeta,
         categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_categoryIdMeta);
-    }
-    if (data.containsKey('sub_category_id')) {
-      context.handle(
-        _subCategoryIdMeta,
-        subCategoryId.isAcceptableOrUnknown(
-          data['sub_category_id']!,
-          _subCategoryIdMeta,
-        ),
-      );
-    }
-    if (data.containsKey('therapeutic_group_id')) {
-      context.handle(
-        _therapeuticGroupIdMeta,
-        therapeuticGroupId.isAcceptableOrUnknown(
-          data['therapeutic_group_id']!,
-          _therapeuticGroupIdMeta,
-        ),
       );
     }
     if (data.containsKey('pharma_form')) {
@@ -3883,14 +2900,6 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
       categoryId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}category_id'],
-      )!,
-      subCategoryId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}sub_category_id'],
-      ),
-      therapeuticGroupId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}therapeutic_group_id'],
       ),
       pharmaForm: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -4044,10 +3053,9 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
   final String? equivalentDrug;
   final String? manufacturerId;
 
-  /// Main category (التصنيف الرئيسي) — NN per §4.7.
-  final String categoryId;
-  final String? subCategoryId;
-  final String? therapeuticGroupId;
+  /// Main category (التصنيف الرئيسي) — optional (Phase 18). Products can be
+  /// created with only a trade name.
+  final String? categoryId;
   final String? pharmaForm;
   final String? dose;
   final String? sizeVolume;
@@ -4123,9 +3131,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     this.activeIngredient,
     this.equivalentDrug,
     this.manufacturerId,
-    required this.categoryId,
-    this.subCategoryId,
-    this.therapeuticGroupId,
+    this.categoryId,
     this.pharmaForm,
     this.dose,
     this.sizeVolume,
@@ -4186,12 +3192,8 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     if (!nullToAbsent || manufacturerId != null) {
       map['manufacturer_id'] = Variable<String>(manufacturerId);
     }
-    map['category_id'] = Variable<String>(categoryId);
-    if (!nullToAbsent || subCategoryId != null) {
-      map['sub_category_id'] = Variable<String>(subCategoryId);
-    }
-    if (!nullToAbsent || therapeuticGroupId != null) {
-      map['therapeutic_group_id'] = Variable<String>(therapeuticGroupId);
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<String>(categoryId);
     }
     if (!nullToAbsent || pharmaForm != null) {
       map['pharma_form'] = Variable<String>(pharmaForm);
@@ -4286,13 +3288,9 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       manufacturerId: manufacturerId == null && nullToAbsent
           ? const Value.absent()
           : Value(manufacturerId),
-      categoryId: Value(categoryId),
-      subCategoryId: subCategoryId == null && nullToAbsent
+      categoryId: categoryId == null && nullToAbsent
           ? const Value.absent()
-          : Value(subCategoryId),
-      therapeuticGroupId: therapeuticGroupId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(therapeuticGroupId),
+          : Value(categoryId),
       pharmaForm: pharmaForm == null && nullToAbsent
           ? const Value.absent()
           : Value(pharmaForm),
@@ -4367,11 +3365,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       activeIngredient: serializer.fromJson<String?>(json['activeIngredient']),
       equivalentDrug: serializer.fromJson<String?>(json['equivalentDrug']),
       manufacturerId: serializer.fromJson<String?>(json['manufacturerId']),
-      categoryId: serializer.fromJson<String>(json['categoryId']),
-      subCategoryId: serializer.fromJson<String?>(json['subCategoryId']),
-      therapeuticGroupId: serializer.fromJson<String?>(
-        json['therapeuticGroupId'],
-      ),
+      categoryId: serializer.fromJson<String?>(json['categoryId']),
       pharmaForm: serializer.fromJson<String?>(json['pharmaForm']),
       dose: serializer.fromJson<String?>(json['dose']),
       sizeVolume: serializer.fromJson<String?>(json['sizeVolume']),
@@ -4444,9 +3438,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       'activeIngredient': serializer.toJson<String?>(activeIngredient),
       'equivalentDrug': serializer.toJson<String?>(equivalentDrug),
       'manufacturerId': serializer.toJson<String?>(manufacturerId),
-      'categoryId': serializer.toJson<String>(categoryId),
-      'subCategoryId': serializer.toJson<String?>(subCategoryId),
-      'therapeuticGroupId': serializer.toJson<String?>(therapeuticGroupId),
+      'categoryId': serializer.toJson<String?>(categoryId),
       'pharmaForm': serializer.toJson<String?>(pharmaForm),
       'dose': serializer.toJson<String?>(dose),
       'sizeVolume': serializer.toJson<String?>(sizeVolume),
@@ -4503,9 +3495,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     Value<String?> activeIngredient = const Value.absent(),
     Value<String?> equivalentDrug = const Value.absent(),
     Value<String?> manufacturerId = const Value.absent(),
-    String? categoryId,
-    Value<String?> subCategoryId = const Value.absent(),
-    Value<String?> therapeuticGroupId = const Value.absent(),
+    Value<String?> categoryId = const Value.absent(),
     Value<String?> pharmaForm = const Value.absent(),
     Value<String?> dose = const Value.absent(),
     Value<String?> sizeVolume = const Value.absent(),
@@ -4561,13 +3551,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     manufacturerId: manufacturerId.present
         ? manufacturerId.value
         : this.manufacturerId,
-    categoryId: categoryId ?? this.categoryId,
-    subCategoryId: subCategoryId.present
-        ? subCategoryId.value
-        : this.subCategoryId,
-    therapeuticGroupId: therapeuticGroupId.present
-        ? therapeuticGroupId.value
-        : this.therapeuticGroupId,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
     pharmaForm: pharmaForm.present ? pharmaForm.value : this.pharmaForm,
     dose: dose.present ? dose.value : this.dose,
     sizeVolume: sizeVolume.present ? sizeVolume.value : this.sizeVolume,
@@ -4649,12 +3633,6 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       categoryId: data.categoryId.present
           ? data.categoryId.value
           : this.categoryId,
-      subCategoryId: data.subCategoryId.present
-          ? data.subCategoryId.value
-          : this.subCategoryId,
-      therapeuticGroupId: data.therapeuticGroupId.present
-          ? data.therapeuticGroupId.value
-          : this.therapeuticGroupId,
       pharmaForm: data.pharmaForm.present
           ? data.pharmaForm.value
           : this.pharmaForm,
@@ -4760,8 +3738,6 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           ..write('equivalentDrug: $equivalentDrug, ')
           ..write('manufacturerId: $manufacturerId, ')
           ..write('categoryId: $categoryId, ')
-          ..write('subCategoryId: $subCategoryId, ')
-          ..write('therapeuticGroupId: $therapeuticGroupId, ')
           ..write('pharmaForm: $pharmaForm, ')
           ..write('dose: $dose, ')
           ..write('sizeVolume: $sizeVolume, ')
@@ -4813,8 +3789,6 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     equivalentDrug,
     manufacturerId,
     categoryId,
-    subCategoryId,
-    therapeuticGroupId,
     pharmaForm,
     dose,
     sizeVolume,
@@ -4863,8 +3837,6 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           other.equivalentDrug == this.equivalentDrug &&
           other.manufacturerId == this.manufacturerId &&
           other.categoryId == this.categoryId &&
-          other.subCategoryId == this.subCategoryId &&
-          other.therapeuticGroupId == this.therapeuticGroupId &&
           other.pharmaForm == this.pharmaForm &&
           other.dose == this.dose &&
           other.sizeVolume == this.sizeVolume &&
@@ -4912,9 +3884,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
   final Value<String?> activeIngredient;
   final Value<String?> equivalentDrug;
   final Value<String?> manufacturerId;
-  final Value<String> categoryId;
-  final Value<String?> subCategoryId;
-  final Value<String?> therapeuticGroupId;
+  final Value<String?> categoryId;
   final Value<String?> pharmaForm;
   final Value<String?> dose;
   final Value<String?> sizeVolume;
@@ -4960,8 +3930,6 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     this.equivalentDrug = const Value.absent(),
     this.manufacturerId = const Value.absent(),
     this.categoryId = const Value.absent(),
-    this.subCategoryId = const Value.absent(),
-    this.therapeuticGroupId = const Value.absent(),
     this.pharmaForm = const Value.absent(),
     this.dose = const Value.absent(),
     this.sizeVolume = const Value.absent(),
@@ -5007,9 +3975,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     this.activeIngredient = const Value.absent(),
     this.equivalentDrug = const Value.absent(),
     this.manufacturerId = const Value.absent(),
-    required String categoryId,
-    this.subCategoryId = const Value.absent(),
-    this.therapeuticGroupId = const Value.absent(),
+    this.categoryId = const Value.absent(),
     this.pharmaForm = const Value.absent(),
     this.dose = const Value.absent(),
     this.sizeVolume = const Value.absent(),
@@ -5046,7 +4012,6 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        tradeName = Value(tradeName),
-       categoryId = Value(categoryId),
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt);
   static Insertable<ItemRow> custom({
@@ -5060,8 +4025,6 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     Expression<String>? equivalentDrug,
     Expression<String>? manufacturerId,
     Expression<String>? categoryId,
-    Expression<String>? subCategoryId,
-    Expression<String>? therapeuticGroupId,
     Expression<String>? pharmaForm,
     Expression<String>? dose,
     Expression<String>? sizeVolume,
@@ -5108,9 +4071,6 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
       if (equivalentDrug != null) 'equivalent_drug': equivalentDrug,
       if (manufacturerId != null) 'manufacturer_id': manufacturerId,
       if (categoryId != null) 'category_id': categoryId,
-      if (subCategoryId != null) 'sub_category_id': subCategoryId,
-      if (therapeuticGroupId != null)
-        'therapeutic_group_id': therapeuticGroupId,
       if (pharmaForm != null) 'pharma_form': pharmaForm,
       if (dose != null) 'dose': dose,
       if (sizeVolume != null) 'size_volume': sizeVolume,
@@ -5175,9 +4135,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     Value<String?>? activeIngredient,
     Value<String?>? equivalentDrug,
     Value<String?>? manufacturerId,
-    Value<String>? categoryId,
-    Value<String?>? subCategoryId,
-    Value<String?>? therapeuticGroupId,
+    Value<String?>? categoryId,
     Value<String?>? pharmaForm,
     Value<String?>? dose,
     Value<String?>? sizeVolume,
@@ -5224,8 +4182,6 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
       equivalentDrug: equivalentDrug ?? this.equivalentDrug,
       manufacturerId: manufacturerId ?? this.manufacturerId,
       categoryId: categoryId ?? this.categoryId,
-      subCategoryId: subCategoryId ?? this.subCategoryId,
-      therapeuticGroupId: therapeuticGroupId ?? this.therapeuticGroupId,
       pharmaForm: pharmaForm ?? this.pharmaForm,
       dose: dose ?? this.dose,
       sizeVolume: sizeVolume ?? this.sizeVolume,
@@ -5301,12 +4257,6 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     }
     if (categoryId.present) {
       map['category_id'] = Variable<String>(categoryId.value);
-    }
-    if (subCategoryId.present) {
-      map['sub_category_id'] = Variable<String>(subCategoryId.value);
-    }
-    if (therapeuticGroupId.present) {
-      map['therapeutic_group_id'] = Variable<String>(therapeuticGroupId.value);
     }
     if (pharmaForm.present) {
       map['pharma_form'] = Variable<String>(pharmaForm.value);
@@ -5438,8 +4388,6 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
           ..write('equivalentDrug: $equivalentDrug, ')
           ..write('manufacturerId: $manufacturerId, ')
           ..write('categoryId: $categoryId, ')
-          ..write('subCategoryId: $subCategoryId, ')
-          ..write('therapeuticGroupId: $therapeuticGroupId, ')
           ..write('pharmaForm: $pharmaForm, ')
           ..write('dose: $dose, ')
           ..write('sizeVolume: $sizeVolume, ')
@@ -29458,10 +28406,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ManufacturersTable manufacturers = $ManufacturersTable(this);
-  late final $TherapeuticGroupsTable therapeuticGroups =
-      $TherapeuticGroupsTable(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
-  late final $SubCategoriesTable subCategories = $SubCategoriesTable(this);
   late final $UnitsTable units = $UnitsTable(this);
   late final $ItemUnitsTable itemUnits = $ItemUnitsTable(this);
   late final $ItemsTable items = $ItemsTable(this);
@@ -29518,10 +28463,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final $AccountingPeriodsTable accountingPeriods =
       $AccountingPeriodsTable(this);
-  late final Index idxSubCategoriesCategory = Index(
-    'idx_sub_categories_category',
-    'CREATE INDEX idx_sub_categories_category ON sub_categories (category_id)',
-  );
   late final Index idxItemUnitsItem = Index(
     'idx_item_units_item',
     'CREATE INDEX idx_item_units_item ON item_units (item_id)',
@@ -29549,14 +28490,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index idxItemsCategory = Index(
     'idx_items_category',
     'CREATE INDEX idx_items_category ON items (category_id)',
-  );
-  late final Index idxItemsSubCategory = Index(
-    'idx_items_sub_category',
-    'CREATE INDEX idx_items_sub_category ON items (sub_category_id)',
-  );
-  late final Index idxItemsTherapeuticGroup = Index(
-    'idx_items_therapeutic_group',
-    'CREATE INDEX idx_items_therapeutic_group ON items (therapeutic_group_id)',
   );
   late final Index idxItemsManufacturer = Index(
     'idx_items_manufacturer',
@@ -29828,9 +28761,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     manufacturers,
-    therapeuticGroups,
     categories,
-    subCategories,
     units,
     itemUnits,
     items,
@@ -29868,7 +28799,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     backups,
     appSettings,
     accountingPeriods,
-    idxSubCategoriesCategory,
     idxItemUnitsItem,
     idxItemUnitsPerLarge,
     idxItemsTradeName,
@@ -29876,8 +28806,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     idxItemsScientificName,
     idxItemsActiveIngredient,
     idxItemsCategory,
-    idxItemsSubCategory,
-    idxItemsTherapeuticGroup,
     idxItemsManufacturer,
     idxItemSuppliersItem,
     idxItemSuppliersSupplier,
@@ -30223,240 +29151,6 @@ typedef $$ManufacturersTableProcessedTableManager =
       ManufacturerRow,
       PrefetchHooks Function()
     >;
-typedef $$TherapeuticGroupsTableCreateCompanionBuilder =
-    TherapeuticGroupsCompanion Function({
-      required String id,
-      required String name,
-      Value<String?> description,
-      Value<bool> isActive,
-      required int createdAt,
-      required int updatedAt,
-      Value<int> rowid,
-    });
-typedef $$TherapeuticGroupsTableUpdateCompanionBuilder =
-    TherapeuticGroupsCompanion Function({
-      Value<String> id,
-      Value<String> name,
-      Value<String?> description,
-      Value<bool> isActive,
-      Value<int> createdAt,
-      Value<int> updatedAt,
-      Value<int> rowid,
-    });
-
-class $$TherapeuticGroupsTableFilterComposer
-    extends Composer<_$AppDatabase, $TherapeuticGroupsTable> {
-  $$TherapeuticGroupsTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-}
-
-class $$TherapeuticGroupsTableOrderingComposer
-    extends Composer<_$AppDatabase, $TherapeuticGroupsTable> {
-  $$TherapeuticGroupsTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$TherapeuticGroupsTableAnnotationComposer
-    extends Composer<_$AppDatabase, $TherapeuticGroupsTable> {
-  $$TherapeuticGroupsTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isActive =>
-      $composableBuilder(column: $table.isActive, builder: (column) => column);
-
-  GeneratedColumn<int> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<int> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-}
-
-class $$TherapeuticGroupsTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $TherapeuticGroupsTable,
-          TherapeuticGroupRow,
-          $$TherapeuticGroupsTableFilterComposer,
-          $$TherapeuticGroupsTableOrderingComposer,
-          $$TherapeuticGroupsTableAnnotationComposer,
-          $$TherapeuticGroupsTableCreateCompanionBuilder,
-          $$TherapeuticGroupsTableUpdateCompanionBuilder,
-          (
-            TherapeuticGroupRow,
-            BaseReferences<
-              _$AppDatabase,
-              $TherapeuticGroupsTable,
-              TherapeuticGroupRow
-            >,
-          ),
-          TherapeuticGroupRow,
-          PrefetchHooks Function()
-        > {
-  $$TherapeuticGroupsTableTableManager(
-    _$AppDatabase db,
-    $TherapeuticGroupsTable table,
-  ) : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$TherapeuticGroupsTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$TherapeuticGroupsTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$TherapeuticGroupsTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<String?> description = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
-                Value<int> createdAt = const Value.absent(),
-                Value<int> updatedAt = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => TherapeuticGroupsCompanion(
-                id: id,
-                name: name,
-                description: description,
-                isActive: isActive,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                required String id,
-                required String name,
-                Value<String?> description = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
-                required int createdAt,
-                required int updatedAt,
-                Value<int> rowid = const Value.absent(),
-              }) => TherapeuticGroupsCompanion.insert(
-                id: id,
-                name: name,
-                description: description,
-                isActive: isActive,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ),
-      );
-}
-
-typedef $$TherapeuticGroupsTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $TherapeuticGroupsTable,
-      TherapeuticGroupRow,
-      $$TherapeuticGroupsTableFilterComposer,
-      $$TherapeuticGroupsTableOrderingComposer,
-      $$TherapeuticGroupsTableAnnotationComposer,
-      $$TherapeuticGroupsTableCreateCompanionBuilder,
-      $$TherapeuticGroupsTableUpdateCompanionBuilder,
-      (
-        TherapeuticGroupRow,
-        BaseReferences<
-          _$AppDatabase,
-          $TherapeuticGroupsTable,
-          TherapeuticGroupRow
-        >,
-      ),
-      TherapeuticGroupRow,
-      PrefetchHooks Function()
-    >;
 typedef $$CategoriesTableCreateCompanionBuilder =
     CategoriesCompanion Function({
       required String id,
@@ -30695,267 +29389,6 @@ typedef $$CategoriesTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $CategoriesTable, CategoryRow>,
       ),
       CategoryRow,
-      PrefetchHooks Function()
-    >;
-typedef $$SubCategoriesTableCreateCompanionBuilder =
-    SubCategoriesCompanion Function({
-      required String id,
-      required String categoryId,
-      required String name,
-      Value<String?> nameEn,
-      Value<String?> description,
-      Value<bool> isActive,
-      required int createdAt,
-      required int updatedAt,
-      Value<int> rowid,
-    });
-typedef $$SubCategoriesTableUpdateCompanionBuilder =
-    SubCategoriesCompanion Function({
-      Value<String> id,
-      Value<String> categoryId,
-      Value<String> name,
-      Value<String?> nameEn,
-      Value<String?> description,
-      Value<bool> isActive,
-      Value<int> createdAt,
-      Value<int> updatedAt,
-      Value<int> rowid,
-    });
-
-class $$SubCategoriesTableFilterComposer
-    extends Composer<_$AppDatabase, $SubCategoriesTable> {
-  $$SubCategoriesTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get nameEn => $composableBuilder(
-    column: $table.nameEn,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnFilters(column),
-  );
-}
-
-class $$SubCategoriesTableOrderingComposer
-    extends Composer<_$AppDatabase, $SubCategoriesTable> {
-  $$SubCategoriesTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<String> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get nameEn => $composableBuilder(
-    column: $table.nameEn,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get isActive => $composableBuilder(
-    column: $table.isActive,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get updatedAt => $composableBuilder(
-    column: $table.updatedAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$SubCategoriesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $SubCategoriesTable> {
-  $$SubCategoriesTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<String> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get categoryId => $composableBuilder(
-    column: $table.categoryId,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get nameEn =>
-      $composableBuilder(column: $table.nameEn, builder: (column) => column);
-
-  GeneratedColumn<String> get description => $composableBuilder(
-    column: $table.description,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<bool> get isActive =>
-      $composableBuilder(column: $table.isActive, builder: (column) => column);
-
-  GeneratedColumn<int> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  GeneratedColumn<int> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
-}
-
-class $$SubCategoriesTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $SubCategoriesTable,
-          SubCategoryRow,
-          $$SubCategoriesTableFilterComposer,
-          $$SubCategoriesTableOrderingComposer,
-          $$SubCategoriesTableAnnotationComposer,
-          $$SubCategoriesTableCreateCompanionBuilder,
-          $$SubCategoriesTableUpdateCompanionBuilder,
-          (
-            SubCategoryRow,
-            BaseReferences<_$AppDatabase, $SubCategoriesTable, SubCategoryRow>,
-          ),
-          SubCategoryRow,
-          PrefetchHooks Function()
-        > {
-  $$SubCategoriesTableTableManager(_$AppDatabase db, $SubCategoriesTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$SubCategoriesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$SubCategoriesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$SubCategoriesTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<String> id = const Value.absent(),
-                Value<String> categoryId = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<String?> nameEn = const Value.absent(),
-                Value<String?> description = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
-                Value<int> createdAt = const Value.absent(),
-                Value<int> updatedAt = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => SubCategoriesCompanion(
-                id: id,
-                categoryId: categoryId,
-                name: name,
-                nameEn: nameEn,
-                description: description,
-                isActive: isActive,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                required String id,
-                required String categoryId,
-                required String name,
-                Value<String?> nameEn = const Value.absent(),
-                Value<String?> description = const Value.absent(),
-                Value<bool> isActive = const Value.absent(),
-                required int createdAt,
-                required int updatedAt,
-                Value<int> rowid = const Value.absent(),
-              }) => SubCategoriesCompanion.insert(
-                id: id,
-                categoryId: categoryId,
-                name: name,
-                nameEn: nameEn,
-                description: description,
-                isActive: isActive,
-                createdAt: createdAt,
-                updatedAt: updatedAt,
-                rowid: rowid,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
-              .toList(),
-          prefetchHooksCallback: null,
-        ),
-      );
-}
-
-typedef $$SubCategoriesTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $SubCategoriesTable,
-      SubCategoryRow,
-      $$SubCategoriesTableFilterComposer,
-      $$SubCategoriesTableOrderingComposer,
-      $$SubCategoriesTableAnnotationComposer,
-      $$SubCategoriesTableCreateCompanionBuilder,
-      $$SubCategoriesTableUpdateCompanionBuilder,
-      (
-        SubCategoryRow,
-        BaseReferences<_$AppDatabase, $SubCategoriesTable, SubCategoryRow>,
-      ),
-      SubCategoryRow,
       PrefetchHooks Function()
     >;
 typedef $$UnitsTableCreateCompanionBuilder =
@@ -31429,9 +29862,7 @@ typedef $$ItemsTableCreateCompanionBuilder =
       Value<String?> activeIngredient,
       Value<String?> equivalentDrug,
       Value<String?> manufacturerId,
-      required String categoryId,
-      Value<String?> subCategoryId,
-      Value<String?> therapeuticGroupId,
+      Value<String?> categoryId,
       Value<String?> pharmaForm,
       Value<String?> dose,
       Value<String?> sizeVolume,
@@ -31478,9 +29909,7 @@ typedef $$ItemsTableUpdateCompanionBuilder =
       Value<String?> activeIngredient,
       Value<String?> equivalentDrug,
       Value<String?> manufacturerId,
-      Value<String> categoryId,
-      Value<String?> subCategoryId,
-      Value<String?> therapeuticGroupId,
+      Value<String?> categoryId,
       Value<String?> pharmaForm,
       Value<String?> dose,
       Value<String?> sizeVolume,
@@ -31572,16 +30001,6 @@ class $$ItemsTableFilterComposer extends Composer<_$AppDatabase, $ItemsTable> {
 
   ColumnFilters<String> get categoryId => $composableBuilder(
     column: $table.categoryId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get subCategoryId => $composableBuilder(
-    column: $table.subCategoryId,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get therapeuticGroupId => $composableBuilder(
-    column: $table.therapeuticGroupId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -31810,16 +30229,6 @@ class $$ItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get subCategoryId => $composableBuilder(
-    column: $table.subCategoryId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get therapeuticGroupId => $composableBuilder(
-    column: $table.therapeuticGroupId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get pharmaForm => $composableBuilder(
     column: $table.pharmaForm,
     builder: (column) => ColumnOrderings(column),
@@ -32041,16 +30450,6 @@ class $$ItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get subCategoryId => $composableBuilder(
-    column: $table.subCategoryId,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get therapeuticGroupId => $composableBuilder(
-    column: $table.therapeuticGroupId,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<String> get pharmaForm => $composableBuilder(
     column: $table.pharmaForm,
     builder: (column) => column,
@@ -32244,9 +30643,7 @@ class $$ItemsTableTableManager
                 Value<String?> activeIngredient = const Value.absent(),
                 Value<String?> equivalentDrug = const Value.absent(),
                 Value<String?> manufacturerId = const Value.absent(),
-                Value<String> categoryId = const Value.absent(),
-                Value<String?> subCategoryId = const Value.absent(),
-                Value<String?> therapeuticGroupId = const Value.absent(),
+                Value<String?> categoryId = const Value.absent(),
                 Value<String?> pharmaForm = const Value.absent(),
                 Value<String?> dose = const Value.absent(),
                 Value<String?> sizeVolume = const Value.absent(),
@@ -32292,8 +30689,6 @@ class $$ItemsTableTableManager
                 equivalentDrug: equivalentDrug,
                 manufacturerId: manufacturerId,
                 categoryId: categoryId,
-                subCategoryId: subCategoryId,
-                therapeuticGroupId: therapeuticGroupId,
                 pharmaForm: pharmaForm,
                 dose: dose,
                 sizeVolume: sizeVolume,
@@ -32340,9 +30735,7 @@ class $$ItemsTableTableManager
                 Value<String?> activeIngredient = const Value.absent(),
                 Value<String?> equivalentDrug = const Value.absent(),
                 Value<String?> manufacturerId = const Value.absent(),
-                required String categoryId,
-                Value<String?> subCategoryId = const Value.absent(),
-                Value<String?> therapeuticGroupId = const Value.absent(),
+                Value<String?> categoryId = const Value.absent(),
                 Value<String?> pharmaForm = const Value.absent(),
                 Value<String?> dose = const Value.absent(),
                 Value<String?> sizeVolume = const Value.absent(),
@@ -32388,8 +30781,6 @@ class $$ItemsTableTableManager
                 equivalentDrug: equivalentDrug,
                 manufacturerId: manufacturerId,
                 categoryId: categoryId,
-                subCategoryId: subCategoryId,
-                therapeuticGroupId: therapeuticGroupId,
                 pharmaForm: pharmaForm,
                 dose: dose,
                 sizeVolume: sizeVolume,
@@ -43948,12 +42339,8 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$ManufacturersTableTableManager get manufacturers =>
       $$ManufacturersTableTableManager(_db, _db.manufacturers);
-  $$TherapeuticGroupsTableTableManager get therapeuticGroups =>
-      $$TherapeuticGroupsTableTableManager(_db, _db.therapeuticGroups);
   $$CategoriesTableTableManager get categories =>
       $$CategoriesTableTableManager(_db, _db.categories);
-  $$SubCategoriesTableTableManager get subCategories =>
-      $$SubCategoriesTableTableManager(_db, _db.subCategories);
   $$UnitsTableTableManager get units =>
       $$UnitsTableTableManager(_db, _db.units);
   $$ItemUnitsTableTableManager get itemUnits =>

@@ -337,7 +337,12 @@ void main() {
 
     await _enterTradeName(tester, 'منتج بالعيار');
     await _selectCombo(tester, 'التصنيف', 'أدوية');
-    await _tapChip(tester, 'باراسيتامول');
+    // The active-ingredient selector is searchable (§Phase 18): type to reveal
+    // matches, then tap the row to add it with its strength.
+    await tester.enterText(_fieldByLabel('ابحث عن مادة فعالة…'), 'باراسيتا');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('باراسيتامول').last);
+    await tester.pumpAndSettle();
     await tester.enterText(_fieldByLabel('العيار'), '500 ملغ');
     await tester.pumpAndSettle();
     await _selectCombo(tester, 'الأجزاء', 'ظرف');

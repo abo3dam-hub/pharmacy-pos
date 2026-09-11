@@ -11,13 +11,14 @@ import 'package:pharmacy_pos/shared/database/app_database.dart';
 
 import 'helpers.dart';
 
-Future<String> _group(AppDatabase db) async {
+Future<String> _ingredient(AppDatabase db, String id, String name,
+    {String? nameEn}) async {
   final now = DateTime.now().millisecondsSinceEpoch;
-  const id = 'tg_smart_test';
-  await db.into(db.therapeuticGroups).insert(
-        TherapeuticGroupsCompanion.insert(
+  await db.into(db.activeIngredients).insert(
+        ActiveIngredientsCompanion.insert(
           id: id,
-          name: 'مضادات الالتهاب',
+          name: name,
+          nameEn: Value(nameEn),
           createdAt: now,
           updatedAt: now,
         ),
@@ -26,15 +27,28 @@ Future<String> _group(AppDatabase db) async {
   return id;
 }
 
+Future<void> _linkIngredient(
+    AppDatabase db, String itemId, String ingredientId) async {
+  await db.into(db.itemActiveIngredients).insert(
+        ItemActiveIngredientsCompanion.insert(
+          id: 'iai_${itemId}_$ingredientId',
+          itemId: itemId,
+          activeIngredientId: ingredientId,
+          strength: const Value(null),
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+}
+
 Future<String> _item(
   AppDatabase db, {
   required String id,
   required String name,
   required String? scientificName,
-  required String? ingredient,
+  String? ingredient,
   required String? dose,
   required String? form,
-  required String? group,
+  List<String> ingredients = const [],
   int stock = 0,
 }) async {
   final now = DateTime.now().millisecondsSinceEpoch;
@@ -48,8 +62,6 @@ Future<String> _item(
           activeIngredient: Value(ingredient),
           dose: Value(dose),
           pharmaForm: Value(form),
-          therapeuticGroupId: Value(group),
-          categoryId: 'cat_test_default',
           sellingPriceMicros: const Value(5000),
           vatRateBasisPoints: const Value(1500),
           isActive: const Value(true),
@@ -57,6 +69,9 @@ Future<String> _item(
           updatedAt: now,
         ),
       );
+  for (final ai in ingredients) {
+    await _linkIngredient(db, id, ai);
+  }
   if (stock > 0) {
     await insertBatch(db, id, quantityBase: stock);
   }
@@ -73,7 +88,11 @@ void main() {
   setUp(() async {
     db = newDatabase();
     await awaitCategory(db);
-    final group = await _group(db);
+    final aiPara = await _ingredient(db, 'ai_paracetamol', 'Paracetamol',
+        nameEn: 'Paracetamol');
+    await _ingredient(db, 'ai_caffeine', 'Caffeine', nameEn: 'Caffeine');
+    await _ingredient(db, 'ai_ibuprofen', 'Ibuprofen', nameEn: 'Ibuprofen');
+
     await _item(
       db,
       id: 'item_req',
@@ -82,7 +101,7 @@ void main() {
       ingredient: 'Paracetamol',
       dose: '500 mg',
       form: 'tablet',
-      group: group,
+      ingredients: [aiPara],
       stock: 10,
     );
     await _item(
@@ -90,10 +109,9 @@ void main() {
       id: 'item_t1',
       name: 'Paracetamol 500 x100',
       scientificName: 'Paracetamol',
-      ingredient: 'Paracetamol',
       dose: '500 mg',
       form: 'tablet',
-      group: group,
+      ingredients: [aiPara],
       stock: 25,
     );
     await _item(
@@ -101,10 +119,9 @@ void main() {
       id: 'item_t2',
       name: 'Paracetamol Syrup',
       scientificName: 'Paracetamol',
-      ingredient: 'Paracetamol',
       dose: '250 mg',
       form: 'suspension',
-      group: group,
+      ingredients: [aiPara],
       stock: 15,
     );
     await _item(
@@ -112,10 +129,9 @@ void main() {
       id: 'item_t3',
       name: 'Cold Relief',
       scientificName: 'Paracetamol+',
-      ingredient: 'Paracetamol + Caffeine',
       dose: null,
       form: null,
-      group: group,
+      ingredients: [aiPara, 'ai_caffeine'],
       stock: 5,
     );
     await _item(
@@ -123,23 +139,32 @@ void main() {
       id: 'item_out',
       name: 'Paracetamol Out',
       scientificName: 'Paracetamol',
-      ingredient: 'Paracetamol',
       dose: '500 mg',
       form: 'tablet',
-      group: group,
+      ingredients: [aiPara],
       stock: 0,
     );
-    // Same group but unrelated ingredient → candidate but not an alternative.
+    // Unrelated relational ingredient → candidate AND ranked-out.
     await _item(
       db,
       id: 'item_other',
       name: 'Ibuprofen',
       scientificName: 'Ibuprofen',
-      ingredient: 'Ibuprofen',
       dose: '400 mg',
       form: 'tablet',
-      group: group,
+      ingredients: ['ai_ibuprofen'],
       stock: 7,
+    );
+    // Legacy row: only the flat activeIngredient column, no relations.
+    await _item(
+      db,
+      id: 'item_legacy',
+      name: 'Legacy Paracetamol',
+      scientificName: 'Paracetamol',
+      ingredient: 'Paracetamol',
+      dose: '500 mg',
+      form: 'tablet',
+      stock: 3,
     );
     dao = PosCatalogDao(db);
     repo = SalesRepositoryImpl(
@@ -153,17 +178,17 @@ void main() {
 
   tearDown(() async => db.close());
 
-  test('alternativeCandidates returns the broad family superset', () async {
-    final candidates = await dao.alternativeCandidates(
-      itemId: 'item_req',
-      therapeuticGroupId: 'tg_smart_test',
-      activeIngredient: 'Paracetamol',
-    );
+  test('alternativeCandidates returns the relational superset', () async {
+    final candidates = await dao.alternativeCandidates(itemId: 'item_req');
     final ids = {for (final c in candidates) c.id};
     expect(ids, isNotEmpty);
-    // Superset: same group OR ingredient, always with sellable stock.
+    // Relational junction sharing drives candidate generation.
     expect(ids, contains('item_t1'));
-    expect(ids, contains('item_other'));
+    expect(ids, contains('item_t3'));
+    expect(ids, contains('item_legacy'),
+        reason: 'legacy flat activeIngredient fallback still supplies candidates');
+    expect(ids, isNot(contains('item_other')),
+        reason: 'no shared ingredient → not a candidate (no therapeutic group)');
     expect(candidates.any((c) => c.id == 'item_out'), isFalse,
         reason: 'unavailable items are excluded from the candidate set');
   });
@@ -177,13 +202,27 @@ void main() {
     expect(alts.map((a) => a.item.id), isNot(contains('item_other')));
     expect(alts.map((a) => a.item.id), isNot(contains('item_out')));
 
-    expect(alts.map((a) => a.item.id), containsAll(['item_t1', 'item_t2', 'item_t3']));
+    expect(
+        alts.map((a) => a.item.id),
+        containsAll(
+            ['item_t1', 'item_t2', 'item_t3', 'item_legacy']));
     expect(alts.firstWhere((a) => a.item.id == 'item_t1').tier,
         SmartAlternativeTier.tier1);
     expect(alts.firstWhere((a) => a.item.id == 'item_t2').tier,
         SmartAlternativeTier.tier2);
     expect(alts.firstWhere((a) => a.item.id == 'item_t3').tier,
-        SmartAlternativeTier.tier3);
+        SmartAlternativeTier.tier3,
+        reason: 'multi-ingredient candidate keeps tier3 via relational names');
+    expect(alts.firstWhere((a) => a.item.id == 'item_legacy').tier,
+        SmartAlternativeTier.tier1,
+        reason: 'legacy flat ingredient ranks via the flat fallback token');
+  });
+
+  test('relational ingredient names hydrate into the snapshot', () async {
+    final item = (await dao.byId('item_t3'))!;
+    expect(item.relationalIngredientNames, containsAll(['Paracetamol', 'Caffeine']));
+    final req = (await dao.byId('item_req'))!;
+    expect(req.relationalIngredientNames, ['Paracetamol']);
   });
 
   test('hydration carries dose / pharmaForm / sizeVolume into the item snapshot',

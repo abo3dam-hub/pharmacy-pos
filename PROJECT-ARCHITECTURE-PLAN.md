@@ -180,6 +180,9 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 > - **Timestamps** → INTEGER Unix epoch **milliseconds** (UTC), display localized.
 > - `PK` = Primary Key; `FK` = Foreign Key; `NN` = NOT NULL; `nullable` = NULL allowed.
 > - **Audit:** every mutation of sensitive fields requires audit logging (§17).
+>
+> **Phase 18 change (schema v12, see `PHASE18-PRODUCT-MASTER-CONTRACT-IMPORT-READINESS-COMPLETION-REPORT.md`):**
+> the `sub_categories` and `therapeutic_groups` tables were **removed** (legacy replace-data tables are dropped, keeping only the `'therapeutic_group'` audit label key for old audit rows). Item classification collapses to a single **optional** `category_id` FK→`categories.id`; the Phase 18 product contract only requires a **trade name**, and active-ingredient/indication relationships live in the relational `item_active_ingredients` / `item_indications` join tables.
 
 ---
 
@@ -187,9 +190,12 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 
 ```
 [manufacturers] 1──<[items]
-[therapeutic_groups] 1──<[items]
-[categories] 1──<[sub_categories] 1──<[items]
+[categories] 1──<[items]         (sub_categories & therapeutic_groups removed in Phase 18/v12)
 [units] 1──<[item_units] >──1 [items]
+
+[items] 1──<[item_active_ingredients] >──[active_ingredients]
+[items] 1──<[item_indications] >──[indications]
+[items] 1──<[item_suppliers] >──[suppliers]
 
 [items] 1──<[batches]
 [batches] 1──<[stock_movements]
@@ -243,8 +249,8 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 
 ---
 
-### 4.2 `therapeutic_groups`
-**Purpose:** independent master list of therapeutic groups (Item.Therapeutic Group is a **FK**).
+### 4.2 `therapeutic_groups` — *(REMOVED in Phase 18 / schema v12)*
+**Purpose (historical):** independent master list of therapeutic groups. The table and its code were dropped in Phase 18; audit rows keep the `'therapeutic_group'` entity-type label. No active code references it.
 
 | Field | Type | NN | Default | Notes |
 |-------|------|----|---------|-------|
@@ -276,8 +282,8 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 
 ---
 
-### 4.4 `sub_categories`
-**Purpose:** sub-categories belonging to one main category (Arabic: التصنيف الفرعي). A dedicated table (1-2 levels: main + sub).
+### 4.4 `sub_categories` — *(REMOVED in Phase 18 / schema v12)*
+**Purpose (historical):** sub-categories belonging to one main category. The table was dropped in Phase 18; classification is a single optional `items.category_id` FK. No active code references it.
 
 | Field | Type | NN | Default | Notes |
 |-------|------|----|---------|-------|
@@ -338,9 +344,9 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 | active_ingredients | TEXT | nullable | NULL | Active Ingredients / Composition |
 | equivalent_drug | TEXT | nullable | NULL | Equivalent Drug (free reference / note) |
 | manufacturer_id | TEXT | FK→`manufacturers.id` | nullable | FK to independent Manufacturers table |
-| main_category_id | TEXT | FK→`categories.id` | NN | FK to Main Category |
-| sub_category_id | TEXT | FK→`sub_categories.id` | nullable | FK to Sub-Category |
-| therapeutic_group_id | TEXT | FK→`therapeutic_groups.id` | nullable | FK to independent Therapeutic Groups table |
+| category_id | TEXT | FK→`categories.id` | nullable | Main Category (التصنيف) — **optional** in the Phase 18 contract |
+| ~~sub_category_id~~ | — | — | — | removed in Phase 18/v12 |
+| ~~therapeutic_group_id~~ | — | — | — | removed in Phase 18/v12 |
 
 #### Pharmaceutical specifications
 | Field | Type | NN | Default | Notes |
@@ -392,7 +398,7 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 | created_at | INTEGER | NN | now | |
 | updated_at | INTEGER | NN | now | |
 
-**Indexes:** `primary_barcode` (unique where non-null), `secondary_barcode`, `trade_name_1`, `trade_name_2`, `scientific_name`, `active_ingredients` (prefix/search index), `manufacturer_id`, `main_category_id`, `sub_category_id`, `therapeutic_group_id`.
+**Indexes:** `primary_barcode` (unique where non-null), `secondary_barcode`, `trade_name_1`, `trade_name_2`, `scientific_name`, `active_ingredients` (prefix/search index), `manufacturer_id`, `category_id`. (sub_category / therapeutic_group indexes dropped with their tables in Phase 18.)
 
 **Business rules:**
 - Manufacturer, Main Category, Sub-Category, and Therapeutic Group are **FKs to standalone tables** (§4.1–4.4), not free text.
@@ -853,8 +859,10 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 | items / medicines | `items` | Product master data |
 | batches | `batches` | Batch/expiry/cost/quantity |
 | categories | `categories` | Main categories |
-| sub_categories | `sub_categories` | Sub-categories of a main category |
-| therapeutic_groups | `therapeutic_groups` | Independent medical classification master |
+| ~~sub_categories~~ | — | removed in Phase 18/v12 |
+| ~~therapeutic_groups~~ | — | removed in Phase 18/v12 |
+| active_ingredients | `active_ingredients`, `item_active_ingredients` | Active-ingredient master + item joins (strengths) |
+| indications | `indications`, `item_indications` | Indication master + item joins |
 | manufacturers | `manufacturers` | Independent manufacturer master |
 | suppliers | `suppliers` | Supplier master |
 | customers | `customers` | Customer/patient master |
@@ -894,9 +902,9 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 | Active Ingredients / Composition | `items.active_ingredients` |
 | Equivalent Drug | `items.equivalent_drug` |
 | Manufacturer | `items.manufacturer_id` FK → `manufacturers` |
-| Main Category | `items.main_category_id` FK → `categories` |
-| Sub-Category | `items.sub_category_id` FK → `sub_categories` |
-| Therapeutic Group | `items.therapeutic_group_id` FK → `therapeutic_groups` |
+| Main Category | `items.category_id` FK → `categories` (optional in Phase 18) |
+| ~~Sub-Category~~ | removed in Phase 18/v12 |
+| ~~Therapeutic Group~~ | removed in Phase 18/v12 |
 
 ### Pharmaceutical Specifications
 | Requirement | Column |
@@ -1687,6 +1695,7 @@ Full POS workspaces UI, full accounting UI, smart-alternatives UI, scanner hardw
 - **Phase 14 — Polish & Hardening:** RTL QA, responsive polish, shortcuts, performance, accessibility.
 - **Phase 15 — Testing & CI/CD:** coverage thresholds, integration suite, release pipelines.
 - **Phase 16 — Release:** installer (Inno Setup/MSIX), icons/splash, docs, tag `v1.0.0`, GitHub Release artifacts.
+- **Phase 18 (delivered) — Product Master Contract & Import Readiness:** schema v12 (dropped `sub_categories` + `therapeutic_groups`, nullable `category_id`), simplified product contract (trade name required; units/parts/category optional), relational active-ingredient + indication joins surfaced on product views, searchable multi-row ingredient selector, relational Smart Alternatives with flat-token fallback, minimal-row Excel import with trade-name matching and `name:strength` ingredient parsing, and targeted (non-generic) save error mapping. Full detail in `PHASE18-PRODUCT-MASTER-CONTRACT-IMPORT-READINESS-COMPLETION-REPORT.md`.
 
 ---
 

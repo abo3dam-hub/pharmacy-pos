@@ -126,6 +126,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   late final Set<String> _selectedSupplierIds;
   late final Set<String> _selectedActiveIngredientIds;
   late final Set<String> _selectedIndicationIds;
+  String _ingredientSearch = '';
   bool _partialSaleEnabled = false;
   bool _partPriceManual = false;
 
@@ -150,7 +151,9 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     _isControlled = _initial.isControlledDrug;
     _lockAutoPrice = _initial.lockAutoPriceUpdate;
     _requiresPrescription = _initial.requiresPrescription;
-    _categoryId = _initial.categoryId.isEmpty ? null : _initial.categoryId;
+    _categoryId = (_initial.categoryId == null || _initial.categoryId!.isEmpty)
+        ? null
+        : _initial.categoryId;
     _manufacturerId = _initial.manufacturerId;
     _partUnitId = _initial.units?.baseUnitId;
     _largeUnitId = _initial.units?.largeUnitId;
@@ -366,9 +369,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       activeIngredient: _emptyToNull(_c('activeIngredient').text),
       equivalentDrug: _emptyToNull(_c('equivalentDrug').text),
       manufacturerId: _manufacturerId,
-      categoryId: _categoryId!,
-      subCategoryId: _initial.subCategoryId,
-      therapeuticGroupId: _initial.therapeuticGroupId,
+      categoryId: _categoryId,
       pharmaForm: _emptyToNull(_c('pharmaForm').text),
       dose: _emptyToNull(_c('dose').text),
       sizeVolume: _emptyToNull(_c('sizeVolume').text),
@@ -428,6 +429,19 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       if (i.id == id) return i.name;
     }
     return id;
+  }
+
+  /// Active ingredients matching the search query that are not already
+  /// selected (case-insensitive over name and English name).
+  List<ActiveIngredientRow> _matchingIngredients(String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+    return _activeIngredients
+        .where((i) =>
+            !_selectedActiveIngredientIds.contains(i.id) &&
+            (i.name.toLowerCase().contains(q) ||
+                (i.nameEn ?? '').toLowerCase().contains(q)))
+        .toList();
   }
 
   // ----- inline master-data + supplier creation -----
@@ -604,38 +618,60 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                   ],
                 ),
                 _section(l10n.itemActiveIngredients),
-                Wrap(
-                  spacing: AppSpacing.s,
-                  runSpacing: AppSpacing.s,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    for (final ingredient in _activeIngredients)
-                      FilterChip(
-                        label: Text(ingredient.name,
-                            overflow: TextOverflow.ellipsis),
-                        visualDensity: VisualDensity.compact,
-                        selected: _selectedActiveIngredientIds
-                            .contains(ingredient.id),
-                        onSelected: (on) => setState(() {
-                          if (on) {
-                            _selectedActiveIngredientIds.add(ingredient.id);
-                          } else {
-                            _selectedActiveIngredientIds
-                                .remove(ingredient.id);
-                          }
-                        }),
-                      ),
-                    if (widget.onCreateMasterData != null)
-                      _addButton(l10n.itemAddNew,
-                          () => _addMasterData(MasterDataKind.activeIngredient)),
-                  ],
+                if (widget.onCreateMasterData != null)
+                  _addButton(l10n.itemAddNew,
+                      () => _addMasterData(MasterDataKind.activeIngredient)),
+                const SizedBox(height: AppSpacing.xs),
+                SizedBox(
+                  width: 380,
+                  child: TextField(
+                    onChanged: (v) => setState(() => _ingredientSearch = v),
+                    decoration: InputDecoration(
+                      labelText: l10n.itemActiveIngredientsSearch,
+                      isDense: true,
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                    ),
+                  ),
                 ),
+                const SizedBox(height: AppSpacing.xs),
+                if (_ingredientSearch.trim().isNotEmpty)
+                  for (final ingredient
+                      in _matchingIngredients(_ingredientSearch).take(8))
+                    ListTile(
+                      dense: true,
+                      visualDensity: VisualDensity.compact,
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.add_circle_outline, size: 18),
+                      title: Text(ingredient.name,
+                          overflow: TextOverflow.ellipsis),
+                      onTap: () => setState(() {
+                        _selectedActiveIngredientIds.add(ingredient.id);
+                        _ingredientSearch = '';
+                      }),
+                    ),
+                if (_selectedActiveIngredientIds.isEmpty &&
+                    _ingredientSearch.trim().isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                    child: Text(l10n.itemActiveIngredientsHint,
+                        style: context.appTypography.labelSmall),
+                  ),
                 for (final id in _selectedActiveIngredientIds.toList())
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline,
+                              size: 18),
+                          visualDensity: VisualDensity.compact,
+                          tooltip: l10n.itemActiveIngredientsRemove,
+                          onPressed: () => setState(() {
+                            _selectedActiveIngredientIds.remove(id);
+                            _strengthControllers.remove(id)?.dispose();
+                          }),
+                        ),
                         SizedBox(
                           width: 220,
                           child: Text(

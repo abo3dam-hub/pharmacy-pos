@@ -35,6 +35,7 @@ class _CategoriesTabState extends ConsumerState<CategoriesTab> {
     final l10n = AppLocalizations.of(context);
     final message = switch (failure) {
       UnauthorizedFailure() => l10n.authPermissionDenied,
+      DatabaseFailure(message: final m) when (m).trim().isNotEmpty => m,
       _ => l10n.authSaveError,
     };
     ScaffoldMessenger.of(context)

@@ -96,7 +96,7 @@ void main() {
           id: 'old_item',
           primaryBarcode: const Value('999'),
           tradeName: 'قديم',
-          categoryId: 'cat_test_default',
+          categoryId: const Value('cat_test_default'),
           createdAt: now,
           updatedAt: now,
         ));

@@ -25,7 +25,6 @@ PosCatalogItem _makePartialItem() => const PosCatalogItem(
       tradeNameEn: 'Panadol',
       scientificName: 'Paracetamol',
       activeIngredient: 'Paracetamol',
-      therapeuticGroupId: 'tg_1',
       primaryBarcode: '6291041500213',
       isControlledDrug: false,
       requiresPrescription: false,
@@ -218,7 +217,6 @@ PosCatalogItem _altItem({
   required String activeIngredient,
   String? dose,
   String? pharmaForm,
-  String? therapeuticGroupId = 'tg_1',
   int availableStockBase = 10,
   bool isActive = true,
 }) =>
@@ -228,7 +226,6 @@ PosCatalogItem _altItem({
       tradeNameEn: tradeName,
       scientificName: 'Sci $id',
       activeIngredient: activeIngredient,
-      therapeuticGroupId: therapeuticGroupId,
       primaryBarcode: 'b_$id',
       secondaryBarcode: null,
       isControlledDrug: false,

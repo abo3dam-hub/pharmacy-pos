@@ -5,7 +5,7 @@ const int kBackupFormatVersion = 1;
 
 /// The highest schema version this application can read. Backups with a
 /// `schemaVersion` above this value are rejected (no downgrade, ever).
-int get kCurrentSupportedSchemaVersion => 11;
+int get kCurrentSupportedSchemaVersion => 12;
 
 /// Logical layout of the self-contained backup archive (§37).
 ///

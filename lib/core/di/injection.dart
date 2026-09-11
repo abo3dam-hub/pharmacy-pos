@@ -14,7 +14,6 @@ import '../../data/daos/prescription_dao.dart';
 import '../../data/daos/purchase_dao.dart';
 import '../../data/daos/supplier_dao.dart';
 import '../../data/daos/stock_movement_dao.dart';
-import '../../data/daos/therapeutic_group_dao.dart';
 import '../../data/daos/unit_dao.dart';
 import '../../domain/services/audit_service.dart';
 import '../../domain/services/app_paths.dart';
@@ -80,7 +79,6 @@ import '../../features/inventory/domain/usecases/bulk_use_cases.dart';
 import '../../features/inventory/domain/usecases/categories_use_cases.dart';
 import '../../features/inventory/domain/usecases/create_item.dart';
 import '../../features/inventory/domain/usecases/excel_use_cases.dart';
-import '../../features/inventory/domain/usecases/groups_use_cases.dart';
 import '../../features/inventory/domain/usecases/indications_use_cases.dart';
 import '../../features/inventory/domain/usecases/list_items.dart';
 import '../../features/inventory/domain/usecases/manufacturers_use_cases.dart';
@@ -158,8 +156,6 @@ void setupDependencies() {
       () => ItemIndicationDao(db));
   getIt.registerLazySingleton<CategoryDao>(() => CategoryDao(db));
   getIt.registerLazySingleton<ManufacturerDao>(() => ManufacturerDao(db));
-  getIt.registerLazySingleton<TherapeuticGroupDao>(
-      () => TherapeuticGroupDao(db));
   getIt.registerLazySingleton<SupplierDao>(() => SupplierDao(db));
   getIt.registerLazySingleton<PurchaseDao>(() => PurchaseDao(db));
   getIt.registerLazySingleton<CustomerDao>(() => CustomerDao(db));
@@ -520,7 +516,6 @@ void _registerInventory(AppDatabase db) {
       getIt<ItemDao>(),
       getIt<CategoryDao>(),
       getIt<ManufacturerDao>(),
-      getIt<TherapeuticGroupDao>(),
       getIt<UnitDao>(),
       getIt<BatchDao>(),
       getIt<StockMovementDao>(),
@@ -571,8 +566,6 @@ void _registerInventory(AppDatabase db) {
       () => ListCategoriesUseCase(repo, perms));
   getIt.registerLazySingleton<SaveCategoryUseCase>(
       () => SaveCategoryUseCase(repo, perms, audit));
-  getIt.registerLazySingleton<SaveSubCategoryUseCase>(
-      () => SaveSubCategoryUseCase(repo, perms, audit));
   getIt.registerLazySingleton<SetCategoryActiveUseCase>(
       () => SetCategoryActiveUseCase(repo, perms, audit));
   getIt.registerLazySingleton<ListManufacturersUseCase>(
@@ -583,12 +576,6 @@ void _registerInventory(AppDatabase db) {
       () => SetManufacturerActiveUseCase(repo, perms, audit));
   getIt.registerLazySingleton<AllManufacturersUseCase>(
       () => AllManufacturersUseCase(repo, perms));
-  getIt.registerLazySingleton<ListTherapeuticGroupsUseCase>(
-      () => ListTherapeuticGroupsUseCase(repo, perms));
-  getIt.registerLazySingleton<SaveTherapeuticGroupUseCase>(
-      () => SaveTherapeuticGroupUseCase(repo, perms, audit));
-  getIt.registerLazySingleton<SetTherapeuticGroupActiveUseCase>(
-      () => SetTherapeuticGroupActiveUseCase(repo, perms, audit));
   getIt.registerLazySingleton<ListUnitsUseCase>(
       () => ListUnitsUseCase(repo, perms));
   getIt.registerLazySingleton<SaveUnitUseCase>(
@@ -631,14 +618,10 @@ void _registerInventory(AppDatabase db) {
       () => MasterDataController(
             getIt<ListCategoriesUseCase>(),
             getIt<SaveCategoryUseCase>(),
-            getIt<SaveSubCategoryUseCase>(),
             getIt<SetCategoryActiveUseCase>(),
             getIt<SaveManufacturerUseCase>(),
             getIt<SetManufacturerActiveUseCase>(),
             getIt<AllManufacturersUseCase>(),
-            getIt<ListTherapeuticGroupsUseCase>(),
-            getIt<SaveTherapeuticGroupUseCase>(),
-            getIt<SetTherapeuticGroupActiveUseCase>(),
             getIt<ListUnitsUseCase>(),
             getIt<SaveUnitUseCase>(),
             getIt<ListActiveIngredientsUseCase>(),

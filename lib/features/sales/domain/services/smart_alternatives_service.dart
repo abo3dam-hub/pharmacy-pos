@@ -35,6 +35,18 @@ class SmartAlternativesService {
         .toSet();
   }
 
+  /// Composition tokens for comparison: the legacy flat `activeIngredient`
+  /// column plus the relational `item_active_ingredients` names (§4.2b), so
+  /// items that only carry relational ingredient rows still rank (Phase 18).
+  static Set<String> compositionTokens(PosCatalogItem item) {
+    final parts = <String>[];
+    if (item.activeIngredient != null && item.activeIngredient!.trim().isNotEmpty) {
+      parts.add(item.activeIngredient!);
+    }
+    parts.addAll(item.relationalIngredientNames);
+    return ingredientTokens(parts.join(' + '));
+  }
+
   /// Ranks [candidates] against [requested] and keeps the closest [limit]
   /// alternatives. Out-of-stock and non-active candidates are dropped.
   List<SmartAlternative> rank(
@@ -42,14 +54,14 @@ class SmartAlternativesService {
     List<PosCatalogItem> candidates, {
     int limit = 12,
   }) {
-    final targets = ingredientTokens(requested.activeIngredient);
+    final targets = compositionTokens(requested);
     // Candidates that share no ingredient tokens are excluded.
     final scored = <({PosCatalogItem item, SmartAlternativeTier tier})>[];
     for (final candidate in candidates) {
       if (candidate.id == requested.id) continue;
       if (!candidate.isActive) continue;
       if (candidate.availableStockBase <= 0) continue;
-      final tokens = ingredientTokens(candidate.activeIngredient);
+      final tokens = compositionTokens(candidate);
       if (tokens.isEmpty) continue;
       final tier = _tierFor(requested, candidate, targets: targets, tokens: tokens);
       if (tier != null) scored.add((item: candidate, tier: tier));

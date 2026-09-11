@@ -878,6 +878,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activeIngredientStrength => 'Strength';
 
   @override
+  String get itemActiveIngredientsSearch => 'Search active ingredient…';
+
+  @override
+  String get itemActiveIngredientsHint =>
+      'Search and add active ingredients with their strength';
+
+  @override
+  String get itemActiveIngredientsRemove => 'Remove active ingredient';
+
+  @override
   String get itemIndications => 'Indications';
 
   @override

@@ -28,7 +28,7 @@ void main() {
       tradeName: 'بانادول إكسترا',
       tradeNameEn: Value('Panadol Extra'),
       scientificName: Value('Paracetamol + Caffeine'),
-      categoryId: 'cat_test_default',
+      categoryId: const Value('cat_test_default'),
       createdAt: now,
       updatedAt: now,
     ));

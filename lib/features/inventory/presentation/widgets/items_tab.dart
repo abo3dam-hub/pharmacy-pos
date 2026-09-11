@@ -91,6 +91,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       InsufficientStockFailure() => failure.message,
       ExpiredBatchFailure() => failure.message,
       InvalidOperationFailure() => failure.message,
+      DatabaseFailure(message: final m) when (m).trim().isNotEmpty => m,
       _ => l10n.authSaveError,
     };
     ScaffoldMessenger.of(context)

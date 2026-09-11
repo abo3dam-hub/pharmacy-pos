@@ -133,37 +133,75 @@ final query = _db.select(_db.items);
   }
 
   /// Bounded candidate set for the smart-alternatives engine (§18): products
-  /// in the same therapeutic group OR matching any active-ingredient token of
-  /// the requested item, always active + currently available. The engine does
-  /// the authoritative tier ranking afterwards (candidates here are a superset
-  /// of the final alternatives).
+  /// sharing a relational active ingredient (`item_active_ingredients`) or
+  /// indication (`item_indications`) with the requested item, OR matching a
+  /// token of its legacy flat `activeIngredient` column (legacy fallback) —
+  /// always active + currently available. The engine does the authoritative
+  /// tier ranking afterwards (candidates here are a superset).
   Future<List<PosCatalogItem>> alternativeCandidates({
     required String itemId,
-    String? therapeuticGroupId,
-    String? activeIngredient,
     int limit = 18,
   }) async {
-    final group = (therapeuticGroupId ?? '').trim();
-    final tokens = SmartAlternativesService.ingredientTokens(activeIngredient);
-    if (group.isEmpty && tokens.isEmpty) {
-      return const [];
+    final requested = await (_db.select(_db.items)
+          ..where((i) => i.id.equals(itemId)))
+        .getSingleOrNull();
+    if (requested == null) return const [];
+
+    final clauses = <Expression<bool>>[];
+
+    final ingredientIds = <String>{
+      for (final r
+          in await (_db.select(_db.itemActiveIngredients)
+                ..where((r) => r.itemId.equals(itemId)))
+              .get())
+        r.activeIngredientId,
+    };
+    final indicationIds = <String>{
+      for (final r
+          in await (_db.select(_db.itemIndications)
+                ..where((r) => r.itemId.equals(itemId)))
+              .get())
+        r.indicationId,
+    };
+
+    final relationalCandidates = <String>{};
+    if (ingredientIds.isNotEmpty) {
+      final shared = await (_db.select(_db.itemActiveIngredients)
+            ..where((r) => r.activeIngredientId.isIn(ingredientIds)))
+          .get();
+      relationalCandidates.addAll(
+          [for (final r in shared) if (r.itemId != itemId) r.itemId]);
     }
-    final family = <Expression<bool>>[];
-    if (group.isNotEmpty) {
-      family.add(_db.items.therapeuticGroupId.equals(group));
+    if (indicationIds.isNotEmpty) {
+      final shared = await (_db.select(_db.itemIndications)
+            ..where((r) => r.indicationId.isIn(indicationIds)))
+          .get();
+      relationalCandidates.addAll(
+          [for (final r in shared) if (r.itemId != itemId) r.itemId]);
     }
+
+    if (relationalCandidates.isNotEmpty) {
+      clauses.add(_db.items.id.isIn(relationalCandidates));
+    }
+
+    final tokens = SmartAlternativesService.ingredientTokens(
+        requested.activeIngredient);
     if (tokens.isNotEmpty) {
       final likes = <Expression<bool>>[];
       for (final token in tokens) {
-        likes.add(_db.items.activeIngredient
-            .like('%${_escapeLike(token)}%'));
+        likes.add(
+            _db.items.activeIngredient.like('%${_escapeLike(token)}%'));
       }
-      family.add(likes.length == 1 ? likes.first : likes.reduce((a, b) => a | b));
+      clauses.add(
+          likes.length == 1 ? likes.first : likes.reduce((a, b) => a | b));
     }
+
+    if (clauses.isEmpty) return const [];
+
     final filter = <Expression<bool>>[
       _db.items.isActive.equals(true),
       _db.items.id.equals(itemId).not(),
-      family.reduce((a, b) => a | b),
+      clauses.reduce((a, b) => a | b),
     ].reduce((a, b) => a & b);
 
     final candidates = await (_db.select(_db.items)
@@ -203,6 +241,8 @@ final query = _db.select(_db.items);
     }
 
     final availability = await _availableByItem({for (final r in rows) r.id});
+    final relationalIngredients =
+        await _relationalIngredientNamesByItem({for (final r in rows) r.id});
 
     final unitByItem = <String, ItemUnitRow>{};
     for (final u in unitRows) {
@@ -216,8 +256,35 @@ final query = _db.select(_db.items);
           unitRow: unitByItem[r.id],
           unitNames: unitNames,
           availableStockBase: availability[r.id] ?? 0,
+          relationalIngredientNames: relationalIngredients[r.id] ?? const [],
         ),
     ];
+  }
+
+  /// Names of the active ingredients linked through `item_active_ingredients`
+  /// (§4.2b), per item — fetched in one aggregate each for the relations and
+  /// the ingredient name map so the tier engine can compare relational
+  /// compositions without per-row round trips.
+  Future<Map<String, List<String>>> _relationalIngredientNamesByItem(
+      Set<String> itemIds) async {
+    if (itemIds.isEmpty) return const {};
+    final relations = await (_db.select(_db.itemActiveIngredients)
+          ..where((r) => r.itemId.isIn(itemIds)))
+        .get();
+    if (relations.isEmpty) return const {};
+    final names = {
+      for (final ai in await (_db.select(_db.activeIngredients)).get())
+        ai.id: ai.name,
+    };
+    final out = <String, List<String>>{};
+    for (final r in relations) {
+      out.putIfAbsent(r.itemId, () => [])
+          .add(names[r.activeIngredientId] ?? r.activeIngredientId);
+    }
+    for (final v in out.values) {
+      v.sort();
+    }
+    return out;
   }
 
   /// FEFO-available base quantity per item (non-voided, positive, not yet
@@ -245,6 +312,7 @@ final query = _db.select(_db.items);
     required ItemUnitRow? unitRow,
     required Map<String, String> unitNames,
     required int availableStockBase,
+    List<String> relationalIngredientNames = const [],
   }) {
     final baseUnitId = unitRow?.baseUnitId ?? r.sellablePartUnitId ?? 'unit_strip';
     final largeUnitId = unitRow?.largeUnitId ?? baseUnitId;
@@ -255,7 +323,7 @@ final query = _db.select(_db.items);
       tradeNameEn: r.tradeNameEn,
       scientificName: r.scientificName,
       activeIngredient: r.activeIngredient,
-      therapeuticGroupId: r.therapeuticGroupId,
+      relationalIngredientNames: relationalIngredientNames,
       dose: r.dose,
       pharmaForm: r.pharmaForm,
       sizeVolume: r.sizeVolume,

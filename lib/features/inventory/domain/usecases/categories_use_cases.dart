@@ -6,24 +6,19 @@ import '../../../../shared/database/app_database.dart';
 import '../../../../shared/models/enums.dart';
 import '../repositories/inventory_repository.dart';
 
-/// Categories & sub-categories listing (with their sub-rows).
+/// Categories listing.
 class ListCategoriesUseCase {
   const ListCategoriesUseCase(this._repo, this._permissions);
 
   final InventoryRepository _repo;
   final PermissionService _permissions;
 
-  Future<({List<CategoryRow> categories, List<SubCategoryRow> allSubs})> call({
+  Future<({List<CategoryRow> categories})> call({
     String? actingRoleId,
   }) async {
     await _permissions.requireRolePermission(
         _repo.database, actingRoleId, Perm.inventoryView);
-    final categories = await _repo.categories();
-    final allSubs = <SubCategoryRow>[];
-    for (final c in categories) {
-      allSubs.addAll(await _repo.subCategories(c.id));
-    }
-    return (categories: categories, allSubs: allSubs);
+    return (categories: await _repo.categories());
   }
 }
 
@@ -80,69 +75,7 @@ class SaveCategoryUseCase {
   }
 }
 
-/// Create/update a sub-category (§4.6).
-class SaveSubCategoryUseCase {
-  const SaveSubCategoryUseCase(this._repo, this._permissions, this._audit);
-
-  final InventoryRepository _repo;
-  final PermissionService _permissions;
-  final AuditService _audit;
-
-  Future<SubCategoryRow> create(
-    MasterDataDraft draft, {
-    String? actingUserId,
-    String? actingRoleId,
-  }) async {
-    final db = _repo.database;
-    await _permissions.requireRolePermission(db, actingRoleId, Perm.inventoryEdit);
-    if (actingUserId == null || actingUserId.isEmpty) {
-      throw UnauthorizedException('بيانات المستخدم ناقصة للتسجيل');
-    }
-    if (draft.name.trim().isEmpty) {
-      throw ValidationException('اسم التصنيف الفرعي مطلوب');
-    }
-    final row = await _repo.createSubCategory(draft);
-    await _audit.write(
-      db,
-      userId: actingUserId,
-      action: AuditAction.create,
-      entityType: 'sub_category',
-      entityId: row.id,
-      after: {'name': row.name, 'category_id': row.categoryId},
-      note: 'إنشاء تصنيف فرعي: ${row.name}',
-    );
-    return row;
-  }
-
-  Future<SubCategoryRow> update(
-    String id,
-    MasterDataDraft draft, {
-    String? actingUserId,
-    String? actingRoleId,
-  }) async {
-    final db = _repo.database;
-    await _permissions.requireRolePermission(db, actingRoleId, Perm.inventoryEdit);
-    if (actingUserId == null || actingUserId.isEmpty) {
-      throw UnauthorizedException('بيانات المستخدم ناقصة للتسجيل');
-    }
-    if (draft.name.trim().isEmpty) {
-      throw ValidationException('اسم التصنيف الفرعي مطلوب');
-    }
-    final row = await _repo.updateSubCategory(id, draft);
-    await _audit.write(
-      db,
-      userId: actingUserId,
-      action: AuditAction.update,
-      entityType: 'sub_category',
-      entityId: row.id,
-      after: {'name': row.name, 'category_id': row.categoryId},
-      note: 'تعديل تصنيف فرعي: ${row.name}',
-    );
-    return row;
-  }
-}
-
-/// Toggle the soft-delete flag of a category / sub-category (audited).
+/// Toggle the soft-delete flag of a category (audited).
 class SetCategoryActiveUseCase {
   const SetCategoryActiveUseCase(this._repo, this._permissions, this._audit);
 
@@ -169,28 +102,6 @@ class SetCategoryActiveUseCase {
       entityType: 'category',
       entityId: id,
       note: active ? 'تفعيل تصنيف $id' : 'إيقاف تصنيف $id',
-    );
-  }
-
-  Future<void> subCategory(
-    String id,
-    bool active, {
-    String? actingUserId,
-    String? actingRoleId,
-  }) async {
-    final db = _repo.database;
-    await _permissions.requireRolePermission(db, actingRoleId, Perm.inventoryEdit);
-    if (actingUserId == null || actingUserId.isEmpty) {
-      throw UnauthorizedException('بيانات المستخدم ناقصة للتسجيل');
-    }
-    await _repo.setSubCategoryActive(id, active);
-    await _audit.write(
-      db,
-      userId: actingUserId,
-      action: active ? AuditAction.restore : AuditAction.delete,
-      entityType: 'sub_category',
-      entityId: id,
-      note: active ? 'تفعيل تصنيف فرعي $id' : 'إيقاف تصنيف فرعي $id',
     );
   }
 }

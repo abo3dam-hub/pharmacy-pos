@@ -148,6 +148,9 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     } on AppException catch (e) {
       state = state.copyWith(status: InventoryStatus.error, error: () => e.failure);
       return e.failure;
+    } on Exception {
+      state = state.copyWith(status: InventoryStatus.error);
+      return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }
   }
 
@@ -182,6 +185,9 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     } on AppException catch (e) {
       state = state.copyWith(busy: false, error: () => e.failure);
       return e.failure;
+    } on Exception {
+      state = state.copyWith(busy: false);
+      return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }
   }
 
@@ -200,6 +206,9 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     } on AppException catch (e) {
       state = state.copyWith(busy: false, error: () => e.failure);
       return e.failure;
+    } on Exception {
+      state = state.copyWith(busy: false);
+      return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }
   }
 
@@ -218,6 +227,9 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     } on AppException catch (e) {
       state = state.copyWith(busy: false, error: () => e.failure);
       return e.failure;
+    } on Exception {
+      state = state.copyWith(busy: false);
+      return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }
   }
 
@@ -235,6 +247,9 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     } on AppException catch (e) {
       state = state.copyWith(busy: false, error: () => e.failure);
       return e.failure;
+    } on Exception {
+      state = state.copyWith(busy: false);
+      return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }
   }
 
@@ -253,6 +268,9 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     } on AppException catch (e) {
       state = state.copyWith(busy: false, error: () => e.failure);
       return e.failure;
+    } on Exception {
+      state = state.copyWith(busy: false);
+      return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }
   }
 
@@ -270,6 +288,9 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     } on AppException catch (e) {
       state = state.copyWith(busy: false, error: () => e.failure);
       return e.failure;
+    } on Exception {
+      state = state.copyWith(busy: false);
+      return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }
   }
 
@@ -288,6 +309,9 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     } on AppException catch (e) {
       state = state.copyWith(busy: false, error: () => e.failure);
       return e.failure;
+    } on Exception {
+      state = state.copyWith(busy: false);
+      return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }
   }
 
@@ -309,6 +333,9 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     } on AppException catch (e) {
       state = state.copyWith(busy: false, error: () => e.failure);
       return e.failure;
+    } on Exception {
+      state = state.copyWith(busy: false);
+      return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }
   }
 
@@ -323,6 +350,9 @@ class InventoryController extends StateNotifier<InventoryViewState> {
       return bytes;
     } on AppException catch (e) {
       state = state.copyWith(busy: false, error: () => e.failure);
+      return null;
+    } on Exception {
+      state = state.copyWith(busy: false);
       return null;
     }
   }
@@ -343,6 +373,9 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     } on AppException catch (e) {
       state = state.copyWith(busy: false, error: () => e.failure);
       return e.failure;
+    } on Exception {
+      state = state.copyWith(busy: false);
+      return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }
   }
 }
