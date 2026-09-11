@@ -463,6 +463,7 @@ void main() {
       await repo.updateItem(
           createdRow.id,
           const ItemDraft(tradeName: 'دواء بدون سعر',
+              primaryBarcode: '6291041500555',
               sellingPriceMicros: 4000000, costMicros: 2000000));
       final updateBytes = _xlsx([
         [

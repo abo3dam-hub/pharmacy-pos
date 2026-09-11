@@ -77,6 +77,11 @@ class InventoryRepositoryImpl implements InventoryRepository {
           onlyActive: onlyActive);
 
   @override
+  Future<List<ItemRow>> allItems() => (_db.select(
+        _db.items,
+      )..orderBy([(i) => OrderingTerm.asc(i.tradeName)])).get();
+
+  @override
   Future<ItemRow?> findItem(String id) => _itemDao.byId(id);
 
   @override
@@ -507,6 +512,40 @@ class InventoryRepositoryImpl implements InventoryRepository {
   @override
   Future<List<String>> indicationIdsForItem(String itemId) =>
       _itemIndicationDao.indicationIdsForItem(itemId);
+
+  @override
+  Future<Map<String, List<ItemActiveIngredientRow>>>
+  activeIngredientRelationsForItems(Set<String> itemIds) async {
+    if (itemIds.isEmpty) return const {};
+    final rows = await _itemActiveIngredientDao.forItemIds(itemIds);
+    final out = <String, List<ItemActiveIngredientRow>>{};
+    for (final r in rows) {
+      out.putIfAbsent(r.itemId, () => []).add(r);
+    }
+    return out;
+  }
+
+  @override
+  Future<Map<String, List<String>>> indicationIdsForItems(
+    Set<String> itemIds,
+  ) async {
+    if (itemIds.isEmpty) return const {};
+    final rows = await _itemIndicationDao.forItemIds(itemIds);
+    final out = <String, List<String>>{};
+    for (final r in rows) {
+      out.putIfAbsent(r.itemId, () => []).add(r.indicationId);
+    }
+    return out;
+  }
+
+  @override
+  Future<Map<String, ItemUnitRow>> itemUnitsForItems(Set<String> itemIds) async {
+    if (itemIds.isEmpty) return const {};
+    final rows = await (_db.select(_db.itemUnits)
+          ..where((u) => u.itemId.isIn(itemIds)))
+        .get();
+    return {for (final r in rows) r.itemId: r};
+  }
 
   @override
   Future<Map<String, List<ItemIngredientRef>>> activeIngredientRefsForItems(

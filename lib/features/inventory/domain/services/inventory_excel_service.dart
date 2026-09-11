@@ -1,7 +1,7 @@
 import 'package:excel/excel.dart';
 
-import '../../../../core/data_grid/page_request.dart';
 import '../../../../core/money/money.dart';
+import '../../../../core/util/smart_search.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../domain/entities/inventory_item.dart';
 import '../repositories/inventory_repository.dart';
@@ -11,14 +11,32 @@ import '../repositories/inventory_repository.dart';
 /// Export writes the full §5 profile plus live stock snapshot. Import accepts
 /// the same header layout; master-data entities are matched by *name*
 /// (categories, manufacturers, active ingredients, indications, units) and
-/// items are matched by primary barcode, falling back to trade name (create or
-/// update). The only hard requirement per row is a non-empty trade name.
-/// The sheet keeps a fixed Arabic header row. Phase 18.1: the المكافئ /
-/// الشكل الصيدلاني / الجرعة / الحجم columns were appended at the end (indices
-/// 23–26) so previously exported files stay positionally valid, and a blank
-/// cell for an existing item preserves the current value (financial fields,
-/// stock limits, location, barcodes, expiry flag, ingredients, indications,
-/// units and the four appended fields are never overwritten by a blank).
+/// items are matched deterministically. The only hard requirement per row is a
+/// non-empty trade name.
+///
+/// **Matching (Phase 18.2A, safe & deterministic — never guesses):**
+///   1. a non-empty barcode cell is looked up in an in-memory
+///      primary/secondary barcode index (exact); a barcode that matches nobody
+///      identifies a brand-new row (no fuzzy barcode edits, source ids are
+///      never synthesised into barcodes);
+///   2. otherwise the normalized trade name is looked up and narrowed by the
+///      **composite identity**: every discriminator the row provides (active
+///      ingredient + strength pairs, pharmaceutical form, dose, manufacturer)
+///      must match a candidate exactly; portions not provided are ignored
+///      (blank = preserve on update);
+///   3. exactly one candidate → update it; none → create; **more than one →
+///      conflict/ambiguous** (reported, row skipped). `package_shape`/unit
+///      relations are NOT part of the identity.
+///
+/// **Scalability (Phase 18.2A):** the whole catalog is loaded **once** per
+/// import (plus bulk relational-ingredient / indication / unit projections),
+/// indexes (barcode, normalized trade name, composite) are built in memory and
+/// no database query or full-catalog scan runs per sheet row; the row loop
+/// yields periodically so a 14 000-row file never blocks the UI isolate. The
+/// Excel contract is unchanged: blank optional cells on an existing item
+/// preserve the current value (financial fields, stock limits, location,
+/// barcodes, expiry flag, ingredients, indications, units and the appended
+/// المكافئ/الشكل الصيدلاني/الجرعة/الحجم columns).
 class InventoryExcelService {
   const InventoryExcelService(this._repo);
 
@@ -96,9 +114,7 @@ class InventoryExcelService {
   List<int> exportItems(List<InventoryItemView> views) {
     final excel = Excel.createExcel();
     final sheet = excel[_sheetName];
-    sheet.appendRow([
-      for (final h in headers) TextCellValue(h),
-    ]);
+    sheet.appendRow([for (final h in headers) TextCellValue(h)]);
     for (final v in views) {
       final item = v.item;
       final units = v.units;
@@ -110,7 +126,8 @@ class InventoryExcelService {
         TextCellValue(item.scientificName ?? ''),
         TextCellValue(item.activeIngredient ?? ''),
         TextCellValue(
-            [for (final i in v.activeIngredients) _ingredientCell(i)].join('; ')),
+          [for (final i in v.activeIngredients) _ingredientCell(i)].join('; '),
+        ),
         TextCellValue(v.categoryName ?? ''),
         TextCellValue(v.manufacturerName ?? ''),
         TextCellValue(v.indicationNames.join('; ')),
@@ -137,25 +154,35 @@ class InventoryExcelService {
   }
 
   static String _ingredientCell(ItemIngredientRef ref) =>
-      (ref.strength?.isNotEmpty ?? false) ? '${ref.name}:${ref.strength}' : ref.name;
+      (ref.strength?.isNotEmpty ?? false)
+      ? '${ref.name}:${ref.strength}'
+      : ref.name;
 
   // ----- Import -----
 
-  /// Parses bytes into import rows, resolving master-data by name. Rows that
-  /// cannot be matched cleanly are reported in [ExcelImportIssues].
+  /// Parses bytes into import rows, resolving master-data by name and items by
+  /// deterministic matching (barcode → composite identity; ambiguous rows are
+  /// skipped with an issue). The item catalog is loaded exactly once and every
+  /// per-row lookup is an in-memory index access (Phase 18.2A).
   Future<({List<ImportRow> rows, List<String> issues})> parseImport(
-      List<int> bytes) async {
+    List<int> bytes,
+  ) async {
     final excel = Excel.decodeBytes(bytes);
     final sheet = excel.tables[_sheetName];
     if (sheet == null || sheet.maxRows == 0) {
-      return (rows: const <ImportRow>[], issues: const ['ملف بدون أوراق بيانات']);
+      return (
+        rows: const <ImportRow>[],
+        issues: const ['ملف بدون أوراق بيانات'],
+      );
     }
 
     // Pre-load master-data lookups outside the loop.
     final categories = await _repo.categories();
     final byCategoryName = {for (final c in categories) c.name.trim(): c};
     final manufacturers = await _repo.manufacturers();
-    final byManufacturerName = {for (final m in manufacturers) m.name.trim(): m};
+    final byManufacturerName = {
+      for (final m in manufacturers) m.name.trim(): m,
+    };
     final unitList = await _repo.units();
     final byUnitName = {
       for (final u in unitList) u.name: u,
@@ -175,10 +202,19 @@ class InventoryExcelService {
         if (d.nameEn != null && d.nameEn!.isNotEmpty) d.nameEn!.trim(): d,
     };
 
+    // The one-shot item catalog: all rows + bulk relational/unit projections.
+    final catalog = await _ItemCatalog.load(_repo);
+
     final issues = <String>[];
     final rows = <ImportRow>[];
-    final seenKeys = <String>{};
+    final seenTargets = <String, int>{};
     for (var r = 1; r < sheet.maxRows; r++) {
+      // Yield to the event loop every 256 rows so a very large file never
+      // blocks the UI isolate (chunked processing, no timing assumptions).
+      if (r % 256 == 0) {
+        await Future<void>.delayed(Duration.zero);
+      }
+
       final values = sheet.row(r);
       String at(int idx) =>
           _cellToText(values.length > idx ? values[idx]?.value : null).trim();
@@ -186,15 +222,6 @@ class InventoryExcelService {
       final barcode = at(_colIndex['الرمز الشريطي الرئيسي']!);
       final tradeName = at(_colIndex['الاسم التجاري']!);
       if (tradeName.isEmpty) continue;
-      final existing = await _matchingItem(barcode, tradeName);
-
-      // Duplicate matching key within the file.
-      final key = barcode.isNotEmpty ? 'b:$barcode' : 't:${tradeName.toLowerCase()}';
-      if (existing == null && seenKeys.contains(key)) {
-        issues.add('الصف ${r + 1}: ${barcode.isNotEmpty ? 'الرمز' : 'الاسم'} "$key" مكرر داخل الملف');
-        continue;
-      }
-      seenKeys.add(key);
 
       final categoryName = at(_colIndex['التصنيف']!);
       final category = categoryName.isEmpty
@@ -215,20 +242,14 @@ class InventoryExcelService {
       }
 
       // Relational active ingredients encoded as `name:strength` pairs
-      // separated by ';' (strength optional, §4.2b). A blank cell for an
-      // existing item preserves its current relational set.
+      // separated by ';' (strength optional, §4.2b). Only pairs the sheet
+      // actually provides take part in the composite match; a blank cell for
+      // an existing item preserves its current relational set.
       final rawIngredients = at(_colIndex['المواد الفعالة']!).trim();
       var ingredientIds = <String>[];
       var ingredientStrengths = <String, String>{};
       var ingredientsOk = true;
-      if (rawIngredients.isEmpty && existing != null) {
-        final rels = await _repo.activeIngredientRelationsForItem(existing.id);
-        ingredientIds = [for (final r in rels) r.activeIngredientId];
-        ingredientStrengths = {
-          for (final r in rels)
-            if ((r.strength ?? '').isNotEmpty) r.activeIngredientId: r.strength!,
-        };
-      } else {
+      if (rawIngredients.isNotEmpty) {
         for (final entry in _splitEntries(rawIngredients)) {
           final (name, strength) = _splitPair(entry);
           final ingredient = byIngredientName[name];
@@ -238,17 +259,17 @@ class InventoryExcelService {
             break;
           }
           ingredientIds.add(ingredient.id);
-          if (strength.isNotEmpty) ingredientStrengths[ingredient.id] = strength;
+          if (strength.isNotEmpty) {
+            ingredientStrengths[ingredient.id] = strength;
+          }
         }
+        if (!ingredientsOk) continue;
       }
-      if (!ingredientsOk) continue;
 
       final rawIndications = at(_colIndex['الاستطبابات']!).trim();
       var indicationIds = <String>[];
       var indicationsOk = true;
-      if (rawIndications.isEmpty && existing != null) {
-        indicationIds = await _repo.indicationIdsForItem(existing.id);
-      } else {
+      if (rawIndications.isNotEmpty) {
         for (final name in _splitEntries(rawIndications)) {
           final indication = byIndicationName[name];
           if (indication == null) {
@@ -258,8 +279,72 @@ class InventoryExcelService {
           }
           indicationIds.add(indication.id);
         }
+        if (!indicationsOk) continue;
       }
-      if (!indicationsOk) continue;
+
+      final pharmaForm = at(_colIndex['الشكل الصيدلاني']!);
+      final dose = at(_colIndex['الجرعة / العيار']!);
+
+      // Deterministic item resolution: barcode first, else composite.
+      final (existing, ambiguous) = _resolveItem(
+        catalog,
+        barcode: barcode,
+        tradeName: tradeName,
+        providedForm: _normOrNull(pharmaForm),
+        providedDose: _normOrNull(dose),
+        providedManufacturerId: manufacturer?.id,
+        providedIngredientIds: ingredientIds,
+        providedIngredientStrengths: ingredientStrengths,
+      );
+      if (ambiguous) {
+        issues.add(
+          'الصف ${r + 1}: الاسم "$tradeName" يطابق أكثر من منتج '
+          '(أضف الباركود أو العيار أو الشكل الصيدلاني أو الشركة للتمييز)',
+        );
+        continue;
+      }
+
+      // Duplicate targeting within the file: the same item (by barcode,
+      // matched id, or creation identity) may only appear once.
+      final targetKey = barcode.isNotEmpty
+          ? 'b:$barcode'
+          : existing != null
+          ? 'i:${existing.id}'
+          : 'c:$_creationIdentity(tradeName, pharmaForm, dose, '
+                'manufacturer?.id, ingredientIds, ingredientStrengths)';
+      final alreadySeenAt = seenTargets[targetKey];
+      if (alreadySeenAt != null) {
+        issues.add(
+          'الصف ${r + 1}: هذا المنتج مكرر داخل الملف (رُصد أولاً في '
+          'الصف $alreadySeenAt)',
+        );
+        continue;
+      }
+      seenTargets[targetKey] = r + 1;
+
+      // Blank relational fields for an existing item preserve its current set
+      // (resolved from the in-memory catalog, never per-row).
+      final preservedIngredientIds = rawIngredients.isEmpty && existing != null
+          ? [
+              for (final rel
+                  in catalog.activeIngredientsByItem[existing.id] ??
+                      const <ItemActiveIngredientRow>[])
+                rel.activeIngredientId,
+            ]
+          : ingredientIds;
+      final preservedIngredientStrengths =
+          rawIngredients.isEmpty && existing != null
+          ? {
+              for (final rel
+                  in catalog.activeIngredientsByItem[existing.id] ??
+                      const <ItemActiveIngredientRow>[])
+                if ((rel.strength ?? '').isNotEmpty)
+                  rel.activeIngredientId: rel.strength!,
+            }
+          : ingredientStrengths;
+      final preservedIndicationIds = rawIndications.isEmpty && existing != null
+          ? catalog.indicationIdsByItem[existing.id] ?? const <String>[]
+          : indicationIds;
 
       final baseName = at(_colIndex['الأجزاء']!);
       final largeName = at(_colIndex['التعبئة التجارية']!);
@@ -267,29 +352,30 @@ class InventoryExcelService {
       final largeUnit = largeName.isEmpty ? null : byUnitName[largeName];
       if (baseName.isNotEmpty && (baseUnit == null || largeUnit == null)) {
         issues.add(
-            'الصف ${r + 1}: الوحدات "$baseName" / "$largeName" غير معروفة');
+          'الصف ${r + 1}: الوحدات "$baseName" / "$largeName" غير معروفة',
+        );
         continue;
       }
 
       // Unit relation: from the sheet when complete, otherwise preserved for
-      // existing items (optional for new ones, Phase 18).
-      final existingUnits =
-          existing == null ? null : await _repo.itemUnitsFor(existing.id);
-      final ItemUnitRelation? relation =
-          baseUnit != null && largeUnit != null
-              ? ItemUnitRelation(
-                  baseUnitId: baseUnit.id,
-                  largeUnitId: largeUnit.id,
-                  unitsPerLarge:
-                      _parseInt(at(_colIndex['عدد الأجزاء']!)) ?? 1,
-                )
-              : existingUnits == null
-                  ? null
-                  : ItemUnitRelation(
-                      baseUnitId: existingUnits.baseUnitId,
-                      largeUnitId: existingUnits.largeUnitId,
-                      unitsPerLarge: existingUnits.unitsPerLarge,
-                    );
+      // existing items (optional for new ones, Phase 18). Unit relations are
+      // NOT part of the item identity (never used to disambiguate).
+      final existingUnits = existing == null
+          ? null
+          : catalog.unitsByItem[existing.id];
+      final ItemUnitRelation? relation = baseUnit != null && largeUnit != null
+          ? ItemUnitRelation(
+              baseUnitId: baseUnit.id,
+              largeUnitId: largeUnit.id,
+              unitsPerLarge: _parseInt(at(_colIndex['عدد الأجزاء']!)) ?? 1,
+            )
+          : existingUnits == null
+          ? null
+          : ItemUnitRelation(
+              baseUnitId: existingUnits.baseUnitId,
+              largeUnitId: existingUnits.largeUnitId,
+              unitsPerLarge: existingUnits.unitsPerLarge,
+            );
 
       // Financial/stock fields are optional: a blank cell for an existing item
       // preserves the current value, for a new item it defaults to zero. Only
@@ -314,15 +400,18 @@ class InventoryExcelService {
 
       final draft = ItemDraft(
         primaryBarcode: barcode.isEmpty ? existing?.primaryBarcode : barcode,
-        secondaryBarcode: _orNull(at(_colIndex['الرمز الشريطي الثانوي']!)) ??
+        secondaryBarcode:
+            _orNull(at(_colIndex['الرمز الشريطي الثانوي']!)) ??
             existing?.secondaryBarcode,
         tradeName: tradeName,
         tradeNameEn:
-            _orNull(at(_colIndex['الاسم التجاري (EN)']!)) ?? existing?.tradeNameEn,
+            _orNull(at(_colIndex['الاسم التجاري (EN)']!)) ??
+            existing?.tradeNameEn,
         scientificName:
             _orNull(at(_colIndex['الاسم العلمي']!)) ?? existing?.scientificName,
         activeIngredient:
-            _orNull(at(_colIndex['المادة الفعالة']!)) ?? existing?.activeIngredient,
+            _orNull(at(_colIndex['المادة الفعالة']!)) ??
+            existing?.activeIngredient,
         equivalentDrug:
             _orNull(at(_colIndex['المكافئ']!)) ?? existing?.equivalentDrug,
         pharmaForm:
@@ -331,7 +420,8 @@ class InventoryExcelService {
         sizeVolume: _orNull(at(_colIndex['الحجم']!)) ?? existing?.sizeVolume,
         categoryId: category?.id ?? existing?.categoryId,
         manufacturerId: manufacturer?.id ?? existing?.manufacturerId,
-        shelfLocation: _orNull(at(_colIndex['الموقع']!)) ?? existing?.shelfLocation,
+        shelfLocation:
+            _orNull(at(_colIndex['الموقع']!)) ?? existing?.shelfLocation,
         hasExpiry: expiryText.trim().isEmpty
             ? (existing?.hasExpiry ?? false)
             : _cellBool(values, _colIndex['له تاريخ صلاحية']!),
@@ -352,9 +442,9 @@ class InventoryExcelService {
             ? (existing?.maximumStockBase ?? 0)
             : (_parseInt(maxRaw) ?? 0),
         units: relation,
-        activeIngredientIds: ingredientIds,
-        activeIngredientStrengths: ingredientStrengths,
-        indicationIds: indicationIds,
+        activeIngredientIds: preservedIngredientIds,
+        activeIngredientStrengths: preservedIngredientStrengths,
+        indicationIds: preservedIndicationIds,
         // Fields the sheet does not model are preserved untouched on update so
         // an import is an in-place edit of the product master (lossless
         // round-trip, Phase 18.1).
@@ -363,8 +453,7 @@ class InventoryExcelService {
         requiresPrescription: existing?.requiresPrescription ?? false,
         customPrice1Micros: existing?.customPrice1Micros ?? 0,
         customPrice2Micros: existing?.customPrice2Micros ?? 0,
-        purchaseDiscountBasisPoints:
-            existing?.purchaseDiscountBasisPoints ?? 0,
+        purchaseDiscountBasisPoints: existing?.purchaseDiscountBasisPoints ?? 0,
         usageInstructions: existing?.usageInstructions,
         generalNotes: existing?.generalNotes,
         licenseNumber: existing?.licenseNumber,
@@ -375,14 +464,131 @@ class InventoryExcelService {
         partialSaleMarkupBasisPoints: existing?.partialSaleMarkupBasisPoints,
         partialSalePriceMicros: existing?.partialSalePriceMicros,
       );
-      rows.add(ImportRow(
-        draft: draft,
-        rowNumber: r + 1,
-        barcode: barcode.isEmpty ? null : barcode,
-        existingItemId: existing?.id,
-      ));
+      rows.add(
+        ImportRow(
+          draft: draft,
+          rowNumber: r + 1,
+          barcode: barcode.isEmpty ? null : barcode,
+          existingItemId: existing?.id,
+        ),
+      );
     }
     return (rows: rows, issues: issues);
+  }
+
+  /// Deterministic item resolution (Phase 18.2A). Returns `(item, false)` for
+  /// a single match or an unambiguous new-creation, or `(null, true)` when the
+  /// barcode maps to several rows (impossible, barcodes are unique) or the
+  /// normalized trade name resolves to more than one candidate composite.
+  static (ItemRow?, bool) _resolveItem(
+    _ItemCatalog catalog, {
+    required String barcode,
+    required String tradeName,
+    String? providedForm,
+    String? providedDose,
+    String? providedManufacturerId,
+    List<String> providedIngredientIds = const [],
+    Map<String, String> providedIngredientStrengths = const {},
+  }) {
+    if (barcode.isNotEmpty) {
+      return (catalog.byBarcode(barcode), false);
+    }
+
+    final candidates =
+        catalog.byNormalizedName[SmartSearch.normalize(tradeName)] ??
+        const <ItemRow>[];
+    if (candidates.isEmpty) return (null, false);
+
+    final matched = <ItemRow>[];
+    for (final candidate in candidates) {
+      if (!_coversCandidate(
+        catalog,
+        candidate,
+        providedForm: providedForm,
+        providedDose: providedDose,
+        providedManufacturerId: providedManufacturerId,
+        providedIngredientIds: providedIngredientIds,
+        providedIngredientStrengths: providedIngredientStrengths,
+      )) {
+        continue;
+      }
+      matched.add(candidate);
+      if (matched.length > 1) return (null, true);
+    }
+    return matched.isEmpty ? (null, false) : (matched.first, false);
+  }
+
+  /// True when the candidate's stored profile matches every *provided*
+  /// discriminator exactly (ingredient ids + their strengths, pharmaceutical
+  /// form, dose, manufacturer). Values the sheet does not provide are ignored.
+  static bool _coversCandidate(
+    _ItemCatalog catalog,
+    ItemRow candidate, {
+    String? providedForm,
+    String? providedDose,
+    String? providedManufacturerId,
+    List<String> providedIngredientIds = const [],
+    Map<String, String> providedIngredientStrengths = const {},
+  }) {
+    if (providedForm != null) {
+      if (SmartSearch.normalize(candidate.pharmaForm ?? '') != providedForm) {
+        return false;
+      }
+    }
+    if (providedDose != null) {
+      if (SmartSearch.normalize(candidate.dose ?? '') != providedDose) {
+        return false;
+      }
+    }
+    if (providedManufacturerId != null &&
+        candidate.manufacturerId != providedManufacturerId) {
+      return false;
+    }
+    if (providedIngredientIds.isNotEmpty) {
+      final candidateById = <String, String>{
+        for (final r
+            in catalog.activeIngredientsByItem[candidate.id] ?? const [])
+          r.activeIngredientId: r.strength ?? '',
+      };
+      for (final id in providedIngredientIds) {
+        final candidateStrength = candidateById[id];
+        if (candidateStrength == null) return false;
+        final providedStrength = providedIngredientStrengths[id] ?? '';
+        if (providedStrength.isNotEmpty &&
+            SmartSearch.normalize(providedStrength) !=
+                SmartSearch.normalize(candidateStrength)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /// Normalizes a name-like discriminator for deterministic comparison.
+  static String? _normOrNull(String value) =>
+      value.isEmpty ? null : SmartSearch.normalize(value);
+
+  /// Stable creation identity for in-file duplicate detection of new rows.
+  static String _creationIdentity(
+    String tradeName,
+    String pharmaForm,
+    String dose,
+    String? manufacturerId,
+    List<String> ingredientIds,
+    Map<String, String> ingredientStrengths,
+  ) {
+    final sortedIngredientIds = [...ingredientIds]..sort();
+    final pairs = [
+      for (final id in sortedIngredientIds)
+        '$id:${ingredientStrengths[id] ?? ''}',
+    ]..sort();
+    return [
+      SmartSearch.normalize(tradeName),
+      SmartSearch.normalize(pharmaForm),
+      SmartSearch.normalize(dose),
+      manufacturerId ?? '',
+      pairs.join(','),
+    ].join('\u0001');
   }
 
   /// Separator-tolerant splitting of a multi-value cell (';', '؛').
@@ -400,23 +606,6 @@ class InventoryExcelService {
     final idx = entry.indexOf(':');
     if (idx < 0) return (entry.trim(), '');
     return (entry.substring(0, idx).trim(), entry.substring(idx + 1).trim());
-  }
-
-  Future<ItemRow?> _matchingItem(String barcode, String tradeName) async {
-    final all = await _repo.searchItems(const PageRequest(pageSize: 10000));
-    if (barcode.isNotEmpty) {
-      for (final row in all.items) {
-        if (row.primaryBarcode == barcode || row.secondaryBarcode == barcode) {
-          return row;
-        }
-      }
-    }
-    for (final row in all.items) {
-      if (row.tradeName.trim().toLowerCase() == tradeName.toLowerCase()) {
-        return row;
-      }
-    }
-    return null;
   }
 
   // ----- helpers -----
@@ -443,21 +632,18 @@ class InventoryExcelService {
 
   /// Parses a numeric cell allowing commas and Arabic-Indic digits.
   static int? _parseInt(String raw) {
-    final cleaned = _toAsciiDigits(raw)
-        .replaceAll(',', '')
-        .replaceAll('٬', '')
-        .trim();
+    final cleaned = _toAsciiDigits(
+      raw,
+    ).replaceAll(',', '').replaceAll('٬', '').trim();
     if (cleaned.isEmpty) return null;
     return int.tryParse(cleaned);
   }
 
   /// Parses a monetary cell via [Money] (integer micro-units, never REAL).
   static int? _parseMoney(String raw) {
-    final cleaned = _toAsciiDigits(raw)
-        .replaceAll(',', '')
-        .replaceAll('٬', '')
-        .replaceAll('٫', '.')
-        .trim();
+    final cleaned = _toAsciiDigits(
+      raw,
+    ).replaceAll(',', '').replaceAll('٬', '').replaceAll('٫', '.').trim();
     if (cleaned.isEmpty) return 0;
     try {
       return Money.parse(cleaned).units;
@@ -466,16 +652,72 @@ class InventoryExcelService {
     }
   }
 
-  static String _toAsciiDigits(String input) =>
-      input.split('').map((c) {
-        final code = c.codeUnitAt(0);
-        if (code >= 0x0660 && code <= 0x0669) {
-          return String.fromCharCode(code - 0x0660 + 0x30);
-        }
-        return c;
-      }).join();
+  static String _toAsciiDigits(String input) => input.split('').map((c) {
+    final code = c.codeUnitAt(0);
+    if (code >= 0x0660 && code <= 0x0669) {
+      return String.fromCharCode(code - 0x0660 + 0x30);
+    }
+    return c;
+  }).join();
 
   static String? _orNull(String value) => value.isEmpty ? null : value;
+}
+
+/// One-shot in-memory item catalog built once per import so every per-row
+/// lookup is an index access with zero additional database round trips
+/// (Phase 18.2A scalability guarantee).
+class _ItemCatalog {
+  _ItemCatalog._({
+    required this.itemsById,
+    required this.barcodeByCode,
+    required this.byNormalizedName,
+    required this.activeIngredientsByItem,
+    required this.indicationIdsByItem,
+    required this.unitsByItem,
+  });
+
+  final Map<String, ItemRow> itemsById;
+  final Map<String, ItemRow> barcodeByCode;
+  final Map<String, List<ItemRow>> byNormalizedName;
+  final Map<String, List<ItemActiveIngredientRow>> activeIngredientsByItem;
+  final Map<String, List<String>> indicationIdsByItem;
+  final Map<String, ItemUnitRow> unitsByItem;
+
+  ItemRow? byBarcode(String code) => barcodeByCode[code];
+
+  static Future<_ItemCatalog> load(InventoryRepository repo) async {
+    final items = await repo.allItems();
+    final ids = {for (final i in items) i.id};
+    final activeIngredientsByItem = await repo
+        .activeIngredientRelationsForItems(ids);
+    final indicationIdsByItem = await repo.indicationIdsForItems(ids);
+    final unitsByItem = await repo.itemUnitsForItems(ids);
+
+    final byId = <String, ItemRow>{for (final i in items) i.id: i};
+    final barcodeByCode = <String, ItemRow>{};
+    for (final i in items) {
+      if (i.primaryBarcode case final b when b != null && b.isNotEmpty) {
+        barcodeByCode[b] = i;
+      }
+      if (i.secondaryBarcode case final b when b != null && b.isNotEmpty) {
+        barcodeByCode[b] = i;
+      }
+    }
+    final byName = <String, List<ItemRow>>{};
+    for (final i in items) {
+      final normalized = SmartSearch.normalize(i.tradeName);
+      byName.putIfAbsent(normalized, () => []).add(i);
+    }
+
+    return _ItemCatalog._(
+      itemsById: byId,
+      barcodeByCode: barcodeByCode,
+      byNormalizedName: byName,
+      activeIngredientsByItem: activeIngredientsByItem,
+      indicationIdsByItem: indicationIdsByItem,
+      unitsByItem: unitsByItem,
+    );
+  }
 }
 
 /// A parsed, validation-ready import row. [rowNumber] is the 1-based Excel

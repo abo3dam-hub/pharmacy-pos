@@ -925,6 +925,28 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 > four new columns) never overwrite existing values; only explicit cells
 > change. Export→import is therefore lossless, verified by `test/
 > inventory_excel_contract_test.dart` (§31).
+>
+> **Phase 18.2A matching & scalability (Syrian-database gate):** the item is
+> resolved **deterministically and never guessed** — (1) a non-blank barcode is
+> matched exactly against the in-memory primary/secondary barcode index; an
+> unmatched barcode identifies a brand-new row (no fuzzy edits, source ids are
+> never synthesised into barcodes); (2) without a barcode, the normalized trade
+> name (Arabic fold via `SmartSearch`) is narrowed by the **composite
+> identity**: every provided discriminator (active-ingredient id + strength
+> pairs, pharmaceutical form, dose, manufacturer) must match a candidate
+> exactly; blank discriminators are ignored (blank = preserve on update);
+> (3) exactly one candidate → update, none → create, **more than one →
+> conflict/ambiguous** (row reported and skipped). `package_shape`/`size_volume`
+> and unit relations are **not** part of the identity. The whole catalog is
+> loaded **once** per operation (`InventoryRepository.allItems()` + bulk
+> `activeIngredientRelationsForItems` / `indicationIdsForItems` /
+> `itemUnitsForItems` projections), barcode/name/composite indexes are built in
+> memory, there is **no per-row DB query and no `pageSize: 10000` full-catalog
+> scan**, the row loop yields every 256 rows, and in-file duplicate targeting
+> (barcode / matched id / creation identity) is rejected with «مكرر داخل
+> الملف». Verified by `test/inventory_import_scalability_test.dart`
+> (14 001-row export/import proves matching after index 10 000 with exactly one
+> catalog load per operation and zero `searchItems` calls).
 
 ### Flags
 | Requirement | Column |
@@ -1712,6 +1734,7 @@ Full POS workspaces UI, full accounting UI, smart-alternatives UI, scanner hardw
 - **Phase 16 — Release:** installer (Inno Setup/MSIX), icons/splash, docs, tag `v1.0.0`, GitHub Release artifacts.
 - **Phase 18 (delivered) — Product Master Contract & Import Readiness:** schema v12 (dropped `sub_categories` + `therapeutic_groups`, nullable `category_id`), simplified product contract (trade name required; units/parts/category optional), relational active-ingredient + indication joins surfaced on product views, searchable multi-row ingredient selector, relational Smart Alternatives with flat-token fallback, minimal-row Excel import with trade-name matching and `name:strength` ingredient parsing, and targeted (non-generic) save error mapping. Full detail in `PHASE18-PRODUCT-MASTER-CONTRACT-IMPORT-READINESS-COMPLETION-REPORT.md`.
 - **Phase 18.1 (delivered) — Product Master Contract Corrections & Syrian DB Import Gate:** hardens the trade-name-only contract end-to-end (product form saves with trade name alone; parts/packaging validations only fire when a unit relation is configured; units always stored as a consistent base+large relation; active-ingredient summary clears when its relational ingredients are removed), the Excel contract adds the `المكافئ / الشكل الصيدلاني / الجرعة / العيار / الحجم` columns (indices 23–26, appended for positional backward-compat) and turns every optional cell into blank-preserves-on-update (financial fields, VAT, min/max, shelf location, barcodes, has-expiry, ingredients/indications, unit relation, EN/scientific/flat ingredient, plus non-sheet fields such as flags, custom prices and partial-sale config so export→import is lossless), Smart Alternatives rank by tier → stock → **same manufacturer** → trade name and the flat-token fallback now only applies to legacy items with no relational ingredients, and the filler terminology uses «الكمية» instead of «الوحدات الأساسية» (`prescriptionQuantity`). Deep-dive in `PHASE18.1-PRODUCT-MASTER-CONTRACT-CORRECTIONS-COMPLETION-REPORT.md`. The step that follows this milestone (importing the Syrian medicine database (~14 000 rows)) is **not part of Phase 18.1** and is gated on this report's DoD.
+- **Phase 18.2A (delivered) — Product Master Contract Closure & Scalable Import Engine:** closes the import-gate contract and removes every scaling hazard for the ~14 000-row Syrian catalog. Product master contract closed (trade name required, everything else optional, parts/packaging relations never erased by a blank edit, prices/cost never an import condition, each active ingredient stays paired with its strength). Excel/import matching is now **deterministic and safe** — barcode-exact first, then a composite identity (ingredients+strengths, form, dose, manufacturer) that must match a candidate exactly, ambiguity surfaces as a conflict instead of a guess, an unmatched barcode creates (never a fuzzy edit and never a synthesised source-id barcode), and `package_shape`/units are excluded from identity. **Scalability:** catalog loaded once per operation plus bulk relational projections (`allItems()`, `itemUnitsForItems`, `activeIngredientRelationsForItems`, `indicationIdsForItems`), in-memory barcode/name/composite indexes, no `pageSize: 10000`, no per-row catalog scan (`searchItems`/`_findByScanned` removed from the pipeline), periodic event-loop yields, and in-file duplicate targeting rejected. `InventoryViewBuilder.buildMany` is bulk (one round trip per page for categories/manufacturers/units/ingredients/indications). Verified by `test/inventory_import_scalability_test.dart` (14 001-row round-trip, no-scan proof via call-counting repository wrapper, duplicate-name disambiguation, ambiguous conflict, non-identity of package_shape/units, in-file dedupe, re-import-no-duplicate) with the Excel contract A–G suite still green. Deep-dive in `PHASE18.2A-PRODUCT-MASTER-IMPORT-SCALABILITY-COMPLETION-REPORT.md`. **The Syrian medicine database import is still NOT started** — it proceeds only as a separately-scoped follow-up.
 
 ---
 

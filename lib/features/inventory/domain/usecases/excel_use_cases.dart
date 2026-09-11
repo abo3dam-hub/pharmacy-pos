@@ -1,5 +1,4 @@
 import '../../../../core/constants/permission_codes.dart';
-import '../../../../core/data_grid/page_request.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../domain/services/audit_service.dart';
 import '../../../../domain/services/permission_service.dart';
@@ -26,8 +25,8 @@ class ExportItemsUseCase {
   Future<List<int>> call({String? actingRoleId}) async {
     await _permissions.requireRolePermission(
         _repo.database, actingRoleId, Perm.inventoryView);
-    final result = await _repo.searchItems(const PageRequest(pageSize: 10000));
-    final views = await viewBuilder.buildMany(result.items);
+    final result = await _repo.allItems();
+    final views = await viewBuilder.buildMany(result);
     return _excel.exportItems(views);
   }
 }
@@ -76,8 +75,7 @@ class ImportItemsUseCase {
     var updated = 0;
 
     for (final row in parsed.rows) {
-      final existingId = row.existingItemId ??
-          (row.barcode == null ? null : await _findByScanned(row.barcode!));
+      final existingId = row.existingItemId;
       try {
         if (existingId != null) {
           final supplierIds = await _repo.supplierIdsForItem(existingId);
@@ -121,16 +119,6 @@ class ImportItemsUseCase {
       note: 'استيراد Excel: أنشئ $created، حُدّث $updated، رُفض ${issues.length}',
     );
     return ImportSummary(created: created, updated: updated, issues: issues);
-  }
-
-  Future<String?> _findByScanned(String barcode) async {
-    final result = await _repo.searchItems(const PageRequest(pageSize: 10000));
-    for (final item in result.items) {
-      if (item.primaryBarcode == barcode || item.secondaryBarcode == barcode) {
-        return item.id;
-      }
-    }
-    return null;
   }
 }
 

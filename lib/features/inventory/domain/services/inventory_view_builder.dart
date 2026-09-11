@@ -47,30 +47,29 @@ class InventoryViewBuilder {
   Future<List<InventoryItemView>> buildMany(List<ItemRow> items) async {
     if (items.isEmpty) return const [];
     final ids = {for (final item in items) item.id};
+    final categories = {for (final c in await _repo.categories()) c.id: c.name};
+    final manufacturers = {
+      for (final m in await _repo.manufacturers()) m.id: m.name
+    };
+    final units = {for (final u in await _repo.units()) u.id: u.name};
     final ingredientsByItem = await _repo.activeIngredientRefsForItems(ids);
     final indicationsByItem = await _repo.indicationNamesForItems(ids);
+    final unitsByItem = await _repo.itemUnitsForItems(ids);
     final views = <InventoryItemView>[];
     for (final item in items) {
-      final category = item.categoryId == null
-          ? null
-          : (await _repo.categoryById(item.categoryId!))?.name;
-      final manufacturer = item.manufacturerId == null
-          ? null
-          : (await _repo.manufacturerById(item.manufacturerId!))?.name;
-      final unitsRow = await _repo.itemUnitsFor(item.id);
-      final baseUnitName = unitsRow == null
-          ? null
-          : (await _repo.unitById(unitsRow.baseUnitId))?.name;
-      final largeUnitName = unitsRow == null
-          ? null
-          : (await _repo.unitById(unitsRow.largeUnitId))?.name;
+      final unitsRow = unitsByItem[item.id];
       views.add(InventoryItemView(
         item: item,
         units: unitsRow,
-        baseUnitName: baseUnitName,
-        largeUnitName: largeUnitName,
-        categoryName: category,
-        manufacturerName: manufacturer,
+        baseUnitName:
+            unitsRow == null ? null : units[unitsRow.baseUnitId],
+        largeUnitName:
+            unitsRow == null ? null : units[unitsRow.largeUnitId],
+        categoryName:
+            item.categoryId == null ? null : categories[item.categoryId],
+        manufacturerName: item.manufacturerId == null
+            ? null
+            : manufacturers[item.manufacturerId],
         activeIngredients: ingredientsByItem[item.id] ?? const [],
         indicationNames: indicationsByItem[item.id] ?? const [],
       ));

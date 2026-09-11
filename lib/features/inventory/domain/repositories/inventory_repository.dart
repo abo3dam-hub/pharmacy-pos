@@ -307,6 +307,11 @@ abstract class InventoryRepository {
     String? manufacturerId,
     bool? onlyActive,
   });
+
+  /// Loads the complete item catalog in one round trip (no page-size ceiling)
+  /// for the Excel export/import engine so a multi-thousand-row sheet never
+  /// triggers a full-database scan per sheet row (§27, Phase 18.2A).
+  Future<List<ItemRow>> allItems();
   Future<ItemRow?> findItem(String id);
   Future<ItemRow> createItem(ItemDraft draft);
   Future<ItemRow> updateItem(String id, ItemDraft draft);
@@ -359,10 +364,18 @@ abstract class InventoryRepository {
 
   /// Batch projections used by the grid and the Excel export so relational
   /// taxonomy is resolved in one round trip per page.
-  Future<Map<String, List<ItemIngredientRef>>> activeIngredientRefsForItems(
-      Set<String> itemIds);
+Future<Map<String, List<ItemIngredientRef>>> activeIngredientRefsForItems(
+    Set<String> itemIds);
   Future<Map<String, List<String>>> indicationNamesForItems(
-      Set<String> itemIds);
+    Set<String> itemIds);
+
+  /// Bulk catalog projections for the import engine (Phase 18.2A): relational
+  /// ingredient rows, indication ids and unit relations for a whole set of item
+  /// ids, so blank-preserve and composite matching never query per item.
+  Future<Map<String, List<ItemActiveIngredientRow>>>
+      activeIngredientRelationsForItems(Set<String> itemIds);
+  Future<Map<String, List<String>>> indicationIdsForItems(Set<String> itemIds);
+  Future<Map<String, ItemUnitRow>> itemUnitsForItems(Set<String> itemIds);
 
   // Batches & ledger (§4.8, §4.9)
   Future<List<BatchRow>> batchesForItem(String itemId);
