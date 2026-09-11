@@ -1,7 +1,8 @@
 # Phase 18.1 — Product Master Contract Corrections & Syrian DB Import Gate — Completion Report
 
 **Status:** ✅ COMPLETED in one guided execution session.
-**Baseline commit:** `681111a` (Phase 18.1 branch point; pushed to `main` as part of the `5fe6888` rebase). Current recommended `main` tip for this phase: the commit recorded at the end of this document.
+**Baseline commit:** `681111a` (Phase 18.1 branch point; pushed to `main` as part of the `5fe6888` rebase).
+**Phase 18.1 commits on `main`:** `e4464e0` (Phase 18.1 corrective implementation + tests + report) and `86de1c9` (CI: annotate the two deliberate experimental `TableMigration` uses so the strict `flutter analyze` gate — which had kept the Phase 18 CI run red and skipped the test step — stays green). CI on `86de1c9`: `analyze-test`, `build-windows` and `build-android` all **success**.
 **Scope governor:** run the full test suite first, document the solution, then stop. **The Syrian medicine database import was NOT started** — it is explicitly gated on this report's Definition of Done.
 
 ---
