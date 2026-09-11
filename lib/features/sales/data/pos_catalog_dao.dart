@@ -133,11 +133,13 @@ final query = _db.select(_db.items);
   }
 
   /// Bounded candidate set for the smart-alternatives engine (§18): products
-  /// sharing a relational active ingredient (`item_active_ingredients`) or
-  /// indication (`item_indications`) with the requested item, OR matching a
-  /// token of its legacy flat `activeIngredient` column (legacy fallback) —
-  /// always active + currently available. The engine does the authoritative
-  /// tier ranking afterwards (candidates here are a superset).
+  /// sharing a relational active ingredient (`item_active_ingredients`), a
+  /// relational indication (`item_indications`) or the same manufacturer with
+  /// the requested item — always active + currently available. The legacy flat
+  /// `activeIngredient` column is ONLY consulted as a fallback for legacy
+  /// items that carry no relational active-ingredient data (relational is
+  /// primary, Phase 18.1). The engine does the authoritative tier ranking
+  /// afterwards (candidates here are a superset).
   Future<List<PosCatalogItem>> alternativeCandidates({
     required String itemId,
     int limit = 18,
@@ -184,16 +186,25 @@ final query = _db.select(_db.items);
       clauses.add(_db.items.id.isIn(relationalCandidates));
     }
 
-    final tokens = SmartAlternativesService.ingredientTokens(
-        requested.activeIngredient);
-    if (tokens.isNotEmpty) {
-      final likes = <Expression<bool>>[];
-      for (final token in tokens) {
-        likes.add(
-            _db.items.activeIngredient.like('%${_escapeLike(token)}%'));
+    final requestedManufacturerId = requested.manufacturerId;
+    if (requestedManufacturerId != null) {
+      clauses.add(_db.items.manufacturerId.equals(requestedManufacturerId));
+    }
+
+    // Legacy-only fallback: the flat free-text column is consulted only when
+    // the requested item has no relational active-ingredient rows.
+    if (ingredientIds.isEmpty) {
+      final tokens = SmartAlternativesService.ingredientTokens(
+          requested.activeIngredient);
+      if (tokens.isNotEmpty) {
+        final likes = <Expression<bool>>[];
+        for (final token in tokens) {
+          likes.add(
+              _db.items.activeIngredient.like('%${_escapeLike(token)}%'));
+        }
+        clauses.add(
+            likes.length == 1 ? likes.first : likes.reduce((a, b) => a | b));
       }
-      clauses.add(
-          likes.length == 1 ? likes.first : likes.reduce((a, b) => a | b));
     }
 
     if (clauses.isEmpty) return const [];
@@ -323,6 +334,7 @@ final query = _db.select(_db.items);
       tradeNameEn: r.tradeNameEn,
       scientificName: r.scientificName,
       activeIngredient: r.activeIngredient,
+      manufacturerId: r.manufacturerId,
       relationalIngredientNames: relationalIngredientNames,
       dose: r.dose,
       pharmaForm: r.pharmaForm,

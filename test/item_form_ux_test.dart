@@ -177,7 +177,7 @@ void main() {
   });
 
   testWidgets(
-      'missing/invalid parts guidance is targeted and the parts relation saves',
+      'trade-name-only saves; parts guidance targets only configured units',
       (tester) async {
     tester.view.physicalSize = const Size(1100, 1500);
     tester.view.devicePixelRatio = 1.0;
@@ -186,25 +186,31 @@ void main() {
     ItemFormResult? submitted;
     await _openDialog(tester, onResult: (r) => submitted = r);
 
+    // Phase 18.1 trade-name-only contract: category, units and prices are all
+    // optional — the trade name alone must save.
     await _enterTradeName(tester, 'بانادول');
-    await _selectCombo(tester, 'التصنيف', 'أدوية');
-
-    // No parts unit selected → targeted guidance (was the generic save-error
-    // regression) and the dialog must stay open.
     await _tapSave(tester);
-    expect(find.text('اختر الأجزاء'), findsOneWidget,
-        reason: 'missing parts-unit guidance must surface, not a generic error');
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(submitted, isNotNull,
+        reason: 'trade name alone satisfies the Product Master contract');
+    expect(submitted!.draft.units, isNull,
+        reason: 'no parts/packaging selected → no unit relation is forced');
+    expect(submitted!.draft.categoryId, isNull,
+        reason: 'classification is optional');
 
-    // Select the parts unit → packaging is auto-suggested.
+    // Once the parts unit is configured, an invalid parts count is rejected
+    // with targeted guidance (not the generic save-error) and the dialog stays
+    // open.
+    submitted = null;
+    await _openDialog(tester, onResult: (r) => submitted = r);
+    await _enterTradeName(tester, 'بانادول');
     await _selectCombo(tester, 'الأجزاء', 'ظرف');
     await tester.pumpAndSettle();
-
-    // parts = 0 is rejected with a targeted message.
     await tester.enterText(_fieldByLabel('عدد الأجزاء'), '0');
     await tester.pumpAndSettle();
     await _tapSave(tester);
-    expect(find.text('عدد الأجزاء يجب أن يكون أكبر من صفر'), findsOneWidget);
+    expect(find.text('عدد الأجزاء يجب أن يكون أكبر من صفر'), findsOneWidget,
+        reason: 'targeted guidance surfaces when a unit relation is built');
+    expect(find.byType(AlertDialog), findsOneWidget);
 
     // Valid values → the draft carries the unit relation.
     await tester.enterText(_fieldByLabel('عدد الأجزاء'), '10');

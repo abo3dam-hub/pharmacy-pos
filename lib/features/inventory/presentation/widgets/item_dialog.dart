@@ -272,24 +272,16 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       _snack(l10n.inventoryRequiredName);
       return false;
     }
-    if (_categoryId == null) {
-      _snack(l10n.inventorySelectCategory);
-      return false;
-    }
-    if (_partUnitId == null) {
-      _snack(l10n.inventorySelectBaseUnit);
-      return false;
-    }
-    if (_largeUnitId == null) {
-      _snack(l10n.inventorySelectLargeUnit);
-      return false;
-    }
     final parts = int.tryParse(_partsCount) ?? 0;
-    if (parts <= 0) {
+    if (_partUnitId != null && parts <= 0) {
       _snack(l10n.inventoryUnitsPerLargeInvalid);
       return false;
     }
     if (_partialSaleEnabled) {
+      if (_partUnitId == null) {
+        _snack(l10n.inventorySelectBaseUnit);
+        return false;
+      }
       if (parts <= 1) {
         _snack(l10n.partialSalePartsInvalid);
         return false;
@@ -341,7 +333,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     if (cost == null || selling == null || wholesale == null ||
         halfWholesale == null || custom1 == null || custom2 == null ||
         vat == null || discount == null || minStock == null ||
-        maxStock == null || parts <= 0) {
+        maxStock == null) {
       _snack(l10n.authSaveError);
       return;
     }
@@ -366,7 +358,10 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       tradeName: _c('tradeName').text.trim(),
       tradeNameEn: _emptyToNull(_c('tradeNameEn').text),
       scientificName: _emptyToNull(_c('scientificName').text),
-      activeIngredient: _emptyToNull(_c('activeIngredient').text),
+      activeIngredient:
+          _selectedActiveIngredientIds.isEmpty && _initial.activeIngredientIds.isNotEmpty
+              ? null
+              : _emptyToNull(_c('activeIngredient').text),
       equivalentDrug: _emptyToNull(_c('equivalentDrug').text),
       manufacturerId: _manufacturerId,
       categoryId: _categoryId,
@@ -392,11 +387,13 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       usageInstructions: _emptyToNull(_c('usageInstructions').text),
       generalNotes: _emptyToNull(_c('generalNotes').text),
       licenseNumber: _emptyToNull(_c('licenseNumber').text),
-      units: ItemUnitRelation(
-        baseUnitId: _partUnitId!,
-        largeUnitId: _largeUnitId!,
-        unitsPerLarge: unitsPerLarge,
-      ),
+      units: (_partUnitId != null && _largeUnitId != null)
+          ? ItemUnitRelation(
+              baseUnitId: _partUnitId!,
+              largeUnitId: _largeUnitId!,
+              unitsPerLarge: unitsPerLarge,
+            )
+          : null,
       supplierIds: _selectedSupplierIds.toList(),
       activeIngredientIds: _selectedActiveIngredientIds.toList(),
       activeIngredientStrengths: {

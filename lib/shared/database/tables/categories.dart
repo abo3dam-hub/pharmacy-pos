@@ -1,7 +1,8 @@
 import 'package:drift/drift.dart';
 
-/// Main categories / التصنيف الرئيسي (§4.3). Sub-categories live in the
-/// dedicated `sub_categories` table (1–2 levels: main + sub).
+/// Main categories / التصنيف الرئيسي (§4.3). Products carry at most one
+/// optional category; the `sub_categories` table was removed in Phase 18
+/// (v12) along with therapeutic groups in favour of relational indications.
 @DataClassName('CategoryRow')
 class Categories extends Table {
   TextColumn get id => text()();

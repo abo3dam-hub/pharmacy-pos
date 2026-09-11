@@ -10,6 +10,7 @@ class PosCatalogItem {
     this.tradeNameEn,
     this.scientificName,
     this.activeIngredient,
+    this.manufacturerId,
     this.relationalIngredientNames = const [],
     this.primaryBarcode,
     this.secondaryBarcode,
@@ -45,6 +46,10 @@ class PosCatalogItem {
   final String? tradeNameEn;
   final String? scientificName;
   final String? activeIngredient;
+
+  /// Master manufacturer id; used by the smart-alternatives engine as a
+  /// secondary (tie-break) similarity signal (§18 Phase 18.1).
+  final String? manufacturerId;
 
   /// Names of the active ingredients linked through `item_active_ingredients`
   /// (§4.2b) — the relational complement of the legacy flat `activeIngredient`

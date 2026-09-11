@@ -914,6 +914,18 @@ Build a professional **Pharmacy Management & Point-of-Sale (POS) system** that i
 | Size / Volume | `items.size_volume` |
 | Shelf Location | `items.shelf_location` |
 
+> **Phase 18.1 Excel contract:** the product import/export sheet carries the four
+> pharmaceutical columns above plus `الجرعة / العيار` under the merged
+> header `المكافئ / الشكل الصيدلاني / الجرعة / العيار / الحجم` as
+> **appended columns 23–26** (positional backward-compat with Phase 3 sheets),
+> mapped back to `equivalent_drug`, `pharmaceutical_form`,
+> `dose_concentration` and `size_volume`. Import **blank = preserve**: blank
+> optional cells (financials, VAT, min/max, location, expiry flag, barcodes,
+> ingredients/indications, unit relation, EN/scientific/flat ingredient and the
+> four new columns) never overwrite existing values; only explicit cells
+> change. Export→import is therefore lossless, verified by `test/
+> inventory_excel_contract_test.dart` (§31).
+
 ### Flags
 | Requirement | Column |
 |-------------|--------|
@@ -1240,6 +1252,8 @@ The RBAC model is **extensible** — any new permission is simply a row in `perm
 - Computed **dynamically** from current `items` data at request time — never stale stored matches.
 - Optional cache only for performance; invalidated whenever item data changes; calculation remains authoritative.
 - Extensible: additional rules can be added without UI coupling.
+- **Relational-primary matching (Phase 18 + 18.1):** candidates are selected by shared relational `item_active_ingredients`; the legacy flat-token LIKE fallback applies **only** to items that have no relational ingredient ids.
+- **Phase 18.1 ranking:** tier (green/yellow/blue) → available stock (desc) → **same manufacturer first** (clear-tie break when both sides carry a `manufacturer_id`) → Arabic trade name, implemented in `SmartAlternativesService.rank`; catalog rows include the item's `manufacturer_id`.
 
 ---
 
@@ -1376,6 +1390,7 @@ Main menus, Sidebar, Navigation, Buttons, Forms, Dialogs, Tables, Data grids, PO
 | Batch | التشغيلة |
 | Expiry Date | تاريخ الصلاحية |
 | Stock | المخزون / الكمية |
+| Prescription Quantity | الكمية <br/>— Phase 18.1: reworded from «الوحدات الأساسية» (`prescriptionQuantity` key + `PartialPriceCalculator` user-facing strings) so a bare quantity label no longer implies a base-unit; the unit term only appears where a unit is actually attached |
 | Lost Sale | النواقص (نواقص) |
 | Alternative | البدائل |
 | Cash Box | الصندوق |
@@ -1696,6 +1711,7 @@ Full POS workspaces UI, full accounting UI, smart-alternatives UI, scanner hardw
 - **Phase 15 — Testing & CI/CD:** coverage thresholds, integration suite, release pipelines.
 - **Phase 16 — Release:** installer (Inno Setup/MSIX), icons/splash, docs, tag `v1.0.0`, GitHub Release artifacts.
 - **Phase 18 (delivered) — Product Master Contract & Import Readiness:** schema v12 (dropped `sub_categories` + `therapeutic_groups`, nullable `category_id`), simplified product contract (trade name required; units/parts/category optional), relational active-ingredient + indication joins surfaced on product views, searchable multi-row ingredient selector, relational Smart Alternatives with flat-token fallback, minimal-row Excel import with trade-name matching and `name:strength` ingredient parsing, and targeted (non-generic) save error mapping. Full detail in `PHASE18-PRODUCT-MASTER-CONTRACT-IMPORT-READINESS-COMPLETION-REPORT.md`.
+- **Phase 18.1 (delivered) — Product Master Contract Corrections & Syrian DB Import Gate:** hardens the trade-name-only contract end-to-end (product form saves with trade name alone; parts/packaging validations only fire when a unit relation is configured; units always stored as a consistent base+large relation; active-ingredient summary clears when its relational ingredients are removed), the Excel contract adds the `المكافئ / الشكل الصيدلاني / الجرعة / العيار / الحجم` columns (indices 23–26, appended for positional backward-compat) and turns every optional cell into blank-preserves-on-update (financial fields, VAT, min/max, shelf location, barcodes, has-expiry, ingredients/indications, unit relation, EN/scientific/flat ingredient, plus non-sheet fields such as flags, custom prices and partial-sale config so export→import is lossless), Smart Alternatives rank by tier → stock → **same manufacturer** → trade name and the flat-token fallback now only applies to legacy items with no relational ingredients, and the filler terminology uses «الكمية» instead of «الوحدات الأساسية» (`prescriptionQuantity`). Deep-dive in `PHASE18.1-PRODUCT-MASTER-CONTRACT-CORRECTIONS-COMPLETION-REPORT.md`. The step that follows this milestone (importing the Syrian medicine database (~14 000 rows)) is **not part of Phase 18.1** and is gated on this report's DoD.
 
 ---
 

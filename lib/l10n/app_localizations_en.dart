@@ -1454,7 +1454,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prescriptionItem => 'Item';
 
   @override
-  String get prescriptionQuantity => 'Quantity (base units)';
+  String get prescriptionQuantity => 'Quantity';
 
   @override
   String get prescriptionDosage => 'Dosage';

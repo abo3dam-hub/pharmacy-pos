@@ -80,7 +80,7 @@ class PartialPriceCalculator {
     }
     if (sellablePartBaseQuantity < 1) {
       throw ValidationException(
-          'عدد الوحدات الأساسية في الجزء يجب أن يكون أكبر من أو يساوي 1');
+          'عدد الوحدات في الجزء يجب أن يكون أكبر من أو يساوي 1');
     }
     return sellablePartQuantity * sellablePartBaseQuantity;
   }
@@ -115,7 +115,7 @@ class PartialPriceCalculator {
     }
     if (sellablePartBaseQuantity < 1) {
       throw ValidationException(
-          'عدد الوحدات الأساسية في الجزء يجب أن يكون أكبر من أو يساوي 1');
+          'عدد الوحدات في الجزء يجب أن يكون أكبر من أو يساوي 1');
     }
 
     final completeProducts = quantityParts ~/ partsPerFullProduct;
@@ -162,7 +162,7 @@ class PartialPriceCalculator {
       }
       if (sellablePartBaseQuantity != null) {
         throw ValidationException(
-            'عدد الوحدات الأساسية يجب أن يكون فارغاً عند تعطيل البيع الجزئي');
+            'عدد الوحدات يجب أن يكون فارغاً عند تعطيل البيع الجزئي');
       }
       if (partialSaleMarkupBasisPoints != null) {
         throw ValidationException(
@@ -181,7 +181,7 @@ class PartialPriceCalculator {
     }
     if (sellablePartBaseQuantity == null || sellablePartBaseQuantity < 1) {
       throw ValidationException(
-          'عدد الوحدات الأساسية في الجزء يجب أن يكون أكبر من أو يساوي 1');
+          'عدد الوحدات في الجزء يجب أن يكون أكبر من أو يساوي 1');
     }
     if (partialSaleMarkupBasisPoints == null ||
         partialSaleMarkupBasisPoints < 0 ||

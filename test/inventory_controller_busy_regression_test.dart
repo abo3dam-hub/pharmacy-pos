@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pharmacy_pos/core/errors/failures.dart';
 import 'package:pharmacy_pos/data/daos/active_ingredient_dao.dart';
 import 'package:pharmacy_pos/data/daos/batch_dao.dart';
 import 'package:pharmacy_pos/data/daos/category_dao.dart';
@@ -143,5 +144,54 @@ void main() {
         reason: 'a successful save must release the UI spinner');
     expect(controller.state.status, InventoryStatus.ready);
     expect(controller.state.total, 1);
+  });
+
+  test(
+      'product edit surfaces the root-cause failure of a duplicate-barcode '
+      'edit (not a generic save error)', () async {
+    final db = newDatabase();
+    final controller = _controller(db);
+    await controller.load(actingRoleId: _adminRole);
+
+    final a = await controller.createItem(
+      const ItemDraft(tradeName: 'منتج أ', primaryBarcode: 'BC_A-EDIT'),
+      actingUserId: _admin,
+      actingRoleId: _adminRole,
+    );
+    final b = await controller.createItem(
+      const ItemDraft(tradeName: 'منتج ب', primaryBarcode: 'BC_B-EDIT'),
+      actingUserId: _admin,
+      actingRoleId: _adminRole,
+    );
+    expect(a, isNull);
+    expect(b, isNull);
+    expect(controller.state.total, 2);
+
+    final idB = controller.state.items
+        .singleWhere((v) => v.item.primaryBarcode == 'BC_B-EDIT')
+        .item
+        .id;
+
+    // Editing produces a duplicate primary barcode on the *same* save the
+    // product form submits — the exact scenario the UI must explain.
+    final failure = await controller.updateItem(
+      idB,
+      const ItemDraft(
+        tradeName: 'منتج ب',
+        primaryBarcode: 'BC_A-EDIT',
+      ),
+      actingUserId: _admin,
+      actingRoleId: _adminRole,
+    );
+    expect(failure, isA<DuplicateFailure>(),
+        reason: 'the UNIQUE barcode constraint must surface as the specific '
+            'root-cause failure and its message, so the UI shows the cause '
+            'instead of the generic save error');
+    expect(failure!.message, isNotEmpty);
+    expect(controller.state.busy, isFalse,
+        reason: 'the failed edit releases the spinner');
+    expect(controller.state.status, InventoryStatus.ready);
+    expect(controller.state.total, 2,
+        reason: 'the failed edit leaks no phantom row');
   });
 }

@@ -1454,7 +1454,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get prescriptionItem => 'الصنف';
 
   @override
-  String get prescriptionQuantity => 'الكمية (الوحدات الأساسية)';
+  String get prescriptionQuantity => 'الكمية';
 
   @override
   String get prescriptionDosage => 'الجرعة';

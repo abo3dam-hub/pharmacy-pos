@@ -13,7 +13,12 @@ import '../repositories/inventory_repository.dart';
 /// (categories, manufacturers, active ingredients, indications, units) and
 /// items are matched by primary barcode, falling back to trade name (create or
 /// update). The only hard requirement per row is a non-empty trade name.
-/// The sheet keeps a fixed Arabic header row for every target.
+/// The sheet keeps a fixed Arabic header row. Phase 18.1: the المكافئ /
+/// الشكل الصيدلاني / الجرعة / الحجم columns were appended at the end (indices
+/// 23–26) so previously exported files stay positionally valid, and a blank
+/// cell for an existing item preserves the current value (financial fields,
+/// stock limits, location, barcodes, expiry flag, ingredients, indications,
+/// units and the four appended fields are never overwritten by a blank).
 class InventoryExcelService {
   const InventoryExcelService(this._repo);
 
@@ -49,6 +54,10 @@ class InventoryExcelService {
     'الحد الأدنى',
     'الحد الأقصى',
     'المخزون الحالي',
+    'المكافئ',
+    'الشكل الصيدلاني',
+    'الجرعة / العيار',
+    'الحجم',
   ];
 
   static const Map<String, int> _colIndex = {
@@ -75,6 +84,10 @@ class InventoryExcelService {
     'الحد الأدنى': 20,
     'الحد الأقصى': 21,
     'المخزون الحالي': 22,
+    'المكافئ': 23,
+    'الشكل الصيدلاني': 24,
+    'الجرعة / العيار': 25,
+    'الحجم': 26,
   };
 
   // ----- Export -----
@@ -105,7 +118,7 @@ class InventoryExcelService {
         BoolCellValue(item.hasExpiry),
         TextCellValue(v.baseUnitName ?? ''),
         TextCellValue(v.largeUnitName ?? ''),
-        IntCellValue(units?.unitsPerLarge ?? 1),
+        units == null ? TextCellValue('') : IntCellValue(units.unitsPerLarge),
         TextCellValue(Money.fromUnits(item.sellingPriceMicros).format()),
         TextCellValue(Money.fromUnits(item.wholesalePriceMicros).format()),
         TextCellValue(Money.fromUnits(item.halfWholesalePriceMicros).format()),
@@ -114,6 +127,10 @@ class InventoryExcelService {
         IntCellValue(item.minimumStockBase),
         IntCellValue(item.maximumStockBase),
         IntCellValue(item.currentStockBase),
+        TextCellValue(item.equivalentDrug ?? ''),
+        TextCellValue(item.pharmaForm ?? ''),
+        TextCellValue(item.dose ?? ''),
+        TextCellValue(item.sizeVolume ?? ''),
       ]);
     }
     return excel.save(fileName: 'inventory.xlsx')!;
@@ -198,35 +215,49 @@ class InventoryExcelService {
       }
 
       // Relational active ingredients encoded as `name:strength` pairs
-      // separated by ';' (strength optional, §4.2b).
-      final rawIngredients = at(_colIndex['المواد الفعالة']!);
-      final ingredientIds = <String>[];
-      final ingredientStrengths = <String, String>{};
+      // separated by ';' (strength optional, §4.2b). A blank cell for an
+      // existing item preserves its current relational set.
+      final rawIngredients = at(_colIndex['المواد الفعالة']!).trim();
+      var ingredientIds = <String>[];
+      var ingredientStrengths = <String, String>{};
       var ingredientsOk = true;
-      for (final entry in _splitEntries(rawIngredients)) {
-        final (name, strength) = _splitPair(entry);
-        final ingredient = byIngredientName[name];
-        if (ingredient == null) {
-          issues.add('الصف ${r + 1}: المادة الفعالة "$name" غير معروفة');
-          ingredientsOk = false;
-          break;
+      if (rawIngredients.isEmpty && existing != null) {
+        final rels = await _repo.activeIngredientRelationsForItem(existing.id);
+        ingredientIds = [for (final r in rels) r.activeIngredientId];
+        ingredientStrengths = {
+          for (final r in rels)
+            if ((r.strength ?? '').isNotEmpty) r.activeIngredientId: r.strength!,
+        };
+      } else {
+        for (final entry in _splitEntries(rawIngredients)) {
+          final (name, strength) = _splitPair(entry);
+          final ingredient = byIngredientName[name];
+          if (ingredient == null) {
+            issues.add('الصف ${r + 1}: المادة الفعالة "$name" غير معروفة');
+            ingredientsOk = false;
+            break;
+          }
+          ingredientIds.add(ingredient.id);
+          if (strength.isNotEmpty) ingredientStrengths[ingredient.id] = strength;
         }
-        ingredientIds.add(ingredient.id);
-        if (strength.isNotEmpty) ingredientStrengths[ingredient.id] = strength;
       }
       if (!ingredientsOk) continue;
 
-      final rawIndications = at(_colIndex['الاستطبابات']!);
-      final indicationIds = <String>[];
+      final rawIndications = at(_colIndex['الاستطبابات']!).trim();
+      var indicationIds = <String>[];
       var indicationsOk = true;
-      for (final name in _splitEntries(rawIndications)) {
-        final indication = byIndicationName[name];
-        if (indication == null) {
-          issues.add('الصف ${r + 1}: الاستطباب "$name" غير معروف');
-          indicationsOk = false;
-          break;
+      if (rawIndications.isEmpty && existing != null) {
+        indicationIds = await _repo.indicationIdsForItem(existing.id);
+      } else {
+        for (final name in _splitEntries(rawIndications)) {
+          final indication = byIndicationName[name];
+          if (indication == null) {
+            issues.add('الصف ${r + 1}: الاستطباب "$name" غير معروف');
+            indicationsOk = false;
+            break;
+          }
+          indicationIds.add(indication.id);
         }
-        indicationIds.add(indication.id);
       }
       if (!indicationsOk) continue;
 
@@ -240,7 +271,7 @@ class InventoryExcelService {
         continue;
       }
 
-      // Unit relation: from the sheet when given, otherwise preserved for
+      // Unit relation: from the sheet when complete, otherwise preserved for
       // existing items (optional for new ones, Phase 18).
       final existingUnits =
           existing == null ? null : await _repo.itemUnitsFor(existing.id);
@@ -260,41 +291,89 @@ class InventoryExcelService {
                       unitsPerLarge: existingUnits.unitsPerLarge,
                     );
 
-      final selling = _parseMoney(at(_colIndex['سعر البيع']!));
-      final wholesale = _parseMoney(at(_colIndex['سعر الجملة']!));
-      final half = _parseMoney(at(_colIndex['سعر الجملة النصف']!));
-      final cost = _parseMoney(at(_colIndex['سعر التكلفة']!));
-      if (selling == null || cost == null) {
+      // Financial/stock fields are optional: a blank cell for an existing item
+      // preserves the current value, for a new item it defaults to zero. Only
+      // a *non-blank* unparseable value is rejected.
+      final sellingRaw = at(_colIndex['سعر البيع']!);
+      final wholesaleRaw = at(_colIndex['سعر الجملة']!);
+      final halfRaw = at(_colIndex['سعر الجملة النصف']!);
+      final costRaw = at(_colIndex['سعر التكلفة']!);
+      final selling = sellingRaw.isEmpty ? null : _parseMoney(sellingRaw);
+      final wholesale = wholesaleRaw.isEmpty ? null : _parseMoney(wholesaleRaw);
+      final half = halfRaw.isEmpty ? null : _parseMoney(halfRaw);
+      final cost = costRaw.isEmpty ? null : _parseMoney(costRaw);
+      if ((sellingRaw.isNotEmpty && selling == null) ||
+          (costRaw.isNotEmpty && cost == null)) {
         issues.add('الصف ${r + 1}: قيم مالية غير صالحة');
         continue;
       }
+      final vatRaw = at(_colIndex['ضريبة %']!);
+      final minRaw = at(_colIndex['الحد الأدنى']!);
+      final maxRaw = at(_colIndex['الحد الأقصى']!);
+      final expiryText = at(_colIndex['له تاريخ صلاحية']!);
 
       final draft = ItemDraft(
-        primaryBarcode: barcode.isEmpty ? null : barcode,
-        secondaryBarcode:
-            _orNull(at(_colIndex['الرمز الشريطي الثانوي']!)),
+        primaryBarcode: barcode.isEmpty ? existing?.primaryBarcode : barcode,
+        secondaryBarcode: _orNull(at(_colIndex['الرمز الشريطي الثانوي']!)) ??
+            existing?.secondaryBarcode,
         tradeName: tradeName,
-        tradeNameEn: _orNull(at(_colIndex['الاسم التجاري (EN)']!)),
-        scientificName: _orNull(at(_colIndex['الاسم العلمي']!)),
-        activeIngredient: _orNull(at(_colIndex['المادة الفعالة']!)),
+        tradeNameEn:
+            _orNull(at(_colIndex['الاسم التجاري (EN)']!)) ?? existing?.tradeNameEn,
+        scientificName:
+            _orNull(at(_colIndex['الاسم العلمي']!)) ?? existing?.scientificName,
+        activeIngredient:
+            _orNull(at(_colIndex['المادة الفعالة']!)) ?? existing?.activeIngredient,
+        equivalentDrug:
+            _orNull(at(_colIndex['المكافئ']!)) ?? existing?.equivalentDrug,
+        pharmaForm:
+            _orNull(at(_colIndex['الشكل الصيدلاني']!)) ?? existing?.pharmaForm,
+        dose: _orNull(at(_colIndex['الجرعة / العيار']!)) ?? existing?.dose,
+        sizeVolume: _orNull(at(_colIndex['الحجم']!)) ?? existing?.sizeVolume,
         categoryId: category?.id ?? existing?.categoryId,
         manufacturerId: manufacturer?.id ?? existing?.manufacturerId,
-        shelfLocation: _orNull(at(_colIndex['الموقع']!)),
-        hasExpiry: _cellBool(values, _colIndex['له تاريخ صلاحية']!),
-        sellingPriceMicros: selling,
-        subUnitPriceMicros: existing?.subUnitPriceMicros ?? selling,
+        shelfLocation: _orNull(at(_colIndex['الموقع']!)) ?? existing?.shelfLocation,
+        hasExpiry: expiryText.trim().isEmpty
+            ? (existing?.hasExpiry ?? false)
+            : _cellBool(values, _colIndex['له تاريخ صلاحية']!),
+        sellingPriceMicros: selling ?? existing?.sellingPriceMicros ?? 0,
+        subUnitPriceMicros: existing?.subUnitPriceMicros ?? selling ?? 0,
         wholesalePriceMicros:
-            wholesale ?? existing?.wholesalePriceMicros ?? selling,
+            wholesale ?? existing?.wholesalePriceMicros ?? selling ?? 0,
         halfWholesalePriceMicros:
-            half ?? existing?.halfWholesalePriceMicros ?? selling,
-        vatRateBasisPoints: (_parseInt(at(_colIndex['ضريبة %']!)) ?? 0) * 100,
-        costMicros: cost,
-        minimumStockBase: _parseInt(at(_colIndex['الحد الأدنى']!)) ?? 0,
-        maximumStockBase: _parseInt(at(_colIndex['الحد الأقصى']!)) ?? 0,
+            half ?? existing?.halfWholesalePriceMicros ?? selling ?? 0,
+        vatRateBasisPoints: vatRaw.trim().isEmpty
+            ? (existing?.vatRateBasisPoints ?? 0)
+            : (_parseInt(vatRaw) ?? 0) * 100,
+        costMicros: cost ?? existing?.costMicros ?? 0,
+        minimumStockBase: minRaw.trim().isEmpty
+            ? (existing?.minimumStockBase ?? 0)
+            : (_parseInt(minRaw) ?? 0),
+        maximumStockBase: maxRaw.trim().isEmpty
+            ? (existing?.maximumStockBase ?? 0)
+            : (_parseInt(maxRaw) ?? 0),
         units: relation,
         activeIngredientIds: ingredientIds,
         activeIngredientStrengths: ingredientStrengths,
         indicationIds: indicationIds,
+        // Fields the sheet does not model are preserved untouched on update so
+        // an import is an in-place edit of the product master (lossless
+        // round-trip, Phase 18.1).
+        isControlledDrug: existing?.isControlledDrug ?? false,
+        lockAutoPriceUpdate: existing?.lockAutoPriceUpdate ?? false,
+        requiresPrescription: existing?.requiresPrescription ?? false,
+        customPrice1Micros: existing?.customPrice1Micros ?? 0,
+        customPrice2Micros: existing?.customPrice2Micros ?? 0,
+        purchaseDiscountBasisPoints:
+            existing?.purchaseDiscountBasisPoints ?? 0,
+        usageInstructions: existing?.usageInstructions,
+        generalNotes: existing?.generalNotes,
+        licenseNumber: existing?.licenseNumber,
+        partialSaleEnabled: existing?.partialSaleEnabled ?? false,
+        sellablePartUnitId: existing?.sellablePartUnitId,
+        partsPerFullProduct: existing?.partsPerFullProduct,
+        sellablePartBaseQuantity: existing?.sellablePartBaseQuantity,
+        partialSaleMarkupBasisPoints: existing?.partialSaleMarkupBasisPoints,
+        partialSalePriceMicros: existing?.partialSalePriceMicros,
       );
       rows.add(ImportRow(
         draft: draft,

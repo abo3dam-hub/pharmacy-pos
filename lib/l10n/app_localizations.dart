@@ -2915,7 +2915,7 @@ abstract class AppLocalizations {
   /// No description provided for @prescriptionQuantity.
   ///
   /// In ar, this message translates to:
-  /// **'الكمية (الوحدات الأساسية)'**
+  /// **'الكمية'**
   String get prescriptionQuantity;
 
   /// No description provided for @prescriptionDosage.

@@ -476,7 +476,7 @@
   "prescriptionItems": "Prescription items",
   "prescriptionAddItem": "Add item",
   "prescriptionItem": "Item",
-  "prescriptionQuantity": "Quantity (base units)",
+  "prescriptionQuantity": "Quantity",
   "prescriptionDosage": "Dosage",
   "prescriptionFrequency": "Frequency",
   "prescriptionDurationDays": "Duration (days)",

@@ -476,7 +476,7 @@
   "prescriptionItems": "أصناف الوصفة",
   "prescriptionAddItem": "إضافة صنف",
   "prescriptionItem": "الصنف",
-  "prescriptionQuantity": "الكمية (الوحدات الأساسية)",
+  "prescriptionQuantity": "الكمية",
   "prescriptionDosage": "الجرعة",
   "prescriptionFrequency": "التكرار",
   "prescriptionDurationDays": "مدة العلاج (أيام)",

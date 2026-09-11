@@ -13,7 +13,8 @@ import '../entities/smart_alternative.dart';
 ///     ingredient with the requested product.
 ///
 /// Candidates are ranked by tier first, then by available stock (desc), then
-/// alphabetically — so the pharmacist picks a stocked, equivalent item.
+/// by same-manufacturer (tie-break), then alphabetically — so the pharmacist
+/// picks a stocked, equivalent item from the same supplier family first.
 class SmartAlternativesService {
   const SmartAlternativesService();
 
@@ -72,6 +73,17 @@ class SmartAlternativesService {
       if (byTier != 0) return byTier;
       final byStock = b.item.availableStockBase.compareTo(a.item.availableStockBase);
       if (byStock != 0) return byStock;
+      // Same manufacturer is preferred over the same tier + stock (§18.1).
+      final aMfr = a.item.manufacturerId != null &&
+              a.item.manufacturerId == requested.manufacturerId
+          ? 1
+          : 0;
+      final bMfr = b.item.manufacturerId != null &&
+              b.item.manufacturerId == requested.manufacturerId
+          ? 1
+          : 0;
+      final byMfr = bMfr.compareTo(aMfr);
+      if (byMfr != 0) return byMfr;
       return a.item.tradeName.compareTo(b.item.tradeName);
     });
 

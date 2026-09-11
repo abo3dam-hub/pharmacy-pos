@@ -215,7 +215,6 @@ this.supplierIds = const [],
   ItemDraft copyWith({
     String? tradeName,
     String? categoryId,
-    String? subCategoryId,
     String? shelfLocation,
     List<String>? supplierIds,
     List<String>? activeIngredientIds,
@@ -270,8 +269,9 @@ this.supplierIds = const [],
       );
 }
 
-/// Master-data draft shared by categories, sub-categories, manufacturers,
-/// therapeutic groups and units (§4.1–4.5).
+/// Master-data draft shared by categories, manufacturers, units, active
+/// ingredients and indications (§4.1–4.6). Sub-categories and therapeutic
+/// groups were removed in Phase 18 (v12).
 class MasterDataDraft {
   const MasterDataDraft({
     required this.name,
