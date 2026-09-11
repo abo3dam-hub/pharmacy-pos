@@ -2,7 +2,7 @@
 
 **Status:** ✅ COMPLETED in one guided execution session.
 **Baseline commit:** `c1bcf3b` (Phase 18.1 final state on `main`, all suites green).
-**Phase 18.2A commit on `main`:** _filled in after push_ (see §7).
+**Phase 18.2A commit on `main`:** `3491c49` (see §7).
 **Scope governor:** run the full test suite, document the solution, then stop. **The Syrian medicine database import was NOT started** — Phase 18.2A only removes the last contract and scaling obstacles so that import can run idempotently; the import itself remains a separately-scoped follow-up.
 
 ---
@@ -110,8 +110,8 @@ Also re-pinned: Phase 18.1 contract test G (the intermediate in-app edit that in
 | Item | Value |
 |------|-------|
 | Baseline | `c1bcf3b` |
-| Phase 18.2A commit on `main` | **(SHA recorded after push)** |
-| CI (GitHub Actions `ci.yml`) | **verify after push**: `analyze-test` (flutter analyze + flutter test), `build-windows`, `build-android` |
+| Phase 18.2A commit on `main` | `3491c49` |
+| CI (GitHub Actions `ci.yml`) | **success** — `analyze-test` (flutter analyze + full flutter test suite), `build-windows`, `build-android` all green (run `34596786540`) |
 
 ---
 
