@@ -94,7 +94,7 @@ void main() {
     final db = newDatabase();
     final controller = _controller(db);
 
-    await controller.load(actingRoleId: _adminRole);
+    await controller.load(inStockOnly: false, actingRoleId: _adminRole);
     expect(controller.state.status, InventoryStatus.ready);
     expect(controller.state.busy, isFalse);
 
@@ -111,7 +111,7 @@ void main() {
     // A duplicate barcode still fails via the unique index and must release
     // the spinner without leaking a phantom row into the grid.
     await insertItem(db);
-    await controller.load(actingRoleId: _adminRole);
+    await controller.load(inStockOnly: false, actingRoleId: _adminRole);
     final failure = await controller.createItem(
       const ItemDraft(
         tradeName: 'بانادول مكرر',
@@ -133,7 +133,7 @@ void main() {
     final db = newDatabase();
     final controller = _controller(db);
 
-    await controller.load(actingRoleId: _adminRole);
+    await controller.load(inStockOnly: false, actingRoleId: _adminRole);
     final failure = await controller.createItem(
       _draft,
       actingUserId: _admin,
@@ -151,7 +151,7 @@ void main() {
       'edit (not a generic save error)', () async {
     final db = newDatabase();
     final controller = _controller(db);
-    await controller.load(actingRoleId: _adminRole);
+    await controller.load(inStockOnly: false, actingRoleId: _adminRole);
 
     final a = await controller.createItem(
       const ItemDraft(tradeName: 'منتج أ', primaryBarcode: 'BC_A-EDIT'),

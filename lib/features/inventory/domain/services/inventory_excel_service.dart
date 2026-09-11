@@ -160,11 +160,23 @@ class InventoryExcelService {
 
   // ----- Import -----
 
-  /// Parses bytes into import rows, resolving master-data by name and items by
-  /// deterministic matching (barcode → composite identity; ambiguous rows are
-  /// skipped with an issue). The item catalog is loaded exactly once and every
-  /// per-row lookup is an in-memory index access (Phase 18.2A).
-  Future<({List<ImportRow> rows, List<String> issues})> parseImport(
+/// Parses bytes into import rows, resolving master-data by name and items by
+/// deterministic matching (barcode → composite identity; ambiguous rows are
+/// skipped with an issue). The item catalog is loaded exactly once and every
+/// per-row lookup is an in-memory index access (Phase 18.2A).
+///
+/// **Master-data auto-creation (Phase 18.3):** instead of rejecting a row
+/// whose referenced master entity (category, manufacturer, active ingredient,
+/// indication or unit) is unknown, the missing entity is created on the spot
+/// and the row imported — so a supplier's full catalog sheet inserts complete.
+/// Every auto-created row is reported through [createdMaster] so the caller can
+/// audit it like an explicit master-data create.
+  Future<
+      ({
+        List<ImportRow> rows,
+        List<String> issues,
+        List<CreatedMasterRecord> createdMaster,
+      })> parseImport(
     List<int> bytes,
   ) async {
     final excel = Excel.decodeBytes(bytes);
@@ -173,6 +185,7 @@ class InventoryExcelService {
       return (
         rows: const <ImportRow>[],
         issues: const ['ملف بدون أوراق بيانات'],
+        createdMaster: const <CreatedMasterRecord>[],
       );
     }
 
@@ -207,6 +220,7 @@ class InventoryExcelService {
 
     final issues = <String>[];
     final rows = <ImportRow>[];
+    final createdMaster = <CreatedMasterRecord>[];
     final seenTargets = <String, int>{};
     for (var r = 1; r < sheet.maxRows; r++) {
       // Yield to the event loop every 256 rows so a very large file never
@@ -224,21 +238,35 @@ class InventoryExcelService {
       if (tradeName.isEmpty) continue;
 
       final categoryName = at(_colIndex['التصنيف']!);
-      final category = categoryName.isEmpty
+      var category = categoryName.isEmpty
           ? null
           : byCategoryName[categoryName];
       if (categoryName.isNotEmpty && category == null) {
-        issues.add('الصف ${r + 1}: التصنيف "$categoryName" غير معروف');
-        continue;
+        category = await _repo.createCategory(MasterDataDraft(
+              name: categoryName,
+            ));
+        byCategoryName[categoryName] = category;
+        createdMaster.add(CreatedMasterRecord(
+          entityType: 'category',
+          entityId: category.id,
+          name: category.name,
+        ));
       }
 
       final manufacturerName = at(_colIndex['الشركة المصنعة']!);
-      final manufacturer = manufacturerName.isNotEmpty
+      var manufacturer = manufacturerName.isNotEmpty
           ? byManufacturerName[manufacturerName]
           : null;
       if (manufacturerName.isNotEmpty && manufacturer == null) {
-        issues.add('الصف ${r + 1}: الشركة "$manufacturerName" غير معروفة');
-        continue;
+        manufacturer = await _repo.createManufacturer(MasterDataDraft(
+              name: manufacturerName,
+            ));
+        byManufacturerName[manufacturerName] = manufacturer;
+        createdMaster.add(CreatedMasterRecord(
+          entityType: 'manufacturer',
+          entityId: manufacturer.id,
+          name: manufacturer.name,
+        ));
       }
 
       // Relational active ingredients encoded as `name:strength` pairs
@@ -248,38 +276,44 @@ class InventoryExcelService {
       final rawIngredients = at(_colIndex['المواد الفعالة']!).trim();
       var ingredientIds = <String>[];
       var ingredientStrengths = <String, String>{};
-      var ingredientsOk = true;
       if (rawIngredients.isNotEmpty) {
         for (final entry in _splitEntries(rawIngredients)) {
           final (name, strength) = _splitPair(entry);
-          final ingredient = byIngredientName[name];
+          var ingredient = byIngredientName[name];
           if (ingredient == null) {
-            issues.add('الصف ${r + 1}: المادة الفعالة "$name" غير معروفة');
-            ingredientsOk = false;
-            break;
+            ingredient =
+                await _repo.createActiveIngredient(MasterDataDraft(name: name));
+            byIngredientName[name] = ingredient;
+            createdMaster.add(CreatedMasterRecord(
+              entityType: 'active_ingredient',
+              entityId: ingredient.id,
+              name: ingredient.name,
+            ));
           }
           ingredientIds.add(ingredient.id);
           if (strength.isNotEmpty) {
             ingredientStrengths[ingredient.id] = strength;
           }
         }
-        if (!ingredientsOk) continue;
       }
 
       final rawIndications = at(_colIndex['الاستطبابات']!).trim();
       var indicationIds = <String>[];
-      var indicationsOk = true;
       if (rawIndications.isNotEmpty) {
         for (final name in _splitEntries(rawIndications)) {
-          final indication = byIndicationName[name];
+          var indication = byIndicationName[name];
           if (indication == null) {
-            issues.add('الصف ${r + 1}: الاستطباب "$name" غير معروف');
-            indicationsOk = false;
-            break;
+            indication =
+                await _repo.createIndication(MasterDataDraft(name: name));
+            byIndicationName[name] = indication;
+            createdMaster.add(CreatedMasterRecord(
+              entityType: 'indication',
+              entityId: indication.id,
+              name: indication.name,
+            ));
           }
           indicationIds.add(indication.id);
         }
-        if (!indicationsOk) continue;
       }
 
       final pharmaForm = at(_colIndex['الشكل الصيدلاني']!);
@@ -348,11 +382,29 @@ class InventoryExcelService {
 
       final baseName = at(_colIndex['الأجزاء']!);
       final largeName = at(_colIndex['التعبئة التجارية']!);
-      final baseUnit = baseName.isEmpty ? null : byUnitName[baseName];
-      final largeUnit = largeName.isEmpty ? null : byUnitName[largeName];
+      var baseUnit = baseName.isEmpty ? null : byUnitName[baseName];
+      var largeUnit = largeName.isEmpty ? null : byUnitName[largeName];
+      if (baseName.isNotEmpty && baseUnit == null) {
+        baseUnit = await _repo.createUnit(MasterDataDraft(name: baseName));
+        byUnitName[baseName] = baseUnit;
+        createdMaster.add(CreatedMasterRecord(
+          entityType: 'unit',
+          entityId: baseUnit.id,
+          name: baseUnit.name,
+        ));
+      }
+      if (largeName.isNotEmpty && largeUnit == null) {
+        largeUnit = await _repo.createUnit(MasterDataDraft(name: largeName));
+        byUnitName[largeName] = largeUnit;
+        createdMaster.add(CreatedMasterRecord(
+          entityType: 'unit',
+          entityId: largeUnit.id,
+          name: largeUnit.name,
+        ));
+      }
       if (baseName.isNotEmpty && (baseUnit == null || largeUnit == null)) {
         issues.add(
-          'الصف ${r + 1}: الوحدات "$baseName" / "$largeName" غير معروفة',
+          'الصف ${r + 1}: الوحدات "$baseName" / "$largeName" غير مكتملة',
         );
         continue;
       }
@@ -473,7 +525,7 @@ class InventoryExcelService {
         ),
       );
     }
-    return (rows: rows, issues: issues);
+    return (rows: rows, issues: issues, createdMaster: createdMaster);
   }
 
   /// Deterministic item resolution (Phase 18.2A). Returns `(item, false)` for
@@ -735,4 +787,20 @@ class ImportRow {
   final int rowNumber;
   final String? barcode;
   final String? existingItemId;
+}
+
+/// An auto-created master-data row reported by the importer (Phase 18.3). When
+/// a sheet row references a category/manufacturer/active ingredient/indication/
+/// unit that does not exist yet, the importer creates it and reports it here so
+/// the caller can audit the creation like a normal master-data create.
+class CreatedMasterRecord {
+  const CreatedMasterRecord({
+    required this.entityType,
+    required this.entityId,
+    required this.name,
+  });
+
+  final String entityType;
+  final String entityId;
+  final String name;
 }

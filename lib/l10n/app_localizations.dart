@@ -1004,6 +1004,24 @@ abstract class AppLocalizations {
   /// **'المفعّلة فقط'**
   String get inventoryActiveFilter;
 
+  /// No description provided for @inventoryInStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواد الموجودة في المخزون'**
+  String get inventoryInStock;
+
+  /// No description provided for @inventoryProductTree.
+  ///
+  /// In ar, this message translates to:
+  /// **'شجرة المواد'**
+  String get inventoryProductTree;
+
+  /// No description provided for @inventoryStockTooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الحالي: {stock} · سعر البيع: {price}'**
+  String inventoryStockTooltip(String stock, String price);
+
   /// No description provided for @inventoryCreatedMessage.
   ///
   /// In ar, this message translates to:
@@ -1051,6 +1069,12 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'سقط {skipped} صفًا'**
   String inventoryImportIssues(int skipped);
+
+  /// No description provided for @inventoryImportMaster.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُنشئت {count} بيانات أساسية جديدة'**
+  String inventoryImportMaster(int count);
 
   /// No description provided for @inventoryExportDone.
   ///

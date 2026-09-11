@@ -306,6 +306,7 @@ abstract class InventoryRepository {
     String? categoryId,
     String? manufacturerId,
     bool? onlyActive,
+    bool? inStockOnly,
   });
 
   /// Loads the complete item catalog in one round trip (no page-size ceiling)

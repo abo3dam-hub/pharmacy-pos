@@ -24,6 +24,7 @@ class ListItemsUseCase {
     String? categoryId,
     String? manufacturerId,
     bool? onlyActive,
+    bool? inStockOnly,
     String? actingRoleId,
   }) async {
     await _permissions.requireRolePermission(
@@ -31,7 +32,8 @@ class ListItemsUseCase {
     final result = await _repo.searchItems(page,
         categoryId: categoryId,
         manufacturerId: manufacturerId,
-        onlyActive: onlyActive);
+        onlyActive: onlyActive,
+        inStockOnly: inStockOnly);
     final views = await viewBuilder.buildMany(result.items);
     return (items: views, total: result.total, request: result.request);
   }

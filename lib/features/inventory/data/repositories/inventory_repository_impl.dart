@@ -70,11 +70,13 @@ class InventoryRepositoryImpl implements InventoryRepository {
     String? categoryId,
     String? manufacturerId,
     bool? onlyActive,
+    bool? inStockOnly,
   }) =>
       _itemDao.search(page,
           categoryId: categoryId,
           manufacturerId: manufacturerId,
-          onlyActive: onlyActive);
+          onlyActive: onlyActive,
+          inStockOnly: inStockOnly);
 
   @override
   Future<List<ItemRow>> allItems() => (_db.select(

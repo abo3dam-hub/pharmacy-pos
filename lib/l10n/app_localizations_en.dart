@@ -468,6 +468,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryActiveFilter => 'Active only';
 
   @override
+  String get inventoryInStock => 'Items in stock';
+
+  @override
+  String get inventoryProductTree => 'Product tree';
+
+  @override
+  String inventoryStockTooltip(String stock, String price) {
+    return 'Current stock: $stock · Selling price: $price';
+  }
+
+  @override
   String get inventoryCreatedMessage => 'Item created';
 
   @override
@@ -493,6 +504,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String inventoryImportIssues(int skipped) {
     return 'Skipped $skipped rows';
+  }
+
+  @override
+  String inventoryImportMaster(int count) {
+    return 'Created $count new master records';
   }
 
   @override

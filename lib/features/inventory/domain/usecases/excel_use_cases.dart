@@ -36,11 +36,13 @@ class ImportSummary {
   const ImportSummary({
     required this.created,
     required this.updated,
+    this.createdMaster = 0,
     required this.issues,
   });
 
   final int created;
   final int updated;
+  final int createdMaster;
   final List<String> issues;
 
   int get skipped => issues.length;
@@ -73,6 +75,18 @@ class ImportItemsUseCase {
     final issues = [...parsed.issues];
     var created = 0;
     var updated = 0;
+
+    for (final m in parsed.createdMaster) {
+      await _audit.write(
+        db,
+        userId: actingUserId,
+        action: AuditAction.create,
+        entityType: m.entityType,
+        entityId: m.entityId,
+        after: {'name': m.name},
+        note: 'إنشاء تلقائي أثناء استيراد: ${m.name}',
+      );
+    }
 
     for (final row in parsed.rows) {
       final existingId = row.existingItemId;
@@ -115,10 +129,22 @@ class ImportItemsUseCase {
       action: AuditAction.bulkOp,
       entityType: 'item',
       entityId: 'import:${DateTime.now().microsecondsSinceEpoch}',
-      after: {'created': created, 'updated': updated, 'issues': issues.length},
-      note: 'استيراد Excel: أنشئ $created، حُدّث $updated، رُفض ${issues.length}',
+      after: {
+        'created': created,
+        'updated': updated,
+        'createdMaster': parsed.createdMaster.length,
+        'issues': issues.length,
+      },
+      note: 'استيراد Excel: أنشئ $created، حُدّث $updated، '
+          'أُنشئت ${parsed.createdMaster.length} بيانات أساسية، '
+          'رُفض ${issues.length}',
     );
-    return ImportSummary(created: created, updated: updated, issues: issues);
+    return ImportSummary(
+      created: created,
+      updated: updated,
+      createdMaster: parsed.createdMaster.length,
+      issues: issues,
+    );
   }
 }
 

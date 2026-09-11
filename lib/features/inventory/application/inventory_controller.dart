@@ -25,6 +25,7 @@ class InventoryViewState {
     this.total = 0,
     this.request = const PageRequest(),
     this.onlyActive,
+    this.inStockOnly = true,
     this.selectedIds = const {},
     this.error,
     this.busy = false,
@@ -39,6 +40,7 @@ class InventoryViewState {
   final int total;
   final PageRequest request;
   final bool? onlyActive;
+  final bool? inStockOnly;
   final Set<String> selectedIds;
   final Failure? error;
   final bool busy;
@@ -59,6 +61,7 @@ class InventoryViewState {
     int? total,
     PageRequest? request,
     bool? onlyActive,
+    bool? inStockOnly,
     Set<String>? selectedIds,
     Failure? Function()? error,
     bool? busy,
@@ -73,6 +76,7 @@ class InventoryViewState {
       total: total ?? this.total,
       request: request ?? this.request,
       onlyActive: onlyActive ?? this.onlyActive,
+      inStockOnly: inStockOnly ?? this.inStockOnly,
       selectedIds: selectedIds ?? this.selectedIds,
       error: error != null ? error() : this.error,
       busy: busy ?? this.busy,
@@ -122,15 +126,18 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     String search = '',
     int page = 1,
     bool? onlyActive,
+    bool? inStockOnly,
     String? actingRoleId,
   }) async {
     state = state.copyWith(
         status: InventoryStatus.loading,
         error: () => null,
-        onlyActive: onlyActive ?? state.onlyActive);
+        onlyActive: onlyActive ?? state.onlyActive,
+        inStockOnly: inStockOnly ?? state.inStockOnly);
     try {
       final result = await _listItems.call(
         PageRequest(page: page, search: search, pageSize: 30),
+        inStockOnly: inStockOnly ?? state.inStockOnly,
         actingRoleId: actingRoleId,
       );
       state = state.copyWith(
@@ -158,6 +165,7 @@ class InventoryController extends StateNotifier<InventoryViewState> {
         search: state.search,
         page: state.page,
         onlyActive: state.onlyActive,
+        inStockOnly: state.inStockOnly,
         actingRoleId: actingRoleId,
       );
 

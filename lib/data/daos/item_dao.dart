@@ -19,6 +19,7 @@ class ItemDao {
     String? categoryId,
     String? manufacturerId,
     bool? onlyActive,
+    bool? inStockOnly,
     Set<String> relatedItemIds = const {},
   }) {
     final conds = <Expression<bool>>[];
@@ -44,6 +45,9 @@ class ItemDao {
       conds.add(_db.items.manufacturerId.equals(manufacturerId));
     }
     if (onlyActive != null) conds.add(_db.items.isActive.equals(onlyActive));
+    if (inStockOnly == true) {
+      conds.add(_db.items.currentStockBase.isBiggerThanValue(0));
+    }
     return conds.isEmpty ? null : conds.reduce((a, b) => a & b);
   }
 
@@ -54,12 +58,14 @@ class ItemDao {
     String? categoryId,
     String? manufacturerId,
     bool? onlyActive,
+    bool? inStockOnly,
   }) async {
     final related = await SmartSearchDao(_db).matchingItemIds(page.search);
     final filter = _filter(page.search,
         categoryId: categoryId,
         manufacturerId: manufacturerId,
         onlyActive: onlyActive,
+        inStockOnly: inStockOnly,
         relatedItemIds: related);
 
     final totalExpr = _db.items.id.count();
@@ -97,11 +103,13 @@ class ItemDao {
     String? categoryId,
     String? manufacturerId,
     bool? onlyActive,
+    bool? inStockOnly,
   }) {
     return _db.select(_db.items).watch().asyncMap((_) => search(page,
         categoryId: categoryId,
         manufacturerId: manufacturerId,
-        onlyActive: onlyActive));
+        onlyActive: onlyActive,
+        inStockOnly: inStockOnly));
   }
 
   Future<ItemRow?> byId(String id) => (_db.select(_db.items)

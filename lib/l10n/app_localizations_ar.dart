@@ -468,6 +468,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get inventoryActiveFilter => 'المفعّلة فقط';
 
   @override
+  String get inventoryInStock => 'المواد الموجودة في المخزون';
+
+  @override
+  String get inventoryProductTree => 'شجرة المواد';
+
+  @override
+  String inventoryStockTooltip(String stock, String price) {
+    return 'الرصيد الحالي: $stock · سعر البيع: $price';
+  }
+
+  @override
   String get inventoryCreatedMessage => 'تم إنشاء المنتج';
 
   @override
@@ -493,6 +504,11 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String inventoryImportIssues(int skipped) {
     return 'سقط $skipped صفًا';
+  }
+
+  @override
+  String inventoryImportMaster(int count) {
+    return 'أُنشئت $count بيانات أساسية جديدة';
   }
 
   @override

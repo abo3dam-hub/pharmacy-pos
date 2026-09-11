@@ -103,10 +103,19 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
 
   Future<void> _toggleActiveFilter(bool value) => _load(onlyActive: value);
 
-  Future<void> _load({String search = '', bool? onlyActive}) async {
+  Future<void> _toggleInStock(bool value) => _load(inStockOnly: value);
+
+  Future<void> _load({
+    String search = '',
+    bool? onlyActive,
+    bool? inStockOnly,
+  }) async {
     final failure = await ref
         .read(inventoryControllerProvider.notifier)
-        .load(search: search, onlyActive: onlyActive, actingRoleId: _actingRoleId);
+        .load(search: search,
+            onlyActive: onlyActive,
+            inStockOnly: inStockOnly,
+            actingRoleId: _actingRoleId);
     _showFailure(failure);
   }
 
@@ -377,13 +386,16 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
     if (!mounted) return;
     final report = ref.read(inventoryControllerProvider).importReport;
     if (report != null) {
-      final message = report.issues.isEmpty
-          ? l10n.inventoryImportDone(report.created, report.updated)
-          : '${l10n.inventoryImportDone(report.created, report.updated)} · '
-              '${l10n.inventoryImportIssues(report.issues.length)}';
+      final parts = <String>[
+        l10n.inventoryImportDone(report.created, report.updated),
+        if (report.createdMaster > 0)
+          l10n.inventoryImportMaster(report.createdMaster),
+        if (report.issues.isNotEmpty)
+          l10n.inventoryImportIssues(report.issues.length),
+      ];
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(message)));
+        ..showSnackBar(SnackBar(content: Text(parts.join(' · '))));
     } else {
       _showFailure(const DatabaseFailure('inventoryImportFailed'));
     }
@@ -395,7 +407,10 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
     if (page < 1 || page > (pageCount == 0 ? 1 : pageCount)) return;
     ref
         .read(inventoryControllerProvider.notifier)
-        .load(search: state.search, page: page, actingRoleId: _actingRoleId);
+        .load(search: state.search,
+            page: page,
+            inStockOnly: state.inStockOnly,
+            actingRoleId: _actingRoleId);
   }
 
   void _openBatches(InventoryItemView view) =>
@@ -431,6 +446,22 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
             spacing: AppSpacing.m,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
+              SegmentedButton<bool>(
+                segments: [
+                  ButtonSegment(
+                    value: true,
+                    label: Text(l10n.inventoryInStock),
+                  ),
+                  ButtonSegment(
+                    value: false,
+                    label: Text(l10n.inventoryProductTree),
+                  ),
+                ],
+                selected: {state.inStockOnly ?? true},
+                showSelectedIcon: false,
+                onSelectionChanged: (selection) =>
+                    _toggleInStock(selection.first),
+              ),
               FilterChip(
                 label: Text(l10n.inventoryActiveFilter),
                 selected: state.onlyActive ?? false,
@@ -582,7 +613,15 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
               DataCell(Text(Money.fromUnits(row.item.costMicros).format())),
               DataCell(
                   Text(Money.fromUnits(row.item.sellingPriceMicros).format())),
-              DataCell(Text(_stockText(row))),
+              DataCell(
+                Tooltip(
+                  message: l10n.inventoryStockTooltip(
+                    _stockText(row),
+                    Money.fromUnits(row.item.sellingPriceMicros).format(),
+                  ),
+                  child: Text(_stockText(row)),
+                ),
+              ),
               DataCell(StockStatusChip(status: row.stockStatus)),
               DataCell(_actions(l10n, row)),
             ],
@@ -650,11 +689,17 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.s),
-                  Text(
-                    '${l10n.itemStock}: ${_stockText(row)} · '
-                    '${l10n.itemCost}: ${Money.fromUnits(row.item.costMicros).format()} · '
-                    '${l10n.itemPrice}: ${Money.fromUnits(row.item.sellingPriceMicros).format()}',
-                    style: typography.label,
+                  Tooltip(
+                    message: l10n.inventoryStockTooltip(
+                      _stockText(row),
+                      Money.fromUnits(row.item.sellingPriceMicros).format(),
+                    ),
+                    child: Text(
+                      '${l10n.itemStock}: ${_stockText(row)} · '
+                      '${l10n.itemCost}: ${Money.fromUnits(row.item.costMicros).format()} · '
+                      '${l10n.itemPrice}: ${Money.fromUnits(row.item.sellingPriceMicros).format()}',
+                      style: typography.label,
+                    ),
                   ),
                   if (_canEdit) ...[
                     const SizedBox(height: AppSpacing.s),

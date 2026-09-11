@@ -22,6 +22,7 @@ import 'package:pharmacy_pos/features/inventory/domain/services/inventory_excel_
 import 'package:pharmacy_pos/features/inventory/domain/services/inventory_view_builder.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/excel_use_cases.dart';
 import 'package:pharmacy_pos/shared/database/app_database.dart';
+import 'package:pharmacy_pos/shared/models/enums.dart';
 
 import 'helpers.dart';
 
@@ -65,6 +66,7 @@ class CountingRepo extends InventoryRepositoryImpl {
     String? categoryId,
     String? manufacturerId,
     bool? onlyActive,
+    bool? inStockOnly,
   }) {
     searchItemsCalls++;
     return super.searchItems(
@@ -72,6 +74,7 @@ class CountingRepo extends InventoryRepositoryImpl {
       categoryId: categoryId,
       manufacturerId: manufacturerId,
       onlyActive: onlyActive,
+      inStockOnly: inStockOnly,
     );
   }
 }
@@ -464,5 +467,216 @@ void main() {
         );
       },
     );
+
+    test(
+      'unknown master data is auto-created so the full sheet imports',
+      () async {
+        final db = newDatabase();
+        await awaitCategory(db);
+        final repo = CountingRepo(db);
+
+        // Two rows referencing the same unknown category/manufacturer/
+        // ingredient/indication/units plus one row with a distinct unknown
+        // manufacturer — mirrors the supplier's raw catalog sheet.
+        final bytes = _xlsx([
+          [
+            '111000001',
+            null,
+            'بانادول أصلي',
+            null,
+            null,
+            null,
+            'باراسيتامول:500 ملغ',
+            'أدوية عامة',
+            'فرسان الأدوية',
+            'صداع',
+            null,
+            null,
+            'شريط',
+            'علبة',
+            null,
+            null,
+            null,
+            null,
+            null,
+            '3000',
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+          ],
+          [
+            '111000002',
+            null,
+            'بانادول إكسترا',
+            null,
+            null,
+            null,
+            'باراسيتامول:500 ملغ',
+            'أدوية عامة',
+            'فرسان الأدوية',
+            'صداع',
+            null,
+            null,
+            'شريط',
+            'علبة',
+            null,
+            null,
+            null,
+            null,
+            null,
+            '3500',
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+          ],
+          [
+            '111000003',
+            null,
+            'دواء تابع لشركة أخرى',
+            null,
+            null,
+            null,
+            null,
+            null,
+            'مختلفة كلياً',
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+          ],
+        ]);
+
+        final summary = await ImportItemsUseCase(
+          repo,
+          const PermissionService(),
+          const AuditService(),
+        )(bytes, actingUserId: _admin, actingRoleId: _adminRole);
+
+        expect(
+          summary.issues,
+          isEmpty,
+          reason: 'unknown master data must never skip a row anymore',
+        );
+        expect(
+          summary.created,
+          3,
+          reason: 'all three sheet rows import end-to-end',
+        );
+        // category(1) + manufacturers(2) + ingredient(1) + indication(1)
+        // + units(1, 'شريط' — 'علبة' already ships in seed data) == 6 distinct
+        // auto-created master rows.
+        expect(summary.createdMaster, 6);
+
+        final categoryNames = (await db.select(db.categories).get())
+            .map((r) => r.name)
+            .toList();
+        final manufacturerNames = (await db.select(db.manufacturers).get())
+            .map((r) => r.name)
+            .toList();
+        final ingredientNames = (await db.select(db.activeIngredients).get())
+            .map((r) => r.name)
+            .toList();
+        final indicationNames = (await db.select(db.indications).get())
+            .map((r) => r.name)
+            .toList();
+        final unitNames = (await db.select(db.units).get())
+            .map((r) => r.name)
+            .toList();
+        expect(categoryNames, contains('أدوية عامة'));
+        expect(
+          manufacturerNames,
+          containsAll(['فرسان الأدوية', 'مختلفة كلياً']),
+        );
+        expect(ingredientNames, contains('باراسيتامول'));
+        expect(indicationNames, contains('صداع'));
+        expect(unitNames, containsAll(['شريط', 'علبة']));
+
+        // Each auto-created master row is audited like a normal create.
+        final auditRows = await db.select(db.auditLogs).get();
+        final masterAudits = auditRows
+            .where((a) => a.action == AuditAction.create.name)
+            .where((a) => a.entityId.startsWith('cat_'))
+            .toList();
+        expect(masterAudits.length, 1,
+            reason: 'the auto-created category is audited once');
+
+        expect(
+          await _itemCount(db),
+          3,
+          reason: 'previously-skipped rows now land as items',
+        );
+
+        // Re-importing the same sheet must find the master data it already
+        // created (zero new master rows, updates in place).
+        final second = await ImportItemsUseCase(
+          repo,
+          const PermissionService(),
+          const AuditService(),
+        )(bytes, actingUserId: _admin, actingRoleId: _adminRole);
+        expect(second.created, 0);
+        expect(second.updated, 3);
+        expect(
+          second.createdMaster,
+          0,
+          reason: 'previously auto-created master data is reused by name',
+        );
+      },
+    );
+
+    test('in-stock filter keeps only items with current stock > 0', () async {
+      final db = newDatabase();
+      await awaitCategory(db);
+      final repo = CountingRepo(db);
+
+      final outOfStock = await repo.createItem(
+        const ItemDraft(tradeName: 'منتج نفد'),
+      );
+      expect(outOfStock.id, isNotEmpty);
+      final stocked = await repo.createItem(
+        const ItemDraft(tradeName: 'منتج متوفر'),
+      );
+      await insertBatch(db, stocked.id, quantityBase: 5);
+
+      final page = const PageRequest(page: 1, pageSize: 100);
+      final all = await repo.searchItems(page);
+      expect(all.total, 2);
+      expect(
+        all.items.map((i) => i.currentStockBase).any((s) => s > 0),
+        isTrue,
+        reason: 'one of the two has live stock',
+      );
+
+      final inStock = await repo.searchItems(
+        page,
+        inStockOnly: true,
+      );
+      expect(inStock.total, 1);
+      expect(inStock.items.single.tradeName, 'منتج متوفر');
+
+      final allOut = await repo.searchItems(page, inStockOnly: false);
+      expect(allOut.total, 2, reason: 'explicit false = the full catalog');
+    });
   });
 }

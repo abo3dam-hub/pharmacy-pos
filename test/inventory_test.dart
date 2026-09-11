@@ -16,6 +16,7 @@ import 'package:pharmacy_pos/data/daos/unit_dao.dart';
 import 'package:pharmacy_pos/domain/services/audit_service.dart';
 import 'package:pharmacy_pos/domain/services/permission_service.dart';
 import 'package:pharmacy_pos/domain/services/stock_service.dart';
+import 'package:pharmacy_pos/features/inventory/application/inventory_controller.dart';
 import 'package:pharmacy_pos/features/inventory/data/repositories/inventory_repository_impl.dart';
 import 'package:pharmacy_pos/features/inventory/domain/repositories/inventory_repository.dart';
 import 'package:pharmacy_pos/features/inventory/domain/services/inventory_excel_service.dart';
@@ -25,6 +26,7 @@ import 'package:pharmacy_pos/features/inventory/domain/usecases/bulk_use_cases.d
 import 'package:pharmacy_pos/features/inventory/domain/usecases/create_item.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/excel_use_cases.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/list_items.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/set_item_active.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/stock_use_cases.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/update_item.dart';
 import 'package:pharmacy_pos/shared/database/app_database.dart';
@@ -290,6 +292,61 @@ void main() {
         () => create(_draft, actingUserId: 'user_viewer', actingRoleId: 'role_viewer'),
         throwsA(isA<UnauthorizedException>()),
       );
+    });
+
+    test('load defaults to in-stock; the full catalog is a toggle away',
+        () async {
+      final db = newDatabase();
+      await awaitCategory(db);
+      final h = _repo(db);
+      final repo = h.repository;
+      final out = await repo.createItem(
+        const ItemDraft(tradeName: 'بلا مخزون'),
+      );
+      expect(out.id, isNotEmpty);
+      final inStock = await repo.createItem(
+        const ItemDraft(tradeName: 'بمخزون'),
+      );
+      await insertBatch(db, inStock.id, quantityBase: 4);
+
+      final controller = InventoryController(
+        ListItemsUseCase(repo, const PermissionService(),
+            viewBuilder: InventoryViewBuilder(repo)),
+        CreateItemUseCase(repo, const PermissionService(), const AuditService()),
+        UpdateItemUseCase(repo, const PermissionService(), const AuditService()),
+        SetItemActiveUseCase(
+            repo, const PermissionService(), const AuditService()),
+        AddBatchUseCase(repo, const PermissionService(), const AuditService()),
+        VoidBatchUseCase(
+            repo, const PermissionService(), const AuditService()),
+        ListBatchesUseCase(repo, const PermissionService()),
+        AdjustStockUseCase(repo, const PermissionService(), const AuditService()),
+        BulkUpdateItemsUseCase(
+            repo, const PermissionService(), const AuditService()),
+        ExportItemsUseCase(repo, const PermissionService(),
+            InventoryExcelService(repo),
+            viewBuilder: InventoryViewBuilder(repo)),
+        ImportItemsUseCase(repo, const PermissionService(), const AuditService()),
+      );
+
+      // Opening the inventory view shows only what actually is on the shelf.
+      await controller.load(actingRoleId: _adminRole);
+      expect(controller.state.inStockOnly, isTrue,
+          reason: 'the in-stock view is the first screen');
+      expect(controller.state.total, 1);
+      expect(
+        controller.state.items.single.item.tradeName,
+        'بمخزون',
+      );
+
+      // The product tree (full catalog) is reachable with a flip.
+      await controller.load(inStockOnly: false, actingRoleId: _adminRole);
+      expect(controller.state.total, 2);
+
+      // Reload keeps the current mode.
+      await controller.reload();
+      expect(controller.state.total, 2,
+          reason: 'reload must not silently snap back to in-stock-only');
     });
   });
 
