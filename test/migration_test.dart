@@ -176,6 +176,9 @@ class _V1Database extends AppDatabase {
             await customStatement('DROP INDEX IF EXISTS idx_items_sub_category');
             await customStatement(
                 'DROP INDEX IF EXISTS idx_items_therapeutic_group');
+            // Mirrors AppDatabase._migrate, which already carries its own
+            // ignore for this deliberate experimental API use.
+            // ignore: experimental_member_use
             await m.alterTable(TableMigration(items));
             await customStatement('DROP TABLE IF EXISTS sub_categories');
             await customStatement('DROP TABLE IF EXISTS therapeutic_groups');

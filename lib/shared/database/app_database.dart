@@ -317,6 +317,10 @@ class AppDatabase extends _$AppDatabase {
       // off around the rebuild and re-creates the surviving indexes.
       await customStatement('DROP INDEX IF EXISTS idx_items_sub_category');
       await customStatement('DROP INDEX IF EXISTS idx_items_therapeutic_group');
+      // Deliberate use of the experimental table-rebuild primitive (CI gates on
+      // clean `flutter analyze`; keeping that gate strict is worth an ignore
+      // here rather than disabling fatal warnings project-wide).
+      // ignore: experimental_member_use
       await m.alterTable(TableMigration(items));
       await customStatement('DROP TABLE IF EXISTS sub_categories');
       await customStatement('DROP TABLE IF EXISTS therapeutic_groups');
