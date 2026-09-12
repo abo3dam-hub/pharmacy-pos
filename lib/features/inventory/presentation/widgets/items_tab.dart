@@ -296,8 +296,8 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       context,
       title: activating ? l10n.userActivate : l10n.userDeactivate,
       message: activating
-          ? l10n.userActivateConfirmMessage(view.primaryLabel)
-          : l10n.userDeactivateConfirmMessage(view.primaryLabel),
+          ? l10n.userActivateConfirmMessage(view.displayName)
+          : l10n.userDeactivateConfirmMessage(view.displayName),
       confirmLabel: activating ? l10n.userActivate : l10n.userDeactivate,
       destructive: !activating,
     );
@@ -324,7 +324,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
     final confirmed = await showAppConfirmDialog(
       context,
       title: l10n.inventoryDeleteTitle,
-      message: l10n.inventoryDeleteConfirm(view.primaryLabel),
+      message: l10n.inventoryDeleteConfirm(view.displayName),
       confirmLabel: l10n.commonDelete,
       destructive: true,
     );
