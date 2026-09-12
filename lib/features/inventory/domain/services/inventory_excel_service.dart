@@ -344,8 +344,7 @@ class InventoryExcelService {
           ? 'b:$barcode'
           : existing != null
           ? 'i:${existing.id}'
-          : 'c:$_creationIdentity(tradeName, pharmaForm, dose, '
-                'manufacturer?.id, ingredientIds, ingredientStrengths)';
+          : 'c:${_creationIdentity(tradeName, pharmaForm, dose, manufacturer?.id, ingredientIds, ingredientStrengths)}';
       final alreadySeenAt = seenTargets[targetKey];
       if (alreadySeenAt != null) {
         issues.add(
