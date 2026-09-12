@@ -6,7 +6,6 @@ import '../../../../shared/models/enums.dart';
 import '../repositories/inventory_repository.dart';
 import '../services/inventory_excel_service.dart';
 import '../services/inventory_view_builder.dart';
-import 'create_item.dart' show itemAuditJson;
 
 /// Full inventory export to xlsx bytes (§27). Requires `inventory.view`.
 class ExportItemsUseCase {
@@ -73,58 +72,58 @@ class ImportItemsUseCase {
     final service = InventoryExcelService(_repo);
     final parsed = await service.parseImport(bytes);
     final issues = [...parsed.issues];
+
+    final auditEntries = <AuditEntry>[
+      for (final m in parsed.createdMaster)
+        AuditEntry(
+          userId: actingUserId,
+          action: AuditAction.create,
+          entityType: m.entityType,
+          entityId: m.entityId,
+          after: {'name': m.name},
+          note: 'إنشاء تلقائي أثناء استيراد: ${m.name}',
+        ),
+    ];
+
+    // All rows persist in one repository transaction; per-row audit records
+    // are collected and flushed together so a large sheet does not pay a
+    // transaction per item (§27, §28 performance).
+    final applied = await _repo.applyImport([
+      for (final row in parsed.rows)
+        ImportApplyEntry(
+          rowNumber: row.rowNumber,
+          draft: row.draft,
+          existingItemId: row.existingItemId,
+        ),
+    ]);
+    issues.addAll(applied.failures);
     var created = 0;
     var updated = 0;
-
-    for (final m in parsed.createdMaster) {
-      await _audit.write(
-        db,
-        userId: actingUserId,
-        action: AuditAction.create,
-        entityType: m.entityType,
-        entityId: m.entityId,
-        after: {'name': m.name},
-        note: 'إنشاء تلقائي أثناء استيراد: ${m.name}',
-      );
-    }
-
-    for (final row in parsed.rows) {
-      final existingId = row.existingItemId;
-      try {
-        if (existingId != null) {
-          final supplierIds = await _repo.supplierIdsForItem(existingId);
-          await _repo.updateItem(
-              existingId, row.draft.copyWith(supplierIds: supplierIds));
-          await _audit.write(
-            db,
-            userId: actingUserId,
-            action: AuditAction.update,
-            entityType: 'item',
-            entityId: existingId,
-            after: itemAuditJsonDraft(row.draft),
-            note: 'استيراد (تحديث) منتج: ${row.draft.tradeName}',
-          );
-          updated++;
-        } else {
-          final createdRow = await _repo.createItem(row.draft);
-          await _audit.write(
-            db,
-            userId: actingUserId,
-            action: AuditAction.create,
-            entityType: 'item',
-            entityId: createdRow.id,
-            after: itemAuditJson(createdRow),
-            note: 'استيراد (إنشاء) منتج: ${row.draft.tradeName}',
-          );
-          created++;
-        }
-      } on DomainException catch (e) {
-        issues.add('الصف ${row.rowNumber}: ${e.failure.message}');
+    for (final outcome in applied.outcomes) {
+      if (outcome.action == ImportApplyAction.created) {
+        created++;
+        auditEntries.add(AuditEntry(
+          userId: actingUserId,
+          action: AuditAction.create,
+          entityType: 'item',
+          entityId: outcome.entityId,
+          after: itemAuditJsonDraft(outcome.draft),
+          note: 'استيراد (إنشاء) منتج: ${outcome.draft.tradeName}',
+        ));
+      } else {
+        updated++;
+        auditEntries.add(AuditEntry(
+          userId: actingUserId,
+          action: AuditAction.update,
+          entityType: 'item',
+          entityId: outcome.entityId,
+          after: itemAuditJsonDraft(outcome.draft),
+          note: 'استيراد (تحديث) منتج: ${outcome.draft.tradeName}',
+        ));
       }
     }
 
-    await _audit.write(
-      db,
+    auditEntries.add(AuditEntry(
       userId: actingUserId,
       action: AuditAction.bulkOp,
       entityType: 'item',
@@ -138,7 +137,9 @@ class ImportItemsUseCase {
       note: 'استيراد Excel: أنشئ $created، حُدّث $updated، '
           'أُنشئت ${parsed.createdMaster.length} بيانات أساسية، '
           'رُفض ${issues.length}',
-    );
+    ));
+    await _audit.writeMany(db, auditEntries);
+
     return ImportSummary(
       created: created,
       updated: updated,

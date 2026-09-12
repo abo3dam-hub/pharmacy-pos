@@ -100,47 +100,95 @@ class InventoryRepositoryImpl implements InventoryRepository {
       _itemSupplierDao.itemIdsForSupplier(supplierId);
 
   @override
-  Future<ItemRow> createItem(ItemDraft draft) async {
+  Future<ItemRow> createItem(ItemDraft draft) =>
+      _guarded(() => _db.transaction(() => _insertItemInternal(draft)));
+
+  @override
+  Future<ItemRow> updateItem(String id, ItemDraft draft) =>
+      _guarded(() => _db.transaction(() => _updateItemInternal(id, draft)));
+
+  @override
+  Future<ImportApplyResult> applyImport(List<ImportApplyEntry> entries) async {
+    final outcomes = <ImportApplyOutcome>[];
+    final failures = <String>[];
+    // One transaction for the whole sheet: an 11k-row catalog import used to
+    // open a transaction per row (plus one audit insert per row), which made
+    // the operation quadratic in fsync stalls. Rows that fail keep the strict
+    // per-row error capture (issue + continue) so a single bad line never
+    // rolls back the entire file (§27, §28).
+    await _db.transaction(() async {
+      for (final entry in entries) {
+        try {
+          if (entry.existingItemId != null) {
+            final id = entry.existingItemId!;
+            final suppliers = (await _itemSupplierDao.forItem(id))
+                .map((r) => r.supplierId)
+                .toList();
+            final effective = entry.draft.copyWith(supplierIds: suppliers);
+            await _guarded(() => _updateItemInternal(id, effective));
+            outcomes.add(ImportApplyOutcome(
+              rowNumber: entry.rowNumber,
+              action: ImportApplyAction.updated,
+              entityId: id,
+              draft: effective,
+            ));
+          } else {
+            final row = await _guarded(() => _insertItemInternal(entry.draft));
+            outcomes.add(ImportApplyOutcome(
+              rowNumber: entry.rowNumber,
+              action: ImportApplyAction.created,
+              entityId: row.id,
+              draft: entry.draft,
+            ));
+          }
+        } on DomainException catch (e) {
+          failures.add('الصف ${entry.rowNumber}: ${e.failure.message}');
+        }
+      }
+    });
+    return ImportApplyResult(outcomes: outcomes, failures: failures);
+  }
+
+  /// Inserts a brand-new item. Runs inside whatever transaction the caller
+  /// opened ([createItem], [applyImport]); never opens its own.
+  Future<ItemRow> _insertItemInternal(ItemDraft draft) async {
     final id = ItemDao.newItemId();
     final now = DateTime.now().millisecondsSinceEpoch;
     final withSummary = await _syncIngredientSummary(draft);
-    await _guarded(() => _db.transaction(() async {
-          await _db
-              .into(_db.items)
-              .insert(_toInsertCompanion(withSummary, id: id, at: now));
-          if (draft.units != null) {
-            await _applyUnits(draft.units, itemId: id);
-          }
-          await _itemSupplierDao.setForItem(id, draft.supplierIds);
-          await _itemActiveIngredientDao.setForItem(id, draft.activeIngredientIds,
-              strengths: draft.activeIngredientStrengths);
-          await _itemIndicationDao.setForItem(id, draft.indicationIds);
-        }));
+    await _db
+        .into(_db.items)
+        .insert(_toInsertCompanion(withSummary, id: id, at: now));
+    if (draft.units != null) {
+      await _applyUnits(draft.units, itemId: id);
+    }
+    await _itemSupplierDao.setForItem(id, draft.supplierIds);
+    await _itemActiveIngredientDao.setForItem(id, draft.activeIngredientIds,
+        strengths: draft.activeIngredientStrengths);
+    await _itemIndicationDao.setForItem(id, draft.indicationIds);
     final row = await _itemDao.byId(id);
     if (row == null) throw NotFoundException('المنتج لم يُحفظ');
     return row;
   }
 
-  @override
-  Future<ItemRow> updateItem(String id, ItemDraft draft) async {
+  /// Updates an existing item. Runs inside whatever transaction the caller
+  /// opened ([updateItem], [applyImport]); never opens its own.
+  Future<ItemRow> _updateItemInternal(String id, ItemDraft draft) async {
     final existing = await _itemDao.byId(id);
     if (existing == null) throw NotFoundException('المنتج رقم $id غير موجود');
     final now = DateTime.now().millisecondsSinceEpoch;
     final withSummary = await _syncIngredientSummary(draft);
-    await _guarded(() => _db.transaction(() async {
-          await (_db.update(_db.items)..where((i) => i.id.equals(id)))
-              .write(_toUpdateCompanion(withSummary, at: now));
-          // Keep the existing unit relation when the update does not carry one
-          // (e.g. bulk category/shelf edits); units are optional under the
-          // Phase 18 contract (trade name is the only required field).
-          if (draft.units != null) {
-            await _applyUnits(draft.units, itemId: id);
-          }
-          await _itemSupplierDao.setForItem(id, draft.supplierIds);
-          await _itemActiveIngredientDao.setForItem(id, draft.activeIngredientIds,
-              strengths: draft.activeIngredientStrengths);
-          await _itemIndicationDao.setForItem(id, draft.indicationIds);
-        }));
+    await (_db.update(_db.items)..where((i) => i.id.equals(id)))
+        .write(_toUpdateCompanion(withSummary, at: now));
+    // Keep the existing unit relation when the update does not carry one
+    // (e.g. bulk category/shelf edits); units are optional under the
+    // Phase 18 contract (trade name is the only required field).
+    if (draft.units != null) {
+      await _applyUnits(draft.units, itemId: id);
+    }
+    await _itemSupplierDao.setForItem(id, draft.supplierIds);
+    await _itemActiveIngredientDao.setForItem(id, draft.activeIngredientIds,
+        strengths: draft.activeIngredientStrengths);
+    await _itemIndicationDao.setForItem(id, draft.indicationIds);
     final row = await _itemDao.byId(id);
     if (row == null) throw NotFoundException('المنتج رقم $id غير موجود');
     return row;

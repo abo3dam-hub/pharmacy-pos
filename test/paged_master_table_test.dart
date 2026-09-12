@@ -91,6 +91,43 @@ void main() {
         .masterDataCount(1)), findsOneWidget);
     expect(find.textContaining('1 / 1'), findsOneWidget);
   });
+
+  testWidgets('thousands of rows stay bounded to a single page', (tester) async {
+    // §28 perf guard: building one DataRow per registry row froze the master
+    // tabs with large catalogues; the paged table must materialise only the
+    // active page no matter how many entries the controller holds.
+    final big = [
+      for (var i = 0; i < 5000; i++)
+        _Entry('bulk ${i.toString().padLeft(5, '0')}'),
+    ];
+    await tester.pumpWidget(_harness(
+      Scaffold(
+        body: PagedMasterTable<_Entry>(
+          data: big,
+          pageSize: 50,
+          emptyMessage: 'empty',
+          searchText: (e) => e.name,
+          columns: [DataColumn(label: Text('name'))],
+          rowBuilder: (e) => DataRow(cells: [DataCell(Text(e.name))]),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('bulk 00000'), findsOneWidget);
+    expect(find.text('bulk 00050'), findsNothing,
+        reason: 'only the active page may be materialised');
+    final rendered = tester
+        .widgetList(find.textContaining('bulk '))
+        .length;
+    expect(rendered, lessThanOrEqualTo(50),
+        reason: 'data rows are bounded by the page size, never the dataset');
+
+    final l10n = findL10n(tester);
+    await tester.tap(find.byTooltip(l10n.commonNext));
+    await tester.pumpAndSettle();
+    expect(find.text('bulk 00050'), findsOneWidget);
+  });
 }
 
 AppLocalizations findL10n(WidgetTester tester) {

@@ -74,4 +74,55 @@ class AuditService {
           ),
         );
   }
+
+  /// Writes a whole batch of audit rows through a single prepared insert
+  /// (§28 performance): the import path emits one row per item, so batching
+  /// keeps an 11k-row catalog import from paying one transaction per row for
+  /// the ledger on top of the inventory writes.
+  Future<void> writeMany(AppDatabase db, List<AuditEntry> entries) async {
+    if (entries.isEmpty) return;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await db.batch((batch) {
+      for (final e in entries) {
+        batch.insert(
+          db.auditLogs,
+          AuditLogsCompanion.insert(
+            id: newId('audit'),
+            userId: e.userId,
+            action: auditActionToStored(e.action),
+            entityType: e.entityType,
+            entityId: e.entityId,
+            beforeData:
+                e.before != null ? Value(jsonEncode(e.before)) : const Value(null),
+            afterData:
+                e.after != null ? Value(jsonEncode(e.after)) : const Value(null),
+            note: e.note != null ? Value(e.note) : const Value(null),
+            createdAt: now,
+          ),
+        );
+      }
+    });
+  }
+}
+
+/// One pending audit row, used to defer ledger writes into a single
+/// transaction through [AuditService.writeMany].
+class AuditEntry {
+  const AuditEntry({
+    required this.userId,
+    required this.action,
+    required this.entityType,
+    required this.entityId,
+    this.before,
+    this.after,
+    this.note,
+  });
+
+  final String userId;
+  final AuditAction action;
+  final String entityType;
+  final String entityId;
+  final Map<String, Object?>? before;
+  final Map<String, Object?>? after;
+  final String? note;
 }

@@ -294,6 +294,55 @@ class MasterDataDraft {
   final String? abbreviation;
 }
 
+/// Outcome of applying one imported row: created or updated in place.
+enum ImportApplyAction { created, updated }
+
+/// One resolved import row handed to [InventoryRepository.applyImport]: the
+/// workbook is already parsed and deduplicated by the Excel service; the
+/// repository only persists it.
+class ImportApplyEntry {
+  const ImportApplyEntry({
+    required this.rowNumber,
+    required this.draft,
+    this.existingItemId,
+  });
+
+  final int rowNumber;
+  final ItemDraft draft;
+  final String? existingItemId;
+}
+
+/// Result of one applied import row, carrying a stable entity id so the caller
+/// can write one audit record per row.
+class ImportApplyOutcome {
+  const ImportApplyOutcome({
+    required this.rowNumber,
+    required this.action,
+    required this.entityId,
+    required this.draft,
+  });
+
+  final int rowNumber;
+  final ImportApplyAction action;
+  final String entityId;
+
+  /// The effective draft that was written (for audit snapshots).
+  final ItemDraft draft;
+}
+
+/// Batch import persistence result: how each row landed and the per-row failure
+/// messages (`الصف N: السبب`), mirroring the previous per-row semantics so the
+/// caller can surface issues without an extra pass.
+class ImportApplyResult {
+  const ImportApplyResult({
+    required this.outcomes,
+    required this.failures,
+  });
+
+  final List<ImportApplyOutcome> outcomes;
+  final List<String> failures;
+}
+
 /// Data-access contract for the inventory feature. Mirrors the DAO layer so
 /// use cases stay free of SQL; stock mutations go through the ledger.
 abstract class InventoryRepository {
@@ -317,6 +366,12 @@ abstract class InventoryRepository {
   Future<ItemRow> createItem(ItemDraft draft);
   Future<ItemRow> updateItem(String id, ItemDraft draft);
   Future<void> setItemActive(String id, bool active);
+
+  /// Persists the whole resolved import sheet inside one transaction (§27,
+  /// §28 performance): rows are created/updated in place with per-row error
+  /// capture, instead of opening a transaction per item (which made an 11k-row
+  /// catalog import quadratic in fsyncs).
+  Future<ImportApplyResult> applyImport(List<ImportApplyEntry> entries);
 
   /// Physically removes an item after the safety checks run: an item with any
   /// live stock, batch, ledger movement or sale/purchase/prescription
