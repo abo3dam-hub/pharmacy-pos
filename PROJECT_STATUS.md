@@ -3,7 +3,8 @@
 Current date: 2026-09-12 · Branch: `main` · Remote: `abo3dam-hub/pharmacy-pos`
 
 > Report for guiding subsequent development. Reflects the state after the
-> post-18.3 hardening/perf cycle (commits `c5a57d5` → `a7243c6`).
+> post-18.3 audit & harden cycle (commits `c5a57d5` → `ba5d1c6`; completion
+> report: [`POST-18.3-AUDIT-HARDEN-COMPLETION-REPORT.md`](./POST-18.3-AUDIT-HARDEN-COMPLETION-REPORT.md)).
 
 ---
 
@@ -14,9 +15,9 @@ Current date: 2026-09-12 · Branch: `main` · Remote: `abo3dam-hub/pharmacy-pos`
 | Framework | Flutter (stable), Arabic-first RTL UI |
 | Persistence | SQLite via Drift (code-gen `app_database.g.dart`) |
 | L10n | `flutter gen-l10n` — `app_ar.arb` / `app_en.arb` |
-| Tests | 86 test files · **623 tests pass** · `flutter analyze` clean |
+| Tests | 86 test files · **630 tests pass** · `flutter analyze` clean |
 | CI | GitHub Actions: `analyze-test`, `perf-file-db`, `build-windows`, `build-android` |
-| Last CI | Run `34665548031` (commit `a7243c6`) — **all 4 jobs success** |
+| Last CI | Run `34665548031` (commit `a7243c6`) — **all 4 jobs success**; `ba5d1c6` pushed, CI re-running |
 
 Local env used by this workflow:
 
@@ -58,6 +59,7 @@ Local env used by this workflow:
 | `fa080fa` | **perf(inventory)**: single-transaction import + batched audit, perf regressions |
 | `e5101bf` | **docs**: project status report for the post-18.3 hardening cycle |
 | `a7243c6` | **perf(inventory)**: live import progress + cancel; single-tx bulk edits; CI file-DB perf guard |
+| `ba5d1c6` | **feat(harden)**: audit-and-harden cycle — pricing v13, COGS reconciliation, financial dashboard |
 | `632ee7e` | **fix(import)**: EN-name tie-breaker closes re-import gap on real 11.3k file + commit `test1.xlsx` |
 | `20ef12c` | docs: status report — real-file acceptance green, EN tie-breaker notes |
 | `(next)` | **feat(ux/errors/i18n)**: chained save-and-continue (item→batch→invoice), reason-based failure messages, AR+EN item names |
