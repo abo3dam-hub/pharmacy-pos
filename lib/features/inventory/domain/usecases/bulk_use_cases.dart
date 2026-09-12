@@ -8,6 +8,7 @@ import '../../../../shared/database/app_database.dart';
 import '../../../../shared/models/enums.dart';
 import '../repositories/inventory_repository.dart';
 import 'create_item.dart' show itemAuditJson;
+import 'excel_use_cases.dart' show itemAuditJsonDraft;
 
 /// Supported multi-selection grid operations (§22, "Bulk Actions").
 enum BulkOperation { changeCategory, changeShelfLocation, adjustPricePercent }
@@ -80,16 +81,21 @@ class BulkUpdateItemsUseCase {
     }
     await _validate(db, input, actingRoleId);
 
+    // Rows are resolved to target drafts first (reads), then persisted in ONE
+    // repository transaction; the audit batch is flushed with a single
+    // prepared insert (writeMany) — same §28 pattern that fixed the Excel
+    // import. A catalog-wide price scope over 10k+ rows no longer pays a
+    // transaction per item.
     final ids = await _operatingIds(db, input);
-    var updated = 0;
+    final entries = <BulkUpdateEntry>[];
+    final auditEntries = <AuditEntry>[];
     for (final id in ids) {
       final row = await _repo.findItem(id);
       if (row == null) continue;
       final before = itemAuditJson(row);
       final draft = await _draftFor(row, input);
-      final afterRow = await _repo.updateItem(id, draft);
-      await _audit.write(
-        db,
+      entries.add(BulkUpdateEntry(itemId: id, draft: draft));
+      auditEntries.add(AuditEntry(
         userId: actingUserId,
         action: input.operation == BulkOperation.adjustPricePercent
             ? AuditAction.priceChange
@@ -97,14 +103,13 @@ class BulkUpdateItemsUseCase {
         entityType: 'item',
         entityId: id,
         before: before,
-        after: itemAuditJson(afterRow),
+        after: itemAuditJsonDraft(draft),
         note: _auditNote(input),
-      );
-      updated++;
+      ));
     }
 
-    await _audit.write(
-      db,
+    final updated = await _repo.applyBulkUpdates(entries);
+    auditEntries.add(AuditEntry(
       userId: actingUserId,
       action: AuditAction.bulkOp,
       entityType: 'item',
@@ -123,7 +128,8 @@ class BulkUpdateItemsUseCase {
       },
       note: 'عملية جماعية (${input.operation.name} - ${input.priceScope.name})'
           ' على $updated منتجات',
-    );
+    ));
+    await _audit.writeMany(db, auditEntries);
     return updated;
   }
 

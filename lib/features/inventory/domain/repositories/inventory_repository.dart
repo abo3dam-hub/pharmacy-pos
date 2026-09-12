@@ -294,6 +294,17 @@ class MasterDataDraft {
   final String? abbreviation;
 }
 
+/// One resolved bulk-edit row handed to [InventoryRepository.applyBulkUpdates]:
+/// an already-computed target draft for an existing item. Mirrors
+/// [ImportApplyEntry] so catalog-scale bulk edits (e.g. price scope over the
+/// whole catalogue) persist in one transaction instead of one per item.
+class BulkUpdateEntry {
+  const BulkUpdateEntry({required this.itemId, required this.draft});
+
+  final String itemId;
+  final ItemDraft draft;
+}
+
 /// Outcome of applying one imported row: created or updated in place.
 enum ImportApplyAction { created, updated }
 
@@ -371,7 +382,24 @@ abstract class InventoryRepository {
   /// §28 performance): rows are created/updated in place with per-row error
   /// capture, instead of opening a transaction per item (which made an 11k-row
   /// catalog import quadratic in fsyncs).
-  Future<ImportApplyResult> applyImport(List<ImportApplyEntry> entries);
+  ///
+  /// Progress is reported through [onProgress] and the loop polls
+  /// [shouldCancel] at regular checkpoints so the UI can paint live progress
+  /// and abort a large import (progress/cancel workstream).
+  Future<ImportApplyResult> applyImport(
+    List<ImportApplyEntry> entries, {
+    void Function(int processed, int total)? onProgress,
+    bool Function()? shouldCancel,
+  });
+
+  /// Persists a batch of already-resolved bulk-edit drafts in one transaction
+  /// (price/category/shelf bulk actions over a large selection), with the same
+  /// performance and cancellation semantics as [applyImport].
+  Future<int> applyBulkUpdates(
+    List<BulkUpdateEntry> entries, {
+    void Function(int processed, int total)? onProgress,
+    bool Function()? shouldCancel,
+  });
 
   /// Physically removes an item after the safety checks run: an item with any
   /// live stock, batch, ledger movement or sale/purchase/prescription

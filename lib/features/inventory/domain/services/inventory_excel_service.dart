@@ -1,5 +1,6 @@
 import 'package:excel/excel.dart';
 
+import '../../../../core/errors/exceptions.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/util/smart_search.dart';
 import '../../../../shared/database/app_database.dart';
@@ -177,8 +178,10 @@ class InventoryExcelService {
         List<String> issues,
         List<CreatedMasterRecord> createdMaster,
       })> parseImport(
-    List<int> bytes,
-  ) async {
+    List<int> bytes, {
+    void Function(int processed, int total)? onProgress,
+    bool Function()? shouldCancel,
+  }) async {
     final excel = Excel.decodeBytes(bytes);
     final sheet = excel.tables[_sheetName];
     if (sheet == null || sheet.maxRows == 0) {
@@ -225,7 +228,13 @@ class InventoryExcelService {
     for (var r = 1; r < sheet.maxRows; r++) {
       // Yield to the event loop every 256 rows so a very large file never
       // blocks the UI isolate (chunked processing, no timing assumptions).
+      // The same checkpoint honors user cancellation and emits live progress
+      // for the import progress workstream.
       if (r % 256 == 0) {
+        if (shouldCancel?.call() ?? false) {
+          throw ImportCancelledException();
+        }
+        onProgress?.call(r, sheet.maxRows - 1);
         await Future<void>.delayed(Duration.zero);
       }
 
@@ -524,6 +533,7 @@ class InventoryExcelService {
         ),
       );
     }
+    onProgress?.call(sheet.maxRows - 1, sheet.maxRows - 1);
     return (rows: rows, issues: issues, createdMaster: createdMaster);
   }
 

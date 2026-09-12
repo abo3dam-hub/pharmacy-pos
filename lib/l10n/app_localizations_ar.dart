@@ -518,6 +518,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get inventoryImportFailed => 'تعذر قراءة الملف';
 
   @override
+  String get inventoryImportParsing => 'جارٍ تحليل ملف إكسل...';
+
+  @override
+  String get inventoryImportApplying => 'جارٍ استيراد المنتجات...';
+
+  @override
+  String inventoryImportProgress(int processed, int total) {
+    return '$processed من $total';
+  }
+
+  @override
+  String get inventoryImportCancel => 'إلغاء الاستيراد';
+
+  @override
+  String get inventoryImportCancelled => 'تم إلغاء الاستيراد';
+
+  @override
   String get itemBarcodePrimary => 'الباركود الأساسي';
 
   @override

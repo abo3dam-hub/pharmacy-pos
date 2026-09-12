@@ -25,6 +25,25 @@ jobs:
       - run: flutter analyze
       - run: flutter test
 
+  perf-file-db:
+    needs: analyze-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install system SQLite (tests load libsqlite3.so.0)
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-0
+
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      # §28 perf guard on real disk I/O: an in-memory DB cannot reproduce the
+      # fsync stalls that made an 11.3k-row catalog import hang the UI.
+      - run: PHARMACY_FILE_DB=1 flutter test test/inventory_perf_regression_test.dart
+
   build-android:
     needs: analyze-test
     runs-on: ubuntu-latest

@@ -34,6 +34,7 @@ class InventoryViewState {
     this.movements = const [],
     this.batchOf,
     this.importReport,
+    this.importProgress,
   });
 
   final InventoryStatus status;
@@ -51,6 +52,9 @@ class InventoryViewState {
   final List<StockMovementRow> movements;
   final String? batchOf;
   final ImportSummary? importReport;
+
+  /// Live progress of an in-flight Excel import (progress/cancel workstream).
+  final ImportProgress? importProgress;
 
   String get search => request.search;
   int get page => request.page;
@@ -70,6 +74,7 @@ class InventoryViewState {
     List<StockMovementRow>? movements,
     String? Function()? batchOf,
     ImportSummary? Function()? importReport,
+    ImportProgress? Function()? importProgress,
   }) {
     return InventoryViewState(
       status: status ?? this.status,
@@ -85,6 +90,8 @@ class InventoryViewState {
       movements: movements ?? this.movements,
       batchOf: batchOf != null ? batchOf() : this.batchOf,
       importReport: importReport != null ? importReport() : this.importReport,
+      importProgress:
+          importProgress != null ? importProgress() : this.importProgress,
     );
   }
 }
@@ -124,6 +131,12 @@ class InventoryController extends StateNotifier<InventoryViewState> {
   int lastBulkUpdatedCount = 0;
   final ExportItemsUseCase _exportItems;
   final ImportItemsUseCase _importItems;
+
+  /// Set by [cancelImport]; polled by the running import between checkpoints.
+  bool _importCancelled = false;
+
+  /// Aborts the in-flight Excel import at the next progress checkpoint.
+  void cancelImport() => _importCancelled = true;
 
   Future<Failure?> load({
     String search = '',
@@ -393,19 +406,38 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     String? actingUserId,
     String? actingRoleId,
   }) async {
+    _importCancelled = false;
     state = state.copyWith(
-        busy: true, error: () => null, importReport: () => null);
+        busy: true,
+        error: () => null,
+        importReport: () => null,
+        importProgress: () => null);
     try {
-      final report = await _importItems.call(bytes,
-          actingUserId: actingUserId, actingRoleId: actingRoleId);
-      state = state.copyWith(busy: false, importReport: () => report);
+      final report = await _importItems.call(
+        bytes,
+        actingUserId: actingUserId,
+        actingRoleId: actingRoleId,
+        onProgress: (progress) => state = state.copyWith(
+            busy: true, importProgress: () => progress),
+        shouldCancel: () => _importCancelled,
+      );
+      state = state.copyWith(
+          busy: false,
+          importReport: () => report,
+          importProgress: () => null);
       await reload(actingRoleId: actingRoleId);
       return null;
+    } on ImportCancelledException {
+      state = state.copyWith(
+          busy: false, error: () => null, importProgress: () => null);
+      return const ImportCancelledFailure();
     } on AppException catch (e) {
-      state = state.copyWith(busy: false, error: () => e.failure);
+      state = state.copyWith(
+          busy: false, error: () => e.failure, importProgress: () => null);
       return e.failure;
     } on Exception {
-      state = state.copyWith(busy: false);
+      state = state.copyWith(
+          busy: false, importProgress: () => null);
       return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }
   }

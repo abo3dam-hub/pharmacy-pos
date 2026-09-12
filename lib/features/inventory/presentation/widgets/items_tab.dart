@@ -25,7 +25,9 @@ import '../../application/master_data_controller.dart';
 import '../../domain/entities/inventory_item.dart';
 import '../../domain/repositories/inventory_repository.dart';
 import '../../domain/services/compound_stock_text.dart';
+import '../../domain/usecases/excel_use_cases.dart';
 import '../widgets/bulk_dialog.dart';
+import '../widgets/import_progress_view.dart';
 import '../widgets/item_dialog.dart';
 import '../widgets/master_data_dialog.dart';
 import '../widgets/status_chips.dart';
@@ -405,6 +407,13 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
         .importExcel(bytes,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
     if (failure != null) {
+      if (failure is ImportCancelledFailure) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(l10n.inventoryImportCancelled)));
+        return;
+      }
       _showFailure(failure);
       return;
     }
@@ -555,9 +564,27 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       compact: _buildCards(l10n, state, typography),
     );
 
+    final importProgress = state.importProgress;
     return LoadingOverlay(
       visible: state.status == InventoryStatus.loading || state.busy,
       label: l10n.commonLoading,
+      progress: importProgress == null
+          ? null
+          : ImportProgressView(
+              progress: importProgress,
+              stageLabel: importProgress.stage == ImportStage.parsing
+                  ? l10n.inventoryImportParsing
+                  : l10n.inventoryImportApplying,
+              progressLabel: l10n
+                  .inventoryImportProgress(importProgress.processed,
+                      importProgress.total == 0
+                          ? 0
+                          : importProgress.total),
+              cancelLabel: l10n.inventoryImportCancel,
+              onCancel: () => ref
+                  .read(inventoryControllerProvider.notifier)
+                  .cancelImport(),
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

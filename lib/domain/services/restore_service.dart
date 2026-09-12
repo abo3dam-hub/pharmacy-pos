@@ -380,11 +380,13 @@ class RestoreService {
       }
     }
     if (toUpdate.isEmpty) return;
-    for (final entry in toUpdate.entries) {
-      await (db.update(db.expenses)
-            ..where((e) => e.id.equals(entry.key)))
-          .write(ExpensesCompanion(receiptPath: Value(entry.value)));
-    }
+    await db.transaction(() async {
+      for (final entry in toUpdate.entries) {
+        await (db.update(db.expenses)
+              ..where((e) => e.id.equals(entry.key)))
+            .write(ExpensesCompanion(receiptPath: Value(entry.value)));
+      }
+    });
   }
 
   Future<void> _replaceReceipts(

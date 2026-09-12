@@ -47,6 +47,30 @@ class ImportSummary {
   int get skipped => issues.length;
 }
 
+/// Parsing vs. persistence phase of a live Excel import (progress workstream).
+enum ImportStage { parsing, applying }
+
+/// Live import progress for the UI. [fraction] is null while the phase total
+/// is unknown (not applicable) and otherwise clamped to 0..1.
+class ImportProgress {
+  const ImportProgress({
+    required this.stage,
+    this.processed = 0,
+    this.total = 0,
+    this.created = 0,
+    this.updated = 0,
+  });
+
+  final ImportStage stage;
+  final int processed;
+  final int total;
+  final int created;
+  final int updated;
+
+  double? get fraction =>
+      total <= 0 ? null : (processed / total).clamp(0.0, 1.0);
+}
+
 /// Excel import (§27). Requires `inventory.create`; rows matching an existing
 /// primary barcode update the item, otherwise a new item is created. Every
 /// action is audited; a summary record is also written.
@@ -61,6 +85,8 @@ class ImportItemsUseCase {
     List<int> bytes, {
     String? actingUserId,
     String? actingRoleId,
+    void Function(ImportProgress? progress)? onProgress,
+    bool Function()? shouldCancel,
   }) async {
     final db = _repo.database;
     await _permissions.requireRolePermission(
@@ -70,7 +96,12 @@ class ImportItemsUseCase {
     }
 
     final service = InventoryExcelService(_repo);
-    final parsed = await service.parseImport(bytes);
+    final parsed = await service.parseImport(
+      bytes,
+      onProgress: (processed, total) => onProgress?.call(ImportProgress(
+          stage: ImportStage.parsing, processed: processed, total: total)),
+      shouldCancel: shouldCancel,
+    );
     final issues = [...parsed.issues];
 
     final auditEntries = <AuditEntry>[
@@ -88,14 +119,19 @@ class ImportItemsUseCase {
     // All rows persist in one repository transaction; per-row audit records
     // are collected and flushed together so a large sheet does not pay a
     // transaction per item (§27, §28 performance).
-    final applied = await _repo.applyImport([
-      for (final row in parsed.rows)
-        ImportApplyEntry(
-          rowNumber: row.rowNumber,
-          draft: row.draft,
-          existingItemId: row.existingItemId,
-        ),
-    ]);
+    final applied = await _repo.applyImport(
+      [
+        for (final row in parsed.rows)
+          ImportApplyEntry(
+            rowNumber: row.rowNumber,
+            draft: row.draft,
+            existingItemId: row.existingItemId,
+          ),
+      ],
+      onProgress: (processed, total) => onProgress?.call(ImportProgress(
+          stage: ImportStage.applying, processed: processed, total: total)),
+      shouldCancel: shouldCancel,
+    );
     issues.addAll(applied.failures);
     var created = 0;
     var updated = 0;
@@ -139,6 +175,14 @@ class ImportItemsUseCase {
           'رُفض ${issues.length}',
     ));
     await _audit.writeMany(db, auditEntries);
+
+    onProgress?.call(ImportProgress(
+      stage: ImportStage.applying,
+      processed: parsed.rows.length,
+      total: parsed.rows.length,
+      created: created,
+      updated: updated,
+    ));
 
     return ImportSummary(
       created: created,

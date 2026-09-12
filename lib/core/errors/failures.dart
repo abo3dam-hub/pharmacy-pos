@@ -41,3 +41,10 @@ class InvalidOperationFailure extends Failure {
 class DatabaseFailure extends Failure {
   const DatabaseFailure(super.message, {super.cause});
 }
+
+/// The user aborted an in-flight Excel import before it finished applying.
+/// Not an error: the UI reports it as an informational notice, never a red
+/// failure (progress workstream).
+class ImportCancelledFailure extends Failure {
+  const ImportCancelledFailure([super.message = 'تم إلغاء الاستيراد']);
+}

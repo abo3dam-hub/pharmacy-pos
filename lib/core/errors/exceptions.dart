@@ -53,3 +53,10 @@ class DatabaseException extends DomainException {
   DatabaseException(String message, {Object? cause})
       : super(DatabaseFailure(message, cause: cause));
 }
+
+/// Raised when the user cancels an in-flight Excel import (progress/cancel
+/// workstream). Callers map it to [ImportCancelledFailure].
+class ImportCancelledException extends DomainException {
+  ImportCancelledException([String message = 'تم إلغاء الاستيراد'])
+      : super(ImportCancelledFailure(message));
+}

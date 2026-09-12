@@ -108,7 +108,11 @@ class InventoryRepositoryImpl implements InventoryRepository {
       _guarded(() => _db.transaction(() => _updateItemInternal(id, draft)));
 
   @override
-  Future<ImportApplyResult> applyImport(List<ImportApplyEntry> entries) async {
+  Future<ImportApplyResult> applyImport(
+    List<ImportApplyEntry> entries, {
+    void Function(int processed, int total)? onProgress,
+    bool Function()? shouldCancel,
+  }) async {
     final outcomes = <ImportApplyOutcome>[];
     final failures = <String>[];
     // One transaction for the whole sheet: an 11k-row catalog import used to
@@ -117,7 +121,8 @@ class InventoryRepositoryImpl implements InventoryRepository {
     // per-row error capture (issue + continue) so a single bad line never
     // rolls back the entire file (§27, §28).
     await _db.transaction(() async {
-      for (final entry in entries) {
+      for (var i = 0; i < entries.length; i++) {
+        final entry = entries[i];
         try {
           if (entry.existingItemId != null) {
             final id = entry.existingItemId!;
@@ -144,9 +149,43 @@ class InventoryRepositoryImpl implements InventoryRepository {
         } on DomainException catch (e) {
           failures.add('الصف ${entry.rowNumber}: ${e.failure.message}');
         }
+        // Progress/cancel checkpoint: let the UI paint and honor an abort.
+        // Throwing inside the transaction rolls everything back atomically.
+        if (i % 64 == 0) {
+          onProgress?.call(i, entries.length);
+          if (shouldCancel?.call() ?? false) {
+            throw ImportCancelledException();
+          }
+        }
       }
+      onProgress?.call(entries.length, entries.length);
     });
     return ImportApplyResult(outcomes: outcomes, failures: failures);
+  }
+
+  @override
+  Future<int> applyBulkUpdates(
+    List<BulkUpdateEntry> entries, {
+    void Function(int processed, int total)? onProgress,
+    bool Function()? shouldCancel,
+  }) async {
+    var updated = 0;
+    await _db.transaction(() async {
+      for (var i = 0; i < entries.length; i++) {
+        final entry = entries[i];
+        if (await _itemDao.byId(entry.itemId) == null) continue;
+        await _guarded(() => _updateItemInternal(entry.itemId, entry.draft));
+        updated++;
+        if (i % 64 == 0) {
+          onProgress?.call(i, entries.length);
+          if (shouldCancel?.call() ?? false) {
+            throw ImportCancelledException();
+          }
+        }
+      }
+      onProgress?.call(entries.length, entries.length);
+    });
+    return updated;
   }
 
   /// Inserts a brand-new item. Runs inside whatever transaction the caller

@@ -518,6 +518,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryImportFailed => 'Could not read the file';
 
   @override
+  String get inventoryImportParsing => 'Parsing Excel file...';
+
+  @override
+  String get inventoryImportApplying => 'Importing products...';
+
+  @override
+  String inventoryImportProgress(int processed, int total) {
+    return '$processed of $total';
+  }
+
+  @override
+  String get inventoryImportCancel => 'Cancel import';
+
+  @override
+  String get inventoryImportCancelled => 'Import cancelled';
+
+  @override
   String get itemBarcodePrimary => 'Primary barcode';
 
   @override

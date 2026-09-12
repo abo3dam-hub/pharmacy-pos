@@ -1088,6 +1088,36 @@ abstract class AppLocalizations {
   /// **'تعذر قراءة الملف'**
   String get inventoryImportFailed;
 
+  /// No description provided for @inventoryImportParsing.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ تحليل ملف إكسل...'**
+  String get inventoryImportParsing;
+
+  /// No description provided for @inventoryImportApplying.
+  ///
+  /// In ar, this message translates to:
+  /// **'جارٍ استيراد المنتجات...'**
+  String get inventoryImportApplying;
+
+  /// No description provided for @inventoryImportProgress.
+  ///
+  /// In ar, this message translates to:
+  /// **'{processed} من {total}'**
+  String inventoryImportProgress(int processed, int total);
+
+  /// No description provided for @inventoryImportCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء الاستيراد'**
+  String get inventoryImportCancel;
+
+  /// No description provided for @inventoryImportCancelled.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم إلغاء الاستيراد'**
+  String get inventoryImportCancelled;
+
   /// No description provided for @itemBarcodePrimary.
   ///
   /// In ar, this message translates to:

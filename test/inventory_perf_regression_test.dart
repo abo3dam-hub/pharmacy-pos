@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:drift/native.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pharmacy_pos/data/daos/active_ingredient_dao.dart';
@@ -26,6 +29,17 @@ const _adminRole = 'role_admin';
 
 /// The scale the field experience was reported at (≈11.3k catalogue rows).
 const _scaleRows = 11300;
+
+/// The CI `perf-file-db` job (/CI job #4) runs this file with
+/// `PHARMACY_FILE_DB=1` so the guardrail also covers real disk fsync stalls,
+/// which an in-memory database cannot expose.
+bool get _fileDb => Platform.environment['PHARMACY_FILE_DB'] == '1';
+
+Future<AppDatabase> _database() async {
+  if (!_fileDb) return newDatabase();
+  final dir = await Directory.systemTemp.createTemp('pharmacy_perf_db_');
+  return AppDatabase(NativeDatabase(File('${dir.path}/perf.sqlite')));
+}
 
 InventoryRepositoryImpl _repo(AppDatabase db) => InventoryRepositoryImpl(
       db,
@@ -65,8 +79,9 @@ void main() {
 
   test(
       'catalog-level ingest stays linear: 11,300 fresh rows create + audit in '
-      'one pass and re-import them as updates', () async {
-    final db = newDatabase();
+      'one pass and re-import them as updates'
+          '${_fileDb ? ' (file-backed DB)' : ' (in-memory DB)'}', () async {
+    final db = await _database();
     final repo = _repo(db);
     final useCase = ImportItemsUseCase(
         repo, const PermissionService(), const AuditService());
@@ -126,9 +141,11 @@ void main() {
     // Guardrail against a performance regression, not a micro-benchmark: the
     // previous per-row transaction + per-row audit path blew well past this on
     // a file-backed DB; the ceiling exists to fail loudly, the printed numbers
-    // give the real measurement.
-    expect(firstMs, lessThan(120000),
+    // give the real measurement. The file-backed CI job gets a wider ceiling
+    // because shared-Runner disk I/O is noisier than a local disk.
+    final ceilingMs = _fileDb ? 300000 : 120000;
+    expect(firstMs, lessThan(ceilingMs),
         reason: 'a 11.3k fresh import must not take minutes');
-    expect(secondMs, lessThan(120000));
-  }, timeout: const Timeout(Duration(minutes: 4)));
+    expect(secondMs, lessThan(ceilingMs));
+  }, timeout: const Timeout(Duration(minutes: 10)));
 }
