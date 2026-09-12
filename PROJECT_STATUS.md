@@ -14,7 +14,7 @@ Current date: 2026-09-12 · Branch: `main` · Remote: `abo3dam-hub/pharmacy-pos`
 | Framework | Flutter (stable), Arabic-first RTL UI |
 | Persistence | SQLite via Drift (code-gen `app_database.g.dart`) |
 | L10n | `flutter gen-l10n` — `app_ar.arb` / `app_en.arb` |
-| Tests | 83 test files · **607 tests pass** (+1 skipped real-file) · `flutter analyze` clean |
+| Tests | 83 test files · **610 tests pass** · `flutter analyze` clean |
 | CI | GitHub Actions: `analyze-test`, `perf-file-db`, `build-windows`, `build-android` |
 | Last CI | Run `34665548031` (commit `a7243c6`) — **all 4 jobs success** |
 
@@ -58,6 +58,7 @@ Local env used by this workflow:
 | `fa080fa` | **perf(inventory)**: single-transaction import + batched audit, perf regressions |
 | `e5101bf` | **docs**: project status report for the post-18.3 hardening cycle |
 | `a7243c6` | **perf(inventory)**: live import progress + cancel; single-tx bulk edits; CI file-DB perf guard |
+| (next) | **fix(import)**: EN-name tie-breaker closes re-import gap on real 11.3k file + commit `test1.xlsx` |
 
 ---
 
@@ -93,8 +94,24 @@ The follow-up to the report's "suggested next targets", implemented and CI-green
 - **Tests added**: `test/inventory_import_progress_cancel_test.dart` (4 tests:
   progress stream, atomic rollback on cancel-during-apply, abort
   cancel-during-parse, controller cancel wiring) and
-  `test/inventory_real_file_import_test.dart` (self-skips until `test1.xlsx`
-  is committed; then replays the real file end-to-end with printed counts).
+  `test/inventory_real_file_import_test.dart`.
+
+### EN-name tie-breaker (commit after `a7243c6`)
+When several candidates survive the composite item match *and* the row's only
+remaining discriminator is the English trade name, `_resolveItem` now narrows
+by `الاسم التجاري (EN)` (tie-break only — a row that already resolves
+uniquely behaves exactly as before, and matching candidates are never
+rejected). This resolved the last gap on the **real** catalogue:
+
+- Before: `test1.xlsx` second pass `updated=11278` (`created=11283`, 5
+  name-ambiguity guards: كلوتريمازول، مينوكسيديل، يونادول ×3 — rows without
+  barcode or active ingredients whose AR name matched >1 product).
+- After: `updated=11283 = created`, issues `16` on both passes (same in-file
+  duplicates), ~16 s per pass. Products that share AR **and** EN name with no
+  other discriminator still trip the guard (correct — cannot disambiguate).
+- Two explicit regression tests added in
+  `test/inventory_import_identity_regression_test.dart` (EN breaks the tie;
+  same-EN twins stay guarded).
 
 ### Deliberately not changed
 - **Items / users / audit lists already page from the DB**
@@ -198,12 +215,11 @@ All four tracked issues are fixed, tested, and committed.
 
 ## 7. Open items / pending decisions
 
-1. **`test1.xlsx` is NOT present in the repo** (checked repo root + whole
-   workspace; the only committed workbook is `inventory.xlsx`, the 1-row
-   sample). The real-file acceptance test `test/inventory_real_file_import_test.dart`
-   self-skips until the user commits `test1.xlsx` to the repo root — then it
-   replays the actual 11.3k catalogue through import + re-import automatically.
-   Please upload the file.
+1. **`test1.xlsx` now committed; real-file acceptance is green.** The file
+   (sheet `products`, 11,299 data rows, 27 columns) replays end-to-end on
+   every test run: first pass `created=11283, master=1860, issues=16`
+   (all in-file duplicates), second pass `created=0, updated=11283`,
+   ≈16 s/pass. No ambiguity guards remain (EN tie-breaker).
 2. **Unanswered design question:** should the Excel service return **bytes only**
    (vs. writing repo-root `inventory.xlsx` during tests)? Tests currently build
    bytes in-memory (`excel.save()` without filename) — keep it that way.

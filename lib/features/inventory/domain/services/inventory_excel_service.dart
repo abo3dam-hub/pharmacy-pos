@@ -333,6 +333,8 @@ class InventoryExcelService {
         catalog,
         barcode: barcode,
         tradeName: tradeName,
+        providedNameEn:
+            _normOrNull(at(_colIndex['الاسم التجاري (EN)']!)),
         providedForm: _normOrNull(pharmaForm),
         providedDose: _normOrNull(dose),
         providedManufacturerId: manufacturer?.id,
@@ -342,7 +344,8 @@ class InventoryExcelService {
       if (ambiguous) {
         issues.add(
           'الصف ${r + 1}: الاسم "$tradeName" يطابق أكثر من منتج '
-          '(أضف الباركود أو العيار أو الشكل الصيدلاني أو الشركة للتمييز)',
+          '(أضف الباركود أو العيار أو الشكل الصيدلاني أو الشركة أو '
+          'الاسم التجاري (EN) للتمييز)',
         );
         continue;
       }
@@ -541,10 +544,17 @@ class InventoryExcelService {
   /// a single match or an unambiguous new-creation, or `(null, true)` when the
   /// barcode maps to several rows (impossible, barcodes are unique) or the
   /// normalized trade name resolves to more than one candidate composite.
+  ///
+  /// When several candidates survive the composite discriminators *and* the
+  /// row provides an English trade name, the English name breaks the tie: only
+  /// a candidate whose stored name matches it is kept. If that narrows to one
+  /// candidate the row updates deterministically; products whose only textual
+  /// difference lives on a different attribute stay guarded as ambiguous.
   static (ItemRow?, bool) _resolveItem(
     _ItemCatalog catalog, {
     required String barcode,
     required String tradeName,
+    String? providedNameEn,
     String? providedForm,
     String? providedDose,
     String? providedManufacturerId,
@@ -574,9 +584,18 @@ class InventoryExcelService {
         continue;
       }
       matched.add(candidate);
-      if (matched.length > 1) return (null, true);
     }
-    return matched.isEmpty ? (null, false) : (matched.first, false);
+
+    if (matched.length > 1 && providedNameEn != null) {
+      final byEn = [
+        for (final c in matched)
+          if (SmartSearch.normalize(c.tradeNameEn ?? '') == providedNameEn) c,
+      ];
+      if (byEn.length == 1) return (byEn.first, false);
+    }
+
+    if (matched.isEmpty) return (null, false);
+    return matched.length == 1 ? (matched.first, false) : (null, true);
   }
 
   /// True when the candidate's stored profile matches every *provided*
