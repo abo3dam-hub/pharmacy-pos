@@ -332,6 +332,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get dashboardKpis => 'نظرة عامة';
 
   @override
+  String get dashboardFinancialSummary => 'قائمة دخل اليوم';
+
+  @override
   String get dashboardUnitsSold => 'الوحدات المباعة اليوم';
 
   @override

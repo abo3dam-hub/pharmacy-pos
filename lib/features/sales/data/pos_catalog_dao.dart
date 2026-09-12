@@ -47,8 +47,7 @@ class PosCatalogDao {
       filter.add(_db.items.currentStockBase.isBiggerThanValue(0));
     }
 
-    final composite =
-        filter.isEmpty ? null : filter.reduce((a, b) => a & b);
+    final composite = filter.isEmpty ? null : filter.reduce((a, b) => a & b);
 
     final countExpr = _db.items.id.count();
     final countQuery = _db.selectOnly(_db.items)..addColumns([countExpr]);
@@ -56,14 +55,14 @@ class PosCatalogDao {
     final total = (await countQuery.getSingle()).read(countExpr) ?? 0;
 
     // SQLite numeric IDs (TEXT ids sort lexicographically); order by trade name.
-final orderCol = switch (request.orderBy) {
-  'tradeNameEn' => _db.items.tradeNameEn,
-  'scientificName' => _db.items.scientificName,
-  'currentStockBase' => _db.items.currentStockBase,
-  _ => _db.items.tradeName,
-};
+    final orderCol = switch (request.orderBy) {
+      'tradeNameEn' => _db.items.tradeNameEn,
+      'scientificName' => _db.items.scientificName,
+      'currentStockBase' => _db.items.currentStockBase,
+      _ => _db.items.tradeName,
+    };
 
-final query = _db.select(_db.items);
+    final query = _db.select(_db.items);
     // Relevance-first ordering when searching by default order: exact name →
     // prefix → contains → everything else, so the best matches lead the page.
     if (q.isNotEmpty && request.orderBy == null) {
@@ -107,17 +106,17 @@ final query = _db.select(_db.items);
   Future<PosCatalogItem?> byBarcode(String barcode) async {
     final code = barcode.trim();
     if (code.isEmpty) return null;
-    final primary = await (_db.select(_db.items)
-          ..where((i) => i.primaryBarcode.equals(code)))
-        .getSingleOrNull();
+    final primary = await (_db.select(
+      _db.items,
+    )..where((i) => i.primaryBarcode.equals(code))).getSingleOrNull();
     if (primary != null) {
       return (await hydrate([primary])).isEmpty
           ? null
           : (await hydrate([primary])).first;
     }
-    final secondary = await (_db.select(_db.items)
-          ..where((i) => i.secondaryBarcode.equals(code)))
-        .getSingleOrNull();
+    final secondary = await (_db.select(
+      _db.items,
+    )..where((i) => i.secondaryBarcode.equals(code))).getSingleOrNull();
     if (secondary == null) return null;
     return (await hydrate([secondary])).isEmpty
         ? null
@@ -125,8 +124,9 @@ final query = _db.select(_db.items);
   }
 
   Future<PosCatalogItem?> byId(String id) async {
-    final row = await (_db.select(_db.items)..where((i) => i.id.equals(id)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.items,
+    )..where((i) => i.id.equals(id))).getSingleOrNull();
     if (row == null) return null;
     final hydrated = await hydrate([row]);
     return hydrated.isEmpty ? null : hydrated.first;
@@ -144,42 +144,44 @@ final query = _db.select(_db.items);
     required String itemId,
     int limit = 18,
   }) async {
-    final requested = await (_db.select(_db.items)
-          ..where((i) => i.id.equals(itemId)))
-        .getSingleOrNull();
+    final requested = await (_db.select(
+      _db.items,
+    )..where((i) => i.id.equals(itemId))).getSingleOrNull();
     if (requested == null) return const [];
 
     final clauses = <Expression<bool>>[];
 
     final ingredientIds = <String>{
-      for (final r
-          in await (_db.select(_db.itemActiveIngredients)
-                ..where((r) => r.itemId.equals(itemId)))
-              .get())
+      for (final r in await (_db.select(
+        _db.itemActiveIngredients,
+      )..where((r) => r.itemId.equals(itemId))).get())
         r.activeIngredientId,
     };
     final indicationIds = <String>{
-      for (final r
-          in await (_db.select(_db.itemIndications)
-                ..where((r) => r.itemId.equals(itemId)))
-              .get())
+      for (final r in await (_db.select(
+        _db.itemIndications,
+      )..where((r) => r.itemId.equals(itemId))).get())
         r.indicationId,
     };
 
     final relationalCandidates = <String>{};
     if (ingredientIds.isNotEmpty) {
-      final shared = await (_db.select(_db.itemActiveIngredients)
-            ..where((r) => r.activeIngredientId.isIn(ingredientIds)))
-          .get();
-      relationalCandidates.addAll(
-          [for (final r in shared) if (r.itemId != itemId) r.itemId]);
+      final shared = await (_db.select(
+        _db.itemActiveIngredients,
+      )..where((r) => r.activeIngredientId.isIn(ingredientIds))).get();
+      relationalCandidates.addAll([
+        for (final r in shared)
+          if (r.itemId != itemId) r.itemId,
+      ]);
     }
     if (indicationIds.isNotEmpty) {
-      final shared = await (_db.select(_db.itemIndications)
-            ..where((r) => r.indicationId.isIn(indicationIds)))
-          .get();
-      relationalCandidates.addAll(
-          [for (final r in shared) if (r.itemId != itemId) r.itemId]);
+      final shared = await (_db.select(
+        _db.itemIndications,
+      )..where((r) => r.indicationId.isIn(indicationIds))).get();
+      relationalCandidates.addAll([
+        for (final r in shared)
+          if (r.itemId != itemId) r.itemId,
+      ]);
     }
 
     if (relationalCandidates.isNotEmpty) {
@@ -195,15 +197,16 @@ final query = _db.select(_db.items);
     // the requested item has no relational active-ingredient rows.
     if (ingredientIds.isEmpty) {
       final tokens = SmartAlternativesService.ingredientTokens(
-          requested.activeIngredient);
+        requested.activeIngredient,
+      );
       if (tokens.isNotEmpty) {
         final likes = <Expression<bool>>[];
         for (final token in tokens) {
-          likes.add(
-              _db.items.activeIngredient.like('%${_escapeLike(token)}%'));
+          likes.add(_db.items.activeIngredient.like('%${_escapeLike(token)}%'));
         }
         clauses.add(
-            likes.length == 1 ? likes.first : likes.reduce((a, b) => a | b));
+          likes.length == 1 ? likes.first : likes.reduce((a, b) => a | b),
+        );
       }
     }
 
@@ -215,15 +218,17 @@ final query = _db.select(_db.items);
       clauses.reduce((a, b) => a | b),
     ].reduce((a, b) => a & b);
 
-    final candidates = await (_db.select(_db.items)
-          ..where((i) => filter)
-          ..orderBy([(_) => OrderingTerm.asc(_db.items.tradeName)])
-          ..limit(limit * 3))
-        .get();
+    final candidates =
+        await (_db.select(_db.items)
+              ..where((i) => filter)
+              ..orderBy([(_) => OrderingTerm.asc(_db.items.tradeName)])
+              ..limit(limit * 3))
+            .get();
     final hydrated = await hydrate(candidates);
-    return [for (final item in hydrated) if (item.availableStockBase > 0) item]
-        .take(limit)
-        .toList();
+    return [
+      for (final item in hydrated)
+        if (item.availableStockBase > 0) item,
+    ].take(limit).toList();
   }
 
   /// Builds [PosCatalogItem] snapshots for a page of item rows with minimal
@@ -232,9 +237,9 @@ final query = _db.select(_db.items);
   Future<List<PosCatalogItem>> hydrate(List<ItemRow> rows) async {
     if (rows.isEmpty) return const [];
 
-    final unitRows = await (_db.select(_db.itemUnits)
-          ..where((u) => u.itemId.isIn({for (final r in rows) r.id})))
-        .get();
+    final unitRows = await (_db.select(
+      _db.itemUnits,
+    )..where((u) => u.itemId.isIn({for (final r in rows) r.id}))).get();
 
     final unitIds = <String>{
       for (final u in unitRows) ...[u.baseUnitId, u.largeUnitId],
@@ -243,17 +248,21 @@ final query = _db.select(_db.items);
     };
     final unitNames = <String, String>{};
     if (unitIds.isNotEmpty) {
-      final units = await (_db.select(_db.units)
-            ..where((u) => u.id.isIn(unitIds)))
-          .get();
+      final units = await (_db.select(
+        _db.units,
+      )..where((u) => u.id.isIn(unitIds))).get();
       for (final u in units) {
         unitNames[u.id] = u.name;
       }
     }
 
     final availability = await _availableByItem({for (final r in rows) r.id});
-    final relationalIngredients =
-        await _relationalIngredientNamesByItem({for (final r in rows) r.id});
+    final relationalIngredients = await _relationalIngredientNamesByItem({
+      for (final r in rows) r.id,
+    });
+    final manufacturerNames = await _manufacturerNamesByItem({
+      for (final r in rows) r.id,
+    });
 
     final unitByItem = <String, ItemUnitRow>{};
     for (final u in unitRows) {
@@ -268,8 +277,31 @@ final query = _db.select(_db.items);
           unitNames: unitNames,
           availableStockBase: availability[r.id] ?? 0,
           relationalIngredientNames: relationalIngredients[r.id] ?? const [],
+          manufacturerName: manufacturerNames[r.id],
         ),
     ];
+  }
+
+  /// Manufacturer display names per item (one SQL round-trip across the page).
+  Future<Map<String, String?>> _manufacturerNamesByItem(
+    Set<String> itemIds,
+  ) async {
+    if (itemIds.isEmpty) return const {};
+    final mfrIds = <String>{};
+    final items = await (_db.select(
+      _db.items,
+    )..where((i) => i.id.isIn(itemIds))).get();
+    for (final r in items) {
+      if (r.manufacturerId != null) mfrIds.add(r.manufacturerId!);
+    }
+    if (mfrIds.isEmpty) return const {};
+    final names = <String, String>{};
+    for (final m in await (_db.select(
+      _db.manufacturers,
+    )..where((m) => m.id.isIn(mfrIds))).get()) {
+      names[m.id] = m.name;
+    }
+    return {for (final r in items) r.id: names[r.manufacturerId]};
   }
 
   /// Names of the active ingredients linked through `item_active_ingredients`
@@ -277,11 +309,12 @@ final query = _db.select(_db.items);
   /// the ingredient name map so the tier engine can compare relational
   /// compositions without per-row round trips.
   Future<Map<String, List<String>>> _relationalIngredientNamesByItem(
-      Set<String> itemIds) async {
+    Set<String> itemIds,
+  ) async {
     if (itemIds.isEmpty) return const {};
-    final relations = await (_db.select(_db.itemActiveIngredients)
-          ..where((r) => r.itemId.isIn(itemIds)))
-        .get();
+    final relations = await (_db.select(
+      _db.itemActiveIngredients,
+    )..where((r) => r.itemId.isIn(itemIds))).get();
     if (relations.isEmpty) return const {};
     final names = {
       for (final ai in await (_db.select(_db.activeIngredients)).get())
@@ -289,7 +322,8 @@ final query = _db.select(_db.items);
     };
     final out = <String, List<String>>{};
     for (final r in relations) {
-      out.putIfAbsent(r.itemId, () => [])
+      out
+          .putIfAbsent(r.itemId, () => [])
           .add(names[r.activeIngredientId] ?? r.activeIngredientId);
     }
     for (final v in out.values) {
@@ -303,14 +337,16 @@ final query = _db.select(_db.items);
   Future<Map<String, int>> _availableByItem(Set<String> itemIds) async {
     if (itemIds.isEmpty) return const {};
     final now = DateTime.now().millisecondsSinceEpoch;
-    final rows = await (_db.select(_db.batches)
-          ..where((b) =>
-              b.itemId.isIn(itemIds) &
-              b.isVoided.equals(false) &
-              b.quantityBase.isBiggerThanValue(0) &
-              (b.expiryDate.isNull() |
-                  b.expiryDate.isBiggerOrEqualValue(now))))
-        .get();
+    final rows =
+        await (_db.select(_db.batches)..where(
+              (b) =>
+                  b.itemId.isIn(itemIds) &
+                  b.isVoided.equals(false) &
+                  b.quantityBase.isBiggerThanValue(0) &
+                  (b.expiryDate.isNull() |
+                      b.expiryDate.isBiggerOrEqualValue(now)),
+            ))
+            .get();
     final totals = <String, int>{};
     for (final b in rows) {
       totals[b.itemId] = (totals[b.itemId] ?? 0) + b.quantityBase;
@@ -324,8 +360,10 @@ final query = _db.select(_db.items);
     required Map<String, String> unitNames,
     required int availableStockBase,
     List<String> relationalIngredientNames = const [],
+    String? manufacturerName,
   }) {
-    final baseUnitId = unitRow?.baseUnitId ?? r.sellablePartUnitId ?? 'unit_strip';
+    final baseUnitId =
+        unitRow?.baseUnitId ?? r.sellablePartUnitId ?? 'unit_strip';
     final largeUnitId = unitRow?.largeUnitId ?? baseUnitId;
     final unitsPerLarge = unitRow?.unitsPerLarge ?? 1;
     return PosCatalogItem(
@@ -335,6 +373,7 @@ final query = _db.select(_db.items);
       scientificName: r.scientificName,
       activeIngredient: r.activeIngredient,
       manufacturerId: r.manufacturerId,
+      manufacturerName: manufacturerName,
       relationalIngredientNames: relationalIngredientNames,
       dose: r.dose,
       pharmaForm: r.pharmaForm,
@@ -367,8 +406,7 @@ final query = _db.select(_db.items);
   /// Collision-safe sequential sale invoice number: `SI-YYYYMMDD-HHmmssSSS`.
   static String nextInvoiceNumber() {
     final now = DateTime.now();
-    String p(int n, [int pad = 2]) =>
-        n.toString().padLeft(pad, '0');
+    String p(int n, [int pad = 2]) => n.toString().padLeft(pad, '0');
     return 'SI-${now.year}${p(now.month)}${p(now.day)}-'
         '${p(now.hour)}${p(now.minute)}${p(now.second)}${p(now.millisecond, 3)}';
   }
@@ -376,14 +414,15 @@ final query = _db.select(_db.items);
   /// Collision-safe sequential return number: `RT-YYYYMMDD-HHmmssSSS`.
   static String nextReturnNumber() {
     final now = DateTime.now();
-    String p(int n, [int pad = 2]) =>
-        n.toString().padLeft(pad, '0');
+    String p(int n, [int pad = 2]) => n.toString().padLeft(pad, '0');
     return 'RT-${now.year}${p(now.month)}${p(now.day)}-'
         '${p(now.hour)}${p(now.minute)}${p(now.second)}${p(now.millisecond, 3)}';
   }
 
   // Convenience: item_units may not exist for a legacy item — treat as
   // single-base-unit sale.
-  static String _escapeLike(String value) =>
-      value.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');
+  static String _escapeLike(String value) => value
+      .replaceAll(r'\', r'\\')
+      .replaceAll('%', r'\%')
+      .replaceAll('_', r'\_');
 }

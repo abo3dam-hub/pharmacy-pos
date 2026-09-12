@@ -145,7 +145,7 @@ class PdfDocuments {
           [
             PdfArabic.shape(
                 '${line.itemName}${line.batchNumber.isNotEmpty ? ' (${line.batchNumber})' : ''}'),
-            '${line.quantityBaseSigned} ${PdfArabic.shape(line.unitTypeName)}',
+            '${line.sellUnitQuantity != null ? '${line.sellUnitQuantity}' : '${line.quantityBaseSigned}'} ${PdfArabic.shape(line.unitTypeName)}',
             money(line.unitPriceMicros),
             money(line.lineTotalMicros),
           ],

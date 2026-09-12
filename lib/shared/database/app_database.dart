@@ -104,7 +104,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -324,6 +324,13 @@ class AppDatabase extends _$AppDatabase {
       await m.alterTable(TableMigration(items));
       await customStatement('DROP TABLE IF EXISTS sub_categories');
       await customStatement('DROP TABLE IF EXISTS therapeutic_groups');
+    }
+    if (from < 13) {
+      // Two-mode pricing lock (§5): a sale line records the sell unit it was
+      // priced in (box = unitsPerLarge, part = configured part size). Existing
+      // rows were priced per base unit — backfilled to 1 (sell unit == base
+      // unit), preserving their historical display semantics.
+      await m.addColumn(salesInvoiceItems, salesInvoiceItems.unitBaseQuantity);
     }
   }
 }

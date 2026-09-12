@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../core/errors/exceptions.dart';
 import '../../core/constants/permission_codes.dart';
+import '../../core/money/money.dart';
 import '../../core/util/ids.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/models/enums.dart';
@@ -106,11 +107,22 @@ class ReturnService {
           .getSingle();
       final batchNumber = batch.batchNumber;
 
-      // Revenue/cost reversal figures from the original sale line.
-      final unitPrice =
-          originalLine.unitPriceMicros;
+      // Revenue/cost reversal figures from the ORIGINAL sale line's stored
+      // money — proportional to the returned base quantity. The stored row
+      // total (net + VAT) is what the customer paid, so a full-row return
+      // reverses exactly the persisted amounts and a partial return reverses a
+      // half-up proportion — never a reconstructed `quantity × unitPrice`
+      // (which ignored discounts/VAT and broke the two-mode pricing lock).
+      final rowQty = originalLine.quantityBaseSigned;
+      final reversalAmount = Money.fromUnits(
+              originalLine.lineTotalMicros + originalLine.taxMicros)
+          .timesRatio(request.quantityBase, rowQty)
+          .units;
+      final reversalMicros = -reversalAmount;
+      final costMicros = Money.fromUnits(originalLine.costTotalMicros)
+          .timesRatio(request.quantityBase, rowQty)
+          .units;
       final unitCost = originalLine.unitCostMicros;
-      final reversalMicros = -(request.quantityBase * unitPrice);
 
       await (db.update(db.salesInvoiceItems)
             ..where((i) => i.id.equals(request.originalInvoiceItemId)))
@@ -188,7 +200,6 @@ class ReturnService {
       // Financial reversal (§14): the reversed revenue first offsets any
       // outstanding accounts-receivable on the invoice, the rest is refunded
       // as cash; inventory/cost is restored via the GL.
-      final reversalAmount = -reversalMicros;
       final outstanding = (originalInvoice.remainingMicros).clamp(0, reversalAmount);
       final cashRefundMicros = reversalAmount - outstanding;
       await _financial.postReturn(
@@ -197,7 +208,7 @@ class ReturnService {
         returnNumber: request.returnNumber,
         invoiceNumber: originalInvoice.invoiceNumber,
         reversalRevenueMicros: reversalAmount,
-        costMicros: request.quantityBase * unitCost,
+        costMicros: costMicros,
         accountsReceivableOffsetMicros: outstanding,
         refundCashMicros: cashRefundMicros,
         userId: request.userId,

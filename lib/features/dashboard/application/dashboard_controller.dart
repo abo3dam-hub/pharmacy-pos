@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/failures.dart';
+import '../../reports/data/reports_dao.dart';
 import '../../sales/data/z_report_dao.dart';
 import '../data/dashboard_dao.dart';
 import '../domain/entities/dashboard_snapshot.dart';
@@ -39,15 +40,19 @@ class DashboardViewState {
 /// Loads the real-data dashboard: a Z-Report window for today's sales plus the
 /// inventory / activity read model behind it.
 class DashboardController extends StateNotifier<DashboardViewState> {
-  DashboardController(this._zReportDao, this._dashboardDao)
-      : super(const DashboardViewState());
+  DashboardController(this._zReportDao, this._dashboardDao, this._reportsDao)
+    : super(const DashboardViewState());
 
   final ZReportDao _zReportDao;
   final DashboardDao _dashboardDao;
+  final ReportsDao _reportsDao;
 
   Future<Failure?> load({String? userId}) async {
     state = state.copyWith(
-        status: DashboardStatus.loading, busy: true, clearError: true);
+      status: DashboardStatus.loading,
+      busy: true,
+      clearError: true,
+    );
     try {
       final now = DateTime.now();
       final from = DateTime(now.year, now.month, now.day);
@@ -55,6 +60,17 @@ class DashboardController extends StateNotifier<DashboardViewState> {
         fromMillis: from.millisecondsSinceEpoch,
         toMillis: now.millisecondsSinceEpoch,
         userId: userId,
+      );
+      final statement = await _reportsDao.incomeStatement(
+        fromMillis: from.millisecondsSinceEpoch,
+        toMillis: now.millisecondsSinceEpoch,
+      );
+      final financials = DashboardFinancials(
+        revenueMicros: statement.salesRevenueMicros,
+        netRevenueMicros: statement.netRevenueMicros,
+        cogsMicros: statement.costOfGoodsSoldMicros,
+        grossProfitMicros: statement.grossProfitMicros,
+        netIncomeMicros: statement.netIncomeMicros,
       );
       final snapshot = await _dashboardDao.load(
         nowMillis: now.millisecondsSinceEpoch,
@@ -64,15 +80,19 @@ class DashboardController extends StateNotifier<DashboardViewState> {
         todayUnitsSold: today.unitsSold,
         todayTotalMicros: today.totalMicros,
         todayPaidMicros: today.paidMicros,
+        financials: financials,
       );
       state = DashboardViewState(
-          status: DashboardStatus.ready, snapshot: snapshot);
+        status: DashboardStatus.ready,
+        snapshot: snapshot,
+      );
       return null;
     } on Exception catch (e) {
       state = state.copyWith(
-          status: DashboardStatus.error,
-          busy: false,
-          error: () => Failure('${e.runtimeType}: $e'));
+        status: DashboardStatus.error,
+        busy: false,
+        error: () => Failure('${e.runtimeType}: $e'),
+      );
     }
     return state.error;
   }

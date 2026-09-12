@@ -156,27 +156,13 @@ void main() {
   // ── TEST B: Partial-sale pricing (Phase 6 domain) ──────────────────
 
   group('TEST B — Partial-sale pricing', () {
-    test('partial sale decomposition and price computation', () {
-      // Item: $10 box of 10 strips, 10% markup
+    test('partial price formula: \$10 ÷ 10 × 1.10 = \$1.10', () {
       final partialPrice = calc.calculatePartialPrice(
         sellingPriceMicros: 100000,
         partsPerFullProduct: 10,
         markupBasisPoints: 1000,
       );
       expect(partialPrice, 11000); // $1.10
-
-      // Sell 13 strips: 1 full box ($10) + 3 strips (3 × $1.10)
-      final d = calc.decompose(
-        quantityParts: 13,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: 11000,
-      );
-      expect(d.completeProducts, 1);
-      expect(d.remainingParts, 3);
-      expect(d.totalPriceMicros, 133000);
-      expect(d.totalBaseQuantity, 130);
     });
 
     test('consistency invariant: parts × base = unitsPerLarge', () {
@@ -196,9 +182,10 @@ void main() {
 
   // ── TEST C: Partial-sale in actual sale flow ────────────────────────
   //
-  // The SaleService API computes: unitPriceMicros × quantityBase.
-  // For partial-sale items, the caller must decompose into lines, each with
-  // the correct per-base-unit price. The decomposition is NOT bypassed.
+  // Two-mode pricing lock (§5): an explicit part-mode line is priced per sell
+  // unit at the partial selling price — `gross = partialPrice × quantityParts`.
+  // Parts are NEVER batched back into whole boxes (the 19,601 bug); a cashier
+  // pricing by strip pays 13 × $1.10 = $14.30, not $13.30.
 
   group('TEST C — Partial-sale actual business flow', () {
     late String itemId;
@@ -243,164 +230,84 @@ void main() {
       );
     }
 
-    /// Decompose a strip quantity into sale lines with correct per-base-unit
-    /// prices. This is the actual business flow: the POS layer decomposes
-    /// the customer's strip request into full-box and partial-strips lines.
-    List<SaleLineRequest> decomposeIntoSaleLines({
-      required String itemId,
+    /// One explicit part-mode sale line: price per sell unit (strip) × parts.
+    /// quantityBase = parts × sellablePartBaseQuantity drives FEFO/cost/stock.
+    SaleLineRequest buildPartLine({
       required int quantityParts,
-      required int partsPerFullProduct,
       required int sellablePartBaseQuantity,
-      required int fullRetailPriceMicros,
       required int partialSellingPriceMicros,
     }) {
-      final completeProducts = quantityParts ~/ partsPerFullProduct;
-      final remainingParts = quantityParts % partsPerFullProduct;
-      final lines = <SaleLineRequest>[];
-
-      // Full-box portion: price per base = fullRetail / (parts × basePerPart).
-      if (completeProducts > 0) {
-        final fullBoxBaseQty =
-            completeProducts * partsPerFullProduct * sellablePartBaseQuantity;
-        final fullBoxPricePerBase =
-            fullRetailPriceMicros ~/ (partsPerFullProduct * sellablePartBaseQuantity);
-        lines.add(SaleLineRequest(
-          itemId: itemId,
-          quantityBase: fullBoxBaseQty,
-          unitPriceMicros: fullBoxPricePerBase,
-          unitTypeId: 'unit_strip',
-        ));
-      }
-
-      // Partial-strips portion: price per base = partialPrice / basePerPart.
-      if (remainingParts > 0) {
-        final partialBaseQty = remainingParts * sellablePartBaseQuantity;
-        final partialPricePerBase =
-            partialSellingPriceMicros ~/ sellablePartBaseQuantity;
-        lines.add(SaleLineRequest(
-          itemId: itemId,
-          quantityBase: partialBaseQty,
-          unitPriceMicros: partialPricePerBase,
-          unitTypeId: 'unit_strip',
-        ));
-      }
-
-      return lines;
+      return SaleLineRequest(
+        itemId: itemId,
+        quantityBase: quantityParts * sellablePartBaseQuantity,
+        unitPriceMicros: partialSellingPriceMicros,
+        quantity: quantityParts,
+        unitBaseQuantity: sellablePartBaseQuantity,
+        unitTypeId: 'unit_strip',
+      );
     }
 
-    test('13 strips → 1 box + 3 strips → \$13.30 → 130 base units', () async {
+    test('13 strips → 13 × \$1.10 = \$14.30 → 130 base units (never "1 box + 3")',
+        () async {
       await setupPartialSaleItem();
 
-      // Step 1: Compute partial price per strip.
       final partialPricePerStrip = calc.calculatePartialPrice(
-        sellingPriceMicros: 100000, // $10.00
+        sellingPriceMicros: 100000,
         partsPerFullProduct: 10,
-        markupBasisPoints: 1000, // 10%
+        markupBasisPoints: 1000,
       );
       expect(partialPricePerStrip, 11000); // $1.10 per strip
 
-      // Step 2: Decompose 13 strips.
-      final decomposition = calc.decompose(
-        quantityParts: 13,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: partialPricePerStrip,
-      );
-      expect(decomposition.completeProducts, 1);
-      expect(decomposition.remainingParts, 3);
-      expect(decomposition.totalBaseQuantity, 130);
-      expect(decomposition.totalPriceMicros, 133000); // $13.30
+      // A 13-strip request stays ONE part-mode line — no box conversion.
+      final saleLines = [
+        buildPartLine(
+          quantityParts: 13,
+          sellablePartBaseQuantity: 10,
+          partialSellingPriceMicros: partialPricePerStrip,
+        ),
+      ];
 
-      // Step 3: Create sale lines via decomposition (actual business flow).
-      final saleLines = decomposeIntoSaleLines(
-        itemId: itemId,
-        quantityParts: 13,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: partialPricePerStrip,
-      );
-      expect(saleLines, hasLength(2)); // 1 full box + 1 partial
-
-      // Step 4: Execute sale.
       final outcome = await SaleService().recordSale(
         db,
         SaleRequest(
           invoiceNumber: 'SI-C1',
           userId: 'user_admin',
           paymentMethod: PaymentMethod.cash,
-          paidMicros: decomposition.totalPriceMicros,
+          paidMicros: 13 * 11000,
           lines: saleLines,
         ),
       );
 
-      // Step 5: Verify invoice total = $13.30.
-      expect(outcome.invoice.totalMicros, 133000);
+      expect(outcome.invoice.totalMicros, 13 * 11000); // $14.30
+      expect(outcome.lines, hasLength(1));
+      final line = outcome.lines.single;
+      expect(line.quantityBaseSigned, 130);
+      expect(line.unitBaseQuantity, 10);
+      expect(line.lineTotalMicros, 143000);
 
-      // Step 6: Verify two lines created (full box + partial strips).
-      expect(outcome.lines, hasLength(2));
-
-      // Full box line: 100 base units at $0.10/base = $10.00.
-      final fullBoxLine = outcome.lines.firstWhere(
-          (l) => l.unitPriceMicros == 1000 && l.quantityBaseSigned == 100);
-      expect(fullBoxLine.lineTotalMicros, 100000); // $10.00
-
-      // Partial strips line: 30 base units at $0.11/base = $3.30.
-      final partialLine = outcome.lines.firstWhere(
-          (l) => l.unitPriceMicros == 1100 && l.quantityBaseSigned == 30);
-      expect(partialLine.lineTotalMicros, 33000); // $3.30
-
-      // Step 7: Verify stock deducted = 130 base units.
       final item = await (db.select(db.items)
             ..where((i) => i.id.equals(itemId)))
           .getSingle();
       expect(item.currentStockBase, 170); // 300 - 130
 
-      // Step 8: Verify FEFO ledger.
       final movs = await (db.select(db.stockMovements)
             ..where((m) => m.itemId.equals(itemId)))
           .get();
       final saleMovs =
           movs.where((m) => m.movementType == MovementType.sale).toList();
-      expect(saleMovs, hasLength(2)); // 2 batch allocations
-      final totalDeducted =
-          saleMovs.fold<int>(0, (sum, m) => sum + m.quantityBaseSigned);
-      expect(totalDeducted, -130);
+      expect(saleMovs, hasLength(1)); // one single-batch allocation
+      expect(saleMovs.single.quantityBaseSigned, -130);
     });
 
-    test('10 strips → 1 box → \$10.00 (NO cumulative markup)', () async {
+    test('10 strips in part mode = 10 × \$1.10 (no implicit full-box pricing)',
+        () async {
       await setupPartialSaleItem();
 
-      // 10 strips = exactly 1 box. Must be sold at full retail, NOT at
-      // partial price with markup. The partial markup applies only to
-      // quantities that don't fill a complete box.
       final partialPricePerStrip = calc.calculatePartialPrice(
         sellingPriceMicros: 100000,
         partsPerFullProduct: 10,
         markupBasisPoints: 1000,
       );
-
-      final decomposition = calc.decompose(
-        quantityParts: 10,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: partialPricePerStrip,
-      );
-      expect(decomposition.completeProducts, 1);
-      expect(decomposition.remainingParts, 0);
-      expect(decomposition.totalPriceMicros, 100000); // $10.00, NOT $11.00
-
-      final saleLines = decomposeIntoSaleLines(
-        itemId: itemId,
-        quantityParts: 10,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: partialPricePerStrip,
-      );
-      expect(saleLines, hasLength(1)); // Only 1 full-box line
 
       final outcome = await SaleService().recordSale(
         db,
@@ -408,13 +315,19 @@ void main() {
           invoiceNumber: 'SI-C2',
           userId: 'user_admin',
           paymentMethod: PaymentMethod.cash,
-          paidMicros: decomposition.totalPriceMicros,
-          lines: saleLines,
+          paidMicros: 10 * 11000,
+          lines: [
+            buildPartLine(
+              quantityParts: 10,
+              sellablePartBaseQuantity: 10,
+              partialSellingPriceMicros: partialPricePerStrip,
+            ),
+          ],
         ),
       );
 
-      // CRITICAL: 10 strips = $10.00, NOT $11.00.
-      expect(outcome.invoice.totalMicros, 100000);
+      // Part mode is explicit: 10 strips priced per strip = $11.00.
+      expect(outcome.invoice.totalMicros, 110000);
 
       final item = await (db.select(db.items)
             ..where((i) => i.id.equals(itemId)))
@@ -422,7 +335,41 @@ void main() {
       expect(item.currentStockBase, 200); // 300 - 100
     });
 
-    test('3 strips → 0 boxes + 3 strips → \$3.30 → 30 base units', () async {
+    test('1 box in box mode = \$10.00 full retail (never per-base reconstruction)',
+        () async {
+      await setupPartialSaleItem();
+
+      final outcome = await SaleService().recordSale(
+        db,
+        SaleRequest(
+          invoiceNumber: 'SI-C2B',
+          userId: 'user_admin',
+          paymentMethod: PaymentMethod.cash,
+          paidMicros: 100000,
+          lines: [
+            SaleLineRequest(
+              itemId: itemId,
+              quantityBase: 100,
+              unitPriceMicros: 100000,
+              quantity: 1,
+              unitBaseQuantity: 100,
+              unitTypeId: 'unit_box',
+            ),
+          ],
+        ),
+      );
+
+      expect(outcome.invoice.totalMicros, 100000);
+      expect(outcome.lines.single.lineTotalMicros, 100000);
+      expect(outcome.lines.single.unitBaseQuantity, 100);
+
+      final item = await (db.select(db.items)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(item.currentStockBase, 200); // 300 - 100
+    });
+
+    test('3 strips → \$3.30 → 30 base units', () async {
       await setupPartialSaleItem();
 
       final partialPricePerStrip = calc.calculatePartialPrice(
@@ -431,35 +378,20 @@ void main() {
         markupBasisPoints: 1000,
       );
 
-      final decomposition = calc.decompose(
-        quantityParts: 3,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: partialPricePerStrip,
-      );
-      expect(decomposition.completeProducts, 0);
-      expect(decomposition.remainingParts, 3);
-      expect(decomposition.totalPriceMicros, 33000); // $3.30
-
-      final saleLines = decomposeIntoSaleLines(
-        itemId: itemId,
-        quantityParts: 3,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: partialPricePerStrip,
-      );
-      expect(saleLines, hasLength(1)); // Only partial strips
-
       final outcome = await SaleService().recordSale(
         db,
         SaleRequest(
           invoiceNumber: 'SI-C3',
           userId: 'user_admin',
           paymentMethod: PaymentMethod.cash,
-          paidMicros: decomposition.totalPriceMicros,
-          lines: saleLines,
+          paidMicros: 3 * 11000,
+          lines: [
+            buildPartLine(
+              quantityParts: 3,
+              sellablePartBaseQuantity: 10,
+              partialSellingPriceMicros: partialPricePerStrip,
+            ),
+          ],
         ),
       );
 
@@ -473,7 +405,7 @@ void main() {
       expect(item.currentStockBase, 270); // 300 - 30
     });
 
-    test('27 strips → 2 boxes + 7 strips → \$27.70 → 270 base units', () async {
+    test('27 strips → \$29.70 → 270 base units (never "2 boxes + 7")', () async {
       await setupPartialSaleItem();
 
       final partialPricePerStrip = calc.calculatePartialPrice(
@@ -481,27 +413,6 @@ void main() {
         partsPerFullProduct: 10,
         markupBasisPoints: 1000,
       );
-
-      final decomposition = calc.decompose(
-        quantityParts: 27,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: partialPricePerStrip,
-      );
-      expect(decomposition.completeProducts, 2);
-      expect(decomposition.remainingParts, 7);
-      expect(decomposition.totalPriceMicros, 277000); // $27.70
-
-      final saleLines = decomposeIntoSaleLines(
-        itemId: itemId,
-        quantityParts: 27,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: partialPricePerStrip,
-      );
-      expect(saleLines, hasLength(2));
 
       final outcome = await SaleService().recordSale(
         db,
@@ -509,12 +420,18 @@ void main() {
           invoiceNumber: 'SI-C4',
           userId: 'user_admin',
           paymentMethod: PaymentMethod.cash,
-          paidMicros: decomposition.totalPriceMicros,
-          lines: saleLines,
+          paidMicros: 27 * 11000,
+          lines: [
+            buildPartLine(
+              quantityParts: 27,
+              sellablePartBaseQuantity: 10,
+              partialSellingPriceMicros: partialPricePerStrip,
+            ),
+          ],
         ),
       );
 
-      expect(outcome.invoice.totalMicros, 277000); // $27.70
+      expect(outcome.invoice.totalMicros, 27 * 11000); // $29.70
 
       final item = await (db.select(db.items)
             ..where((i) => i.id.equals(itemId)))
@@ -522,7 +439,7 @@ void main() {
       expect(item.currentStockBase, 30); // 300 - 270
     });
 
-    test('1 strip → 0 boxes + 1 strip → \$1.10 → 10 base units', () async {
+    test('1 strip → \$1.10 → 10 base units', () async {
       await setupPartialSaleItem();
 
       final partialPricePerStrip = calc.calculatePartialPrice(
@@ -531,35 +448,20 @@ void main() {
         markupBasisPoints: 1000,
       );
 
-      final decomposition = calc.decompose(
-        quantityParts: 1,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: partialPricePerStrip,
-      );
-      expect(decomposition.completeProducts, 0);
-      expect(decomposition.remainingParts, 1);
-      expect(decomposition.totalPriceMicros, 11000); // $1.10
-
-      final saleLines = decomposeIntoSaleLines(
-        itemId: itemId,
-        quantityParts: 1,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: partialPricePerStrip,
-      );
-      expect(saleLines, hasLength(1));
-
       final outcome = await SaleService().recordSale(
         db,
         SaleRequest(
           invoiceNumber: 'SI-C5',
           userId: 'user_admin',
           paymentMethod: PaymentMethod.cash,
-          paidMicros: decomposition.totalPriceMicros,
-          lines: saleLines,
+          paidMicros: 11000,
+          lines: [
+            buildPartLine(
+              quantityParts: 1,
+              sellablePartBaseQuantity: 10,
+              partialSellingPriceMicros: partialPricePerStrip,
+            ),
+          ],
         ),
       );
 

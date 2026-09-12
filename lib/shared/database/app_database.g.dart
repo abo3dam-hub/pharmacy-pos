@@ -14115,6 +14115,18 @@ class $SalesInvoiceItemsTable extends SalesInvoiceItems
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _unitBaseQuantityMeta = const VerificationMeta(
+    'unitBaseQuantity',
+  );
+  @override
+  late final GeneratedColumn<int> unitBaseQuantity = GeneratedColumn<int>(
+    'unit_base_quantity',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _vatRateBasisPointsMeta =
       const VerificationMeta('vatRateBasisPoints');
   @override
@@ -14262,6 +14274,7 @@ class $SalesInvoiceItemsTable extends SalesInvoiceItems
     prescriptionItemId,
     quantityBaseSigned,
     unitPriceMicros,
+    unitBaseQuantity,
     vatRateBasisPoints,
     lineDiscountBasisPoints,
     lineSubtotalMicros,
@@ -14366,6 +14379,15 @@ class $SalesInvoiceItemsTable extends SalesInvoiceItems
       );
     } else if (isInserting) {
       context.missing(_unitPriceMicrosMeta);
+    }
+    if (data.containsKey('unit_base_quantity')) {
+      context.handle(
+        _unitBaseQuantityMeta,
+        unitBaseQuantity.isAcceptableOrUnknown(
+          data['unit_base_quantity']!,
+          _unitBaseQuantityMeta,
+        ),
+      );
     }
     if (data.containsKey('vat_rate_basis_points')) {
       context.handle(
@@ -14513,6 +14535,10 @@ class $SalesInvoiceItemsTable extends SalesInvoiceItems
         DriftSqlType.int,
         data['${effectivePrefix}unit_price_micros'],
       )!,
+      unitBaseQuantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}unit_base_quantity'],
+      )!,
       vatRateBasisPoints: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}vat_rate_basis_points'],
@@ -14589,6 +14615,13 @@ class SalesInvoiceItemRow extends DataClass
   final String? prescriptionItemId;
   final int quantityBaseSigned;
   final int unitPriceMicros;
+
+  /// Base quantity consumed per sell unit at sale time (unitsPerLarge for a
+  /// box, the configured sellable-part size for a strip). Persisted so
+  /// historical invoices display the real sold unit ("1 × 14,000" not
+  /// "3 × 4,667") even after the unit configuration changes. Defaults to 1 for
+  /// legacy rows (sell unit == base unit).
+  final int unitBaseQuantity;
   final int vatRateBasisPoints;
   final int lineDiscountBasisPoints;
   final int lineSubtotalMicros;
@@ -14615,6 +14648,7 @@ class SalesInvoiceItemRow extends DataClass
     this.prescriptionItemId,
     required this.quantityBaseSigned,
     required this.unitPriceMicros,
+    required this.unitBaseQuantity,
     required this.vatRateBasisPoints,
     required this.lineDiscountBasisPoints,
     required this.lineSubtotalMicros,
@@ -14644,6 +14678,7 @@ class SalesInvoiceItemRow extends DataClass
     }
     map['quantity_base_signed'] = Variable<int>(quantityBaseSigned);
     map['unit_price_micros'] = Variable<int>(unitPriceMicros);
+    map['unit_base_quantity'] = Variable<int>(unitBaseQuantity);
     map['vat_rate_basis_points'] = Variable<int>(vatRateBasisPoints);
     map['line_discount_basis_points'] = Variable<int>(lineDiscountBasisPoints);
     map['line_subtotal_micros'] = Variable<int>(lineSubtotalMicros);
@@ -14676,6 +14711,7 @@ class SalesInvoiceItemRow extends DataClass
           : Value(prescriptionItemId),
       quantityBaseSigned: Value(quantityBaseSigned),
       unitPriceMicros: Value(unitPriceMicros),
+      unitBaseQuantity: Value(unitBaseQuantity),
       vatRateBasisPoints: Value(vatRateBasisPoints),
       lineDiscountBasisPoints: Value(lineDiscountBasisPoints),
       lineSubtotalMicros: Value(lineSubtotalMicros),
@@ -14712,6 +14748,7 @@ class SalesInvoiceItemRow extends DataClass
       ),
       quantityBaseSigned: serializer.fromJson<int>(json['quantityBaseSigned']),
       unitPriceMicros: serializer.fromJson<int>(json['unitPriceMicros']),
+      unitBaseQuantity: serializer.fromJson<int>(json['unitBaseQuantity']),
       vatRateBasisPoints: serializer.fromJson<int>(json['vatRateBasisPoints']),
       lineDiscountBasisPoints: serializer.fromJson<int>(
         json['lineDiscountBasisPoints'],
@@ -14743,6 +14780,7 @@ class SalesInvoiceItemRow extends DataClass
       'prescriptionItemId': serializer.toJson<String?>(prescriptionItemId),
       'quantityBaseSigned': serializer.toJson<int>(quantityBaseSigned),
       'unitPriceMicros': serializer.toJson<int>(unitPriceMicros),
+      'unitBaseQuantity': serializer.toJson<int>(unitBaseQuantity),
       'vatRateBasisPoints': serializer.toJson<int>(vatRateBasisPoints),
       'lineDiscountBasisPoints': serializer.toJson<int>(
         lineDiscountBasisPoints,
@@ -14770,6 +14808,7 @@ class SalesInvoiceItemRow extends DataClass
     Value<String?> prescriptionItemId = const Value.absent(),
     int? quantityBaseSigned,
     int? unitPriceMicros,
+    int? unitBaseQuantity,
     int? vatRateBasisPoints,
     int? lineDiscountBasisPoints,
     int? lineSubtotalMicros,
@@ -14796,6 +14835,7 @@ class SalesInvoiceItemRow extends DataClass
         : this.prescriptionItemId,
     quantityBaseSigned: quantityBaseSigned ?? this.quantityBaseSigned,
     unitPriceMicros: unitPriceMicros ?? this.unitPriceMicros,
+    unitBaseQuantity: unitBaseQuantity ?? this.unitBaseQuantity,
     vatRateBasisPoints: vatRateBasisPoints ?? this.vatRateBasisPoints,
     lineDiscountBasisPoints:
         lineDiscountBasisPoints ?? this.lineDiscountBasisPoints,
@@ -14831,6 +14871,9 @@ class SalesInvoiceItemRow extends DataClass
       unitPriceMicros: data.unitPriceMicros.present
           ? data.unitPriceMicros.value
           : this.unitPriceMicros,
+      unitBaseQuantity: data.unitBaseQuantity.present
+          ? data.unitBaseQuantity.value
+          : this.unitBaseQuantity,
       vatRateBasisPoints: data.vatRateBasisPoints.present
           ? data.vatRateBasisPoints.value
           : this.vatRateBasisPoints,
@@ -14876,6 +14919,7 @@ class SalesInvoiceItemRow extends DataClass
           ..write('prescriptionItemId: $prescriptionItemId, ')
           ..write('quantityBaseSigned: $quantityBaseSigned, ')
           ..write('unitPriceMicros: $unitPriceMicros, ')
+          ..write('unitBaseQuantity: $unitBaseQuantity, ')
           ..write('vatRateBasisPoints: $vatRateBasisPoints, ')
           ..write('lineDiscountBasisPoints: $lineDiscountBasisPoints, ')
           ..write('lineSubtotalMicros: $lineSubtotalMicros, ')
@@ -14903,6 +14947,7 @@ class SalesInvoiceItemRow extends DataClass
     prescriptionItemId,
     quantityBaseSigned,
     unitPriceMicros,
+    unitBaseQuantity,
     vatRateBasisPoints,
     lineDiscountBasisPoints,
     lineSubtotalMicros,
@@ -14929,6 +14974,7 @@ class SalesInvoiceItemRow extends DataClass
           other.prescriptionItemId == this.prescriptionItemId &&
           other.quantityBaseSigned == this.quantityBaseSigned &&
           other.unitPriceMicros == this.unitPriceMicros &&
+          other.unitBaseQuantity == this.unitBaseQuantity &&
           other.vatRateBasisPoints == this.vatRateBasisPoints &&
           other.lineDiscountBasisPoints == this.lineDiscountBasisPoints &&
           other.lineSubtotalMicros == this.lineSubtotalMicros &&
@@ -14953,6 +14999,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
   final Value<String?> prescriptionItemId;
   final Value<int> quantityBaseSigned;
   final Value<int> unitPriceMicros;
+  final Value<int> unitBaseQuantity;
   final Value<int> vatRateBasisPoints;
   final Value<int> lineDiscountBasisPoints;
   final Value<int> lineSubtotalMicros;
@@ -14976,6 +15023,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
     this.prescriptionItemId = const Value.absent(),
     this.quantityBaseSigned = const Value.absent(),
     this.unitPriceMicros = const Value.absent(),
+    this.unitBaseQuantity = const Value.absent(),
     this.vatRateBasisPoints = const Value.absent(),
     this.lineDiscountBasisPoints = const Value.absent(),
     this.lineSubtotalMicros = const Value.absent(),
@@ -15000,6 +15048,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
     this.prescriptionItemId = const Value.absent(),
     required int quantityBaseSigned,
     required int unitPriceMicros,
+    this.unitBaseQuantity = const Value.absent(),
     this.vatRateBasisPoints = const Value.absent(),
     this.lineDiscountBasisPoints = const Value.absent(),
     this.lineSubtotalMicros = const Value.absent(),
@@ -15031,6 +15080,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
     Expression<String>? prescriptionItemId,
     Expression<int>? quantityBaseSigned,
     Expression<int>? unitPriceMicros,
+    Expression<int>? unitBaseQuantity,
     Expression<int>? vatRateBasisPoints,
     Expression<int>? lineDiscountBasisPoints,
     Expression<int>? lineSubtotalMicros,
@@ -15058,6 +15108,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
       if (quantityBaseSigned != null)
         'quantity_base_signed': quantityBaseSigned,
       if (unitPriceMicros != null) 'unit_price_micros': unitPriceMicros,
+      if (unitBaseQuantity != null) 'unit_base_quantity': unitBaseQuantity,
       if (vatRateBasisPoints != null)
         'vat_rate_basis_points': vatRateBasisPoints,
       if (lineDiscountBasisPoints != null)
@@ -15089,6 +15140,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
     Value<String?>? prescriptionItemId,
     Value<int>? quantityBaseSigned,
     Value<int>? unitPriceMicros,
+    Value<int>? unitBaseQuantity,
     Value<int>? vatRateBasisPoints,
     Value<int>? lineDiscountBasisPoints,
     Value<int>? lineSubtotalMicros,
@@ -15114,6 +15166,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
       prescriptionItemId: prescriptionItemId ?? this.prescriptionItemId,
       quantityBaseSigned: quantityBaseSigned ?? this.quantityBaseSigned,
       unitPriceMicros: unitPriceMicros ?? this.unitPriceMicros,
+      unitBaseQuantity: unitBaseQuantity ?? this.unitBaseQuantity,
       vatRateBasisPoints: vatRateBasisPoints ?? this.vatRateBasisPoints,
       lineDiscountBasisPoints:
           lineDiscountBasisPoints ?? this.lineDiscountBasisPoints,
@@ -15162,6 +15215,9 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
     }
     if (unitPriceMicros.present) {
       map['unit_price_micros'] = Variable<int>(unitPriceMicros.value);
+    }
+    if (unitBaseQuantity.present) {
+      map['unit_base_quantity'] = Variable<int>(unitBaseQuantity.value);
     }
     if (vatRateBasisPoints.present) {
       map['vat_rate_basis_points'] = Variable<int>(vatRateBasisPoints.value);
@@ -15219,6 +15275,7 @@ class SalesInvoiceItemsCompanion extends UpdateCompanion<SalesInvoiceItemRow> {
           ..write('prescriptionItemId: $prescriptionItemId, ')
           ..write('quantityBaseSigned: $quantityBaseSigned, ')
           ..write('unitPriceMicros: $unitPriceMicros, ')
+          ..write('unitBaseQuantity: $unitBaseQuantity, ')
           ..write('vatRateBasisPoints: $vatRateBasisPoints, ')
           ..write('lineDiscountBasisPoints: $lineDiscountBasisPoints, ')
           ..write('lineSubtotalMicros: $lineSubtotalMicros, ')
@@ -35419,6 +35476,7 @@ typedef $$SalesInvoiceItemsTableCreateCompanionBuilder =
       Value<String?> prescriptionItemId,
       required int quantityBaseSigned,
       required int unitPriceMicros,
+      Value<int> unitBaseQuantity,
       Value<int> vatRateBasisPoints,
       Value<int> lineDiscountBasisPoints,
       Value<int> lineSubtotalMicros,
@@ -35444,6 +35502,7 @@ typedef $$SalesInvoiceItemsTableUpdateCompanionBuilder =
       Value<String?> prescriptionItemId,
       Value<int> quantityBaseSigned,
       Value<int> unitPriceMicros,
+      Value<int> unitBaseQuantity,
       Value<int> vatRateBasisPoints,
       Value<int> lineDiscountBasisPoints,
       Value<int> lineSubtotalMicros,
@@ -35510,6 +35569,11 @@ class $$SalesInvoiceItemsTableFilterComposer
 
   ColumnFilters<int> get unitPriceMicros => $composableBuilder(
     column: $table.unitPriceMicros,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get unitBaseQuantity => $composableBuilder(
+    column: $table.unitBaseQuantity,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -35628,6 +35692,11 @@ class $$SalesInvoiceItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get unitBaseQuantity => $composableBuilder(
+    column: $table.unitBaseQuantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get vatRateBasisPoints => $composableBuilder(
     column: $table.vatRateBasisPoints,
     builder: (column) => ColumnOrderings(column),
@@ -35735,6 +35804,11 @@ class $$SalesInvoiceItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get unitBaseQuantity => $composableBuilder(
+    column: $table.unitBaseQuantity,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get vatRateBasisPoints => $composableBuilder(
     column: $table.vatRateBasisPoints,
     builder: (column) => column,
@@ -35839,6 +35913,7 @@ class $$SalesInvoiceItemsTableTableManager
                 Value<String?> prescriptionItemId = const Value.absent(),
                 Value<int> quantityBaseSigned = const Value.absent(),
                 Value<int> unitPriceMicros = const Value.absent(),
+                Value<int> unitBaseQuantity = const Value.absent(),
                 Value<int> vatRateBasisPoints = const Value.absent(),
                 Value<int> lineDiscountBasisPoints = const Value.absent(),
                 Value<int> lineSubtotalMicros = const Value.absent(),
@@ -35862,6 +35937,7 @@ class $$SalesInvoiceItemsTableTableManager
                 prescriptionItemId: prescriptionItemId,
                 quantityBaseSigned: quantityBaseSigned,
                 unitPriceMicros: unitPriceMicros,
+                unitBaseQuantity: unitBaseQuantity,
                 vatRateBasisPoints: vatRateBasisPoints,
                 lineDiscountBasisPoints: lineDiscountBasisPoints,
                 lineSubtotalMicros: lineSubtotalMicros,
@@ -35887,6 +35963,7 @@ class $$SalesInvoiceItemsTableTableManager
                 Value<String?> prescriptionItemId = const Value.absent(),
                 required int quantityBaseSigned,
                 required int unitPriceMicros,
+                Value<int> unitBaseQuantity = const Value.absent(),
                 Value<int> vatRateBasisPoints = const Value.absent(),
                 Value<int> lineDiscountBasisPoints = const Value.absent(),
                 Value<int> lineSubtotalMicros = const Value.absent(),
@@ -35910,6 +35987,7 @@ class $$SalesInvoiceItemsTableTableManager
                 prescriptionItemId: prescriptionItemId,
                 quantityBaseSigned: quantityBaseSigned,
                 unitPriceMicros: unitPriceMicros,
+                unitBaseQuantity: unitBaseQuantity,
                 vatRateBasisPoints: vatRateBasisPoints,
                 lineDiscountBasisPoints: lineDiscountBasisPoints,
                 lineSubtotalMicros: lineSubtotalMicros,

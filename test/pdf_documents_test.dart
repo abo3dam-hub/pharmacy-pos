@@ -213,6 +213,7 @@ PosInvoiceView _invoice({
     unitTypeId: 'unit_strip',
     unitTypeName: 'شريط',
     quantityBaseSigned: 2,
+    unitBaseQuantity: 1,
     unitPriceMicros: 5000000,
     vatRateBasisPoints: 0,
     lineDiscountBasisPoints: 0,

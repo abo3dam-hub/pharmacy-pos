@@ -2,6 +2,9 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pharmacy_pos/core/errors/exceptions.dart';
 import 'package:pharmacy_pos/domain/services/partial_price_calculator.dart';
+import 'package:pharmacy_pos/features/sales/domain/entities/pos_cart.dart';
+import 'package:pharmacy_pos/features/sales/domain/entities/pos_catalog_item.dart';
+import 'package:pharmacy_pos/features/sales/domain/usecases/pos_pricing.dart';
 import 'package:pharmacy_pos/shared/database/app_database.dart';
 
 import 'helpers.dart';
@@ -23,9 +26,9 @@ void main() {
   group('PS01 — Partial sale disabled', () {
     test('partial sale fields are NULL when disabled', () async {
       final itemId = await insertItem(db);
-      final item = await (db.select(db.items)
-            ..where((i) => i.id.equals(itemId)))
-          .getSingle();
+      final item = await (db.select(
+        db.items,
+      )..where((i) => i.id.equals(itemId))).getSingle();
       expect(item.partialSaleEnabled, false);
       expect(item.sellablePartUnitId, isNull);
       expect(item.partsPerFullProduct, isNull);
@@ -46,9 +49,9 @@ void main() {
           partialSaleMarkupBasisPoints: const Value(1000),
         ),
       );
-      final item = await (db.select(db.items)
-            ..where((i) => i.id.equals(itemId)))
-          .getSingle();
+      final item = await (db.select(
+        db.items,
+      )..where((i) => i.id.equals(itemId))).getSingle();
       expect(item.partialSaleEnabled, true);
       expect(item.sellablePartUnitId, 'unit_strip');
       expect(item.partsPerFullProduct, 10);
@@ -175,9 +178,9 @@ void main() {
   group('PS34 — Disabled → sellablePartBaseQuantity is NULL', () {
     test('database stores NULL when disabled', () async {
       final itemId = await insertItem(db);
-      final item = await (db.select(db.items)
-            ..where((i) => i.id.equals(itemId)))
-          .getSingle();
+      final item = await (db.select(
+        db.items,
+      )..where((i) => i.id.equals(itemId))).getSingle();
       expect(item.sellablePartBaseQuantity, isNull);
     });
   });
@@ -229,65 +232,7 @@ void main() {
     });
   });
 
-  group('PS05 — Full product uses full retail price', () {
-    test('decompose with quantity = partsPerFullProduct', () {
-      final d = calc.decompose(
-        quantityParts: 10,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000, // $10.00
-        partialSellingPriceMicros: 11000, // $1.10
-      );
-      expect(d.completeProducts, 1);
-      expect(d.remainingParts, 0);
-      expect(d.totalPriceMicros, 100000); // $10.00 exactly
-    });
-  });
-
-  group('PS06 — Quantity < partsPerFullProduct', () {
-    test('all parts at partial price', () {
-      final d = calc.decompose(
-        quantityParts: 5,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: 11000,
-      );
-      expect(d.completeProducts, 0);
-      expect(d.remainingParts, 5);
-      expect(d.totalPriceMicros, 55000); // 5 × $1.10
-    });
-  });
-
-  group('PS07 — Quantity = partsPerFullProduct', () {
-    test('full product price', () {
-      final d = calc.decompose(
-        quantityParts: 10,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: 11000,
-      );
-      expect(d.totalPriceMicros, 100000);
-    });
-  });
-
-  group('PS08 — Quantity > partsPerFullProduct', () {
-    test('decompose 13 = 1 full + 3 parts', () {
-      final d = calc.decompose(
-        quantityParts: 13,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: 11000,
-      );
-      expect(d.completeProducts, 1);
-      expect(d.remainingParts, 3);
-      expect(d.totalPriceMicros, 133000); // $10 + $3.30
-    });
-  });
-
-  group('PS09 — Different products, different part counts', () {
+  group('PS18 — Rounding is deterministic', () {
     test('product A: 10 parts', () {
       final price = calc.calculatePartialPrice(
         sellingPriceMicros: 100000,
@@ -397,14 +342,13 @@ void main() {
     });
 
     test('PS24: 13 Strips → 130 Tablets', () {
-      final d = calc.decompose(
-        quantityParts: 13,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: 11000,
+      expect(
+        calc.convertToBase(
+          sellablePartQuantity: 13,
+          sellablePartBaseQuantity: 10,
+        ),
+        130,
       );
-      expect(d.totalBaseQuantity, 130);
     });
   });
 
@@ -443,37 +387,128 @@ void main() {
     });
   });
 
-  group('PS29 — Counterexample: partsPerFullProduct ≠ sellablePartBaseQuantity', () {
-    test('syrup: 40 parts, 5 ml per dose', () {
-      final d = calc.decompose(
-        quantityParts: 13,
-        partsPerFullProduct: 40,
-        sellablePartBaseQuantity: 5,
-        fullRetailPriceMicros: 200000, // $20 bottle
-        partialSellingPriceMicros: 5500, // derived from formula
+  group(
+    'PS29 — Counterexample: partsPerFullProduct ≠ sellablePartBaseQuantity',
+    () {
+      test('syrup: 13 parts × 5 ml = 65 ml base', () {
+        expect(
+          calc.convertToBase(
+            sellablePartQuantity: 13,
+            sellablePartBaseQuantity: 5,
+          ),
+          65,
+        );
+      });
+    },
+  );
+
+  // ── Two-mode pricing lock (PosLinePricer) ──────────────────────────────
+
+  group('Two-mode pricing — PosLinePricer (Design Lock acceptance)', () {
+    // README acceptance scenario: box = 14,000; partsPerFullProduct = 3;
+    // sellablePartBaseQuantity = 1; markup 20% → part = 14,000÷3 (half-up)
+    // = 4,667 × 1.2 (half-up) = 5,600.
+    PosCatalogItem mkItem() => const PosCatalogItem(
+      id: 'item_141',
+      tradeName: 'منتج',
+      tradeNameEn: 'Item',
+      scientificName: 'Sci',
+      activeIngredient: 'Ing',
+      primaryBarcode: '9999999999991',
+      isControlledDrug: false,
+      requiresPrescription: false,
+      isActive: true,
+      sellingPriceMicros: 14000,
+      vatRateBasisPoints: 0,
+      currentStockBase: 30,
+      availableStockBase: 30,
+      baseUnitId: 'unit_ua',
+      baseUnitName: 'قطعة',
+      largeUnitId: 'unit_box',
+      largeUnitName: 'علبة',
+      unitsPerLarge: 3,
+      partialSaleEnabled: true,
+      sellablePartUnitId: 'unit_part',
+      sellablePartUnitName: 'ظرف',
+      partsPerFullProduct: 3,
+      sellablePartBaseQuantity: 1,
+      partialSaleMarkupBasisPoints: 2000,
+    );
+
+    const pricer = PosLinePricer();
+
+    test('B — 1 part × partial price = 5,600 (no per-base reconstruction)', () {
+      final p = pricer.priceLine(
+        PosCartLine(
+          item: mkItem(),
+          quantity: 1,
+          unitMode: PosLineUnitMode.sellablePart,
+        ),
       );
-      expect(d.totalBaseQuantity, 65); // 13 × 5 = 65 ml
-      expect(d.completeProducts, 0);
-      expect(d.remainingParts, 13);
+      expect(p.grossMicros, 5600);
+      expect(p.quantityBase, 1);
+    });
+
+    test('C — 3 parts = 3 × 5,600 = 16,800 (never one box)', () {
+      final p = pricer.priceLine(
+        PosCartLine(
+          item: mkItem(),
+          quantity: 3,
+          unitMode: PosLineUnitMode.sellablePart,
+        ),
+      );
+      expect(p.grossMicros, 16800);
+      expect(p.quantityBase, 3);
+      expect(p.lines, hasLength(1));
+      expect(p.lines.single.unitTypeId, 'unit_part');
+    });
+
+    test('A — 1 box at the full package price = 14,000', () {
+      final p = pricer.priceLine(
+        PosCartLine(
+          item: mkItem(),
+          quantity: 1,
+          unitMode: PosLineUnitMode.largeUnit,
+        ),
+      );
+      expect(p.grossMicros, 14000);
+      expect(p.quantityBase, 3);
+      expect(p.lines.single.unitPriceMicros, 14000);
+    });
+
+    test('D — box + 1 part across two lines totals 19,600 exactly', () {
+      final box = pricer.priceLine(
+        PosCartLine(
+          item: mkItem(),
+          quantity: 1,
+          unitMode: PosLineUnitMode.largeUnit,
+        ),
+      );
+      final part = pricer.priceLine(
+        PosCartLine(
+          item: mkItem(),
+          quantity: 1,
+          unitMode: PosLineUnitMode.sellablePart,
+        ),
+      );
+      expect(box.grossMicros + part.grossMicros, 19600);
+      expect(box.quantityBase + part.quantityBase, 4);
+    });
+
+    test('manual override on a part: per sell-unit price, not a ratio', () {
+      final p = pricer.priceLine(
+        PosCartLine(
+          item: mkItem(),
+          quantity: 2,
+          unitMode: PosLineUnitMode.sellablePart,
+          priceOverrideMicros: 7000,
+        ),
+      );
+      expect(p.grossMicros, 14000);
     });
   });
 
   // ── Edge Cases ───────────────────────────────────────────────────────────
-
-  group('Quantity = 0 rejected', () {
-    test('decompose rejects zero quantity', () {
-      expect(
-        () => calc.decompose(
-          quantityParts: 0,
-          partsPerFullProduct: 10,
-          sellablePartBaseQuantity: 10,
-          fullRetailPriceMicros: 100000,
-          partialSellingPriceMicros: 11000,
-        ),
-        throwsA(isA<DomainException>()),
-      );
-    });
-  });
 
   group('Negative quantity rejected', () {
     test('convertToBase rejects negative', () {
@@ -526,38 +561,6 @@ void main() {
         markupBasisPoints: 10000,
       );
       expect(price, 20000); // $2.00
-    });
-  });
-
-  // ── Full decomposition examples ──────────────────────────────────────────
-
-  group('Complete decomposition examples', () {
-    test('25 strips: 2 boxes + 5 strips', () {
-      final d = calc.decompose(
-        quantityParts: 25,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: 11000,
-      );
-      expect(d.completeProducts, 2);
-      expect(d.remainingParts, 5);
-      expect(d.totalPriceMicros, 255000); // $20 + $5.50
-      expect(d.totalBaseQuantity, 250); // 25 × 10
-    });
-
-    test('1 strip: 0 boxes + 1 strip', () {
-      final d = calc.decompose(
-        quantityParts: 1,
-        partsPerFullProduct: 10,
-        sellablePartBaseQuantity: 10,
-        fullRetailPriceMicros: 100000,
-        partialSellingPriceMicros: 11000,
-      );
-      expect(d.completeProducts, 0);
-      expect(d.remainingParts, 1);
-      expect(d.totalPriceMicros, 11000);
-      expect(d.totalBaseQuantity, 10);
     });
   });
 }

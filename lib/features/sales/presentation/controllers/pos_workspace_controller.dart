@@ -210,7 +210,10 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
 
   void clearCart() => state = state.copyWith(cart: const [], clearError: true);
 
-  /// F2 — toggle a line between box and fraction (sellable part or base unit).
+  /// F2 — toggle a line between box and sellable part. Only products
+  /// explicitly configured for partial selling can be sold by part; everything
+  /// else is always sold by the commercial package (two-mode pricing lock —
+  /// there is no generic base-unit mode).
   void toggleUnitMode(int index) {
     if (index < 0 || index >= state.cart.length) return;
     final line = state.cart[index];
@@ -218,17 +221,17 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
       PosLineUnitMode.largeUnit =>
         line.item.partialSaleConfigured
             ? PosLineUnitMode.sellablePart
-            : PosLineUnitMode.baseUnit,
+            : PosLineUnitMode.largeUnit,
       PosLineUnitMode.sellablePart => PosLineUnitMode.largeUnit,
-      PosLineUnitMode.baseUnit => PosLineUnitMode.largeUnit,
     };
+    if (nextMode == line.unitMode) return;
     final cart = List<PosCartLine>.from(state.cart);
     cart[index] = line.copyWith(unitMode: nextMode);
     state = state.copyWith(cart: cart, clearError: true);
   }
 
   /// Authorized price override (`change_prices` gated in the application
-  /// layer) — per-base override replacing the master-derived price.
+  /// layer) — per-sell-unit override replacing the master-derived price.
   void setPriceOverride(
     int index, {
     required int? overrideMicros,
@@ -670,10 +673,7 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
     );
   }
 
-  PosLineUnitMode _defaultMode(PosCatalogItem item) =>
-      item.partialSaleConfigured
-          ? PosLineUnitMode.sellablePart
-          : PosLineUnitMode.largeUnit;
+  PosLineUnitMode _defaultMode(PosCatalogItem item) => PosLineUnitMode.largeUnit;
 
   PosCartTotals get totals => _totalsBuilder.totals(state.cart);
 

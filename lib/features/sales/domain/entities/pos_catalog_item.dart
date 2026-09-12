@@ -1,4 +1,3 @@
-import '../../../../core/money/money.dart';
 import '../../../../core/util/bilingual_name.dart';
 
 /// Immutable catalog snapshot served to the POS workspace (pure Dart, no
@@ -12,6 +11,7 @@ class PosCatalogItem {
     this.scientificName,
     this.activeIngredient,
     this.manufacturerId,
+    this.manufacturerName,
     this.relationalIngredientNames = const [],
     this.primaryBarcode,
     this.secondaryBarcode,
@@ -51,6 +51,10 @@ class PosCatalogItem {
   /// Master manufacturer id; used by the smart-alternatives engine as a
   /// secondary (tie-break) similarity signal (§18 Phase 18.1).
   final String? manufacturerId;
+
+  /// Manufacturer display name, hydrated alongside [manufacturerId] so the
+  /// search hints and the smart-alternatives panel can show "الشركة المصنعة".
+  final String? manufacturerName;
 
   /// Names of the active ingredients linked through `item_active_ingredients`
   /// (§4.2b) — the relational complement of the legacy flat `activeIngredient`
@@ -111,20 +115,8 @@ class PosCatalogItem {
       sellablePartBaseQuantity != null &&
       partialSaleMarkupBasisPoints != null;
 
-  /// Retail price per single base unit (large price ÷ units in large).
-  /// Integer micro-units, half-up rounding (anchored in §8/§23).
-  int get baseUnitPriceMicros =>
-      unitsPerLarge <= 0
-          ? 0
-          : Money.fromUnits(sellingPriceMicros).divideBy(unitsPerLarge).units;
-
-  /// Best available base-unit retail price: the configured sub-unit price when
-  /// present, otherwise the derived [baseUnitPriceMicros].
-  int get baseUnitSellingPriceMicros => baseUnitPriceMicros;
-
-  String get primaryLabel => (tradeNameEn?.isNotEmpty ?? false)
-      ? tradeNameEn!
-      : tradeName;
+  String get primaryLabel =>
+      (tradeNameEn?.isNotEmpty ?? false) ? tradeNameEn! : tradeName;
 
   /// Arabic + English together ("الاسم (English)"); falls back to barcode.
   String get displayName {

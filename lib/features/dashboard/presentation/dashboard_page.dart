@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/permission_codes.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/money/money.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/dashboard_controller.dart';
+import '../domain/entities/dashboard_snapshot.dart';
 
 /// Real-data dashboard (§16): today's sales summary, inventory pulse and
 /// activity feeds straight from the database.
@@ -33,6 +35,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final state = ref.watch(dashboardControllerProvider);
     final l10n = AppLocalizations.of(context);
     final snapshot = state.snapshot;
+    final financialsVisible = ref
+        .watch(authControllerProvider)
+        .permissions
+        .contains(Perm.reportsViewProfit);
 
     if (state.status == DashboardStatus.initial ||
         state.status == DashboardStatus.loading) {
@@ -104,6 +110,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           },
         ),
         const SizedBox(height: AppSpacing.xl),
+        if (financialsVisible) ...[
+          Text(
+            l10n.reportIncomeStatement,
+            style: context.appTypography.sectionTitle,
+          ),
+          const SizedBox(height: AppSpacing.m),
+          _FinancialSummaryCard(financials: snapshot.financials),
+          const SizedBox(height: AppSpacing.xl),
+        ],
         _TwoColumnGrid(
           left: _AlertCard(
             title: l10n.dashboardLowStock,
@@ -211,11 +226,7 @@ class _KpiCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.l),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: theme.colorScheme.primary,
-              size: 36,
-            ),
+            Icon(icon, color: theme.colorScheme.primary, size: 36),
             const SizedBox(width: AppSpacing.m),
             Expanded(
               child: Column(
@@ -229,6 +240,97 @@ class _KpiCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FinancialSummaryCard extends StatelessWidget {
+  const _FinancialSummaryCard({required this.financials});
+
+  final DashboardFinancials financials;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final typography = context.appTypography;
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.l),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.dashboardFinancialSummary,
+              style: typography.bodySecondary,
+            ),
+            const SizedBox(height: AppSpacing.s),
+            _FinancialRow(
+              label: l10n.reportIncomeSalesRevenue,
+              value: Money.fromUnits(financials.revenueMicros).format(),
+            ),
+            _FinancialRow(
+              label: l10n.reportIncomeSalesReturns,
+              value: Money.fromUnits(
+                financials.revenueMicros - financials.netRevenueMicros,
+              ).format(),
+            ),
+            _FinancialRow(
+              label: l10n.reportIncomeNetRevenue,
+              value: Money.fromUnits(financials.netRevenueMicros).format(),
+            ),
+            _FinancialRow(
+              label: l10n.reportIncomeCogs,
+              value: '-${Money.fromUnits(financials.cogsMicros).format()}',
+            ),
+            const Divider(height: AppSpacing.l),
+            _FinancialRow(
+              label: l10n.reportIncomeGrossProfit,
+              value: Money.fromUnits(financials.grossProfitMicros).format(),
+              emphasized: true,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _FinancialRow(
+              label: l10n.reportIncomeNetIncome,
+              value: Money.fromUnits(financials.netIncomeMicros).format(),
+              emphasized: true,
+              accent: theme.colorScheme.primary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FinancialRow extends StatelessWidget {
+  const _FinancialRow({
+    required this.label,
+    required this.value,
+    this.emphasized = false,
+    this.accent,
+  });
+
+  final String label;
+  final String value;
+  final bool emphasized;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final typography = context.appTypography;
+    final color = accent ?? Theme.of(context).colorScheme.onSurface;
+    final style = emphasized ? typography.sectionTitle : typography.body;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: typography.bodySecondary)),
+          Text(value, style: style.copyWith(color: color)),
+        ],
       ),
     );
   }
@@ -332,8 +434,12 @@ class _AlertRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(primary,
-                    style: typography.body, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  primary,
+                  style: typography.body,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 Text(secondary, style: typography.bodySecondary),
               ],
             ),
@@ -366,8 +472,12 @@ class _ActivityRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(primary,
-                    style: typography.body, maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(
+                  primary,
+                  style: typography.body,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 Text(secondary, style: typography.bodySecondary),
               ],
             ),

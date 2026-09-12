@@ -18,6 +18,7 @@ import '../../../../shared/models/enums.dart';
 import '../../../../features/inventory/domain/entities/inventory_item.dart';
 import '../../domain/repositories/purchases_repository.dart';
 import '../../../../core/widgets/app_rtl_icons.dart';
+import '../../../suppliers/presentation/widgets/supplier_dialog.dart';
 
 /// Line data handed over from the batch-entry dialog ("حفظ و اضافة فاتورة"):
 /// the item, paid quantity and unit cost are pre-filled into the invoice form.
@@ -97,6 +98,10 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
 
   String? get _actingUserId => ref.read(authControllerProvider).user?.id;
   String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
+  bool get _canCreateSuppliers => ref
+      .read(authControllerProvider)
+      .permissions
+      .contains(Perm.suppliersCreate);
 
   @override
   void initState() {
@@ -111,9 +116,10 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
         .read(allSuppliersUseCaseProvider)
         .call(actingRoleId: auth.actingRoleId);
     if (mounted) {
-      setState(() => _suppliers.addAll([
-            for (final r in rows) (id: r.id, name: r.name),
-          ]));
+      setState(
+        () =>
+            _suppliers.addAll([for (final r in rows) (id: r.id, name: r.name)]),
+      );
     }
     if (_isEdit) {
       await _loadForEdit();
@@ -137,21 +143,24 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
         .itemUnitsFor(item.id);
     String unitName = '';
     if (units != null) {
-      unitName = (await ref
-              .read(inventoryRepositoryProvider)
-              .unitById(units.baseUnitId))
-          ?.name ??
+      unitName =
+          (await ref
+                  .read(inventoryRepositoryProvider)
+                  .unitById(units.baseUnitId))
+              ?.name ??
           '';
     }
     setState(() {
-      _lines.add(_PurchLine(
-        itemId: item.id,
-        itemName: itemDisplayName(item),
-        unitTypeId: units?.baseUnitId ?? '',
-        unitTypeName: unitName,
-        quantityBase: prefill.quantityBase,
-        unitCostMicros: prefill.unitCostMicros,
-      ));
+      _lines.add(
+        _PurchLine(
+          itemId: item.id,
+          itemName: itemDisplayName(item),
+          unitTypeId: units?.baseUnitId ?? '',
+          unitTypeName: unitName,
+          quantityBase: prefill.quantityBase,
+          unitCostMicros: prefill.unitCostMicros,
+        ),
+      );
     });
   }
 
@@ -162,11 +171,13 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
           .call(widget.invoiceId!, actingRoleId: _actingRoleId);
       if (!mounted) return;
       _invoiceNumber.text = detail.invoice.invoiceNumber;
-      _invoiceDate =
-          DateTime.fromMillisecondsSinceEpoch(detail.invoice.invoiceDate);
+      _invoiceDate = DateTime.fromMillisecondsSinceEpoch(
+        detail.invoice.invoiceDate,
+      );
       if (detail.invoice.expectedDate != null) {
-        _expectedDate =
-            DateTime.fromMillisecondsSinceEpoch(detail.invoice.expectedDate!);
+        _expectedDate = DateTime.fromMillisecondsSinceEpoch(
+          detail.invoice.expectedDate!,
+        );
       }
       if (detail.invoice.paidMicros > 0) {
         _paidAmount.text = Money.fromUnits(detail.invoice.paidMicros).format(4);
@@ -174,22 +185,30 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
       if (detail.invoice.notes != null) _notes.text = detail.invoice.notes!;
       _supplierId = detail.invoice.supplierId;
       for (final v in detail.lines) {
-        _lines.add(_PurchLine(
-          itemId: v.line.itemId,
-          itemName: v.itemName,
-          unitTypeId: v.line.unitTypeId,
-          unitTypeName: '',
-          quantityBase: v.line.quantityBase,
-          unitCostMicros: v.line.unitCostMicros,
-          discountBasisPoints: v.line.discountBasisPoints,
-          bonuses: [
-            for (final b in detail.bonuses
-                .where((b2) => b2.bonus.purchaseInvoiceItemId == v.line.id)
-                .toList())
-              _BonusDraft(b.bonus.bonusType, b.bonus.bonusQuantityBase,
-                  b.bonus.itemId),
-          ],
-        ));
+        _lines.add(
+          _PurchLine(
+            itemId: v.line.itemId,
+            itemName: v.itemName,
+            unitTypeId: v.line.unitTypeId,
+            unitTypeName: '',
+            quantityBase: v.line.quantityBase,
+            unitCostMicros: v.line.unitCostMicros,
+            discountBasisPoints: v.line.discountBasisPoints,
+            bonuses: [
+              for (final b
+                  in detail.bonuses
+                      .where(
+                        (b2) => b2.bonus.purchaseInvoiceItemId == v.line.id,
+                      )
+                      .toList())
+                _BonusDraft(
+                  b.bonus.bonusType,
+                  b.bonus.bonusQuantityBase,
+                  b.bonus.itemId,
+                ),
+            ],
+          ),
+        );
       }
       setState(() => _loading = false);
     } on AppException catch (e) {
@@ -209,6 +228,37 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
 
   void _showSnack(Failure? failure) {
     showFailureSnack(context, failure);
+  }
+
+  /// Inline supplier creation on the invoice form (§16): opens the shared
+  /// supplier dialog, persists via the gated use case and selects the fresh
+  /// supplier in the dropdown so the page reflects it immediately.
+  Future<void> _addSupplier() async {
+    final l10n = AppLocalizations.of(context);
+    final draft = await showSupplierFormDialog(
+      context,
+      title: l10n.supplierAddTitle,
+    );
+    if (draft == null || !mounted) return;
+    try {
+      final created = await ref
+          .read(createSupplierUseCaseProvider)
+          .call(
+            draft,
+            actingUserId: _actingUserId,
+            actingRoleId: _actingRoleId,
+          );
+      if (!mounted) return;
+      setState(() {
+        _suppliers.add((id: created.id, name: created.name));
+        _supplierId = created.id;
+      });
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.supplierCreatedMessage)));
+    } on AppException catch (e) {
+      if (mounted) _showSnack(e.failure);
+    }
   }
 
   Future<void> _pickDate() async {
@@ -241,10 +291,10 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
       _showSnack(const DatabaseFailure('no item units'));
       return;
     }
-    final unitName = (await ref
-            .read(inventoryRepositoryProvider)
-            .unitById(units.baseUnitId))
-        ?.name ?? '';
+    final unitName =
+        (await ref.read(inventoryRepositoryProvider).unitById(units.baseUnitId))
+            ?.name ??
+        '';
     setCard(() {
       line.itemId = item.id;
       line.itemName = itemDisplayName(item);
@@ -278,18 +328,20 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
       _showSnack(const DatabaseFailure('no item units'));
       return;
     }
-    final unitName = (await ref
-            .read(inventoryRepositoryProvider)
-            .unitById(units.baseUnitId))
-        ?.name ?? '';
+    final unitName =
+        (await ref.read(inventoryRepositoryProvider).unitById(units.baseUnitId))
+            ?.name ??
+        '';
     setState(() {
-      _lines.add(_PurchLine(
-        itemId: item.id,
-        itemName: itemDisplayName(item),
-        unitTypeId: units.baseUnitId,
-        unitTypeName: unitName,
-        unitCostMicros: item.costMicros,
-      ));
+      _lines.add(
+        _PurchLine(
+          itemId: item.id,
+          itemName: itemDisplayName(item),
+          unitTypeId: units.baseUnitId,
+          unitTypeName: unitName,
+          unitCostMicros: item.costMicros,
+        ),
+      );
     });
   }
 
@@ -333,12 +385,18 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
     final draft = PurchaseDraft(
       invoiceNumber: _invoiceNumber.text.trim(),
       supplierId: _supplierId!,
-      invoiceDate: DateTime(_invoiceDate.year, _invoiceDate.month, _invoiceDate.day)
-          .millisecondsSinceEpoch,
+      invoiceDate: DateTime(
+        _invoiceDate.year,
+        _invoiceDate.month,
+        _invoiceDate.day,
+      ).millisecondsSinceEpoch,
       expectedDate: _expectedDate == null
           ? null
-          : DateTime(_expectedDate!.year, _expectedDate!.month, _expectedDate!.day)
-              .millisecondsSinceEpoch,
+          : DateTime(
+              _expectedDate!.year,
+              _expectedDate!.month,
+              _expectedDate!.day,
+            ).millisecondsSinceEpoch,
       paidMicros: _parseMoney(_paidAmount.text),
       notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
       userId: _actingUserId ?? '',
@@ -363,10 +421,17 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
     );
     final controller = ref.read(purchasesControllerProvider.notifier);
     final Failure? outcome = _isEdit
-        ? await controller.updatePending(widget.invoiceId!, draft,
-            actingUserId: _actingUserId, actingRoleId: _actingRoleId)
-        : await controller.create(draft,
-            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+        ? await controller.updatePending(
+            widget.invoiceId!,
+            draft,
+            actingUserId: _actingUserId,
+            actingRoleId: _actingRoleId,
+          )
+        : await controller.create(
+            draft,
+            actingUserId: _actingUserId,
+            actingRoleId: _actingRoleId,
+          );
     if (!mounted) return;
     setState(() => _saving = false);
     if (outcome != null) {
@@ -376,10 +441,13 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
     final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-          content: Text(_isEdit
-              ? l10n.purchaseUpdatedMessage
-              : l10n.purchaseCreatedMessage)));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEdit ? l10n.purchaseUpdatedMessage : l10n.purchaseCreatedMessage,
+          ),
+        ),
+      );
     context.go('/purchases');
   }
 
@@ -406,7 +474,9 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
     for (final l in _lines) {
       if (l.discountBasisPoints > 0) {
         total +=
-            (l.quantityBase * l.unitCostMicros) * l.discountBasisPoints ~/ 10000;
+            (l.quantityBase * l.unitCostMicros) *
+            l.discountBasisPoints ~/
+            10000;
       }
     }
     return total;
@@ -493,19 +563,40 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DropdownButtonFormField<String?>(
-              initialValue: _supplierId,
-              decoration: InputDecoration(labelText: l10n.purchasesFilterSupplier),
-              items: [
-                DropdownMenuItem(
-                  value: null,
-                  child: Text(l10n.purchaseRequiredSupplier),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String?>(
+                    initialValue: _supplierId,
+                    decoration: InputDecoration(
+                      labelText: l10n.purchasesFilterSupplier,
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: null,
+                        child: Text(l10n.purchaseRequiredSupplier),
+                      ),
+                      for (final s in _suppliers)
+                        DropdownMenuItem(value: s.id, child: Text(s.name)),
+                    ],
+                    onChanged: (v) => setState(
+                      () => _supplierId = v?.isEmpty ?? true ? null : v,
+                    ),
+                  ),
                 ),
-                for (final s in _suppliers)
-                  DropdownMenuItem(value: s.id, child: Text(s.name)),
+                if (_canCreateSuppliers) ...[
+                  const SizedBox(width: AppSpacing.s),
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xs),
+                    child: IconButton(
+                      onPressed: _addSupplier,
+                      tooltip: l10n.supplierAddTitle,
+                      icon: const Icon(Icons.person_add_outlined),
+                    ),
+                  ),
+                ],
               ],
-              onChanged: (v) =>
-                  setState(() => _supplierId = v?.isEmpty ?? true ? null : v),
             ),
             const SizedBox(height: AppSpacing.m),
             Row(
@@ -531,9 +622,11 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                 OutlinedButton.icon(
                   onPressed: _pickExpectedDate,
                   icon: const Icon(Icons.event_outlined),
-                  label: Text(_expectedDate == null
-                      ? l10n.purchaseExpectedDate
-                      : _fmtDate(_expectedDate!)),
+                  label: Text(
+                    _expectedDate == null
+                        ? l10n.purchaseExpectedDate
+                        : _fmtDate(_expectedDate!),
+                  ),
                 ),
               ],
             ),
@@ -547,8 +640,9 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                     decoration: InputDecoration(
                       labelText: l10n.purchasePaidAmount,
                     ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.m),
@@ -585,8 +679,10 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
         if (_lines.isEmpty)
           Padding(
             padding: const EdgeInsets.all(AppSpacing.l),
-            child: Text(l10n.purchaseNoLines,
-                style: context.appTypography.bodySecondary),
+            child: Text(
+              l10n.purchaseNoLines,
+              style: context.appTypography.bodySecondary,
+            ),
           )
         else
           for (int i = 0; i < _lines.length; i++) _lineCard(l10n, i, _lines[i]),
@@ -618,7 +714,9 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                       tooltip: l10n.purchaseRemoveLine,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints.tightFor(
-                          width: 32, height: 32),
+                        width: 32,
+                        height: 32,
+                      ),
                       onPressed: () => _removeLine(line),
                     ),
                   ],
@@ -634,7 +732,9 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                       child: TextFormField(
                         initialValue: '${line.quantityBase}',
                         keyboardType: TextInputType.number,
-                        decoration: InputDecoration(labelText: l10n.purchaseQty),
+                        decoration: InputDecoration(
+                          labelText: l10n.purchaseQty,
+                        ),
                         onChanged: (v) => setCard(() {
                           line.quantityBase =
                               int.tryParse(v.trim()) ?? (line.quantityBase);
@@ -647,10 +747,12 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                         initialValue: line.unitCostMicros == 0
                             ? ''
                             : Money.fromUnits(line.unitCostMicros).format(4),
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
                         decoration: InputDecoration(
-                            labelText: l10n.purchaseUnitCost),
+                          labelText: l10n.purchaseUnitCost,
+                        ),
                         onChanged: (v) => setCard(() {
                           line.unitCostMicros = _parseMoney(v);
                         }),
@@ -664,7 +766,8 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                             : '${(line.discountBasisPoints / 100).round()}',
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                            labelText: l10n.purchaseDiscountPct),
+                          labelText: l10n.purchaseDiscountPct,
+                        ),
                         onChanged: (v) => setCard(() {
                           final pct = int.tryParse(v.trim()) ?? 0;
                           line.discountBasisPoints = pct * 100;
@@ -810,21 +913,23 @@ class _ItemSearchDialogState extends ConsumerState<_ItemSearchDialog> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _results.isEmpty
-                      ? Center(
-                          child: Text(l10n.purchasesEmpty,
-                              style: context.appTypography.labelSmall),
-                        )
-                      : ListView.builder(
-                          itemCount: _results.length,
-                          itemBuilder: (context, i) {
-                            final item = _results[i];
-                            return ListTile(
-                              title: Text(itemDisplayName(item)),
-                              subtitle: Text(item.scientificName ?? ''),
-                              onTap: () => Navigator.of(context).pop(item),
-                            );
-                          },
-                        ),
+                  ? Center(
+                      child: Text(
+                        l10n.purchasesEmpty,
+                        style: context.appTypography.labelSmall,
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _results.length,
+                      itemBuilder: (context, i) {
+                        final item = _results[i];
+                        return ListTile(
+                          title: Text(itemDisplayName(item)),
+                          subtitle: Text(item.scientificName ?? ''),
+                          onTap: () => Navigator.of(context).pop(item),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -874,8 +979,10 @@ class _BonusEditorDialogState extends ConsumerState<_BonusEditorDialog> {
       content: SizedBox(
         width: 480,
         child: _bonuses.isEmpty
-            ? Text(l10n.purchaseNoLines,
-                style: context.appTypography.bodySecondary)
+            ? Text(
+                l10n.purchaseNoLines,
+                style: context.appTypography.bodySecondary,
+              )
             : ListView(
                 shrinkWrap: true,
                 children: [
@@ -889,8 +996,9 @@ class _BonusEditorDialogState extends ConsumerState<_BonusEditorDialog> {
           child: Text(l10n.commonCancel),
         ),
         OutlinedButton.icon(
-          onPressed: () => setState(() => _bonuses.add(_BonusDraft(
-              PurchaseBonusType.bonus_1, 1, null))),
+          onPressed: () => setState(
+            () => _bonuses.add(_BonusDraft(PurchaseBonusType.bonus_1, 1, null)),
+          ),
           icon: const Icon(Icons.add),
           label: Text(l10n.purchaseAddLine),
         ),
@@ -938,9 +1046,11 @@ class _BonusEditorDialogState extends ConsumerState<_BonusEditorDialog> {
             child: OutlinedButton.icon(
               onPressed: () => _pickBonusItem(index),
               icon: const Icon(Icons.search),
-              label: Text(b.itemId == null
-                  ? l10n.purchaseItemPlaceholder
-                  : l10n.purchaseBonusItem),
+              label: Text(
+                b.itemId == null
+                    ? l10n.purchaseItemPlaceholder
+                    : l10n.purchaseBonusItem,
+              ),
             ),
           ),
           IconButton(

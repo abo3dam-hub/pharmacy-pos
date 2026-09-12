@@ -123,7 +123,11 @@ class _InvoiceBody extends StatelessWidget {
                       for (final line in invoice.lines)
                         DataRow(cells: [
                           DataCell(Text(line.itemName)),
-                          DataCell(Text('${line.quantityBaseSigned}')),
+                          DataCell(Text(
+                          line.sellUnitQuantity != null
+                              ? '${line.sellUnitQuantity} ${line.unitTypeName}'
+                              : '${line.quantityBaseSigned}',
+                        )),
                           DataCell(Text(
                               Money.fromUnits(line.unitPriceMicros).formatArabicDigits(),
                               style: context.appTypography.numericStrong)),

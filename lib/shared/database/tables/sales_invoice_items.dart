@@ -37,6 +37,14 @@ class SalesInvoiceItems extends Table {
 
   IntColumn get quantityBaseSigned => integer()();
   IntColumn get unitPriceMicros => integer()();
+
+  /// Base quantity consumed per sell unit at sale time (unitsPerLarge for a
+  /// box, the configured sellable-part size for a strip). Persisted so
+  /// historical invoices display the real sold unit ("1 × 14,000" not
+  /// "3 × 4,667") even after the unit configuration changes. Defaults to 1 for
+  /// legacy rows (sell unit == base unit).
+  IntColumn get unitBaseQuantity => integer().withDefault(const Constant(1))();
+
   IntColumn get vatRateBasisPoints => integer().withDefault(const Constant(0))();
   IntColumn get lineDiscountBasisPoints =>
       integer().withDefault(const Constant(0))();

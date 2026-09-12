@@ -130,12 +130,14 @@ void setupDependencies() {
 
   // Pure domain services.
   getIt.registerLazySingleton<BaseUnitConverter>(
-      () => const BaseUnitConverter());
+    () => const BaseUnitConverter(),
+  );
   getIt.registerLazySingleton<BonusCalculator>(() => const BonusCalculator());
   getIt.registerLazySingleton<StockService>(() => const StockService());
   getIt.registerLazySingleton<AuditService>(() => const AuditService());
   getIt.registerLazySingleton<PermissionService>(
-      () => const PermissionService());
+    () => const PermissionService(),
+  );
 
   // Transactional services.
   getIt.registerLazySingleton<SaleService>(() => SaleService());
@@ -150,12 +152,13 @@ void setupDependencies() {
   getIt.registerLazySingleton<StockMovementDao>(() => StockMovementDao(db));
   getIt.registerLazySingleton<ItemSupplierDao>(() => ItemSupplierDao(db));
   getIt.registerLazySingleton<ActiveIngredientDao>(
-      () => ActiveIngredientDao(db));
+    () => ActiveIngredientDao(db),
+  );
   getIt.registerLazySingleton<IndicationDao>(() => IndicationDao(db));
   getIt.registerLazySingleton<ItemActiveIngredientDao>(
-      () => ItemActiveIngredientDao(db));
-  getIt.registerLazySingleton<ItemIndicationDao>(
-      () => ItemIndicationDao(db));
+    () => ItemActiveIngredientDao(db),
+  );
+  getIt.registerLazySingleton<ItemIndicationDao>(() => ItemIndicationDao(db));
   getIt.registerLazySingleton<CategoryDao>(() => CategoryDao(db));
   getIt.registerLazySingleton<ManufacturerDao>(() => ManufacturerDao(db));
   getIt.registerLazySingleton<SupplierDao>(() => SupplierDao(db));
@@ -180,7 +183,12 @@ void setupDependencies() {
 void _registerDashboard(AppDatabase db) {
   getIt.registerLazySingleton<DashboardDao>(() => DashboardDao(db));
   getIt.registerLazySingleton<DashboardController>(
-      () => DashboardController(getIt<ZReportDao>(), getIt<DashboardDao>()));
+    () => DashboardController(
+      getIt<ZReportDao>(),
+      getIt<DashboardDao>(),
+      getIt<ReportsDao>(),
+    ),
+  );
 }
 
 /// Phase 7 — POS workspace data layer over the existing transactional engine.
@@ -188,76 +196,122 @@ void _registerPhase7(AppDatabase db) {
   getIt.registerLazySingleton<PosCatalogDao>(() => PosCatalogDao(db));
   getIt.registerLazySingleton<SettingsDao>(() => SettingsDao(db));
   getIt.registerLazySingleton<ZReportDao>(() => ZReportDao(db));
-  getIt.registerLazySingleton<SalesRepository>(() => SalesRepositoryImpl(
-        db,
-        getIt<PosCatalogDao>(),
-        getIt<StockService>(),
-        getIt<SaleService>(),
-        getIt<ReturnService>(),
-      ));
+  getIt.registerLazySingleton<SalesRepository>(
+    () => SalesRepositoryImpl(
+      db,
+      getIt<PosCatalogDao>(),
+      getIt<StockService>(),
+      getIt<SaleService>(),
+      getIt<ReturnService>(),
+    ),
+  );
 }
 
 /// Phase 8 — Cash Box (الصندوق) workflow over the existing financial engine.
 void _registerPhase8(AppDatabase db) {
   getIt.registerLazySingleton<CashboxService>(() => const CashboxService());
   getIt.registerLazySingleton<CashboxRepository>(
-      () => CashboxRepositoryImpl(db, getIt<CashboxService>()));
+    () => CashboxRepositoryImpl(db, getIt<CashboxService>()),
+  );
   getIt.registerLazySingleton<CashboxController>(
-      () => CashboxController(getIt<CashboxRepository>()));
+    () => CashboxController(getIt<CashboxRepository>()),
+  );
 }
 
 /// Phase 9 — Expenses (المصروفات): categorized, receipt-scanned, paginated
 /// expense journal with a reverse (cancel) workflow over the financial engine.
 void _registerPhase9(AppDatabase db) {
   getIt.registerLazySingleton<FinancialPostingService>(
-      () => const FinancialPostingService());
+    () => const FinancialPostingService(),
+  );
   getIt.registerLazySingleton<ReceiptStorage>(() => LocalReceiptStorage());
   getIt.registerLazySingleton<ExpenseRepository>(
-      () => ExpenseRepositoryImpl(
-        db,
-        getIt<ReceiptStorage>(),
-        getIt<FinancialPostingService>(),
-      ));
+    () => ExpenseRepositoryImpl(
+      db,
+      getIt<ReceiptStorage>(),
+      getIt<FinancialPostingService>(),
+    ),
+  );
   getIt.registerLazySingleton<ListExpensesUseCase>(
-      () => ListExpensesUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>()));
+    () => ListExpensesUseCase(
+      getIt<ExpenseRepository>(),
+      getIt<PermissionService>(),
+    ),
+  );
   getIt.registerLazySingleton<ListExpenseCategoriesUseCase>(
-      () => ListExpenseCategoriesUseCase(
-          getIt<ExpenseRepository>(), getIt<PermissionService>()));
+    () => ListExpenseCategoriesUseCase(
+      getIt<ExpenseRepository>(),
+      getIt<PermissionService>(),
+    ),
+  );
   getIt.registerLazySingleton<CreateExpenseUseCase>(
-      () => CreateExpenseUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>()));
+    () => CreateExpenseUseCase(
+      getIt<ExpenseRepository>(),
+      getIt<PermissionService>(),
+    ),
+  );
   getIt.registerLazySingleton<UpdateExpenseUseCase>(
-      () => UpdateExpenseUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>(),
-          getIt<AuditService>()));
+    () => UpdateExpenseUseCase(
+      getIt<ExpenseRepository>(),
+      getIt<PermissionService>(),
+      getIt<AuditService>(),
+    ),
+  );
   getIt.registerLazySingleton<CancelExpenseUseCase>(
-      () => CancelExpenseUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>()));
+    () => CancelExpenseUseCase(
+      getIt<ExpenseRepository>(),
+      getIt<PermissionService>(),
+    ),
+  );
   getIt.registerLazySingleton<AttachReceiptUseCase>(
-      () => AttachReceiptUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>(),
-          getIt<AuditService>()));
+    () => AttachReceiptUseCase(
+      getIt<ExpenseRepository>(),
+      getIt<PermissionService>(),
+      getIt<AuditService>(),
+    ),
+  );
   getIt.registerLazySingleton<RemoveReceiptUseCase>(
-      () => RemoveReceiptUseCase(getIt<ExpenseRepository>(), getIt<PermissionService>(),
-          getIt<AuditService>()));
+    () => RemoveReceiptUseCase(
+      getIt<ExpenseRepository>(),
+      getIt<PermissionService>(),
+      getIt<AuditService>(),
+    ),
+  );
   getIt.registerLazySingleton<CreateExpenseCategoryUseCase>(
-      () => CreateExpenseCategoryUseCase(getIt<ExpenseRepository>(),
-          getIt<PermissionService>(), getIt<AuditService>()));
+    () => CreateExpenseCategoryUseCase(
+      getIt<ExpenseRepository>(),
+      getIt<PermissionService>(),
+      getIt<AuditService>(),
+    ),
+  );
   getIt.registerLazySingleton<UpdateExpenseCategoryUseCase>(
-      () => UpdateExpenseCategoryUseCase(getIt<ExpenseRepository>(),
-          getIt<PermissionService>(), getIt<AuditService>()));
+    () => UpdateExpenseCategoryUseCase(
+      getIt<ExpenseRepository>(),
+      getIt<PermissionService>(),
+      getIt<AuditService>(),
+    ),
+  );
   getIt.registerLazySingleton<SetExpenseCategoryActiveUseCase>(
-      () => SetExpenseCategoryActiveUseCase(getIt<ExpenseRepository>(),
-          getIt<PermissionService>(), getIt<AuditService>()));
+    () => SetExpenseCategoryActiveUseCase(
+      getIt<ExpenseRepository>(),
+      getIt<PermissionService>(),
+      getIt<AuditService>(),
+    ),
+  );
   getIt.registerLazySingleton<ExpenseController>(
-      () => ExpenseController(
-        getIt<ListExpensesUseCase>(),
-        getIt<ListExpenseCategoriesUseCase>(),
-        getIt<CreateExpenseUseCase>(),
-        getIt<UpdateExpenseUseCase>(),
-        getIt<CancelExpenseUseCase>(),
-        getIt<AttachReceiptUseCase>(),
-        getIt<RemoveReceiptUseCase>(),
-        getIt<CreateExpenseCategoryUseCase>(),
-        getIt<UpdateExpenseCategoryUseCase>(),
-        getIt<SetExpenseCategoryActiveUseCase>(),
-      ));
+    () => ExpenseController(
+      getIt<ListExpensesUseCase>(),
+      getIt<ListExpenseCategoriesUseCase>(),
+      getIt<CreateExpenseUseCase>(),
+      getIt<UpdateExpenseUseCase>(),
+      getIt<CancelExpenseUseCase>(),
+      getIt<AttachReceiptUseCase>(),
+      getIt<RemoveReceiptUseCase>(),
+      getIt<CreateExpenseCategoryUseCase>(),
+      getIt<UpdateExpenseCategoryUseCase>(),
+      getIt<SetExpenseCategoryActiveUseCase>(),
+    ),
+  );
 }
 
 /// Phase 12 — Audit log & Settings / administration: the read-only audit
@@ -269,63 +323,74 @@ void _registerPhase12(AppDatabase db) {
 
   // Application settings (business name / tax / currency) over `app_settings`.
   getIt.registerLazySingleton<SettingsRepository>(
-      () => SettingsRepositoryImpl(getIt<SettingsDao>(), db));
+    () => SettingsRepositoryImpl(getIt<SettingsDao>(), db),
+  );
   getIt.registerLazySingleton<GetAppSettingsUseCase>(
-      () => GetAppSettingsUseCase(getIt<SettingsRepository>(), perms));
+    () => GetAppSettingsUseCase(getIt<SettingsRepository>(), perms),
+  );
   getIt.registerLazySingleton<SaveAppSettingsUseCase>(
-      () => SaveAppSettingsUseCase(
-        getIt<SettingsRepository>(),
-        perms,
-        audit,
-      ));
+    () => SaveAppSettingsUseCase(getIt<SettingsRepository>(), perms, audit),
+  );
   getIt.registerLazySingleton<SettingsController>(
-      () => SettingsController(
-        getIt<GetAppSettingsUseCase>(),
-        getIt<SaveAppSettingsUseCase>(),
-        db,
-      ));
+    () => SettingsController(
+      getIt<GetAppSettingsUseCase>(),
+      getIt<SaveAppSettingsUseCase>(),
+      db,
+    ),
+  );
 
   // Audit viewer (read-only, paginated, filtered).
   getIt.registerLazySingleton<AuditDao>(() => AuditDao(db));
   getIt.registerLazySingleton<ListAuditLogsUseCase>(
-      () => ListAuditLogsUseCase(getIt<AuditDao>(), perms));
+    () => ListAuditLogsUseCase(getIt<AuditDao>(), perms),
+  );
   getIt.registerLazySingleton<ListAuditActionsUseCase>(
-      () => ListAuditActionsUseCase(getIt<AuditDao>(), perms));
+    () => ListAuditActionsUseCase(getIt<AuditDao>(), perms),
+  );
   getIt.registerLazySingleton<ListAuditActorsUseCase>(
-      () => ListAuditActorsUseCase(getIt<AuditDao>(), perms));
+    () => ListAuditActorsUseCase(getIt<AuditDao>(), perms),
+  );
   getIt.registerLazySingleton<AuditController>(
-      () => AuditController(
-        getIt<ListAuditLogsUseCase>(),
-        getIt<ListAuditActionsUseCase>(),
-        getIt<ListAuditActorsUseCase>(),
-        db,
-      ));
+    () => AuditController(
+      getIt<ListAuditLogsUseCase>(),
+      getIt<ListAuditActionsUseCase>(),
+      getIt<ListAuditActorsUseCase>(),
+      db,
+    ),
+  );
 
   // Role & permission management over `roles` / `role_permissions` /
   // `permissions`.
   getIt.registerLazySingleton<RbacDao>(() => RbacDao(db));
   getIt.registerLazySingleton<LoadRolesSnapshotUseCase>(
-      () => LoadRolesSnapshotUseCase(getIt<RbacDao>(), perms));
+    () => LoadRolesSnapshotUseCase(getIt<RbacDao>(), perms),
+  );
   getIt.registerLazySingleton<GetRoleDetailUseCase>(
-      () => GetRoleDetailUseCase(getIt<RbacDao>(), perms));
+    () => GetRoleDetailUseCase(getIt<RbacDao>(), perms),
+  );
   getIt.registerLazySingleton<CreateRoleUseCase>(
-      () => CreateRoleUseCase(getIt<RbacDao>(), perms, audit));
+    () => CreateRoleUseCase(getIt<RbacDao>(), perms, audit),
+  );
   getIt.registerLazySingleton<UpdateRoleUseCase>(
-      () => UpdateRoleUseCase(getIt<RbacDao>(), perms, audit));
+    () => UpdateRoleUseCase(getIt<RbacDao>(), perms, audit),
+  );
   getIt.registerLazySingleton<SetRolePermissionsUseCase>(
-      () => SetRolePermissionsUseCase(getIt<RbacDao>(), perms, audit));
+    () => SetRolePermissionsUseCase(getIt<RbacDao>(), perms, audit),
+  );
   getIt.registerLazySingleton<DeleteRoleUseCase>(
-      () => DeleteRoleUseCase(getIt<RbacDao>(), perms, audit));
+    () => DeleteRoleUseCase(getIt<RbacDao>(), perms, audit),
+  );
   getIt.registerLazySingleton<RbacController>(
-      () => RbacController(
-        getIt<LoadRolesSnapshotUseCase>(),
-        getIt<GetRoleDetailUseCase>(),
-        getIt<CreateRoleUseCase>(),
-        getIt<UpdateRoleUseCase>(),
-        getIt<SetRolePermissionsUseCase>(),
-        getIt<DeleteRoleUseCase>(),
-        db,
-      ));
+    () => RbacController(
+      getIt<LoadRolesSnapshotUseCase>(),
+      getIt<GetRoleDetailUseCase>(),
+      getIt<CreateRoleUseCase>(),
+      getIt<UpdateRoleUseCase>(),
+      getIt<SetRolePermissionsUseCase>(),
+      getIt<DeleteRoleUseCase>(),
+      db,
+    ),
+  );
 }
 
 /// Phase 11 — Reports hub: read-only reports (trial balance, income
@@ -334,21 +399,29 @@ void _registerPhase12(AppDatabase db) {
 void _registerPhase11(AppDatabase db) {
   getIt.registerLazySingleton<ReportsDao>(() => ReportsDao(db));
   getIt.registerLazySingleton<ReportExportService>(
-      () => const ReportExportService());
+    () => const ReportExportService(),
+  );
   getIt.registerLazySingleton<TrialBalanceController>(
-      () => TrialBalanceController(getIt<ReportsDao>()));
+    () => TrialBalanceController(getIt<ReportsDao>()),
+  );
   getIt.registerLazySingleton<IncomeStatementController>(
-      () => IncomeStatementController(getIt<ReportsDao>()));
+    () => IncomeStatementController(getIt<ReportsDao>()),
+  );
   getIt.registerLazySingleton<BalanceSheetController>(
-      () => BalanceSheetController(getIt<ReportsDao>()));
+    () => BalanceSheetController(getIt<ReportsDao>()),
+  );
   getIt.registerLazySingleton<SalesReportController>(
-      () => SalesReportController(getIt<ReportsDao>()));
+    () => SalesReportController(getIt<ReportsDao>()),
+  );
   getIt.registerLazySingleton<PurchaseReportController>(
-      () => PurchaseReportController(getIt<ReportsDao>()));
+    () => PurchaseReportController(getIt<ReportsDao>()),
+  );
   getIt.registerLazySingleton<InventoryReportController>(
-      () => InventoryReportController(getIt<ReportsDao>()));
+    () => InventoryReportController(getIt<ReportsDao>()),
+  );
   getIt.registerLazySingleton<LostSalesReportController>(
-      () => LostSalesReportController(getIt<ReportsDao>()));
+    () => LostSalesReportController(getIt<ReportsDao>()),
+  );
 }
 
 /// Phase 10 — Accounting management: chart of accounts, journal viewer,
@@ -356,19 +429,26 @@ void _registerPhase11(AppDatabase db) {
 void _registerPhase10(AppDatabase db) {
   getIt.registerLazySingleton<AccountingDao>(() => AccountingDao(db));
   getIt.registerLazySingleton<AccountingPeriodService>(
-      () => AccountingPeriodService());
+    () => AccountingPeriodService(),
+  );
   getIt.registerLazySingleton<CustomerPaymentService>(
-      () => CustomerPaymentService());
+    () => CustomerPaymentService(),
+  );
   getIt.registerLazySingleton<AccountsController>(
-      () => AccountsController(getIt<AccountingDao>()));
+    () => AccountsController(getIt<AccountingDao>()),
+  );
   getIt.registerLazySingleton<JournalController>(
-      () => JournalController(getIt<AccountingDao>()));
+    () => JournalController(getIt<AccountingDao>()),
+  );
   getIt.registerLazySingleton<JournalDetailController>(
-      () => JournalDetailController(getIt<AccountingDao>()));
+    () => JournalDetailController(getIt<AccountingDao>()),
+  );
   getIt.registerLazySingleton<AccountStatementController>(
-      () => AccountStatementController(getIt<AccountingDao>()));
+    () => AccountStatementController(getIt<AccountingDao>()),
+  );
   getIt.registerLazySingleton<PeriodsController>(
-      () => PeriodsController(db, getIt<AccountingPeriodService>()));
+    () => PeriodsController(db, getIt<AccountingPeriodService>()),
+  );
 }
 
 /// Phase 5 — Customers & Prescriptions graph (customer master, derived
@@ -389,47 +469,62 @@ void _registerPhase5(AppDatabase db) {
   final rxRepo = getIt<PrescriptionRepository>();
 
   getIt.registerLazySingleton<ListCustomersUseCase>(
-      () => ListCustomersUseCase(cusRepo, perms));
+    () => ListCustomersUseCase(cusRepo, perms),
+  );
   getIt.registerLazySingleton<AllCustomersUseCase>(
-      () => AllCustomersUseCase(cusRepo, perms));
+    () => AllCustomersUseCase(cusRepo, perms),
+  );
   getIt.registerLazySingleton<CreateCustomerUseCase>(
-      () => CreateCustomerUseCase(cusRepo, perms, audit));
+    () => CreateCustomerUseCase(cusRepo, perms, audit),
+  );
   getIt.registerLazySingleton<UpdateCustomerUseCase>(
-      () => UpdateCustomerUseCase(cusRepo, perms, audit));
+    () => UpdateCustomerUseCase(cusRepo, perms, audit),
+  );
   getIt.registerLazySingleton<SetCustomerActiveUseCase>(
-      () => SetCustomerActiveUseCase(cusRepo, perms, audit));
+    () => SetCustomerActiveUseCase(cusRepo, perms, audit),
+  );
   getIt.registerLazySingleton<SetCustomerAccountUseCase>(
-      () => SetCustomerAccountUseCase(cusRepo, perms, audit));
+    () => SetCustomerAccountUseCase(cusRepo, perms, audit),
+  );
   getIt.registerLazySingleton<CustomerStatementUseCase>(
-      () => CustomerStatementUseCase(cusRepo, perms));
+    () => CustomerStatementUseCase(cusRepo, perms),
+  );
 
   getIt.registerLazySingleton<ListPrescriptionsUseCase>(
-      () => ListPrescriptionsUseCase(rxRepo, perms));
+    () => ListPrescriptionsUseCase(rxRepo, perms),
+  );
   getIt.registerLazySingleton<CreatePrescriptionUseCase>(
-      () => CreatePrescriptionUseCase(rxRepo, perms, audit));
+    () => CreatePrescriptionUseCase(rxRepo, perms, audit),
+  );
   getIt.registerLazySingleton<GetPrescriptionDetailUseCase>(
-      () => GetPrescriptionDetailUseCase(rxRepo, perms));
+    () => GetPrescriptionDetailUseCase(rxRepo, perms),
+  );
   getIt.registerLazySingleton<CustomerActivePrescriptionsUseCase>(
-      () => CustomerActivePrescriptionsUseCase(rxRepo, perms));
+    () => CustomerActivePrescriptionsUseCase(rxRepo, perms),
+  );
   getIt.registerLazySingleton<PreparePrescriptionForSaleUseCase>(
-      () => PreparePrescriptionForSaleUseCase(rxRepo, perms));
+    () => PreparePrescriptionForSaleUseCase(rxRepo, perms),
+  );
 
-  getIt.registerLazySingleton<CustomersController>(() => CustomersController(
-        getIt<ListCustomersUseCase>(),
-        getIt<CreateCustomerUseCase>(),
-        getIt<UpdateCustomerUseCase>(),
-        getIt<SetCustomerActiveUseCase>(),
-        getIt<SetCustomerAccountUseCase>(),
-        getIt<CustomerStatementUseCase>(),
-      ));
+  getIt.registerLazySingleton<CustomersController>(
+    () => CustomersController(
+      getIt<ListCustomersUseCase>(),
+      getIt<CreateCustomerUseCase>(),
+      getIt<UpdateCustomerUseCase>(),
+      getIt<SetCustomerActiveUseCase>(),
+      getIt<SetCustomerAccountUseCase>(),
+      getIt<CustomerStatementUseCase>(),
+    ),
+  );
 
   getIt.registerLazySingleton<PrescriptionsController>(
-      () => PrescriptionsController(
-            getIt<ListPrescriptionsUseCase>(),
-            getIt<CreatePrescriptionUseCase>(),
-            getIt<GetPrescriptionDetailUseCase>(),
-            getIt<PreparePrescriptionForSaleUseCase>(),
-          ));
+    () => PrescriptionsController(
+      getIt<ListPrescriptionsUseCase>(),
+      getIt<CreatePrescriptionUseCase>(),
+      getIt<GetPrescriptionDetailUseCase>(),
+      getIt<PreparePrescriptionForSaleUseCase>(),
+    ),
+  );
 }
 
 /// Phase 4 — Suppliers & Purchases graph (suppliers master, statements,
@@ -456,54 +551,73 @@ void _registerPhase4(AppDatabase db) {
   final purRepo = getIt<PurchasesRepository>();
 
   getIt.registerLazySingleton<ListSuppliersUseCase>(
-      () => ListSuppliersUseCase(supRepo, perms));
+    () => ListSuppliersUseCase(supRepo, perms),
+  );
   getIt.registerLazySingleton<AllSuppliersUseCase>(
-      () => AllSuppliersUseCase(supRepo, perms));
+    () => AllSuppliersUseCase(supRepo, perms),
+  );
   getIt.registerLazySingleton<CreateSupplierUseCase>(
-      () => CreateSupplierUseCase(supRepo, perms, audit));
+    () => CreateSupplierUseCase(supRepo, perms, audit),
+  );
   getIt.registerLazySingleton<UpdateSupplierUseCase>(
-      () => UpdateSupplierUseCase(supRepo, perms, audit));
+    () => UpdateSupplierUseCase(supRepo, perms, audit),
+  );
   getIt.registerLazySingleton<SetSupplierActiveUseCase>(
-      () => SetSupplierActiveUseCase(supRepo, perms, audit));
+    () => SetSupplierActiveUseCase(supRepo, perms, audit),
+  );
   getIt.registerLazySingleton<SupplierBalancesUseCase>(
-      () => SupplierBalancesUseCase(supRepo, perms));
+    () => SupplierBalancesUseCase(supRepo, perms),
+  );
   getIt.registerLazySingleton<SupplierStatementUseCase>(
-      () => SupplierStatementUseCase(supRepo, perms));
+    () => SupplierStatementUseCase(supRepo, perms),
+  );
 
   getIt.registerLazySingleton<ListPurchasesUseCase>(
-      () => ListPurchasesUseCase(purRepo, perms));
+    () => ListPurchasesUseCase(purRepo, perms),
+  );
   getIt.registerLazySingleton<GetPurchaseDetailUseCase>(
-      () => GetPurchaseDetailUseCase(purRepo, perms));
+    () => GetPurchaseDetailUseCase(purRepo, perms),
+  );
   getIt.registerLazySingleton<CreatePurchaseUseCase>(
-      () => CreatePurchaseUseCase(purRepo, perms));
+    () => CreatePurchaseUseCase(purRepo, perms),
+  );
   getIt.registerLazySingleton<UpdatePendingPurchaseUseCase>(
-      () => UpdatePendingPurchaseUseCase(purRepo, perms));
+    () => UpdatePendingPurchaseUseCase(purRepo, perms),
+  );
   getIt.registerLazySingleton<ReceivePurchaseUseCase>(
-      () => ReceivePurchaseUseCase(purRepo, perms));
+    () => ReceivePurchaseUseCase(purRepo, perms),
+  );
   getIt.registerLazySingleton<CancelPurchaseUseCase>(
-      () => CancelPurchaseUseCase(purRepo, perms));
+    () => CancelPurchaseUseCase(purRepo, perms),
+  );
   getIt.registerLazySingleton<PurchaseReturnUseCase>(
-      () => PurchaseReturnUseCase(purRepo, perms));
+    () => PurchaseReturnUseCase(purRepo, perms),
+  );
   getIt.registerLazySingleton<GetAvailableReturnQtyUseCase>(
-      () => GetAvailableReturnQtyUseCase(purRepo, perms));
+    () => GetAvailableReturnQtyUseCase(purRepo, perms),
+  );
 
-  getIt.registerLazySingleton<SuppliersController>(() => SuppliersController(
-        getIt<ListSuppliersUseCase>(),
-        getIt<CreateSupplierUseCase>(),
-        getIt<UpdateSupplierUseCase>(),
-        getIt<SetSupplierActiveUseCase>(),
-        getIt<SupplierBalancesUseCase>(),
-        getIt<SupplierStatementUseCase>(),
-      ));
+  getIt.registerLazySingleton<SuppliersController>(
+    () => SuppliersController(
+      getIt<ListSuppliersUseCase>(),
+      getIt<CreateSupplierUseCase>(),
+      getIt<UpdateSupplierUseCase>(),
+      getIt<SetSupplierActiveUseCase>(),
+      getIt<SupplierBalancesUseCase>(),
+      getIt<SupplierStatementUseCase>(),
+    ),
+  );
 
-  getIt.registerLazySingleton<PurchasesController>(() => PurchasesController(
-        getIt<ListPurchasesUseCase>(),
-        getIt<ReceivePurchaseUseCase>(),
-        getIt<CancelPurchaseUseCase>(),
-        getIt<CreatePurchaseUseCase>(),
-        getIt<UpdatePendingPurchaseUseCase>(),
-        getIt<PurchaseReturnUseCase>(),
-      ));
+  getIt.registerLazySingleton<PurchasesController>(
+    () => PurchasesController(
+      getIt<ListPurchasesUseCase>(),
+      getIt<ReceivePurchaseUseCase>(),
+      getIt<CancelPurchaseUseCase>(),
+      getIt<CreatePurchaseUseCase>(),
+      getIt<UpdatePendingPurchaseUseCase>(),
+      getIt<PurchaseReturnUseCase>(),
+    ),
+  );
 }
 
 /// Inventory & categories module (§3, §4). The feature is wired over the
@@ -532,125 +646,159 @@ void _registerInventory(AppDatabase db) {
 
   final repo = getIt<InventoryRepository>();
   getIt.registerLazySingleton<InventoryViewBuilder>(
-      () => InventoryViewBuilder(repo));
+    () => InventoryViewBuilder(repo),
+  );
   getIt.registerLazySingleton<InventoryExcelService>(
-      () => InventoryExcelService(repo));
+    () => InventoryExcelService(repo),
+  );
   final builder = getIt<InventoryViewBuilder>();
   final excel = getIt<InventoryExcelService>();
 
   // Items
-  getIt.registerLazySingleton<ListItemsUseCase>(() => ListItemsUseCase(
-        repo,
-        perms,
-        viewBuilder: builder,
-      ));
+  getIt.registerLazySingleton<ListItemsUseCase>(
+    () => ListItemsUseCase(repo, perms, viewBuilder: builder),
+  );
   getIt.registerLazySingleton<CreateItemUseCase>(
-      () => CreateItemUseCase(repo, perms, audit));
+    () => CreateItemUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<UpdateItemUseCase>(
-      () => UpdateItemUseCase(repo, perms, audit));
+    () => UpdateItemUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<SetItemActiveUseCase>(
-      () => SetItemActiveUseCase(repo, perms, audit));
+    () => SetItemActiveUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<DeleteItemUseCase>(
-      () => DeleteItemUseCase(repo, perms, audit));
+    () => DeleteItemUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<BulkUpdateItemsUseCase>(
-      () => BulkUpdateItemsUseCase(repo, perms, audit));
+    () => BulkUpdateItemsUseCase(repo, perms, audit),
+  );
 
   // Batches & stock
   getIt.registerLazySingleton<ListBatchesUseCase>(
-      () => ListBatchesUseCase(repo, perms));
+    () => ListBatchesUseCase(repo, perms),
+  );
   getIt.registerLazySingleton<AddBatchUseCase>(
-      () => AddBatchUseCase(repo, perms, audit));
+    () => AddBatchUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<VoidBatchUseCase>(
-      () => VoidBatchUseCase(repo, perms, audit));
+    () => VoidBatchUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<AdjustStockUseCase>(
-      () => AdjustStockUseCase(repo, perms, audit));
+    () => AdjustStockUseCase(repo, perms, audit),
+  );
 
   // Master data
   getIt.registerLazySingleton<ListCategoriesUseCase>(
-      () => ListCategoriesUseCase(repo, perms));
+    () => ListCategoriesUseCase(repo, perms),
+  );
   getIt.registerLazySingleton<SaveCategoryUseCase>(
-      () => SaveCategoryUseCase(repo, perms, audit));
+    () => SaveCategoryUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<SetCategoryActiveUseCase>(
-      () => SetCategoryActiveUseCase(repo, perms, audit));
+    () => SetCategoryActiveUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<DeleteCategoryUseCase>(
-      () => DeleteCategoryUseCase(repo, perms, audit));
+    () => DeleteCategoryUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<ListManufacturersUseCase>(
-      () => ListManufacturersUseCase(repo, perms));
+    () => ListManufacturersUseCase(repo, perms),
+  );
   getIt.registerLazySingleton<SaveManufacturerUseCase>(
-      () => SaveManufacturerUseCase(repo, perms, audit));
+    () => SaveManufacturerUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<SetManufacturerActiveUseCase>(
-      () => SetManufacturerActiveUseCase(repo, perms, audit));
+    () => SetManufacturerActiveUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<AllManufacturersUseCase>(
-      () => AllManufacturersUseCase(repo, perms));
+    () => AllManufacturersUseCase(repo, perms),
+  );
   getIt.registerLazySingleton<ListUnitsUseCase>(
-      () => ListUnitsUseCase(repo, perms));
+    () => ListUnitsUseCase(repo, perms),
+  );
   getIt.registerLazySingleton<SaveUnitUseCase>(
-      () => SaveUnitUseCase(repo, perms, audit));
+    () => SaveUnitUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<ListActiveIngredientsUseCase>(
-      () => ListActiveIngredientsUseCase(repo, perms));
+    () => ListActiveIngredientsUseCase(repo, perms),
+  );
   getIt.registerLazySingleton<SaveActiveIngredientUseCase>(
-      () => SaveActiveIngredientUseCase(repo, perms, audit));
+    () => SaveActiveIngredientUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<SetActiveIngredientActiveUseCase>(
-      () => SetActiveIngredientActiveUseCase(repo, perms, audit));
+    () => SetActiveIngredientActiveUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<DeleteActiveIngredientUseCase>(
-      () => DeleteActiveIngredientUseCase(repo, perms, audit));
+    () => DeleteActiveIngredientUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<DeleteUnitUseCase>(
-      () => DeleteUnitUseCase(repo, perms, audit));
+    () => DeleteUnitUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<DeleteManufacturerUseCase>(
-      () => DeleteManufacturerUseCase(repo, perms, audit));
+    () => DeleteManufacturerUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<ListIndicationsUseCase>(
-      () => ListIndicationsUseCase(repo, perms));
+    () => ListIndicationsUseCase(repo, perms),
+  );
   getIt.registerLazySingleton<SaveIndicationUseCase>(
-      () => SaveIndicationUseCase(repo, perms, audit));
+    () => SaveIndicationUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<SetIndicationActiveUseCase>(
-      () => SetIndicationActiveUseCase(repo, perms, audit));
+    () => SetIndicationActiveUseCase(repo, perms, audit),
+  );
   getIt.registerLazySingleton<DeleteIndicationUseCase>(
-      () => DeleteIndicationUseCase(repo, perms, audit));
+    () => DeleteIndicationUseCase(repo, perms, audit),
+  );
 
   // Excel
   getIt.registerLazySingleton<ExportItemsUseCase>(
-      () => ExportItemsUseCase(repo, perms, excel, viewBuilder: builder));
+    () => ExportItemsUseCase(repo, perms, excel, viewBuilder: builder),
+  );
   getIt.registerLazySingleton<ImportItemsUseCase>(
-      () => ImportItemsUseCase(repo, perms, audit));
+    () => ImportItemsUseCase(repo, perms, audit),
+  );
 
   // Controllers
-  getIt.registerLazySingleton<InventoryController>(() => InventoryController(
-        getIt<ListItemsUseCase>(),
-        getIt<CreateItemUseCase>(),
-        getIt<UpdateItemUseCase>(),
-        getIt<SetItemActiveUseCase>(),
-        getIt<DeleteItemUseCase>(),
-        getIt<AddBatchUseCase>(),
-        getIt<VoidBatchUseCase>(),
-        getIt<ListBatchesUseCase>(),
-        getIt<AdjustStockUseCase>(),
-        getIt<BulkUpdateItemsUseCase>(),
-        getIt<ExportItemsUseCase>(),
-        getIt<ImportItemsUseCase>(),
-      ));
+  getIt.registerLazySingleton<InventoryController>(
+    () => InventoryController(
+      getIt<ListItemsUseCase>(),
+      getIt<CreateItemUseCase>(),
+      getIt<UpdateItemUseCase>(),
+      getIt<SetItemActiveUseCase>(),
+      getIt<DeleteItemUseCase>(),
+      getIt<AddBatchUseCase>(),
+      getIt<VoidBatchUseCase>(),
+      getIt<ListBatchesUseCase>(),
+      getIt<AdjustStockUseCase>(),
+      getIt<BulkUpdateItemsUseCase>(),
+      getIt<ExportItemsUseCase>(),
+      getIt<ImportItemsUseCase>(),
+    ),
+  );
 
   getIt.registerLazySingleton<MasterDataController>(
-      () => MasterDataController(
-            getIt<ListCategoriesUseCase>(),
-            getIt<SaveCategoryUseCase>(),
-            getIt<SetCategoryActiveUseCase>(),
-            getIt<DeleteCategoryUseCase>(),
-            getIt<SaveManufacturerUseCase>(),
-            getIt<SetManufacturerActiveUseCase>(),
-            getIt<DeleteManufacturerUseCase>(),
-            getIt<AllManufacturersUseCase>(),
-            getIt<ListUnitsUseCase>(),
-            getIt<SaveUnitUseCase>(),
-            getIt<DeleteUnitUseCase>(),
-            getIt<ListActiveIngredientsUseCase>(),
-            getIt<SaveActiveIngredientUseCase>(),
-            getIt<SetActiveIngredientActiveUseCase>(),
-            getIt<DeleteActiveIngredientUseCase>(),
-            getIt<ListIndicationsUseCase>(),
-            getIt<SaveIndicationUseCase>(),
-            getIt<SetIndicationActiveUseCase>(),
-            getIt<DeleteIndicationUseCase>(),
-          ));
+    () => MasterDataController(
+      getIt<ListCategoriesUseCase>(),
+      getIt<SaveCategoryUseCase>(),
+      getIt<SetCategoryActiveUseCase>(),
+      getIt<DeleteCategoryUseCase>(),
+      getIt<SaveManufacturerUseCase>(),
+      getIt<SetManufacturerActiveUseCase>(),
+      getIt<DeleteManufacturerUseCase>(),
+      getIt<AllManufacturersUseCase>(),
+      getIt<ListUnitsUseCase>(),
+      getIt<SaveUnitUseCase>(),
+      getIt<DeleteUnitUseCase>(),
+      getIt<ListActiveIngredientsUseCase>(),
+      getIt<SaveActiveIngredientUseCase>(),
+      getIt<SetActiveIngredientActiveUseCase>(),
+      getIt<DeleteActiveIngredientUseCase>(),
+      getIt<ListIndicationsUseCase>(),
+      getIt<SaveIndicationUseCase>(),
+      getIt<SetIndicationActiveUseCase>(),
+      getIt<DeleteIndicationUseCase>(),
+    ),
+  );
 }
 
 /// Auth & user-management graph (§16). AuthController's audit callback writes
@@ -661,21 +809,44 @@ void _registerAuth(AppDatabase db) {
 
   getIt.registerLazySingleton<UserDao>(() => UserDao(db));
   getIt.registerLazySingleton<AuthRepository>(
-      () => AuthRepositoryImpl(getIt<UserDao>()));
+    () => AuthRepositoryImpl(getIt<UserDao>()),
+  );
 
   final authRepo = getIt<AuthRepository>();
-  getIt.registerLazySingleton<LoginUseCase>(() => LoginUseCase(authRepo, passwords));
+  getIt.registerLazySingleton<LoginUseCase>(
+    () => LoginUseCase(authRepo, passwords),
+  );
   getIt.registerLazySingleton<LogoutUseCase>(() => const LogoutUseCase());
-  getIt.registerLazySingleton<GetCurrentUserUseCase>(() => GetCurrentUserUseCase(authRepo));
-  getIt.registerLazySingleton<ChangePasswordUseCase>(() => ChangePasswordUseCase(authRepo, passwords));
-  getIt.registerLazySingleton<ListUserPermissionsUseCase>(() => ListUserPermissionsUseCase(authRepo));
-  getIt.registerLazySingleton<CheckPermissionUseCase>(() => CheckPermissionUseCase(authRepo));
-  getIt.registerLazySingleton<CreateUserUseCase>(() => CreateUserUseCase(authRepo, passwords));
-  getIt.registerLazySingleton<UpdateUserUseCase>(() => UpdateUserUseCase(authRepo));
-  getIt.registerLazySingleton<DeactivateUserUseCase>(() => DeactivateUserUseCase(authRepo));
-  getIt.registerLazySingleton<ReactivateUserUseCase>(() => ReactivateUserUseCase(authRepo));
-  getIt.registerLazySingleton<ListUsersUseCase>(() => ListUsersUseCase(authRepo));
-  getIt.registerLazySingleton<ListRolesUseCase>(() => ListRolesUseCase(authRepo));
+  getIt.registerLazySingleton<GetCurrentUserUseCase>(
+    () => GetCurrentUserUseCase(authRepo),
+  );
+  getIt.registerLazySingleton<ChangePasswordUseCase>(
+    () => ChangePasswordUseCase(authRepo, passwords),
+  );
+  getIt.registerLazySingleton<ListUserPermissionsUseCase>(
+    () => ListUserPermissionsUseCase(authRepo),
+  );
+  getIt.registerLazySingleton<CheckPermissionUseCase>(
+    () => CheckPermissionUseCase(authRepo),
+  );
+  getIt.registerLazySingleton<CreateUserUseCase>(
+    () => CreateUserUseCase(authRepo, passwords),
+  );
+  getIt.registerLazySingleton<UpdateUserUseCase>(
+    () => UpdateUserUseCase(authRepo),
+  );
+  getIt.registerLazySingleton<DeactivateUserUseCase>(
+    () => DeactivateUserUseCase(authRepo),
+  );
+  getIt.registerLazySingleton<ReactivateUserUseCase>(
+    () => ReactivateUserUseCase(authRepo),
+  );
+  getIt.registerLazySingleton<ListUsersUseCase>(
+    () => ListUsersUseCase(authRepo),
+  );
+  getIt.registerLazySingleton<ListRolesUseCase>(
+    () => ListRolesUseCase(authRepo),
+  );
 
   getIt.registerLazySingleton<AuthController>(() {
     final controller = AuthController(
@@ -684,11 +855,7 @@ void _registerAuth(AppDatabase db) {
       getIt<GetCurrentUserUseCase>(),
       getIt<ListUserPermissionsUseCase>(),
     );
-    controller.audit = ({
-      required user,
-      required success,
-      note = '',
-    }) async {
+    controller.audit = ({required user, required success, note = ''}) async {
       // Unknown usernames have no row, and audit_logs.userId is NOT NULL;
       // those failures are intentionally not auditable (§4.27).
       if (user == null) return;
@@ -713,17 +880,19 @@ void _registerAuth(AppDatabase db) {
     return controller;
   });
 
-  getIt.registerLazySingleton<UsersViewController>(() => UsersViewController(
-        getIt<ListUsersUseCase>(),
-        getIt<ListRolesUseCase>(),
-        getIt<CreateUserUseCase>(),
-        getIt<UpdateUserUseCase>(),
-        getIt<DeactivateUserUseCase>(),
-        getIt<ReactivateUserUseCase>(),
-        getIt<ChangePasswordUseCase>(),
-        audit,
-        db,
-      ));
+  getIt.registerLazySingleton<UsersViewController>(
+    () => UsersViewController(
+      getIt<ListUsersUseCase>(),
+      getIt<ListRolesUseCase>(),
+      getIt<CreateUserUseCase>(),
+      getIt<UpdateUserUseCase>(),
+      getIt<DeactivateUserUseCase>(),
+      getIt<ReactivateUserUseCase>(),
+      getIt<ChangePasswordUseCase>(),
+      audit,
+      db,
+    ),
+  );
 }
 
 void _registerPhase13(AppDatabase db) {
@@ -731,27 +900,35 @@ void _registerPhase13(AppDatabase db) {
 
   getIt.registerLazySingleton<AppPaths>(() => const AppPaths());
   getIt.registerLazySingleton<BackupArchiveService>(
-      () => const BackupArchiveService());
+    () => const BackupArchiveService(),
+  );
   getIt.registerLazySingleton<RestoreService>(() => const RestoreService());
-  getIt.registerLazySingleton<DataExportService>(() => const DataExportService());
+  getIt.registerLazySingleton<DataExportService>(
+    () => const DataExportService(),
+  );
 
   getIt.registerLazySingleton<CreateBackupUseCase>(
-      () => CreateBackupUseCase(getIt<BackupArchiveService>(), permissions));
+    () => CreateBackupUseCase(getIt<BackupArchiveService>(), permissions),
+  );
   getIt.registerLazySingleton<PreviewRestoreUseCase>(
-      () => PreviewRestoreUseCase(getIt<RestoreService>(), permissions));
+    () => PreviewRestoreUseCase(getIt<RestoreService>(), permissions),
+  );
   getIt.registerLazySingleton<RestoreBackupUseCase>(
-      () => RestoreBackupUseCase(getIt<RestoreService>(), permissions));
+    () => RestoreBackupUseCase(getIt<RestoreService>(), permissions),
+  );
   getIt.registerLazySingleton<ExportDataUseCase>(
-      () => ExportDataUseCase(getIt<DataExportService>(), permissions));
+    () => ExportDataUseCase(getIt<DataExportService>(), permissions),
+  );
 
-  getIt.registerLazySingleton<DataManagementController>(() =>
-      DataManagementController(
-        getIt<CreateBackupUseCase>(),
-        getIt<PreviewRestoreUseCase>(),
-        getIt<RestoreBackupUseCase>(),
-        getIt<ExportDataUseCase>(),
-        getIt<AppPaths>(),
-        db,
-        AppDatabaseLifecycle(db),
-      ));
+  getIt.registerLazySingleton<DataManagementController>(
+    () => DataManagementController(
+      getIt<CreateBackupUseCase>(),
+      getIt<PreviewRestoreUseCase>(),
+      getIt<RestoreBackupUseCase>(),
+      getIt<ExportDataUseCase>(),
+      getIt<AppPaths>(),
+      db,
+      AppDatabaseLifecycle(db),
+    ),
+  );
 }

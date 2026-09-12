@@ -11,10 +11,16 @@ import 'package:pharmacy_pos/shared/database/app_database.dart';
 
 import 'helpers.dart';
 
-Future<String> _ingredient(AppDatabase db, String id, String name,
-    {String? nameEn}) async {
+Future<String> _ingredient(
+  AppDatabase db,
+  String id,
+  String name, {
+  String? nameEn,
+}) async {
   final now = DateTime.now().millisecondsSinceEpoch;
-  await db.into(db.activeIngredients).insert(
+  await db
+      .into(db.activeIngredients)
+      .insert(
         ActiveIngredientsCompanion.insert(
           id: id,
           name: name,
@@ -28,8 +34,13 @@ Future<String> _ingredient(AppDatabase db, String id, String name,
 }
 
 Future<void> _linkIngredient(
-    AppDatabase db, String itemId, String ingredientId) async {
-  await db.into(db.itemActiveIngredients).insert(
+  AppDatabase db,
+  String itemId,
+  String ingredientId,
+) async {
+  await db
+      .into(db.itemActiveIngredients)
+      .insert(
         ItemActiveIngredientsCompanion.insert(
           id: 'iai_${itemId}_$ingredientId',
           itemId: itemId,
@@ -52,7 +63,9 @@ Future<String> _item(
   int stock = 0,
 }) async {
   final now = DateTime.now().millisecondsSinceEpoch;
-  await db.into(db.items).insert(
+  await db
+      .into(db.items)
+      .insert(
         ItemsCompanion.insert(
           id: id,
           primaryBarcode: Value('BC-$id'),
@@ -88,8 +101,12 @@ void main() {
   setUp(() async {
     db = newDatabase();
     await awaitCategory(db);
-    final aiPara = await _ingredient(db, 'ai_paracetamol', 'Paracetamol',
-        nameEn: 'Paracetamol');
+    final aiPara = await _ingredient(
+      db,
+      'ai_paracetamol',
+      'Paracetamol',
+      nameEn: 'Paracetamol',
+    );
     await _ingredient(db, 'ai_caffeine', 'Caffeine', nameEn: 'Caffeine');
     await _ingredient(db, 'ai_ibuprofen', 'Ibuprofen', nameEn: 'Ibuprofen');
 
@@ -178,60 +195,88 @@ void main() {
 
   tearDown(() async => db.close());
 
-  test('alternativeCandidates: relational-primary, flat only for legacy items',
-      () async {
-    final candidates = await dao.alternativeCandidates(itemId: 'item_req');
-    final ids = {for (final c in candidates) c.id};
-    expect(ids, isNotEmpty);
-    // Relational junction sharing drives candidate generation.
-    expect(ids, contains('item_t1'));
-    expect(ids, contains('item_t3'));
-    expect(ids, isNot(contains('item_legacy')),
-        reason: 'item_req has relational ingredients → the flat free-text '
-            'fallback is not consulted (relational is primary, Phase 18.1)');
-    expect(ids, isNot(contains('item_other')),
-        reason: 'no shared ingredient → not a candidate (no therapeutic group)');
-    expect(candidates.any((c) => c.id == 'item_out'), isFalse,
-        reason: 'unavailable items are excluded from the candidate set');
+  test(
+    'alternativeCandidates: relational-primary, flat only for legacy items',
+    () async {
+      final candidates = await dao.alternativeCandidates(itemId: 'item_req');
+      final ids = {for (final c in candidates) c.id};
+      expect(ids, isNotEmpty);
+      // Relational junction sharing drives candidate generation.
+      expect(ids, contains('item_t1'));
+      expect(ids, contains('item_t3'));
+      expect(
+        ids,
+        isNot(contains('item_legacy')),
+        reason:
+            'item_req has relational ingredients → the flat free-text '
+            'fallback is not consulted (relational is primary, Phase 18.1)',
+      );
+      expect(
+        ids,
+        isNot(contains('item_other')),
+        reason: 'no shared ingredient → not a candidate (no therapeutic group)',
+      );
+      expect(
+        candidates.any((c) => c.id == 'item_out'),
+        isFalse,
+        reason: 'unavailable items are excluded from the candidate set',
+      );
 
-    // A legacy item (no relational ingredients) still gets the flat fallback.
-    final legacyCandidates =
-        await dao.alternativeCandidates(itemId: 'item_legacy');
-    final legacyIds = {for (final c in legacyCandidates) c.id};
-    expect(legacyIds, contains('item_req'),
-        reason: 'legacy flat activeIngredient fallback still supplies candidates');
-  });
+      // A legacy item (no relational ingredients) still gets the flat fallback.
+      final legacyCandidates = await dao.alternativeCandidates(
+        itemId: 'item_legacy',
+      );
+      final legacyIds = {for (final c in legacyCandidates) c.id};
+      expect(
+        legacyIds,
+        contains('item_req'),
+        reason:
+            'legacy flat activeIngredient fallback still supplies candidates',
+      );
+    },
+  );
 
-  test('smartAlternatives ranks tiers and drops unrelated / empty stock',
-      () async {
-    final requested = (await dao.byId('item_req'))!;
-    final alts = await repo.smartAlternatives(requested);
+  test(
+    'smartAlternatives ranks tiers and drops unrelated / empty stock',
+    () async {
+      final requested = (await dao.byId('item_req'))!;
+      final alts = await repo.smartAlternatives(requested);
 
-    // item_other shares nothing → never ranked; item_out has no stock → dropped;
-    // item_legacy is not a candidate for a relational requested item (18.1).
-    expect(alts.map((a) => a.item.id), isNot(contains('item_other')));
-    expect(alts.map((a) => a.item.id), isNot(contains('item_out')));
-    expect(alts.map((a) => a.item.id), isNot(contains('item_legacy')));
+      // item_other shares nothing → never ranked; item_out has no stock → dropped;
+      // item_legacy is not a candidate for a relational requested item (18.1).
+      expect(alts.map((a) => a.item.id), isNot(contains('item_other')));
+      expect(alts.map((a) => a.item.id), isNot(contains('item_out')));
+      expect(alts.map((a) => a.item.id), isNot(contains('item_legacy')));
 
-    expect(
+      expect(
         alts.map((a) => a.item.id),
-        containsAll(['item_t1', 'item_t2', 'item_t3']));
-    expect(alts.firstWhere((a) => a.item.id == 'item_t1').tier,
-        SmartAlternativeTier.tier1);
-    expect(alts.firstWhere((a) => a.item.id == 'item_t2').tier,
-        SmartAlternativeTier.tier2);
-    expect(alts.firstWhere((a) => a.item.id == 'item_t3').tier,
-        SmartAlternativeTier.tier3,
-        reason: 'multi-ingredient candidate keeps tier3 via relational names');
-
-    // Legacy requested item → the flat fallback still ranks equivalents.
-    final legacyRequested = (await dao.byId('item_legacy'))!;
-    final legacyAlts = await repo.smartAlternatives(legacyRequested);
-    expect(legacyAlts.map((a) => a.item.id), contains('item_req'));
-    expect(legacyAlts.firstWhere((a) => a.item.id == 'item_req').tier,
+        containsAll(['item_t1', 'item_t2', 'item_t3']),
+      );
+      expect(
+        alts.firstWhere((a) => a.item.id == 'item_t1').tier,
         SmartAlternativeTier.tier1,
-        reason: 'legacy flat ingredient ranks via the flat fallback token');
-  });
+      );
+      expect(
+        alts.firstWhere((a) => a.item.id == 'item_t2').tier,
+        SmartAlternativeTier.tier2,
+      );
+      expect(
+        alts.firstWhere((a) => a.item.id == 'item_t3').tier,
+        SmartAlternativeTier.tier3,
+        reason: 'multi-ingredient candidate keeps tier3 via relational names',
+      );
+
+      // Legacy requested item → the flat fallback still ranks equivalents.
+      final legacyRequested = (await dao.byId('item_legacy'))!;
+      final legacyAlts = await repo.smartAlternatives(legacyRequested);
+      expect(legacyAlts.map((a) => a.item.id), contains('item_req'));
+      expect(
+        legacyAlts.firstWhere((a) => a.item.id == 'item_req').tier,
+        SmartAlternativeTier.tier1,
+        reason: 'legacy flat ingredient ranks via the flat fallback token',
+      );
+    },
+  );
 
   test('same-manufacturer candidates and ranking tie-break', () async {
     await _item(
@@ -257,47 +302,75 @@ void main() {
       stock: 9,
     );
     final now = DateTime.now().millisecondsSinceEpoch;
-    await db.into(db.manufacturers).insert(
+    await db
+        .into(db.manufacturers)
+        .insert(
           ManufacturersCompanion.insert(
-              id: 'mfr_a', name: 'شركة أ', createdAt: now, updatedAt: now),
+            id: 'mfr_a',
+            name: 'شركة أ',
+            createdAt: now,
+            updatedAt: now,
+          ),
           mode: InsertMode.insertOrIgnore,
         );
-    await db.into(db.manufacturers).insert(
+    await db
+        .into(db.manufacturers)
+        .insert(
           ManufacturersCompanion.insert(
-              id: 'mfr_b', name: 'شركة ب', createdAt: now, updatedAt: now),
+            id: 'mfr_b',
+            name: 'شركة ب',
+            createdAt: now,
+            updatedAt: now,
+          ),
           mode: InsertMode.insertOrIgnore,
         );
-    await (db.update(db.items)..where((i) => i.id.equals('item_req')))
-        .write(const ItemsCompanion(manufacturerId: Value('mfr_a')));
-    await (db.update(db.items)..where((i) => i.id.equals('item_mfr')))
-        .write(const ItemsCompanion(manufacturerId: Value('mfr_a')));
+    await (db.update(db.items)..where((i) => i.id.equals('item_req'))).write(
+      const ItemsCompanion(manufacturerId: Value('mfr_a')),
+    );
+    await (db.update(db.items)..where((i) => i.id.equals('item_mfr'))).write(
+      const ItemsCompanion(manufacturerId: Value('mfr_a')),
+    );
     await (db.update(db.items)..where((i) => i.id.equals('item_other_mfr')))
         .write(const ItemsCompanion(manufacturerId: Value('mfr_b')));
 
     final candidates = await dao.alternativeCandidates(itemId: 'item_req');
-    expect({for (final c in candidates) c.id}, containsAll(
-        ['item_mfr', 'item_other_mfr']),
-        reason: 'same-manufacturer products join the candidate superset');
+    expect(
+      {for (final c in candidates) c.id},
+      containsAll(['item_mfr', 'item_other_mfr']),
+      reason: 'same-manufacturer products join the candidate superset',
+    );
 
     final req = (await dao.byId('item_req'))!;
+    expect(req.manufacturerId, 'mfr_a');
+    expect(req.manufacturerName, 'شركة أ');
     final alts = await repo.smartAlternatives(req);
     final ranked = alts.map((a) => a.item.id).toList();
     // Same tier + same stock → same-manufacturer (مfr_a) wins the tie-break.
-    expect(ranked.indexOf('item_mfr'),
-        lessThan(ranked.indexOf('item_other_mfr')));
+    expect(
+      ranked.indexOf('item_mfr'),
+      lessThan(ranked.indexOf('item_other_mfr')),
+    );
+    // The manufacturer display name is hydrated on candidates too.
+    final itemMfr = alts.firstWhere((a) => a.item.id == 'item_mfr');
+    expect(itemMfr.item.manufacturerName, 'شركة أ');
   });
 
   test('relational ingredient names hydrate into the snapshot', () async {
     final item = (await dao.byId('item_t3'))!;
-    expect(item.relationalIngredientNames, containsAll(['Paracetamol', 'Caffeine']));
+    expect(
+      item.relationalIngredientNames,
+      containsAll(['Paracetamol', 'Caffeine']),
+    );
     final req = (await dao.byId('item_req'))!;
     expect(req.relationalIngredientNames, ['Paracetamol']);
   });
 
-  test('hydration carries dose / pharmaForm / sizeVolume into the item snapshot',
-      () async {
-    final item = (await dao.byId('item_t1'))!;
-    expect(item.dose, '500 mg');
-    expect(item.pharmaForm, 'tablet');
-  });
+  test(
+    'hydration carries dose / pharmaForm / sizeVolume into the item snapshot',
+    () async {
+      final item = (await dao.byId('item_t1'))!;
+      expect(item.dose, '500 mg');
+      expect(item.pharmaForm, 'tablet');
+    },
+  );
 }

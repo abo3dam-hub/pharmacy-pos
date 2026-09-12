@@ -333,6 +333,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardKpis => 'Overview';
 
   @override
+  String get dashboardFinancialSummary => 'Today\'s income statement';
+
+  @override
   String get dashboardUnitsSold => 'Units sold today';
 
   @override

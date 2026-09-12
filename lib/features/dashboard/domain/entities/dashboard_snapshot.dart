@@ -11,6 +11,7 @@ class DashboardSnapshot {
     required this.todayTotalMicros,
     required this.todayPaidMicros,
     required this.todayProfitMicros,
+    required this.financials,
     required this.activeItems,
     required this.customers,
     required this.suppliers,
@@ -30,6 +31,7 @@ class DashboardSnapshot {
   final int todayTotalMicros;
   final int todayPaidMicros;
   final int todayProfitMicros;
+  final DashboardFinancials financials;
   final int activeItems;
   final int customers;
   final int suppliers;
@@ -41,6 +43,24 @@ class DashboardSnapshot {
   final List<NearExpiryBatch> nearExpiryBatches;
   final List<RecentInvoice> recentSales;
   final List<RecentInvoice> recentPurchases;
+}
+
+/// Today's income-statement summary (authoritative GL projection, aligned with
+/// the Reports hub income statement).
+class DashboardFinancials {
+  const DashboardFinancials({
+    required this.revenueMicros,
+    required this.netRevenueMicros,
+    required this.cogsMicros,
+    required this.grossProfitMicros,
+    required this.netIncomeMicros,
+  });
+
+  final int revenueMicros;
+  final int netRevenueMicros;
+  final int cogsMicros;
+  final int grossProfitMicros;
+  final int netIncomeMicros;
 }
 
 /// Product at or below its reorder point.

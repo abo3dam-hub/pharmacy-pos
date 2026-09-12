@@ -27,6 +27,7 @@ import 'package:pharmacy_pos/features/auth/domain/usecases/update_user.dart';
 import 'package:pharmacy_pos/features/auth/domain/usecases/rbac_use_cases.dart';
 import 'package:pharmacy_pos/features/dashboard/application/dashboard_controller.dart';
 import 'package:pharmacy_pos/features/dashboard/data/dashboard_dao.dart';
+import 'package:pharmacy_pos/features/reports/data/reports_dao.dart';
 import 'package:pharmacy_pos/features/sales/data/z_report_dao.dart';
 import 'package:pharmacy_pos/features/settings/application/settings_controller.dart';
 import 'package:pharmacy_pos/features/settings/data/settings_repository_impl.dart';
@@ -41,15 +42,17 @@ import 'helpers.dart';
 ///
 /// The DB seeds its defaults on create (§4.25), so no extra seeding is needed.
 /// Overrides the real getIt-backed singletons so widget tests stay hermetic.
-Future<({ProviderContainer container, AppDatabase db, AuthRepository repository})>
-    buildAuthHarness() async {
+Future<
+  ({ProviderContainer container, AppDatabase db, AuthRepository repository})
+>
+buildAuthHarness() async {
   final db = newDatabase();
   return attachAuthTo(db);
 }
 
 /// Wires auth providers to an existing testing DB (used after seeding).
 ({ProviderContainer container, AppDatabase db, AuthRepository repository})
-    attachAuthTo(AppDatabase db) {
+attachAuthTo(AppDatabase db) {
   final passwords = const PasswordService();
   final repository = AuthRepositoryImpl(UserDao(db));
 
@@ -61,7 +64,8 @@ Future<({ProviderContainer container, AppDatabase db, AuthRepository repository}
   );
   // No-op audit for hermetic widget tests (audit rows are covered by the
   // controller's own tests against a real DB).
-  authController.audit = ({required user, required success, note = ''}) async {};
+  authController.audit =
+      ({required user, required success, note = ''}) async {};
 
   final usersController = UsersViewController(
     ListUsersUseCase(repository),
@@ -75,68 +79,74 @@ Future<({ProviderContainer container, AppDatabase db, AuthRepository repository}
     db,
   );
 
-  final container = ProviderContainer(overrides: [
-    databaseProvider.overrideWithValue(db),
-    authRepositoryProvider.overrideWithValue(repository),
-    authControllerProvider.overrideWith((ref) => authController),
-    usersViewControllerProvider.overrideWith((ref) => usersController),
-    settingsDaoProvider.overrideWithValue(SettingsDao(db)),
+  final container = ProviderContainer(
+    overrides: [
+      databaseProvider.overrideWithValue(db),
+      authRepositoryProvider.overrideWithValue(repository),
+      authControllerProvider.overrideWith((ref) => authController),
+      usersViewControllerProvider.overrideWith((ref) => usersController),
+      settingsDaoProvider.overrideWithValue(SettingsDao(db)),
 
-    // Phase 12: settings, audit viewer and RBAC management, all backed by the
-    // same testing DB so misused providers fail loudly instead of silently.
-    settingsControllerProvider.overrideWith(
-      (ref) => SettingsController(
-        GetAppSettingsUseCase(
-          SettingsRepositoryImpl(SettingsDao(db), db),
-          const PermissionService(),
+      // Phase 12: settings, audit viewer and RBAC management, all backed by the
+      // same testing DB so misused providers fail loudly instead of silently.
+      settingsControllerProvider.overrideWith(
+        (ref) => SettingsController(
+          GetAppSettingsUseCase(
+            SettingsRepositoryImpl(SettingsDao(db), db),
+            const PermissionService(),
+          ),
+          SaveAppSettingsUseCase(
+            SettingsRepositoryImpl(SettingsDao(db), db),
+            const PermissionService(),
+            const AuditService(),
+          ),
+          db,
         ),
-        SaveAppSettingsUseCase(
-          SettingsRepositoryImpl(SettingsDao(db), db),
-          const PermissionService(),
-          const AuditService(),
-        ),
-        db,
       ),
-    ),
-    auditControllerProvider.overrideWith(
-      (ref) => AuditController(
-        ListAuditLogsUseCase(AuditDao(db), const PermissionService()),
-        ListAuditActionsUseCase(AuditDao(db), const PermissionService()),
-        ListAuditActorsUseCase(AuditDao(db), const PermissionService()),
-        db,
+      auditControllerProvider.overrideWith(
+        (ref) => AuditController(
+          ListAuditLogsUseCase(AuditDao(db), const PermissionService()),
+          ListAuditActionsUseCase(AuditDao(db), const PermissionService()),
+          ListAuditActorsUseCase(AuditDao(db), const PermissionService()),
+          db,
+        ),
       ),
-    ),
-    rbacControllerProvider.overrideWith(
-      (ref) => RbacController(
-        LoadRolesSnapshotUseCase(RbacDao(db), const PermissionService()),
-        GetRoleDetailUseCase(RbacDao(db), const PermissionService()),
-        CreateRoleUseCase(
-          RbacDao(db),
-          const PermissionService(),
-          const AuditService(),
+      rbacControllerProvider.overrideWith(
+        (ref) => RbacController(
+          LoadRolesSnapshotUseCase(RbacDao(db), const PermissionService()),
+          GetRoleDetailUseCase(RbacDao(db), const PermissionService()),
+          CreateRoleUseCase(
+            RbacDao(db),
+            const PermissionService(),
+            const AuditService(),
+          ),
+          UpdateRoleUseCase(
+            RbacDao(db),
+            const PermissionService(),
+            const AuditService(),
+          ),
+          SetRolePermissionsUseCase(
+            RbacDao(db),
+            const PermissionService(),
+            const AuditService(),
+          ),
+          DeleteRoleUseCase(
+            RbacDao(db),
+            const PermissionService(),
+            const AuditService(),
+          ),
+          db,
         ),
-        UpdateRoleUseCase(
-          RbacDao(db),
-          const PermissionService(),
-          const AuditService(),
-        ),
-        SetRolePermissionsUseCase(
-          RbacDao(db),
-          const PermissionService(),
-          const AuditService(),
-        ),
-        DeleteRoleUseCase(
-          RbacDao(db),
-          const PermissionService(),
-          const AuditService(),
-        ),
-        db,
       ),
-    ),
-    dashboardControllerProvider.overrideWith(
-      (ref) => DashboardController(ZReportDao(db), DashboardDao(db)),
-    ),
-  ]);
+      dashboardControllerProvider.overrideWith(
+        (ref) => DashboardController(
+          ZReportDao(db),
+          DashboardDao(db),
+          ReportsDao(db),
+        ),
+      ),
+    ],
+  );
   return (container: container, db: db, repository: repository);
 }
 
@@ -150,7 +160,9 @@ Future<void> seedExtraUser(
   String fullName = 'كاشير',
 }) async {
   final passwords = const PasswordService();
-  await db.into(db.users).insert(
+  await db
+      .into(db.users)
+      .insert(
         UsersCompanion.insert(
           id: 'user_$username',
           username: username,

@@ -16,6 +16,7 @@ class PosInvoiceLineView {
     required this.unitTypeName,
     required this.quantityBaseSigned,
     required this.unitPriceMicros,
+    required this.unitBaseQuantity,
     required this.vatRateBasisPoints,
     required this.lineDiscountBasisPoints,
     required this.lineSubtotalMicros,
@@ -37,7 +38,15 @@ class PosInvoiceLineView {
   final String unitTypeId;
   final String unitTypeName;
   final int quantityBaseSigned;
+
+  /// Price per single sell unit (box / sellable part) — the price the cashier
+  /// actually charged, never the base-unit reconstruction.
   final int unitPriceMicros;
+
+  /// Base quantity per sell unit at sale time (persisted) — lets the UI show
+  /// "1 × 14,000" instead of reconstructing "3 × 4,667" from the conversion
+  /// ratio (two-mode pricing lock).
+  final int unitBaseQuantity;
   final int vatRateBasisPoints;
   final int lineDiscountBasisPoints;
   final int lineSubtotalMicros;
@@ -51,6 +60,17 @@ class PosInvoiceLineView {
 
   /// What can still be returned on this line (over-return is prevented).
   int get returnableBase => (quantityBaseSigned - returnQuantityBase).clamp(0, quantityBaseSigned);
+
+  /// Number of whole sell units this line represents (e.g. boxes), derived from
+  /// the persisted per-sell-unit base quantity. Null when [quantityBaseSigned]
+  /// is not a whole multiple of the sell unit (a sell unit split across FEFO
+  /// batches) — callers then fall back to base units.
+  int? get sellUnitQuantity {
+    if (unitBaseQuantity <= 0) return null;
+    if (quantityBaseSigned == 0) return null;
+    if (quantityBaseSigned % unitBaseQuantity != 0) return null;
+    return quantityBaseSigned ~/ unitBaseQuantity;
+  }
 }
 
 /// Immutable, persisted sale invoice view (header + customer + lines).

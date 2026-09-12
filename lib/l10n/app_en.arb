@@ -106,6 +106,7 @@
   "dashboardLowStock": "Low-stock items",
   "dashboardProfitToday": "Today's profit",
   "dashboardKpis": "Overview",
+  "dashboardFinancialSummary": "Today's income statement",
   "dashboardUnitsSold": "Units sold today",
   "dashboardActiveItems": "Active products",
   "dashboardStockValue": "Stock value",

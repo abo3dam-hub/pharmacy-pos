@@ -10,92 +10,67 @@ import '../entities/pos_catalog_item.dart';
 /// `decomposeIntoSaleLines` helper with the real implementation consumed by the
 /// workspace controller.
 ///
-/// Rules (Design Lock §6/§8.4):
-///  * partial-sale item, fraction sale: decompose parts into complete products
-///    (full retail price, no markup) + remaining parts (partial selling price);
-///  * partial-sale item, box sale: full retail price per box (no markup);
-///  * non-partial item: boxes at full retail, base units at the base price.
-///  * the 10% partial markup is applied exactly once — never to full products.
+/// Two-mode pricing lock (§5 / Six Sigma Requirement):
+///  * box sale (always available): `gross = quantity × full package price` —
+///    the commercial selling price, exactly, never reconstructed from the base
+///    unit's conversion ratio (that reconstruction is the root cause of the
+///    14,000 → 4,667 → 3 × 4,667 = 14,001 → 19,601 bug);
+///  * fraction sale (ONLY for products explicitly configured for partial
+///    selling): `gross = quantity × partial selling price per part` — never
+///    auto-converted back into whole boxes, so 3 parts of a 10-part box are
+///    3 × 1,120 = 3,360, not a box;
+///  * the explicit part markup (and manual part price) applies only to part
+///    sales via [partialSellingPricePerPart] — full boxes never carry it.
 class PosLinePricer {
   const PosLinePricer({PartialPriceCalculator? partialPrices})
       : _partialPrices = partialPrices ?? const PartialPriceCalculator();
 
   final PartialPriceCalculator _partialPrices;
 
-  /// Prices a single cart line into engine input lines + money summary.
+  /// Sells [line] as real sell units: one engine line priced per sell unit
+  /// ([PosLineUnitMode.largeUnit] = box at package price, configured
+  /// [PosLineUnitMode.sellablePart] = part at partial price). A fraction line
+  /// on an item that stopped being partial-configured degrades defensively to
+  /// a package line — never to an implicit base-unit sale.
   PosLinePricing priceLine(PosCartLine line) {
     final item = line.item;
     final unitsPerLarge = item.unitsPerLarge > 0 ? item.unitsPerLarge : 1;
 
-    final override = line.priceOverrideMicros;
-    final saleLines = <PosSaleLineInput>[];
+    final usePart =
+        line.unitMode == PosLineUnitMode.sellablePart && item.partialSaleConfigured;
 
-    if (item.partialSaleConfigured) {
-      final partsPerFull = item.partsPerFullProduct!;
-      final sellableBase = item.sellablePartBaseQuantity!;
+    final sellUnitBase =
+        usePart ? (item.sellablePartBaseQuantity ?? unitsPerLarge) : unitsPerLarge;
 
-      if (line.unitMode == PosLineUnitMode.sellablePart) {
-        final completeProducts = line.quantity ~/ partsPerFull;
-        final remainingParts = line.quantity % partsPerFull;
-
-        // Complete boxes: full retail price per box, never the partial markup.
-        if (completeProducts > 0) {
-          saleLines.add(PosSaleLineInput(
-            itemId: item.id,
-            quantityBase: completeProducts * unitsPerLarge,
-            unitPriceMicros: override ?? item.baseUnitPriceMicros,
-            unitTypeId: item.largeUnitId,
-            vatRateBasisPoints: item.vatRateBasisPoints,
-            discountBasisPoints: line.discountBasisPoints,
-            prescriptionItemId: line.prescriptionItemId,
-          ));
-        }
-
-        // Remaining strips: partial selling price (markup applied once).
-        if (remainingParts > 0) {
-          final partialPricePerPart = partialSellingPricePerPart(item);
-          final partialPricePerBase =
-              Money.fromUnits(partialPricePerPart)
-                  .divideBy(sellableBase)
-                  .units;
-          saleLines.add(PosSaleLineInput(
-            itemId: item.id,
-            quantityBase: remainingParts * sellableBase,
-            unitPriceMicros: partialPricePerBase,
-            unitTypeId: item.sellablePartUnitId!,
-            vatRateBasisPoints: item.vatRateBasisPoints,
-            discountBasisPoints: line.discountBasisPoints,
-            prescriptionItemId: line.prescriptionItemId,
-            partialSaleUnitPriceMicros: partialPricePerBase,
-          ));
-        }
-      } else {
-        // Whole boxes even for partial-sale items → full retail, no markup.
-        saleLines.add(PosSaleLineInput(
-          itemId: item.id,
-          quantityBase: line.quantity * unitsPerLarge,
-          unitPriceMicros: item.baseUnitPriceMicros,
-          unitTypeId: item.largeUnitId,
-          vatRateBasisPoints: item.vatRateBasisPoints,
-          discountBasisPoints: line.discountBasisPoints,
-          prescriptionItemId: line.prescriptionItemId,
-        ));
-      }
-    } else {
-      final isBox = line.unitMode == PosLineUnitMode.largeUnit;
-      saleLines.add(PosSaleLineInput(
+    final PosSaleLineInput input;
+    if (usePart) {
+      input = PosSaleLineInput(
         itemId: item.id,
-        quantityBase: isBox ? line.quantity * unitsPerLarge : line.quantity,
+        quantityBase: line.quantity * sellUnitBase,
+        quantity: line.quantity,
+        unitBaseQuantity: sellUnitBase,
         unitPriceMicros:
-            isBox ? item.baseUnitPriceMicros : item.baseUnitSellingPriceMicros,
-        unitTypeId: isBox ? item.largeUnitId : item.baseUnitId,
+            line.priceOverrideMicros ?? partialSellingPricePerPart(item),
+        unitTypeId: item.sellablePartUnitId!,
         vatRateBasisPoints: item.vatRateBasisPoints,
         discountBasisPoints: line.discountBasisPoints,
         prescriptionItemId: line.prescriptionItemId,
-      ));
+      );
+    } else {
+      input = PosSaleLineInput(
+        itemId: item.id,
+        quantityBase: line.quantity * sellUnitBase,
+        quantity: line.quantity,
+        unitBaseQuantity: sellUnitBase,
+        unitPriceMicros: line.priceOverrideMicros ?? item.sellingPriceMicros,
+        unitTypeId: item.largeUnitId,
+        vatRateBasisPoints: item.vatRateBasisPoints,
+        discountBasisPoints: line.discountBasisPoints,
+        prescriptionItemId: line.prescriptionItemId,
+      );
     }
 
-    return _summarize(line, saleLines);
+    return _summarize(line, [input]);
   }
 
   /// Partial selling price per sellable part for the given configured item.
@@ -122,7 +97,8 @@ class PosLinePricer {
     var vatMicros = 0;
     var quantityBase = 0;
     for (final input in saleLines) {
-      final gross = input.unitPriceMicros * input.quantityBase;
+      final sellUnits = input.quantity ?? input.quantityBase;
+      final gross = input.unitPriceMicros * sellUnits;
       final discount = Money.fromUnits(gross)
           .timesRatio(input.discountBasisPoints, 10000)
           .units;

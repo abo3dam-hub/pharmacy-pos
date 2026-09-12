@@ -1,29 +1,6 @@
 import '../../core/errors/exceptions.dart';
 import '../../core/money/money.dart';
 
-/// Decomposition of a sellable-quantity request into full products + remaining
-/// parts for pricing purposes (Design Lock §8.4).
-class PartialSaleDecomposition {
-  const PartialSaleDecomposition({
-    required this.completeProducts,
-    required this.remainingParts,
-    required this.totalBaseQuantity,
-    required this.totalPriceMicros,
-  });
-
-  /// Number of complete products (sold at full retail price).
-  final int completeProducts;
-
-  /// Number of remaining sellable parts (sold at partial selling price).
-  final int remainingParts;
-
-  /// Total base-unit quantity for inventory deduction.
-  final int totalBaseQuantity;
-
-  /// Total price in micro-units.
-  final int totalPriceMicros;
-}
-
 /// Calculates partial-sale pricing and validates partial-sale configuration.
 ///
 /// This service owns the ONLY approved pricing formula (Design Lock §6):
@@ -31,6 +8,9 @@ class PartialSaleDecomposition {
 /// partialBasePrice = sellingPriceMicros ÷ partsPerFullProduct
 /// partialSellingPrice = partialBasePrice × (10000 + markupBasisPoints) ÷ 10000
 /// ```
+/// It is the price-per-sellable-part source for [PosLinePricer]; it never
+/// runs a sellable-part quantity backwards into whole boxes (two-mode pricing
+/// lock — "3 parts" is always 3 × the part price, never 1 box).
 ///
 /// It also validates the full-product consistency invariant (Design Lock §10.7):
 /// ```
@@ -50,18 +30,16 @@ class PartialPriceCalculator {
     required int markupBasisPoints,
   }) {
     if (partsPerFullProduct <= 1) {
-      throw ValidationException(
-          'عدد الأجزاء في العبوة يجب أن يكون أكبر من 1');
+      throw ValidationException('عدد الأجزاء في العبوة يجب أن يكون أكبر من 1');
     }
     if (markupBasisPoints < 0 || markupBasisPoints > 10000) {
-      throw ValidationException(
-          'نسبة الزيادة يجب أن تكون بين 0% و 100%');
+      throw ValidationException('نسبة الزيادة يجب أن تكون بين 0% و 100%');
     }
 
-    final basePrice =
-        Money.fromUnits(sellingPriceMicros).divideBy(partsPerFullProduct);
-    final sellingPrice =
-        basePrice.timesRatio(10000 + markupBasisPoints, 10000);
+    final basePrice = Money.fromUnits(
+      sellingPriceMicros,
+    ).divideBy(partsPerFullProduct);
+    final sellingPrice = basePrice.timesRatio(10000 + markupBasisPoints, 10000);
     return sellingPrice.units;
   }
 
@@ -71,6 +49,7 @@ class PartialPriceCalculator {
   /// ```
   /// baseQuantity = sellablePartQuantity × sellablePartBaseQuantity
   /// ```
+  /// Quantity-only conversion — never money, never part→box reconstruction.
   int convertToBase({
     required int sellablePartQuantity,
     required int sellablePartBaseQuantity,
@@ -80,59 +59,10 @@ class PartialPriceCalculator {
     }
     if (sellablePartBaseQuantity < 1) {
       throw ValidationException(
-          'عدد الوحدات في الجزء يجب أن يكون أكبر من أو يساوي 1');
+        'عدد الوحدات في الجزء يجب أن يكون أكبر من أو يساوي 1',
+      );
     }
     return sellablePartQuantity * sellablePartBaseQuantity;
-  }
-
-  /// Decomposes a quantity of sellable parts into full products + remainder
-  /// and calculates the total price.
-  ///
-  /// Algorithm (§8.4):
-  /// ```
-  /// completeProducts = quantity ÷ partsPerFullProduct
-  /// remainingParts = quantity % partsPerFullProduct
-  /// total = (completeProducts × fullRetailPrice) + (remainingParts × partialSellingPrice)
-  /// ```
-  ///
-  /// Inventory deduction:
-  /// ```
-  /// totalBaseQuantity = quantity × sellablePartBaseQuantity
-  /// ```
-  PartialSaleDecomposition decompose({
-    required int quantityParts,
-    required int partsPerFullProduct,
-    required int sellablePartBaseQuantity,
-    required int fullRetailPriceMicros,
-    required int partialSellingPriceMicros,
-  }) {
-    if (quantityParts <= 0) {
-      throw ValidationException('الكمية المطلوبة يجب أن تكون موجبة');
-    }
-    if (partsPerFullProduct <= 1) {
-      throw ValidationException(
-          'عدد الأجزاء في العبوة يجب أن يكون أكبر من 1');
-    }
-    if (sellablePartBaseQuantity < 1) {
-      throw ValidationException(
-          'عدد الوحدات في الجزء يجب أن يكون أكبر من أو يساوي 1');
-    }
-
-    final completeProducts = quantityParts ~/ partsPerFullProduct;
-    final remainingParts = quantityParts % partsPerFullProduct;
-
-    final fullProductTotal = completeProducts * fullRetailPriceMicros;
-    final partialTotal = remainingParts * partialSellingPriceMicros;
-    final totalPrice = fullProductTotal + partialTotal;
-
-    final totalBaseQuantity = quantityParts * sellablePartBaseQuantity;
-
-    return PartialSaleDecomposition(
-      completeProducts: completeProducts,
-      remainingParts: remainingParts,
-      totalBaseQuantity: totalBaseQuantity,
-      totalPriceMicros: totalPrice,
-    );
   }
 
   /// Validates a partial-sale configuration for an item.
@@ -154,19 +84,23 @@ class PartialPriceCalculator {
       // When disabled, partial-sale fields must be null.
       if (sellablePartUnitId != null) {
         throw ValidationException(
-            'وحدة البيع الجزئي يجب أن تكون فارغة عند تعطيل البيع الجزئي');
+          'وحدة البيع الجزئي يجب أن تكون فارغة عند تعطيل البيع الجزئي',
+        );
       }
       if (partsPerFullProduct != null) {
         throw ValidationException(
-            'عدد الأجزاء يجب أن يكون فارغاً عند تعطيل البيع الجزئي');
+          'عدد الأجزاء يجب أن يكون فارغاً عند تعطيل البيع الجزئي',
+        );
       }
       if (sellablePartBaseQuantity != null) {
         throw ValidationException(
-            'عدد الوحدات يجب أن يكون فارغاً عند تعطيل البيع الجزئي');
+          'عدد الوحدات يجب أن يكون فارغاً عند تعطيل البيع الجزئي',
+        );
       }
       if (partialSaleMarkupBasisPoints != null) {
         throw ValidationException(
-            'نسبة الزيادة يجب أن تكون فارغة عند تعطيل البيع الجزئي');
+          'نسبة الزيادة يجب أن تكون فارغة عند تعطيل البيع الجزئي',
+        );
       }
       return;
     }
@@ -176,18 +110,17 @@ class PartialPriceCalculator {
       throw ValidationException('وحدة البيع الجزئي مطلوبة');
     }
     if (partsPerFullProduct == null || partsPerFullProduct <= 1) {
-      throw ValidationException(
-          'عدد الأجزاء في العبوة يجب أن يكون أكبر من 1');
+      throw ValidationException('عدد الأجزاء في العبوة يجب أن يكون أكبر من 1');
     }
     if (sellablePartBaseQuantity == null || sellablePartBaseQuantity < 1) {
       throw ValidationException(
-          'عدد الوحدات في الجزء يجب أن يكون أكبر من أو يساوي 1');
+        'عدد الوحدات في الجزء يجب أن يكون أكبر من أو يساوي 1',
+      );
     }
     if (partialSaleMarkupBasisPoints == null ||
         partialSaleMarkupBasisPoints < 0 ||
         partialSaleMarkupBasisPoints > 10000) {
-      throw ValidationException(
-          'نسبة الزيادة يجب أن تكون بين 0% و 100%');
+      throw ValidationException('نسبة الزيادة يجب أن تكون بين 0% و 100%');
     }
 
     // Full-product consistency invariant (§10.7).
@@ -195,8 +128,9 @@ class PartialPriceCalculator {
       final expected = partsPerFullProduct * sellablePartBaseQuantity;
       if (expected != unitsPerLarge) {
         throw ValidationException(
-            'خطأ في التنسيق: $partsPerFullProduct × $sellablePartBaseQuantity '
-            '= $expected ≠ $unitsPerLarge وحدة في العبوة الكبيرة');
+          'خطأ في التنسيق: $partsPerFullProduct × $sellablePartBaseQuantity '
+          '= $expected ≠ $unitsPerLarge وحدة في العبوة الكبيرة',
+        );
       }
     }
   }

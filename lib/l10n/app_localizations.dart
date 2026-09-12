@@ -734,6 +734,12 @@ abstract class AppLocalizations {
   /// **'نظرة عامة'**
   String get dashboardKpis;
 
+  /// No description provided for @dashboardFinancialSummary.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة دخل اليوم'**
+  String get dashboardFinancialSummary;
+
   /// No description provided for @dashboardUnitsSold.
   ///
   /// In ar, this message translates to:

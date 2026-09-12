@@ -48,9 +48,13 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final List<FocusNode> _searchFocus = List.generate(
-      kPosCustomerTabCount, (_) => FocusNode());
-  final List<BarcodeBuffer> _buffers =
-      List.generate(kPosCustomerTabCount, (_) => BarcodeBuffer());
+    kPosCustomerTabCount,
+    (_) => FocusNode(),
+  );
+  final List<BarcodeBuffer> _buffers = List.generate(
+    kPosCustomerTabCount,
+    (_) => BarcodeBuffer(),
+  );
   final Map<int, int> _selectedLineByTab = {};
 
   AppLocalizations get _l10n => AppLocalizations.of(context);
@@ -87,8 +91,7 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
   PosWorkspaceController _notifier(int tab) =>
       ref.read(posWorkspaceControllerProvider(tab).notifier);
 
-  Set<String> get _permissions =>
-      ref.read(authControllerProvider).permissions;
+  Set<String> get _permissions => ref.read(authControllerProvider).permissions;
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +133,8 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
 
     return Shortcuts(
       shortcuts: PosShortcutManager.buildIntentMap(
-          ref.watch(shortcutBindingsProvider)),
+        ref.watch(shortcutBindingsProvider),
+      ),
       child: Actions(
         actions: actions,
         child: Scaffold(
@@ -175,12 +179,13 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
                           barcodeBuffer: _buffers[i],
                           onLineSelected: (lineIndex) =>
                               _selectedLineByTab[i] = lineIndex,
-                          onAlternatives: (item) => _showAlternatives(
-                              tabIndex: i, item: item),
+                          onAlternatives: (item) =>
+                              _showAlternatives(tabIndex: i, item: item),
                         ),
                       _ReturnTab(
                         state: ref.watch(
-                            posWorkspaceControllerProvider(kReturnTabIndex)),
+                          posWorkspaceControllerProvider(kReturnTabIndex),
+                        ),
                         notifier: _notifier(kReturnTabIndex),
                       ),
                     ],
@@ -214,11 +219,12 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
     final done = await showPosPaymentSheet(
       context,
       state: notifier.currentState,
-      onInputChanged: (method, cashMicros, cardMicros) => notifier
-          .updatePaymentInputs(
-              method: method,
-              cashReceivedMicros: cashMicros,
-              cardReceivedMicros: cardMicros),
+      onInputChanged: (method, cashMicros, cardMicros) =>
+          notifier.updatePaymentInputs(
+            method: method,
+            cashReceivedMicros: cashMicros,
+            cardReceivedMicros: cardMicros,
+          ),
       totals: notifier.totals,
     );
     if (done == true && mounted) {
@@ -239,7 +245,8 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
     }
     final notifier = _notifier(tabIndex);
     final state = notifier.currentState;
-    final picked = item ??
+    final picked =
+        item ??
         (() {
           if (_selectedLineByTab[tabIndex] != null &&
               _selectedLineByTab[tabIndex]! < state.cart.length) {
@@ -256,10 +263,33 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
         requested: picked,
         onPick: (alt) {
           Navigator.of(context).pop();
-          notifier.addToCart(alt.item);
+          _addAlternative(notifier, alt.item);
         },
       ),
     );
+  }
+
+  /// Adds a picked alternative through the controller and surfaces any
+  /// failure — awaited + mounted-guarded so Alt+S never ends with a silent,
+  /// unhandled rejection leaving the workspace blank.
+  Future<void> _addAlternative(
+    PosWorkspaceController notifier,
+    PosCatalogItem item,
+  ) async {
+    try {
+      await notifier.addToCart(item);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              notifier.currentState.errorMessage ?? _l10n.posAlternativesFailed,
+            ),
+          ),
+        );
+    }
   }
 }
 
@@ -341,8 +371,9 @@ class _PanelsRow extends ConsumerWidget {
     // Parent `_TabWorkspace` watches the controller and rebuilds this subtree
     // on every state change; read (not watch) here is deliberate.
     final state = ref.read(posWorkspaceControllerProvider(tabIndex));
-    final notifier =
-        ref.read(posWorkspaceControllerProvider(tabIndex).notifier);
+    final notifier = ref.read(
+      posWorkspaceControllerProvider(tabIndex).notifier,
+    );
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.m),
       child: Row(
@@ -387,8 +418,9 @@ Future<void> showPosCartSheet(
     builder: (_) => FractionallySizedBox(
       heightFactor: 0.85,
       child: Padding(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
         child: _CartPanel(
           tabIndex: state.tabIndex,
           state: state,
@@ -418,8 +450,9 @@ class _CompactLayout extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(posWorkspaceControllerProvider(tabIndex));
-    final notifier =
-        ref.read(posWorkspaceControllerProvider(tabIndex).notifier);
+    final notifier = ref.read(
+      posWorkspaceControllerProvider(tabIndex).notifier,
+    );
     return Stack(
       children: [
         Positioned.fill(
@@ -442,10 +475,16 @@ class _CompactLayout extends ConsumerWidget {
                     onPressed: state.isEmptyCart
                         ? null
                         : () => showPosCartSheet(
-                            context, state, notifier, onLineSelected),
+                            context,
+                            state,
+                            notifier,
+                            onLineSelected,
+                          ),
                     icon: const Icon(Icons.shopping_cart),
-                    label: Text('${state.cart.length} '
-                        '· ${Money.fromUnits(notifier.totals.totalMicros).formatArabicDigits()}'),
+                    label: Text(
+                      '${state.cart.length} '
+                      '· ${Money.fromUnits(notifier.totals.totalMicros).formatArabicDigits()}',
+                    ),
                   ),
                 ),
               ],
@@ -513,8 +552,9 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
     // scan in progress) does Enter become the §21 quick-add: an unambiguous
     // single search result is added straight to the cart.
     final scanned = widget.barcodeBuffer.feed(widget.barcodeBuffer.terminator);
-    final notifier =
-        ref.read(posWorkspaceControllerProvider(widget.tabIndex).notifier);
+    final notifier = ref.read(
+      posWorkspaceControllerProvider(widget.tabIndex).notifier,
+    );
     if (scanned) {
       notifier.search(value);
       return;
@@ -526,15 +566,13 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
   /// when it resolves to exactly one product, add it to the cart and clear the
   /// field for the next item. Multi-result queries still show the list — they
   /// are never picked from silently.
-  Future<void> _quickAdd(
-    String value,
-    PosWorkspaceController notifier,
-  ) async {
+  Future<void> _quickAdd(String value, PosWorkspaceController notifier) async {
     final q = value.trim();
     if (q.isEmpty) return;
     await notifier.search(q);
     if (!mounted) return;
-    final items = notifier.currentState.searchResults?.items ?? const <PosCatalogItem>[];
+    final items =
+        notifier.currentState.searchResults?.items ?? const <PosCatalogItem>[];
     if (items.length != 1) return;
     await notifier.addToCart(items.single);
     if (!mounted) return;
@@ -580,16 +618,19 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
                   : _ProductList(
                       items: state.searchResults?.items ?? const [],
                       onAdd: (item) => ref
-                          .read(posWorkspaceControllerProvider(
-                                  widget.tabIndex)
-                              .notifier)
+                          .read(
+                            posWorkspaceControllerProvider(
+                              widget.tabIndex,
+                            ).notifier,
+                          )
                           .addToCart(item),
-                      canViewAlternatives:
-                          ref.read(authControllerProvider).permissions.contains(
-                                Perm.viewAlternatives,
-                              ),
+                      canViewAlternatives: ref
+                          .read(authControllerProvider)
+                          .permissions
+                          .contains(Perm.viewAlternatives),
                       onAlternatives: widget.onAlternatives,
-                      onLostSale: state.searchQuery.isNotEmpty &&
+                      onLostSale:
+                          state.searchQuery.isNotEmpty &&
                               (state.searchResults?.items.isEmpty ?? true)
                           ? () => _showLostSaleDialog(l10n, state.searchQuery)
                           : null,
@@ -601,11 +642,15 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
     );
   }
 
-  Future<void> _showLostSaleDialog(AppLocalizations l10n, String barcode) async {
+  Future<void> _showLostSaleDialog(
+    AppLocalizations l10n,
+    String barcode,
+  ) async {
     final draft = await showLostSaleDialog(context, barcode: barcode);
     if (draft == null || !mounted) return;
-    final notifier =
-        ref.read(posWorkspaceControllerProvider(widget.tabIndex).notifier);
+    final notifier = ref.read(
+      posWorkspaceControllerProvider(widget.tabIndex).notifier,
+    );
     final ok = await notifier.captureLostSale(
       productName: draft.name,
       quantity: draft.quantity,
@@ -674,14 +719,17 @@ class _ProductList extends StatelessWidget {
             backgroundColor: isOut
                 ? Theme.of(context).colorScheme.errorContainer
                 : Theme.of(context).colorScheme.secondaryContainer,
-            child: Icon(
-              isOut ? Icons.block : Icons.medication,
-              size: 20,
+            child: Icon(isOut ? Icons.block : Icons.medication, size: 20),
+          ),
+          title: Text(
+            item.displayName,
+            style: context.appTypography.body.copyWith(
+              fontWeight: FontWeight.w600,
             ),
           ),
-          title: Text(item.displayName, style: context.appTypography.body.copyWith(fontWeight: FontWeight.w600)),
           subtitle: Text(
             '${item.scientificName}'
+            '${(item.manufacturerName?.isNotEmpty ?? false) ? ' · ${item.manufacturerName}' : ''}'
             '${(item.activeIngredient?.isNotEmpty ?? false) ? ' · ${item.activeIngredient}' : ''}'
             '${item.partialSaleConfigured ? ' · ${item.sellablePartUnitName ?? ''} ${item.sellablePartBaseQuantity}×${item.partsPerFullProduct} = ${item.unitsPerLarge}' : ''}',
             maxLines: 1,
@@ -701,17 +749,18 @@ class _ProductList extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    Money.fromUnits(item.baseUnitPriceMicros)
-                        .formatArabicDigits(),
+                    Money.fromUnits(
+                      item.sellingPriceMicros,
+                    ).formatArabicDigits(),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    isOut ? l10n.posOutOfStock : '${l10n.posAvailableStock}: $available',
+                    isOut
+                        ? l10n.posOutOfStock
+                        : '${l10n.posAvailableStock}: $available',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isOut
-                              ? Theme.of(context).colorScheme.error
-                              : null,
-                        ),
+                      color: isOut ? Theme.of(context).colorScheme.error : null,
+                    ),
                   ),
                 ],
               ),
@@ -766,7 +815,10 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.remove_shopping_cart_outlined, size: 40),
+                          const Icon(
+                            Icons.remove_shopping_cart_outlined,
+                            size: 40,
+                          ),
                           const SizedBox(height: AppSpacing.s),
                           Text(l10n.posCartItemEmpty),
                         ],
@@ -782,9 +834,11 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                           dense: true,
                           selected: true,
                           onTap: () => widget.onLineSelected(index),
-                          title: Text(line.item.displayName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis),
+                          title: Text(
+                            line.item.displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           subtitle: Text(
                             '${_lineQty(line)} $unitLabel'
                             '${line.isRxLinked ? ' · ${l10n.posRx}' : ''}',
@@ -794,31 +848,42 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.remove_circle_outline),
-                                tooltip: AppLocalizations.of(context).posQtyDecrease,
-                                onPressed: () =>
-                                    widget.notifier.updateQuantity(
-                                        index, line.quantity - 1),
+                                tooltip: AppLocalizations.of(
+                                  context,
+                                ).posQtyDecrease,
+                                onPressed: () => widget.notifier.updateQuantity(
+                                  index,
+                                  line.quantity - 1,
+                                ),
                               ),
                               SizedBox(
                                 width: 44,
                                 child: Text(
                                   '${line.quantity}',
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.add_circle_outline),
-                                tooltip: AppLocalizations.of(context).posQtyIncrease,
-                                onPressed: () =>
-                                    widget.notifier.updateQuantity(
-                                        index, line.quantity + 1),
+                                tooltip: AppLocalizations.of(
+                                  context,
+                                ).posQtyIncrease,
+                                onPressed: () => widget.notifier.updateQuantity(
+                                  index,
+                                  line.quantity + 1,
+                                ),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.close),
-                                tooltip: AppLocalizations.of(context).posRemoveLine,
+                                tooltip: AppLocalizations.of(
+                                  context,
+                                ).posRemoveLine,
                                 visualDensity: VisualDensity.compact,
-                                onPressed: () => widget.notifier.removeLine(index),
+                                onPressed: () =>
+                                    widget.notifier.removeLine(index),
                               ),
                             ],
                           ),
@@ -846,15 +911,16 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                     onPressed: state.isEmptyCart
                         ? null
                         : () => showPosPaymentSheet(
-                              context,
-                              state: state,
-                              onInputChanged: (method, cash, card) =>
-                                  widget.notifier.updatePaymentInputs(
-                                      method: method,
-                                      cashReceivedMicros: cash,
-                                      cardReceivedMicros: card),
-                              totals: totals,
-                            ),
+                            context,
+                            state: state,
+                            onInputChanged: (method, cash, card) =>
+                                widget.notifier.updatePaymentInputs(
+                                  method: method,
+                                  cashReceivedMicros: cash,
+                                  cardReceivedMicros: card,
+                                ),
+                            totals: totals,
+                          ),
                     icon: const Icon(Icons.payments_outlined),
                     label: Text(l10n.posPayButton),
                   ),
@@ -878,17 +944,14 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
       switch (line.unitMode) {
         PosLineUnitMode.largeUnit => l10n.posUnitBox,
         PosLineUnitMode.sellablePart => l10n.posUnitStrip,
-        PosLineUnitMode.baseUnit => l10n.posUnitUnit,
       };
 
-  int _lineQty(PosCartLine line) =>
-      switch (line.unitMode) {
-        PosLineUnitMode.sellablePart => line.quantity,
-        _ => line.quantity,
-      };
+  int _lineQty(PosCartLine line) => line.quantity;
 
   Future<void> _showHoldBillsSheet(
-      BuildContext context, PosWorkspaceController notifier) async {
+    BuildContext context,
+    PosWorkspaceController notifier,
+  ) async {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -914,32 +977,32 @@ class _TotalsView extends StatelessWidget {
         if (totals.vatTotalMicros > 0)
           _totalRow(l10n.commonTax, totals.vatTotalMicros, context),
         Divider(color: Theme.of(context).dividerColor),
-        _totalRow(
-          l10n.posTotalLabel,
-          totals.totalMicros,
-          context,
-          bold: true,
-        ),
+        _totalRow(l10n.posTotalLabel, totals.totalMicros, context, bold: true),
       ],
     );
   }
 
-  Widget _totalRow(String label, int micros, BuildContext context,
-      {bool bold = false}) {
+  Widget _totalRow(
+    String label,
+    int micros,
+    BuildContext context, {
+    bool bold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: bold
-                  ? const TextStyle(fontWeight: FontWeight.bold)
-                  : Theme.of(context).textTheme.bodyMedium),
+          Text(
+            label,
+            style: bold
+                ? const TextStyle(fontWeight: FontWeight.bold)
+                : Theme.of(context).textTheme.bodyMedium,
+          ),
           Text(
             Money.fromUnits(micros).formatArabicDigits(),
             style: bold
-                ? const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 16)
+                ? const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
                 : Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -965,17 +1028,21 @@ class _CustomerHeader extends ConsumerWidget {
         OutlinedButton.icon(
           onPressed: () => _pickCustomer(context, ref),
           icon: const Icon(Icons.person_outline),
-          label: Text(customer == null
-              ? l10n.posCustomerLabel
-              : '${customer.name}'
-                  '${customer.phone != null && customer.phone!.isNotEmpty ? ' · ${customer.phone}' : ''}'),
+          label: Text(
+            customer == null
+                ? l10n.posCustomerLabel
+                : '${customer.name}'
+                      '${customer.phone != null && customer.phone!.isNotEmpty ? ' · ${customer.phone}' : ''}',
+          ),
         ),
         if (customer != null) ...[
           ActionChip(
             avatar: const Icon(Icons.description_outlined),
-            label: Text(state.activePrescription == null
-                ? l10n.posPrescriptionLabel
-                : 'Rx ${state.activePrescription!.prescriptionNumber}'),
+            label: Text(
+              state.activePrescription == null
+                  ? l10n.posPrescriptionLabel
+                  : 'Rx ${state.activePrescription!.prescriptionNumber}',
+            ),
             onPressed: () => _pickPrescription(context, ref),
           ),
           if (state.cart.any((l) => l.isRxLinked))
@@ -1013,8 +1080,11 @@ Future<bool?> showPosPaymentSheet(
   required PosWorkspaceState state,
   required PosCartTotals totals,
   required void Function(
-          PosPaymentMethod method, int cashMicros, int cardMicros)
-      onInputChanged,
+    PosPaymentMethod method,
+    int cashMicros,
+    int cardMicros,
+  )
+  onInputChanged,
 }) {
   return showModalBottomSheet<bool>(
     context: context,
@@ -1063,18 +1133,29 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
     super.dispose();
   }
 
+  /// Parsed cash input as micro-units, or 0 when empty. A value that is
+  /// malformed or negative yields `null` so the sheet never feeds a negative
+  /// amount to [PaymentCalculator.calculate] (which throws) — that crash left
+  /// a blank sheet when a "-" was typed into the field.
   int? get _cashMicros {
     final v = _cash.text.trim();
     if (v.isEmpty) return 0;
     final m = _tryParseMicros(v);
-    return m;
+    return (m == null || m < 0) ? null : m;
   }
 
   int? get _cardMicros {
     final v = _card.text.trim();
     if (v.isEmpty) return 0;
-    return _tryParseMicros(v);
+    final m = _tryParseMicros(v);
+    return (m == null || m < 0) ? null : m;
   }
+
+  /// True when a non-empty field holds something that cannot be parsed as a
+  /// valid, non-negative amount; such input must block submit and show an
+  /// explicit error instead of silently becoming 0 (which would let an
+  /// unintended 0-down credit sale through).
+  bool get _amountsMalformed => _cashMicros == null || _cardMicros == null;
 
   void _reload() {
     setState(() {});
@@ -1093,7 +1174,9 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
     final isCredit = _method == PosPaymentMethod.credit;
     final customer = widget.state.customer;
     final creditBlockedWithoutCustomer = isCredit && customer == null;
-    final canSubmit = payment.isValid &&
+    final canSubmit =
+        !_amountsMalformed &&
+        payment.isValid &&
         (isCredit ? customer != null : payment.fullyPaid);
 
     return Padding(
@@ -1156,7 +1239,9 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
               isCredit)
             TextField(
               controller: _cash,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: InputDecoration(
                 labelText: isCredit
                     ? l10n.posCreditDownCash
@@ -1172,10 +1257,13 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
             const SizedBox(height: AppSpacing.s),
             TextField(
               controller: _card,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: InputDecoration(
-                labelText: isCredit ? l10n.posCreditDownCard : l10n.posCardAmount,
+                labelText: isCredit
+                    ? l10n.posCreditDownCard
+                    : l10n.posCardAmount,
                 border: const OutlineInputBorder(),
                 isDense: true,
               ),
@@ -1195,7 +1283,9 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
                 '${l10n.posCreditRemaining}: '
                 '${Money.fromUnits(payment.remainingMicros).formatArabicDigits()}',
                 style: const TextStyle(
-                    fontWeight: FontWeight.bold, fontSize: 16),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.s),
@@ -1216,6 +1306,8 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
               _error ??
                   (creditBlockedWithoutCustomer
                       ? l10n.posCreditCustomerRequired
+                      : _amountsMalformed
+                      ? l10n.posInvalidPayment
                       : (payment.error ?? l10n.posInvalidPayment)),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
               textAlign: TextAlign.center,
@@ -1233,7 +1325,9 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
   }
 
   Future<void> _submit() async {
-    final notifier = ref.read(posWorkspaceControllerProvider(widget.state.tabIndex).notifier);
+    final notifier = ref.read(
+      posWorkspaceControllerProvider(widget.state.tabIndex).notifier,
+    );
     setState(() {
       _error = null;
     });
@@ -1242,7 +1336,10 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
     if (success) {
       Navigator.of(context).pop(true);
     } else {
-      setState(() => _error = notifier.currentState.errorMessage ?? l10n.posInvalidPayment);
+      setState(
+        () => _error =
+            notifier.currentState.errorMessage ?? l10n.posInvalidPayment,
+      );
     }
   }
 
@@ -1273,9 +1370,8 @@ class _ReceiptDialog extends ConsumerWidget {
   final PosInvoiceView invoice;
 
   Future<void> _print(BuildContext context, WidgetRef ref) async {
-    final pharmacy = await ref.read(settingsDaoProvider).getString(
-          pharmacyNameSettingKey,
-        ) ??
+    final pharmacy =
+        await ref.read(settingsDaoProvider).getString(pharmacyNameSettingKey) ??
         pharmacyFallbackName();
     try {
       await ReceiptPdfService().print(invoice, pharmacy);
@@ -1283,7 +1379,9 @@ class _ReceiptDialog extends ConsumerWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).posPrintFailed)));
+        ..showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).posPrintFailed)),
+        );
     }
   }
 
@@ -1316,12 +1414,16 @@ class _ReceiptDialog extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          '${line.itemName} × ${line.quantityBaseSigned}',
+                          '${line.itemName} ×'
+                          '${line.sellUnitQuantity != null ? ' ${line.sellUnitQuantity} ${line.unitTypeName}' : ' ${line.quantityBaseSigned}'}',
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      Text(Money.fromUnits(line.lineTotalMicros)
-                          .formatArabicDigits()),
+                      Text(
+                        Money.fromUnits(
+                          line.lineTotalMicros,
+                        ).formatArabicDigits(),
+                      ),
                     ],
                   ),
                 ),
@@ -1360,19 +1462,21 @@ class _ReceiptDialog extends ConsumerWidget {
   }
 
   Widget _row(String label, int micros, {bool bold = false}) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label,
-                style: bold ? const TextStyle(fontWeight: FontWeight.bold) : null),
-            Text(
-              Money.fromUnits(micros).formatArabicDigits(),
-              style: bold ? const TextStyle(fontWeight: FontWeight.bold) : null,
-            ),
-          ],
+    padding: const EdgeInsets.symmetric(vertical: 2),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: bold ? const TextStyle(fontWeight: FontWeight.bold) : null,
         ),
-      );
+        Text(
+          Money.fromUnits(micros).formatArabicDigits(),
+          style: bold ? const TextStyle(fontWeight: FontWeight.bold) : null,
+        ),
+      ],
+    ),
+  );
 
   String _formatTs(int millis) {
     final d = DateTime.fromMillisecondsSinceEpoch(millis);
@@ -1384,69 +1488,69 @@ class _ReceiptDialog extends ConsumerWidget {
 }
 
 Future<({String name, int quantity, String? scientificName, String? note})?>
-    showLostSaleDialog(
-  BuildContext context, {
-  required String barcode,
-}) async {
+showLostSaleDialog(BuildContext context, {required String barcode}) async {
   final name = TextEditingController(text: barcode.trim());
   final scientificName = TextEditingController();
   final note = TextEditingController();
   final qty = TextEditingController(text: '1');
   final l10n = AppLocalizations.of(context);
-  final result = await showDialog<
-      ({String name, int quantity, String? scientificName, String? note})>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(l10n.posLostSaleTitle),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: name,
-            autofocus: true,
-            decoration: InputDecoration(labelText: l10n.posLostSaleName),
+  final result =
+      await showDialog<
+        ({String name, int quantity, String? scientificName, String? note})
+      >(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l10n.posLostSaleTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: name,
+                autofocus: true,
+                decoration: InputDecoration(labelText: l10n.posLostSaleName),
+              ),
+              const SizedBox(height: AppSpacing.s),
+              TextField(
+                controller: scientificName,
+                decoration: InputDecoration(labelText: l10n.posLostSaleSciName),
+              ),
+              const SizedBox(height: AppSpacing.s),
+              TextField(
+                controller: note,
+                decoration: InputDecoration(labelText: l10n.posLostSaleNotes),
+              ),
+              const SizedBox(height: AppSpacing.s),
+              TextField(
+                controller: qty,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: l10n.posLostSaleQty),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.s),
-          TextField(
-            controller: scientificName,
-            decoration: InputDecoration(labelText: l10n.posLostSaleSciName),
-          ),
-          const SizedBox(height: AppSpacing.s),
-          TextField(
-            controller: note,
-            decoration: InputDecoration(labelText: l10n.posLostSaleNotes),
-          ),
-          const SizedBox(height: AppSpacing.s),
-          TextField(
-            controller: qty,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(labelText: l10n.posLostSaleQty),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(),
-          child: Text(l10n.commonCancel),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(l10n.commonCancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = qty.text.trim().isEmpty
+                    ? 1
+                    : int.tryParse(qty.text.trim());
+                Navigator.of(ctx).pop((
+                  name: name.text.trim().isEmpty ? barcode : name.text.trim(),
+                  quantity: (text ?? 1).clamp(1, 99999),
+                  scientificName: scientificName.text.trim().isEmpty
+                      ? null
+                      : scientificName.text.trim(),
+                  note: note.text.trim().isEmpty ? null : note.text.trim(),
+                ));
+              },
+              child: Text(l10n.commonSave),
+            ),
+          ],
         ),
-        FilledButton(
-          onPressed: () {
-            final text =
-                qty.text.trim().isEmpty ? 1 : int.tryParse(qty.text.trim());
-            Navigator.of(ctx).pop((
-              name: name.text.trim().isEmpty ? barcode : name.text.trim(),
-              quantity: (text ?? 1).clamp(1, 99999),
-              scientificName: scientificName.text.trim().isEmpty
-                  ? null
-                  : scientificName.text.trim(),
-              note: note.text.trim().isEmpty ? null : note.text.trim(),
-            ));
-          },
-          child: Text(l10n.commonSave),
-        ),
-      ],
-    ),
-  );
+      );
   name.dispose();
   scientificName.dispose();
   note.dispose();
@@ -1545,6 +1649,7 @@ class _AlternativesDialog extends ConsumerWidget {
                   title: Text(alt.item.displayName),
                   subtitle: Text(
                     '${alt.item.scientificName}'
+                    '${(alt.item.manufacturerName?.isNotEmpty ?? false) ? ' · ${alt.item.manufacturerName}' : ''}'
                     '${(alt.item.dose?.isNotEmpty ?? false) ? ' · ${alt.item.dose}' : ''}'
                     '${(alt.item.pharmaForm?.isNotEmpty ?? false) ? ' · ${alt.item.pharmaForm}' : ''}'
                     ' · ${l10n.posAvailableStock}: '
@@ -1553,8 +1658,9 @@ class _AlternativesDialog extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   trailing: Text(
-                    Money.fromUnits(alt.item.baseUnitPriceMicros)
-                        .formatArabicDigits(),
+                    Money.fromUnits(
+                      alt.item.sellingPriceMicros,
+                    ).formatArabicDigits(),
                   ),
                   onTap: () => onPick(alt),
                 );
@@ -1605,10 +1711,7 @@ class _TierBadge extends StatelessWidget {
         width: 28,
         height: 28,
         alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: _colors[tier],
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: _colors[tier], shape: BoxShape.circle),
         child: Text(
           _labels[tier]!,
           style: const TextStyle(
@@ -1675,10 +1778,9 @@ class _CustomerPickerDialogState extends ConsumerState<_CustomerPickerDialog> {
             const SizedBox(height: AppSpacing.m),
             Expanded(
               child: FutureBuilder<List<PosCustomer>>(
-                future: ref.read(salesRepositoryProvider).findCustomers(
-                      _query.text.trim(),
-                      limit: _limit,
-                    ),
+                future: ref
+                    .read(salesRepositoryProvider)
+                    .findCustomers(_query.text.trim(), limit: _limit),
                 builder: (context, snapshot) {
                   final list = snapshot.data ?? const <PosCustomer>[];
                   if (snapshot.connectionState != ConnectionState.done) {
@@ -1812,10 +1914,7 @@ class _ReturnTab extends ConsumerWidget {
               color: Theme.of(context).colorScheme.surface,
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.m),
-                child: _ReturnDetails(
-                  state: state,
-                  notifier: notifier,
-                ),
+                child: _ReturnDetails(state: state, notifier: notifier),
               ),
             ),
           ),
@@ -1861,8 +1960,10 @@ class _InvoiceDropList extends ConsumerWidget {
           selected: selected,
           selectedTileColor: Theme.of(context).colorScheme.secondaryContainer,
           leading: const Icon(Icons.receipt_outlined),
-          title: Text(invoice.invoiceNumber,
-              style: context.appTypography.invoiceNumber),
+          title: Text(
+            invoice.invoiceNumber,
+            style: context.appTypography.invoiceNumber,
+          ),
           subtitle: Text(
             '${invoice.customerName} · '
             '${Money.fromUnits(invoice.totalMicros).formatArabicDigits()}',
@@ -1932,8 +2033,11 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
                 final qty = widget.state.returnQuantityByLine[line.id] ?? 0;
                 return ListTile(
                   dense: true,
-                  title: Text(line.itemName,
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  title: Text(
+                    line.itemName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   subtitle: Text(
                     '${l10n.posLineReturnable}: $returnable · '
                     '${Money.fromUnits(line.lineTotalMicros).formatArabicDigits()}',
@@ -1946,8 +2050,10 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
                         tooltip: AppLocalizations.of(context).posQtyDecrease,
                         onPressed: returnable <= 0
                             ? null
-                            : () => widget.notifier
-                                .setReturnLineQty(line.id, (qty - 1).clamp(0, returnable)),
+                            : () => widget.notifier.setReturnLineQty(
+                                line.id,
+                                (qty - 1).clamp(0, returnable),
+                              ),
                       ),
                       SizedBox(
                         width: 36,
@@ -1962,8 +2068,10 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
                         tooltip: AppLocalizations.of(context).posQtyIncrease,
                         onPressed: qty >= returnable
                             ? null
-                            : () => widget.notifier
-                                .setReturnLineQty(line.id, qty + 1),
+                            : () => widget.notifier.setReturnLineQty(
+                                line.id,
+                                qty + 1,
+                              ),
                       ),
                     ],
                   ),
@@ -1989,7 +2097,10 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
             label: Text(l10n.posReturnButton),
           ),
           if (invoice.isVoidable &&
-              ref.read(authControllerProvider).permissions.contains(Perm.salesVoid)) ...[
+              ref
+                  .read(authControllerProvider)
+                  .permissions
+                  .contains(Perm.salesVoid)) ...[
             const SizedBox(height: AppSpacing.s),
             OutlinedButton.icon(
               onPressed: () => _submitVoid(invoice),
@@ -2015,9 +2126,16 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(ok ? l10n.posReturnSuccess : (notifier.currentState.errorMessage ?? l10n.posInvalidPayment)),
-      ));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? l10n.posReturnSuccess
+                : (notifier.currentState.errorMessage ??
+                      l10n.posInvalidPayment),
+          ),
+        ),
+      );
     _reason.clear();
     notifier.clearError();
   }
@@ -2035,11 +2153,16 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(ok
-            ? l10n.posInvoiceVoided
-            : notifier.currentState.errorMessage ?? l10n.posVoidInvoiceFailed),
-      ));
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? l10n.posInvoiceVoided
+                : notifier.currentState.errorMessage ??
+                      l10n.posVoidInvoiceFailed,
+          ),
+        ),
+      );
     _reason.clear();
     notifier.clearError();
   }

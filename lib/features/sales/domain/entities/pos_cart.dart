@@ -2,9 +2,15 @@ import '../../../../core/errors/exceptions.dart';
 import '../entities/pos_catalog_item.dart';
 
 /// The unit the cashier is selling the line in — the POS "box / fraction"
-/// toggle (F2). For partial-sale items the fraction is the configured sellable
-/// part (strip); otherwise it is the base unit (tablet/strip).
-enum PosLineUnitMode { largeUnit, sellablePart, baseUnit }
+/// toggle (F2).
+///
+/// Two-mode pricing lock: a line is sold either as the commercial package
+/// ([PosLineUnitMode.largeUnit]) at the full package price, or — only when the
+/// product is explicitly configured for partial selling — as its sellable part
+/// ([PosLineUnitMode.sellablePart]) at the partial price. There is no generic
+/// "base unit" mode: non-partial products are always sold by package, and a
+/// partial mode is never the implicit default (explicit user choice only).
+enum PosLineUnitMode { largeUnit, sellablePart }
 
 /// One cart line — an immutable edit snapshot. Quantity is expressed in the
 /// line's current [unitMode] (boxes, sellable parts or base units). All money
@@ -32,9 +38,10 @@ class PosCartLine {
   final int? rxRemainingBase;
   final int discountBasisPoints;
 
-  /// Optional authorized price override: price per base unit used by the price
-  /// engine instead of the master-derived price (guarded by `change_prices` in
-  /// the controller — never in the UI layer).
+  /// Optional authorized price override: price per sell unit (the unit the
+  /// line is being sold in — box or sellable part) used by the price engine
+  /// instead of the master-derived price (guarded by `change_prices` in the
+  /// controller — never in the UI layer).
   final int? priceOverrideMicros;
 
   bool get isRxLinked => prescriptionItemId != null;
@@ -82,8 +89,11 @@ class PosCartLine {
       item.id, quantity, unitMode, prescriptionItemId, priceOverrideMicros);
 }
 
-/// One engine-ready sale line expansion of a cart line (base units + integer
-/// per-base-unit price). Mirrors `SaleLineRequest` semantics (§11 / Phase 6).
+/// One engine-ready sale line expansion of a cart line. Money is computed per
+/// sell unit; [quantity] is the number of sell units and [unitBaseQuantity] the
+/// base quantity consumed per sell unit (so [quantityBase] == quantity ×
+/// unitBaseQuantity for FEFO/cost allocation). Mirrors `SaleLineRequest`
+/// semantics (§11 / Phase 6).
 class PosSaleLineInput {
   const PosSaleLineInput({
     required this.itemId,
@@ -93,24 +103,28 @@ class PosSaleLineInput {
     required this.vatRateBasisPoints,
     required this.discountBasisPoints,
     this.prescriptionItemId,
-    this.partialSaleUnitPriceMicros,
+    this.quantity,
+    this.unitBaseQuantity,
   });
 
   final String itemId;
   final int quantityBase;
 
-  /// Price per single base unit (integer micro-units).
+  /// Number of sell units (boxes / sellable parts) this line represents.
+  final int? quantity;
+
+  /// Base quantity per sell unit (unitsPerLarge for a box, the configured
+  /// sellable-part size for a strip). Defaults to 1 for legacy callers.
+  final int? unitBaseQuantity;
+
+  /// Price per single sell unit (integer micro-units).
   final int unitPriceMicros;
 
-  /// Unit type at sell-time (large part/sellable part/base).
+  /// Unit type at sell-time (large part/sellable part).
   final String unitTypeId;
   final int vatRateBasisPoints;
   final int discountBasisPoints;
   final String? prescriptionItemId;
-
-  /// Pre-computed per-base partial price — persisted on the line so historical
-  /// invoices keep the partial rates (Phase 6). Null for full-product lines.
-  final int? partialSaleUnitPriceMicros;
 }
 
 /// Financial summary for one [PosCartLine] after pricing expansion.
@@ -126,7 +140,8 @@ class PosLinePricing {
 
   final PosCartLine line;
 
-  /// Engine-ready sale lines (1 for normal, up to 2 for partial: box+strips).
+  /// The single sell-unit line this cart line expands into (sell-unit pricing:
+  /// `gross = unitPriceMicros × quantity`, never decomposed).
   final List<PosSaleLineInput> lines;
 
   /// Total base units deducted from stock for this line.
@@ -176,7 +191,6 @@ class PosCartValidator {
     return switch (line.unitMode) {
       PosLineUnitMode.largeUnit =>
         quantity * (line.item.unitsPerLarge > 0 ? line.item.unitsPerLarge : 1),
-      PosLineUnitMode.baseUnit => quantity,
       PosLineUnitMode.sellablePart =>
         quantity *
         (line.item.sellablePartBaseQuantity ?? line.item.unitsPerLarge),

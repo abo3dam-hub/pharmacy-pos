@@ -249,31 +249,31 @@ void main() {
   group('PosLinePricer', () {
     const pricer = PosLinePricer();
 
-    test('13 strips = 1 box + 3 strips, total = \$13.30 (133000 μ), baseQty 130',
-        () {
+    test('sellable-part line is priced per part — never decomposed', () {
+      // 13 parts = 13 × 11,000 = 143,000 — NOT a box (100,000) + 3 parts
+      // (33,000). Fraction sales never auto-convert back into whole boxes.
       final p = pricer.priceLine(PosCartLine(
         item: _makePartialItem(),
         quantity: 13,
         unitMode: PosLineUnitMode.sellablePart,
       ));
-      expect(p.grossMicros, 133000);
+      expect(p.grossMicros, 13 * 11000);
       expect(p.quantityBase, 130);
-      expect(p.lines, hasLength(2));
+      expect(p.lines, hasLength(1));
     });
 
-    test('10 strips = 1 full box, no markup, total \$10 (100000 μ), baseQty 100',
-        () {
+    test('10 sellable parts = 10 × 11,000 (no auto full-box conversion)', () {
       final p = pricer.priceLine(PosCartLine(
         item: _makePartialItem(),
         quantity: 10,
         unitMode: PosLineUnitMode.sellablePart,
       ));
-      expect(p.grossMicros, 100000);
+      expect(p.grossMicros, 10 * 11000);
       expect(p.quantityBase, 100);
       expect(p.lines, hasLength(1));
     });
 
-    test('3 strips only, total \$3.30 (33000 μ), baseQty 30', () {
+    test('3 sellable parts only = 33,000, baseQty 30', () {
       final p = pricer.priceLine(PosCartLine(
         item: _makePartialItem(),
         quantity: 3,
@@ -283,7 +283,7 @@ void main() {
       expect(p.quantityBase, 30);
     });
 
-    test('single strip = \$1.10 (11000 μ), baseQty 10', () {
+    test('single sellable part = 11,000, baseQty 10', () {
       final p = pricer.priceLine(PosCartLine(
         item: _makePartialItem(),
         quantity: 1,
@@ -294,7 +294,7 @@ void main() {
       expect(pricer.partialSellingPricePerPart(_makePartialItem()), 11000);
     });
 
-    test('box mode 2 boxes = \$20 (200000 μ), baseQty 200, no markup', () {
+    test('box line: full package price × boxes, sell-unit metadata', () {
       final p = pricer.priceLine(PosCartLine(
         item: _makePartialItem(),
         quantity: 2,
@@ -302,24 +302,45 @@ void main() {
       ));
       expect(p.grossMicros, 200000);
       expect(p.quantityBase, 200);
+      // The engine price is the FULL package price — never the per-base
+      // reconstruction (4,667 × 3 + markup — the 19,601 bug).
+      expect(p.lines.single.unitPriceMicros, 100000);
+      expect(p.lines.single.quantity, 2);
+      expect(p.lines.single.unitBaseQuantity, 100);
     });
 
-    test('non-partial item: base mode 5 units, box mode 2 boxes', () {
-      final base = pricer.priceLine(PosCartLine(
-        item: _makeOtcItem(),
-        quantity: 5,
-        unitMode: PosLineUnitMode.baseUnit,
-      ));
-      expect(base.grossMicros, 250000);
-      expect(base.quantityBase, 5);
-
-      final box = pricer.priceLine(PosCartLine(
+    test('non-partial item: package mode only, exact box price', () {
+      final p = pricer.priceLine(PosCartLine(
         item: _makeOtcItem(),
         quantity: 2,
         unitMode: PosLineUnitMode.largeUnit,
       ));
-      expect(box.grossMicros, 100000);
-      expect(box.quantityBase, 2);
+      expect(p.grossMicros, 100000);
+      expect(p.quantityBase, 2);
+      expect(p.lines.single.unitPriceMicros, 50000);
+    });
+
+    test('defensive: fraction request on a non-partial item degrades to package',
+        () {
+      final p = pricer.priceLine(PosCartLine(
+        item: _makeOtcItem(),
+        quantity: 4,
+        unitMode: PosLineUnitMode.sellablePart,
+      ));
+      expect(p.grossMicros, 4 * 50000);
+      expect(p.quantityBase, 4);
+      expect(p.lines.single.unitTypeId, 'unit_box');
+    });
+
+    test('price override replaces the per sell-unit price', () {
+      final p = pricer.priceLine(PosCartLine(
+        item: _makePartialItem(),
+        quantity: 1,
+        unitMode: PosLineUnitMode.largeUnit,
+        priceOverrideMicros: 130000,
+      ));
+      expect(p.grossMicros, 130000);
+      expect(p.lines.single.unitPriceMicros, 130000);
     });
 
     test('VAT 10% on gross: 1 box → vat = 10000', () {
@@ -356,15 +377,6 @@ void main() {
         unitMode: PosLineUnitMode.largeUnit,
       );
       expect(v.baseUnitsFor(line, 3), 300);
-    });
-
-    test('baseUnitsFor baseUnit: qty directly', () {
-      final line = PosCartLine(
-        item: _makePartialItem(),
-        quantity: 7,
-        unitMode: PosLineUnitMode.baseUnit,
-      );
-      expect(v.baseUnitsFor(line, 7), 7);
     });
 
     test('baseUnitsFor sellablePart: qty * sellablePartBaseQuantity', () {
@@ -760,13 +772,13 @@ void main() {
       expect(ctrl.currentState.cart.first.unitMode, PosLineUnitMode.largeUnit);
     });
 
-    test('toggleUnitMode cycles large→base→large for non-partial items',
+    test('toggleUnitMode is a no-op for non-partial items (package only)',
         () async {
       final ctrl = _controller(_FakeSalesRepository());
       await ctrl.addToCart(_makeOtcItem(),
           quantity: 1, unitMode: PosLineUnitMode.largeUnit);
       ctrl.toggleUnitMode(0);
-      expect(ctrl.currentState.cart.first.unitMode, PosLineUnitMode.baseUnit);
+      expect(ctrl.currentState.cart.first.unitMode, PosLineUnitMode.largeUnit);
       ctrl.toggleUnitMode(0);
       expect(ctrl.currentState.cart.first.unitMode, PosLineUnitMode.largeUnit);
     });

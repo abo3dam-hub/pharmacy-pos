@@ -11,7 +11,8 @@ import 'financial_posting_service.dart';
 import 'permission_service.dart';
 import 'stock_service.dart';
 
-/// One product line requested for sale. Quantity is in base units.
+/// One product line requested for sale. Quantity is in base units (for
+/// FEFO/cost allocation); money is priced per sell unit.
 class SaleLineRequest {
   const SaleLineRequest({
     required this.itemId,
@@ -21,11 +22,19 @@ class SaleLineRequest {
     this.vatRateBasisPoints = 0,
     this.discountBasisPoints = 0,
     this.prescriptionItemId,
-    this.partialSaleUnitPriceMicros,
+    this.quantity,
+    this.unitBaseQuantity,
   });
 
   final String itemId;
+
+  /// Base units consumed for this line (FEFO / cost / stock deduction).
   final int quantityBase;
+
+  /// Price per single SELL unit (integer micro-units). Two-mode pricing lock:
+  /// the line gross is `unitPriceMicros × quantity` — a box line carries the
+  /// full package price, a part line the partial selling price; the price is
+  /// never reconstructed from the base-unit conversion ratio.
   final int unitPriceMicros;
 
   /// Unit type at sell time (box/strip/…) — NOT NULL per §4.15.
@@ -36,10 +45,12 @@ class SaleLineRequest {
   /// When dispensing from a prescription, the linked prescription item (Phase 6).
   final String? prescriptionItemId;
 
-  /// When selling a partial-sale item, the pre-calculated unit price per
-  /// base-unit from [PartialPriceCalculator]. When null, [unitPriceMicros]
-  /// is used as-is (normal full-product sale).
-  final int? partialSaleUnitPriceMicros;
+  /// Number of sell units priced at [unitPriceMicros]. Defaults to
+  /// [quantityBase] for legacy callers (sell unit == base unit).
+  final int? quantity;
+
+  /// Base quantity per sell unit. Defaults to 1 for legacy callers.
+  final int? unitBaseQuantity;
 }
 
 class SaleRequest {
@@ -93,10 +104,12 @@ class SaleOutcome {
 ///
 /// Each sold line is linked to the exact batch it was consumed from (FEFO).
 ///
-/// Partial-sale support (Phase 6): when a line provides
-/// [SaleLineRequest.partialSaleUnitPriceMicros], the caller has pre-computed
-/// the unit price via [PartialPriceCalculator]. The sale service passes it
-/// through to the line item and inventory at the pre-computed rate.
+/// Two-mode pricing lock (§5): a sale line's money is priced per sell unit —
+/// the box at the full package price or the sellable part at the partial
+/// selling price (`gross = unitPriceMicros × quantity`) — never reconstructed
+/// from the base-unit conversion ratio. The line's exact gross/discount/VAT
+/// are partitioned across its FEFO slots (integer, last slot takes the
+/// remainder) so the persisted rows always sum to the line totals.
 ///
 /// Prescription dispensing (Phase 6): when `prescriptionId` is provided on the
 /// request and/or `prescriptionItemId` on a line, the sale links back to the
@@ -199,24 +212,42 @@ class SaleService {
 
       for (final line in request.lines) {
         final allocations = await _stock.allocateFefo(
-            db, line.itemId, line.quantityBase,
-            atMillis: now);
+            db, line.itemId, line.quantityBase, atMillis: now);
 
-        for (final slot in allocations) {
-          // Use pre-computed partial-sale price when available, otherwise
-          // the standard unit price from the request.
-          final effectiveUnitPrice =
-              line.partialSaleUnitPriceMicros ?? line.unitPriceMicros;
+        // Two-mode pricing lock: money is computed per sell unit — exactly.
+        // lineGross = unitPrice × sell units (never reconstructed from the
+        // base-unit conversion ratio); discount and VAT are the same
+        // half-up line-level rates used by the POS preview.
+        final sellUnits = line.quantity ?? line.quantityBase;
+        final sellUnitBase = line.unitBaseQuantity ?? 1;
+        final lineGross = line.unitPriceMicros * sellUnits;
+        final lineDiscount = Money.fromUnits(lineGross)
+            .timesRatio(line.discountBasisPoints, 10000)
+            .units;
+        final lineNet = lineGross - lineDiscount;
+        final lineVat = Money.fromUnits(lineNet)
+            .timesRatio(line.vatRateBasisPoints, 10000)
+            .units;
 
-          final slotGross = effectiveUnitPrice * slot.quantityBase;
-          final slotDiscount = Money.fromUnits(slotGross)
-              .timesRatio(line.discountBasisPoints, 10000)
-              .units;
-          final slotNet = slotGross - slotDiscount;
+        // Distribute the line's exact money across its FEFO slots so the rows
+        // always sum to the line totals (integer partition, last slot takes the
+        // remainder) — no drift through rounding.
+        final slotQtys = [for (final s in allocations) s.quantityBase];
+        final grossShares = _allocateExact(lineGross, slotQtys);
+        final netShares = _allocateExact(lineNet, slotQtys);
+        final vatShares = _allocateExact(lineVat, slotQtys);
+
+        for (var i = 0; i < allocations.length; i++) {
+          final slot = allocations[i];
+          final slotGross = grossShares[i];
+          final slotNet = netShares[i];
+          final slotDiscount = slotGross - slotNet;
+          final slotVat = vatShares[i];
           final slotCost = slot.batch.unitCostMicros * slot.quantityBase;
 
           subtotalMicros += slotGross;
           discountTotalMicros += slotDiscount;
+          vatTotalMicros += slotVat;
           totalCostMicros += slotCost;
           profitMicros += slotNet - slotCost;
 
@@ -229,11 +260,13 @@ class SaleService {
                   batchId: slot.batch.id,
                   unitTypeId: line.unitTypeId,
                   quantityBaseSigned: slot.quantityBase,
-                  unitPriceMicros: effectiveUnitPrice,
+                  unitBaseQuantity: Value(sellUnitBase),
+                  unitPriceMicros: line.unitPriceMicros,
                   vatRateBasisPoints: Value(line.vatRateBasisPoints),
                   lineDiscountBasisPoints: Value(line.discountBasisPoints),
                   lineSubtotalMicros: Value(slotGross),
                   lineDiscountMicros: Value(slotDiscount),
+                  taxMicros: Value(slotVat),
                   lineTotalMicros: Value(slotNet),
                   unitCostMicros: Value(slot.batch.unitCostMicros),
                   costTotalMicros: Value(slotCost),
@@ -264,7 +297,6 @@ class SaleService {
         }
       }
 
-      vatTotalMicros = _sumVat(request.lines);
       final totalMicros = subtotalMicros - discountTotalMicros + vatTotalMicros;
 
       // Resolve the payment split (cash/card components of paidMicros) and
@@ -442,19 +474,27 @@ class SaleService {
     );
   }
 
-  static int _sumVat(List<SaleLineRequest> lines) {
-    var vat = 0;
-    for (final line in lines) {
-      final effectivePrice = line.partialSaleUnitPriceMicros ?? line.unitPriceMicros;
-      final gross = effectivePrice * line.quantityBase;
-      final discount = Money.fromUnits(gross)
-          .timesRatio(line.discountBasisPoints, 10000)
-          .units;
-      vat += Money.fromUnits(gross - discount)
-          .timesRatio(line.vatRateBasisPoints, 10000)
-          .units;
+  /// Partitions [total] across positive [weights] so the shares always sum to
+  /// exactly [total]: each share gets `total ~/ weightSum` × its weight plus a
+  /// half-up proportional slice of the integer remainder (the last share takes
+  /// any leftover). Keeps per-row money in exact agreement with the line totals
+  /// across FEFO slots without floating point.
+  static List<int> _allocateExact(int total, List<int> weights) {
+    final weightSum = weights.fold<int>(0, (a, b) => a + b);
+    if (weightSum <= 0) return List.filled(weights.length, 0);
+    final whole = total ~/ weightSum;
+    var remainder = total - whole * weightSum;
+    final shares = [for (final w in weights) whole * w];
+    for (var i = 0; i < weights.length && remainder > 0; i++) {
+      final carry = (remainder * weights[i] + weightSum ~/ 2) ~/ weightSum;
+      final amount = carry.clamp(0, remainder);
+      shares[i] += amount;
+      remainder -= amount;
     }
-    return vat;
+    if (remainder != 0) {
+      shares[weights.length - 1] += remainder;
+    }
+    return shares;
   }
 
   /// Voids a completed, never-returned invoice (§19): the invoice row is kept

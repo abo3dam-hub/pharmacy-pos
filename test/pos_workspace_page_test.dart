@@ -252,7 +252,7 @@ void main() {
 
       expect(find.text('ملخص الإيصال'), findsOneWidget);
       expect(find.textContaining('رقم الفاتورة: SI-'), findsOneWidget);
-      expect(find.text('بانادول (Panadol) × 200'), findsOneWidget);
+      expect(find.text('بانادول (Panadol) × 2 علبة'), findsOneWidget);
 
       final search = await pos.repo.searchSaleInvoices(
         const PageRequest(page: 1, pageSize: 10),
@@ -266,6 +266,69 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('السلة فارغة — أضف أصنافاً للبيع'), findsOneWidget);
       expect(find.text('الباقي: 3.00'), findsNothing);
+    });
+
+    testWidgets(
+        'payment fields: "-" and malformed input never crash or submit',
+        (tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      final base = await buildAuthHarness();
+      addTearDown(base.db.close);
+      addTearDown(base.container.dispose);
+      await base
+          .container
+          .read(authControllerProvider.notifier)
+          .login('admin', 'Admin@123');
+      await _seedSellableItem(base.db);
+      final pos = _posOverrides(base.db);
+
+      await tester.pumpWidget(
+        _harness(base.container, pos.overrides, const PosWorkspacePage()),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'بانادول');
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'بانادول (Panadol)'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('دفع (F12)'));
+      await tester.pumpAndSettle();
+
+      final payButton = find.widgetWithText(FilledButton, 'دفع (F12)').last;
+      expect(tester.widget<FilledButton>(payButton).onPressed, isNull);
+
+      // A valid cash amount enables submit...
+      await tester.enterText(
+        find.widgetWithText(TextField, 'المبلغ المقبوض'),
+        '5',
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(tester.widget<FilledButton>(payButton).onPressed, isNotNull);
+
+      // A negative amount previously crashed the sheet (PaymentCalculator
+      // throws and it was invoked inside build) — now it only disables submit.
+      await tester.enterText(
+        find.widgetWithText(TextField, 'المبلغ المقبوض'),
+        '-5',
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(tester.widget<FilledButton>(payButton).onPressed, isNull);
+
+      // Malformed amounts are surfaced as errors, never silently treated as 0.
+      await tester.enterText(
+        find.widgetWithText(TextField, 'المبلغ المقبوض'),
+        '12.5.3',
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(tester.widget<FilledButton>(payButton).onPressed, isNull);
     });
 
     testWidgets('empty search shows no-results and the lost-sale action',
