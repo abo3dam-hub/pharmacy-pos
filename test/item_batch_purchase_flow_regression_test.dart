@@ -82,7 +82,50 @@ void main() {
   });
 
   testWidgets(
-      'edit mode hides the save-and-continue button (single save action)',
+      'edit mode also offers save-and-continue and returns saveContinue',
+      (tester) async {
+    tester.view.physicalSize = const Size(1100, 1500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    ItemFormResult? submitted;
+    await tester.pumpWidget(harness(Scaffold(
+      body: Builder(
+        builder: (context) => Center(
+          child: ElevatedButton(
+            onPressed: () async {
+              submitted = await showItemFormDialog(
+                context,
+                title: 'تعديل منتج',
+                initial: const ItemDraft(tradeName: 'قديم'),
+                categories: const [],
+                manufacturers: const [],
+                units: const [],
+                showContinueAction: true,
+              );
+            },
+            child: const Text('افتح النموذج'),
+          ),
+        ),
+      ),
+    )));
+    await tester.tap(find.text('افتح النموذج'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('حفظ و اضافة الى المخزون'), findsOneWidget,
+        reason: 'the edit form offers the same save-and-continue action');
+
+    await tester.enterText(_fieldByLabel('الاسم التجاري *'), 'بانادول');
+    await tester.pumpAndSettle();
+    await _tapInDialog(tester, 'حفظ و اضافة الى المخزون');
+
+    expect(submitted, isNotNull);
+    expect(submitted!.action, ItemFormAction.saveContinue,
+        reason: 'edit mode routes to the batches flow via saveContinue');
+    expect(submitted!.draft.tradeName, 'بانادول');
+  });
+
+  testWidgets('save-and-continue button stays hidden unless enabled',
       (tester) async {
     tester.view.physicalSize = const Size(1100, 1500);
     tester.view.devicePixelRatio = 1.0;
@@ -94,12 +137,10 @@ void main() {
           child: ElevatedButton(
             onPressed: () => showItemFormDialog(
               context,
-              title: 'تعديل منتج',
-              initial: const ItemDraft(tradeName: 'قديم'),
+              title: 'منتج جديد',
               categories: const [],
               manufacturers: const [],
               units: const [],
-              showContinueAction: true,
             ),
             child: const Text('افتح النموذج'),
           ),
@@ -110,7 +151,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('حفظ و اضافة الى المخزون'), findsNothing,
-        reason: 'edit keeps the single save action');
+        reason: 'forms keep the single save action unless continue is enabled');
   });
 
   testWidgets(

@@ -882,7 +882,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l10n.commonCancel),
         ),
-        if (widget.showContinueAction && widget.initial == null)
+        if (widget.showContinueAction)
           FilledButton.tonalIcon(
             onPressed: () => _submit(ItemFormAction.saveContinue),
             icon: const Icon(Icons.add_card_outlined),

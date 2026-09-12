@@ -14,7 +14,7 @@ Current date: 2026-09-12 · Branch: `main` · Remote: `abo3dam-hub/pharmacy-pos`
 | Framework | Flutter (stable), Arabic-first RTL UI |
 | Persistence | SQLite via Drift (code-gen `app_database.g.dart`) |
 | L10n | `flutter gen-l10n` — `app_ar.arb` / `app_en.arb` |
-| Tests | 86 test files · **622 tests pass** · `flutter analyze` clean |
+| Tests | 86 test files · **623 tests pass** · `flutter analyze` clean |
 | CI | GitHub Actions: `analyze-test`, `perf-file-db`, `build-windows`, `build-android` |
 | Last CI | Run `34665548031` (commit `a7243c6`) — **all 4 jobs success** |
 
@@ -130,10 +130,11 @@ Chained "save and continue" workflow across the Arabic pharmacy-entry screens,
 plus clearer failure messages everywhere and AR+EN item-name display:
 
 - **Chained item → batch → invoice workflow:**
-  - Add-New-Product window gains a third button **"حفظ و اضافة الى المخزون"**
-    (`itemSaveAndContinueBatch`) visible in create mode only; returning
+  - Product window (both **add-new** and **edit**) gains a third button
+    **"حفظ و اضافة الى المخزون"** (`itemSaveAndContinueBatch`); returning
     `ItemFormAction.saveContinue` it saves the item and routes to
-    `/inventory/batches/{newId}?add=1`, where
+    `/inventory/batches/{itemId}?add=1` (the new item's id on create, the
+    edited item's id on edit), where
     `BatchesPage.autoOpenAddBatch` (read from the `add` query param) auto-opens
     the add-batch dialog.
   - Batch window gains **"حفظ و اضافة فاتورة"**
@@ -180,11 +181,12 @@ plus clearer failure messages everywhere and AR+EN item-name display:
   successful `createItem` (reset each attempt) so the continue flow knows the
   new item id — `createItem` still returns `Failure?`, keeping
   `inventory_controller_busy_regression_test.dart` intact.
-- **Tests:** `test/item_batch_purchase_flow_regression_test.dart` (4 tests) —
-  item form shows the continue button only on create and returns
-  `saveContinue`; edit mode hides it; an expiry-tracked batch blocks inline and
-  keeps the dialog open; the save-and-add-invoice button returns its action
-  with the filled input (quantity + money units). Plus
+- **Tests:** `test/item_batch_purchase_flow_regression_test.dart` (5 tests) —
+  item form offers the continue action on create **and** on edit, both
+  returning `saveContinue`, and the button stays hidden when the continue
+  action is not enabled; an expiry-tracked batch blocks inline and keeps the
+  dialog open; the save-and-add-invoice button returns its action with the
+  filled input (quantity + money units). Plus
   `test/bilingual_name_test.dart` (8 tests) locking the AR+EN display rule and
   its POS fallbacks, and updated POS/perf/prescription name assertions
   (`بانادول (Panadol)`). Full suite: **622 tests green**, `flutter analyze`

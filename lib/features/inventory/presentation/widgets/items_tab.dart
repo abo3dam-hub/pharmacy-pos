@@ -209,6 +209,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       onCreateMasterData: _createMasterData,
       onCreateSupplier: _createSupplier,
       defaultPartialSaleMarkupBasisPoints: defaultMarkup,
+      showContinueAction: true,
     );
     if (result == null || !mounted) return;
     final outcome = await ref
@@ -216,6 +217,10 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
         .updateItem(view.item.id, result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
     if (outcome == null && mounted) {
+      if (result.action == ItemFormAction.saveContinue) {
+        context.go('/inventory/batches/${view.item.id}?add=1');
+        return;
+      }
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.inventoryUpdatedMessage)));
