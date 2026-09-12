@@ -58,7 +58,7 @@ Local env used by this workflow:
 | `fa080fa` | **perf(inventory)**: single-transaction import + batched audit, perf regressions |
 | `e5101bf` | **docs**: project status report for the post-18.3 hardening cycle |
 | `a7243c6` | **perf(inventory)**: live import progress + cancel; single-tx bulk edits; CI file-DB perf guard |
-| (next) | **fix(import)**: EN-name tie-breaker closes re-import gap on real 11.3k file + commit `test1.xlsx` |
+| `632ee7e` | **fix(import)**: EN-name tie-breaker closes re-import gap on real 11.3k file + commit `test1.xlsx` |
 
 ---
 
