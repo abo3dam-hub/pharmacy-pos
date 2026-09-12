@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
@@ -850,20 +851,7 @@ class _ActiveStatusChipBox extends StatelessWidget {
 /// Shared error presentation for master-data mutations. Callers guard for
 /// `mounted` before invoking.
 void _showFailure(BuildContext context, Failure? failure) {
-  if (failure == null) return;
-  final l10n = AppLocalizations.of(context);
-  final message = switch (failure) {
-    UnauthorizedFailure() => l10n.authPermissionDenied,
-    InvalidOperationFailure(message: final m) => m,
-    ValidationFailure(message: final m) => m,
-    DuplicateFailure(message: final m) => m,
-    NotFoundFailure(message: final m) => m,
-    DatabaseFailure(message: final m) when (m).trim().isNotEmpty => m,
-    _ => l10n.authSaveError,
-  };
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message)));
+  showFailureSnack(context, failure);
 }
 
 /// Shared master-data tab header: title + add button (edit permission only).

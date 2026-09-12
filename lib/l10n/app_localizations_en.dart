@@ -459,6 +459,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryItemAddTitle => 'Add new item';
 
   @override
+  String get itemSaveAndContinueBatch => 'Save and add to inventory';
+
+  @override
   String get inventoryItemEditTitle => 'Edit item';
 
   @override
@@ -698,7 +701,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get batchesEmpty => 'No batches';
 
   @override
+  String get batchExpiryRequired =>
+      'Expiry date is required for an item with an expiry date';
+
+  @override
+  String get batchSaveAndContinuePurchase => 'Save and add invoice';
+
+  @override
   String get batchUnitCost => 'Unit cost';
+
+  @override
+  String get batchCostInvalid => 'Enter a valid unit cost';
 
   @override
   String get batchReceivedDate => 'Received date';

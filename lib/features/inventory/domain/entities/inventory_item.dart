@@ -32,6 +32,19 @@ BatchStatus batchStatusFor(BatchRow batch, {int? atMillis}) {
   return BatchStatus.normal;
 }
 
+/// Arabic and English trade names shown together: "الاسم (English name)".
+/// Falls back to barcode/scientific name/id when both names are empty.
+String itemDisplayName(ItemRow item) {
+  final ar = item.tradeName.trim();
+  final en = item.tradeNameEn?.trim() ?? '';
+  if (ar.isEmpty && en.isEmpty) {
+    return item.primaryBarcode ?? item.scientificName ?? item.id;
+  }
+  if (ar.isEmpty) return en;
+  if (en.isEmpty) return ar;
+  return '$ar ($en)';
+}
+
 /// A row of the product's active-ingredient selector: the ingredient's master
 /// name plus its optional per-product strength (العيار). Represents one entry
 /// of `item_active_ingredients` (§4.2b).
@@ -90,7 +103,13 @@ class InventoryItemView {
         unitsPerLarge: unitsPerLarge,
       );
 
+  /// Legacy single-name label (Arabic trade name first, then barcode/scientific
+  /// name/id). Kept for confirm dialogs and compact cells.
   String get primaryLabel => item.tradeName.isNotEmpty
       ? item.tradeName
       : (item.primaryBarcode ?? item.scientificName ?? item.id);
+
+  /// Arabic and English trade names shown together: "الاسم (English name)".
+  /// Falls back to the legacy [primaryLabel] when the name is empty.
+  String get displayName => itemDisplayName(item);
 }

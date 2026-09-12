@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -53,13 +54,8 @@ class _PrescriptionsListState extends ConsumerState<PrescriptionsList> {
       ref.read(authControllerProvider).permissions.contains(Perm.prescriptionsCreate);
   String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
 
-  String _message(Failure failure) {
-    final l10n = AppLocalizations.of(context);
-    return switch (failure) {
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      _ => l10n.authSaveError,
-    };
-  }
+  String _message(Failure failure) =>
+      failureMessage(AppLocalizations.of(context), failure);
 
   Future<void> _load({String search = ''}) async {
     final failure = await ref

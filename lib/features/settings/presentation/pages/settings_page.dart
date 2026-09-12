@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/shortcuts/shortcut_manager.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -101,16 +102,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _showFailure(Failure failure) {
-    if (!mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final message = switch (failure) {
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      ValidationFailure() => failure.message,
-      _ => l10n.authSaveError,
-    };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showFailureSnack(context, failure);
   }
 
   Future<void> _rebind(PosShortcutKind kind, String? token) async {

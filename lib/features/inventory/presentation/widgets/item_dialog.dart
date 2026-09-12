@@ -12,11 +12,17 @@ import '../../../suppliers/presentation/widgets/supplier_dialog.dart';
 import '../../domain/repositories/inventory_repository.dart';
 import 'master_data_dialog.dart';
 
-/// Result of the item form: the validated [ItemDraft].
+/// What the user chose in the item form: plain save, or save and jump to the
+/// new item's batch (تشغيلة) ledger.
+enum ItemFormAction { save, saveContinue }
+
+/// Result of the item form: the validated [ItemDraft] plus the chosen
+/// [ItemFormAction].
 class ItemFormResult {
-  const ItemFormResult(this.draft);
+  const ItemFormResult(this.draft, {this.action = ItemFormAction.save});
 
   final ItemDraft draft;
+  final ItemFormAction action;
 }
 
 /// Shows the §5 item create/edit form dialog. Returns a validated draft or
@@ -47,6 +53,7 @@ Future<ItemFormResult?> showItemFormDialog(
       onCreateMasterData,
   Future<SupplierRow?> Function(SupplierDraft draft)? onCreateSupplier,
   int defaultPartialSaleMarkupBasisPoints = 2000,
+  bool showContinueAction = false,
 }) async {
   final result = await showDialog<ItemFormResult>(
     context: context,
@@ -62,6 +69,7 @@ Future<ItemFormResult?> showItemFormDialog(
       onCreateMasterData: onCreateMasterData,
       onCreateSupplier: onCreateSupplier,
       defaultPartialSaleMarkupBasisPoints: defaultPartialSaleMarkupBasisPoints,
+      showContinueAction: showContinueAction,
     ),
   );
   return result;
@@ -80,6 +88,7 @@ class _ItemFormDialog extends StatefulWidget {
     this.onCreateMasterData,
     this.onCreateSupplier,
     this.defaultPartialSaleMarkupBasisPoints = 2000,
+    this.showContinueAction = false,
   });
 
   final String title;
@@ -94,6 +103,10 @@ class _ItemFormDialog extends StatefulWidget {
       onCreateMasterData;
   final Future<SupplierRow?> Function(SupplierDraft draft)? onCreateSupplier;
   final int defaultPartialSaleMarkupBasisPoints;
+
+  /// Whether to show the "حفظ و اضافة الى المخزون" (save-and-continue to the
+  /// batch entry) action. Only meaningful for create (edit keeps one action).
+  final bool showContinueAction;
 
   @override
   State<_ItemFormDialog> createState() => _ItemFormDialogState();
@@ -310,7 +323,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _submit() {
+  void _submit([ItemFormAction action = ItemFormAction.save]) {
     if (!_validate()) return;
     final l10n = AppLocalizations.of(context);
     final cost = _microsFrom('cost');
@@ -413,7 +426,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           ? partPrice
           : null,
     );
-    Navigator.of(context).pop(ItemFormResult(draft));
+    Navigator.of(context).pop(ItemFormResult(draft, action: action));
   }
 
   static String? _emptyToNull(String value) {
@@ -869,6 +882,12 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l10n.commonCancel),
         ),
+        if (widget.showContinueAction && widget.initial == null)
+          FilledButton.tonalIcon(
+            onPressed: () => _submit(ItemFormAction.saveContinue),
+            icon: const Icon(Icons.add_card_outlined),
+            label: Text(l10n.itemSaveAndContinueBatch),
+          ),
         FilledButton(
           onPressed: _submit,
           child: Text(l10n.commonSave),

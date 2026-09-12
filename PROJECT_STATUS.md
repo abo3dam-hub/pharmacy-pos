@@ -14,7 +14,7 @@ Current date: 2026-09-12 · Branch: `main` · Remote: `abo3dam-hub/pharmacy-pos`
 | Framework | Flutter (stable), Arabic-first RTL UI |
 | Persistence | SQLite via Drift (code-gen `app_database.g.dart`) |
 | L10n | `flutter gen-l10n` — `app_ar.arb` / `app_en.arb` |
-| Tests | 83 test files · **610 tests pass** · `flutter analyze` clean |
+| Tests | 85 test files · **614 tests pass** · `flutter analyze` clean |
 | CI | GitHub Actions: `analyze-test`, `perf-file-db`, `build-windows`, `build-android` |
 | Last CI | Run `34665548031` (commit `a7243c6`) — **all 4 jobs success** |
 
@@ -59,6 +59,8 @@ Local env used by this workflow:
 | `e5101bf` | **docs**: project status report for the post-18.3 hardening cycle |
 | `a7243c6` | **perf(inventory)**: live import progress + cancel; single-tx bulk edits; CI file-DB perf guard |
 | `632ee7e` | **fix(import)**: EN-name tie-breaker closes re-import gap on real 11.3k file + commit `test1.xlsx` |
+| `20ef12c` | docs: status report — real-file acceptance green, EN tie-breaker notes |
+| `(next)` | **feat(ux/errors/i18n)**: chained save-and-continue (item→batch→invoice), reason-based failure messages, AR+EN item names |
 
 ---
 
@@ -119,6 +121,61 @@ rejected). This resolved the last gap on the **real** catalogue:
   whole table, so adopting `PagedMasterTable` there would be churn without a
   perf win. `PagedMasterTable` remains the in-memory-list solution (master
   tabs).
+
+---
+
+## 3c. UX workstream #3: save-and-continue, error clarity, bilingual names (complete)
+
+Chained "save and continue" workflow across the Arabic pharmacy-entry screens,
+plus clearer failure messages everywhere and AR+EN item-name display:
+
+- **Chained item → batch → invoice workflow:**
+  - Add-New-Product window gains a third button **"حفظ و اضافة الى المخزون"**
+    (`itemSaveAndContinueBatch`) visible in create mode only; returning
+    `ItemFormAction.saveContinue` it saves the item and routes to
+    `/inventory/batches/{newId}?add=1`, where
+    `BatchesPage.autoOpenAddBatch` (read from the `add` query param) auto-opens
+    the add-batch dialog.
+  - Batch window gains **"حفظ و اضافة فاتورة"**
+    (`batchSaveAndContinuePurchase`); on `BatchFormAction.saveAndAddPurchase`
+    the saved batch carries `PurchasePrefill(itemId, batchNumber, quantityBase,
+    unitCostMicros)` to `/purchases/new` (GoRouter `extra`), which pre-fills the
+    first invoice line (item resolved via the repository, base unit name, the
+    entered quantity + unit cost). Navigation checks `Perm.purchasesCreate`
+    first.
+- **Reason-based failure messages (was: generic/occasionally silent errors):**
+  - The batch dialog previously closed on a missing expiry with an unexplained
+    error. It now keeps the dialog open and shows an inline field error
+    **"تاريخ الانتهاء مطلوب لمنتج بتاريخ صلاحية"** (`batchExpiryRequired`)
+    under the expiry field (cleared on date pick); invalid cost now surfaces
+    `batchCostInvalid` (was `authSaveError`).
+  - New shared helper `lib/core/errors/failure_messages.dart`
+    (`failureMessage(l10n, failure)` + `showFailureSnack(context, failure?)`)
+    maps repository failures to user-facing reasons (`DatabaseFailure` keeps a
+    non-empty message, `DuplicateFailure` surfaces `failure.message`,
+    `UnauthorizedFailure` explains permissions, unknown → a stable generic).
+  - Applied across **16 pages** that previously either swallowed failures or
+    showed a generic message (inventory batches/master tabs/items tab,
+    purchases form/detail/list, customers/customer statement, suppliers/supplier
+    statement, users, roles, settings, prescriptions form/detail/list).
+    `data_management_page.dart` already surfaced `failure.message` and was left
+    as-is.
+- **AR+EN item names displayed together:**
+  - `InventoryItemView.displayName` → `'عربي (English)'`; top-level
+    `itemDisplayName(ItemRow)` for row-level use (inventory_item.dart). Used in
+    the items grid + cards, the batches page header, and the purchase item
+    picker/search + invoice lines. POS search/cart intentionally keep the
+    single customer-facing name (tests assert exact labels).
+- **Controller:** `InventoryController.lastCreatedItemId` (String?) set on
+  successful `createItem` (reset each attempt) so the continue flow knows the
+  new item id — `createItem` still returns `Failure?`, keeping
+  `inventory_controller_busy_regression_test.dart` intact.
+- **Tests:** `test/item_batch_purchase_flow_regression_test.dart` (4 tests) —
+  item form shows the continue button only on create and returns
+  `saveContinue`; edit mode hides it; an expiry-tracked batch blocks inline and
+  keeps the dialog open; the save-and-add-invoice button returns its action
+  with the filled input (quantity + money units). Full suite: **614 tests
+  green**, `flutter analyze` clean.
 
 ---
 
@@ -198,7 +255,7 @@ All four tracked issues are fixed, tested, and committed.
 
 ## 6. Test conventions
 
-- 83 files under `test/`; shared helpers in `helpers.dart` (`ensureSqlite`,
+- 85 files under `test/`; shared helpers in `helpers.dart` (`ensureSqlite`,
   `newDatabase`, role constants `_adminRole = 'role_admin'`,
   `_pharmacistRole = 'role_pharmacist'`).
 - Perf/count-heavy tests: `inventory_import_scalability_test.dart` exercises

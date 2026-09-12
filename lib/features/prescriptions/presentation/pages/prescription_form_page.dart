@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/data_grid/page_request.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -95,14 +96,8 @@ class _PrescriptionFormPageState extends ConsumerState<PrescriptionFormPage> {
 
   void _removeLine(_RxItemLine line) => setState(() => _lines.remove(line));
 
-  String _message(Failure failure) {
-    final l10n = AppLocalizations.of(context);
-    return switch (failure) {
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      ValidationFailure() => failure.message,
-      _ => l10n.authSaveError,
-    };
-  }
+  String _message(Failure failure) =>
+      failureMessage(AppLocalizations.of(context), failure);
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context);

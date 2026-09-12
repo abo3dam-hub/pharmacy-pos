@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
-import '../../../../core/errors/failures.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -64,10 +64,7 @@ class _PrescriptionDetailPageState
         _showSnack(l10n.prescriptionCannotPrepare);
       }
     } else {
-      _showSnack(switch (failure) {
-        UnauthorizedFailure() => l10n.authPermissionDenied,
-        _ => l10n.authSaveError,
-      });
+      _showSnack(failureMessage(AppLocalizations.of(context), failure));
     }
   }
 

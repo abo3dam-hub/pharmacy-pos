@@ -459,6 +459,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get inventoryItemAddTitle => 'إضافة منتج جديد';
 
   @override
+  String get itemSaveAndContinueBatch => 'حفظ و اضافة الى المخزون';
+
+  @override
   String get inventoryItemEditTitle => 'تعديل منتج';
 
   @override
@@ -698,7 +701,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get batchesEmpty => 'لا توجد تشغيلات';
 
   @override
+  String get batchExpiryRequired => 'تاريخ الانتهاء مطلوب لمنتج بتاريخ صلاحية';
+
+  @override
+  String get batchSaveAndContinuePurchase => 'حفظ و اضافة فاتورة';
+
+  @override
   String get batchUnitCost => 'تكلفة الوحدة';
+
+  @override
+  String get batchCostInvalid => 'أدخل تكلفة وحدة صالحة';
 
   @override
   String get batchReceivedDate => 'تاريخ الاستلام';

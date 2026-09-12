@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -70,15 +71,7 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
   }
 
   void _showFailure(Failure? failure) {
-    if (failure == null || !mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final message = switch (failure) {
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      _ => l10n.authSaveError,
-    };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showFailureSnack(context, failure);
   }
 
   bool _has(String perm) =>

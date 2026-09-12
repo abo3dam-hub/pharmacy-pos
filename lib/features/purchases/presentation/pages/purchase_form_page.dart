@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/data_grid/page_request.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
@@ -14,16 +15,34 @@ import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../../../shared/models/enums.dart';
+import '../../../../features/inventory/domain/entities/inventory_item.dart';
 import '../../domain/repositories/purchases_repository.dart';
 import '../../../../core/widgets/app_rtl_icons.dart';
+
+/// Line data handed over from the batch-entry dialog ("حفظ و اضافة فاتورة"):
+/// the item, paid quantity and unit cost are pre-filled into the invoice form.
+class PurchasePrefill {
+  const PurchasePrefill({
+    required this.itemId,
+    required this.quantityBase,
+    required this.unitCostMicros,
+    this.batchNumber,
+  });
+
+  final String itemId;
+  final int quantityBase;
+  final int unitCostMicros;
+  final String? batchNumber;
+}
 
 /// Purchase invoice form — create (`/purchases/new`) or edit a pending invoice
 /// (`/purchases/edit/:id`). Lines carry paid quantities, unit costs, discounts
 /// and the bonus editor (§12, §13). Totals are previewed client-side.
 class PurchaseFormPage extends ConsumerStatefulWidget {
-  const PurchaseFormPage({super.key, this.invoiceId});
+  const PurchaseFormPage({super.key, this.invoiceId, this.prefill});
 
   final String? invoiceId;
+  final PurchasePrefill? prefill;
 
   @override
   ConsumerState<PurchaseFormPage> createState() => _PurchaseFormPageState();
@@ -99,8 +118,41 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
     if (_isEdit) {
       await _loadForEdit();
     } else {
+      await _applyPrefill();
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  /// Pre-fills the first line from the batch-entry hand-off (item, quantity,
+  /// unit cost) and resolves the item's base unit for the line.
+  Future<void> _applyPrefill() async {
+    final prefill = widget.prefill;
+    if (prefill == null) return;
+    final item = await ref
+        .read(inventoryRepositoryProvider)
+        .findItem(prefill.itemId);
+    if (!mounted || item == null) return;
+    final units = await ref
+        .read(inventoryRepositoryProvider)
+        .itemUnitsFor(item.id);
+    String unitName = '';
+    if (units != null) {
+      unitName = (await ref
+              .read(inventoryRepositoryProvider)
+              .unitById(units.baseUnitId))
+          ?.name ??
+          '';
+    }
+    setState(() {
+      _lines.add(_PurchLine(
+        itemId: item.id,
+        itemName: itemDisplayName(item),
+        unitTypeId: units?.baseUnitId ?? '',
+        unitTypeName: unitName,
+        quantityBase: prefill.quantityBase,
+        unitCostMicros: prefill.unitCostMicros,
+      ));
+    });
   }
 
   Future<void> _loadForEdit() async {
@@ -156,15 +208,7 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
   }
 
   void _showSnack(Failure? failure) {
-    if (failure == null || !mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final message = switch (failure) {
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      _ => l10n.authSaveError,
-    };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showFailureSnack(context, failure);
   }
 
   Future<void> _pickDate() async {
@@ -203,9 +247,7 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
         ?.name ?? '';
     setCard(() {
       line.itemId = item.id;
-      line.itemName = item.tradeName.isEmpty
-          ? (item.primaryBarcode ?? item.id)
-          : item.tradeName;
+      line.itemName = itemDisplayName(item);
       line.unitTypeId = units.baseUnitId;
       line.unitTypeName = unitName;
       if (line.unitCostMicros == 0) line.unitCostMicros = item.costMicros;
@@ -243,9 +285,7 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
     setState(() {
       _lines.add(_PurchLine(
         itemId: item.id,
-        itemName: item.tradeName.isEmpty
-            ? (item.primaryBarcode ?? item.id)
-            : item.tradeName,
+        itemName: itemDisplayName(item),
         unitTypeId: units.baseUnitId,
         unitTypeName: unitName,
         unitCostMicros: item.costMicros,
@@ -779,9 +819,7 @@ class _ItemSearchDialogState extends ConsumerState<_ItemSearchDialog> {
                           itemBuilder: (context, i) {
                             final item = _results[i];
                             return ListTile(
-                              title: Text(item.tradeName.isEmpty
-                                  ? (item.primaryBarcode ?? item.id)
-                                  : item.tradeName),
+                              title: Text(itemDisplayName(item)),
                               subtitle: Text(item.scientificName ?? ''),
                               onTap: () => Navigator.of(context).pop(item),
                             );

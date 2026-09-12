@@ -986,6 +986,12 @@ abstract class AppLocalizations {
   /// **'إضافة منتج جديد'**
   String get inventoryItemAddTitle;
 
+  /// No description provided for @itemSaveAndContinueBatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ و اضافة الى المخزون'**
+  String get itemSaveAndContinueBatch;
+
   /// No description provided for @inventoryItemEditTitle.
   ///
   /// In ar, this message translates to:
@@ -1442,11 +1448,29 @@ abstract class AppLocalizations {
   /// **'لا توجد تشغيلات'**
   String get batchesEmpty;
 
+  /// No description provided for @batchExpiryRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء مطلوب لمنتج بتاريخ صلاحية'**
+  String get batchExpiryRequired;
+
+  /// No description provided for @batchSaveAndContinuePurchase.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ و اضافة فاتورة'**
+  String get batchSaveAndContinuePurchase;
+
   /// No description provided for @batchUnitCost.
   ///
   /// In ar, this message translates to:
   /// **'تكلفة الوحدة'**
   String get batchUnitCost;
+
+  /// No description provided for @batchCostInvalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدخل تكلفة وحدة صالحة'**
+  String get batchCostInvalid;
 
   /// No description provided for @batchReceivedDate.
   ///

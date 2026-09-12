@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -46,16 +47,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
       ref.read(usersViewControllerProvider.notifier).load(search: query);
 
   void _showFailure(Failure? failure) {
-    if (failure == null || !mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final message = switch (failure) {
-      DuplicateFailure() => l10n.userUsernameExists,
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      _ => l10n.authSaveError,
-    };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showFailureSnack(context, failure);
   }
 
   Future<void> _createUser() async {

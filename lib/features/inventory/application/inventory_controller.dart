@@ -132,6 +132,11 @@ class InventoryController extends StateNotifier<InventoryViewState> {
   final ExportItemsUseCase _exportItems;
   final ImportItemsUseCase _importItems;
 
+  /// Id of the most recent successful [createItem]; reset to null whenever a
+  /// create fails. Used by the "save and add to inventory" flow to jump the
+  /// user straight into the new item's batch ledger.
+  String? lastCreatedItemId;
+
   /// Set by [cancelImport]; polled by the running import between checkpoints.
   bool _importCancelled = false;
 
@@ -201,9 +206,11 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     String? actingRoleId,
   }) async {
     state = state.copyWith(busy: true, error: () => null);
+    lastCreatedItemId = null;
     try {
-      await _createItem.call(draft,
+      final created = await _createItem.call(draft,
           actingUserId: actingUserId, actingRoleId: actingRoleId);
+      lastCreatedItemId = created.id;
       await reload(actingRoleId: actingRoleId);
       return null;
     } on AppException catch (e) {

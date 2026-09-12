@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
@@ -85,22 +86,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
   String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
 
   void _showFailure(Failure? failure) {
-    if (failure == null || !mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final message = switch (failure) {
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      ValidationFailure() => failure.message,
-      DuplicateFailure() => failure.message,
-      NotFoundFailure() => failure.message,
-      InsufficientStockFailure() => failure.message,
-      ExpiredBatchFailure() => failure.message,
-      InvalidOperationFailure() => failure.message,
-      DatabaseFailure(message: final m) when (m).trim().isNotEmpty => m,
-      _ => l10n.authSaveError,
-    };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showFailureSnack(context, failure);
   }
 
   Future<void> _onSearch(String query) => _load(search: query);
@@ -141,6 +127,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       onCreateMasterData: _createMasterData,
       onCreateSupplier: _createSupplier,
       defaultPartialSaleMarkupBasisPoints: defaultMarkup,
+      showContinueAction: true,
     );
     if (result == null || !mounted) return;
     final outcome = await ref
@@ -148,6 +135,14 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
         .createItem(result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
     if (outcome == null && mounted) {
+      if (result.action == ItemFormAction.saveContinue) {
+        final newId =
+            ref.read(inventoryControllerProvider.notifier).lastCreatedItemId;
+        if (newId != null) {
+          context.go('/inventory/batches/$newId?add=1');
+          return;
+        }
+      }
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.inventoryCreatedMessage)));
@@ -659,7 +654,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
                 .read(inventoryControllerProvider.notifier)
                 .toggleSelection(row.item.id),
             cells: [
-              DataCell(Text(row.primaryLabel)),
+              DataCell(Text(row.displayName)),
               DataCell(Text(row.item.primaryBarcode ?? '')),
               DataCell(Text(row.categoryName ?? '')),
               DataCell(Text(Money.fromUnits(row.item.costMicros).format())),
@@ -726,8 +721,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(row.primaryLabel,
-                                style: typography.sectionTitle),
+                            Text(row.displayName, style: typography.sectionTitle),
                             const SizedBox(height: AppSpacing.xs),
                             Text(
                               '${row.item.primaryBarcode ?? ''}'

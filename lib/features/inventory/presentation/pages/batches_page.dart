@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -16,6 +17,7 @@ import '../../../../shared/database/app_database.dart';
 import '../../../../shared/models/enums.dart';
 import '../../application/inventory_controller.dart';
 import '../../domain/entities/inventory_item.dart';
+import '../../../purchases/presentation/pages/purchase_form_page.dart';
 import '../widgets/batch_dialog.dart';
 import '../widgets/status_chips.dart';
 import '../widgets/stock_adjust_dialog.dart';
@@ -24,9 +26,13 @@ import '../../../../core/widgets/app_rtl_icons.dart';
 /// Batch ledger page for a single item (§4.8, §4.9): batches table + recent
 /// stock movements. Routed at `/inventory/batches/:itemId`.
 class BatchesPage extends ConsumerStatefulWidget {
-  const BatchesPage({super.key, required this.itemId});
+  const BatchesPage({super.key, required this.itemId, this.autoOpenAddBatch = false});
 
   final String itemId;
+
+  /// When true (route `?add=1`), the batch-entry dialog opens automatically —
+  /// used by the "حفظ و اضافة الى المخزون" flow right after item creation.
+  final bool autoOpenAddBatch;
 
   @override
   ConsumerState<BatchesPage> createState() => _BatchesPageState();
@@ -46,6 +52,9 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
           .read(inventoryControllerProvider.notifier)
           .loadBatches(widget.itemId,
               actingRoleId: ref.read(authControllerProvider).actingRoleId);
+      if (mounted && widget.autoOpenAddBatch && _canAdjust) {
+        await _addBatch();
+      }
     });
   }
 
@@ -55,15 +64,7 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
   String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
 
   void _showFailure(Failure? failure) {
-    if (failure == null || !mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final message = switch (failure) {
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      _ => l10n.authSaveError,
-    };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showFailureSnack(context, failure);
   }
 
   Future<void> _addBatch() async {
@@ -79,6 +80,21 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
         .addBatch(result.input,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
     if (failure == null && mounted) {
+      if (result.action == BatchFormAction.saveAndAddPurchase) {
+        final canPurchase = ref
+            .read(authControllerProvider)
+            .permissions
+            .contains(Perm.purchasesCreate);
+        if (canPurchase) {
+          context.go('/purchases/new', extra: PurchasePrefill(
+            itemId: result.input.itemId,
+            batchNumber: result.input.batchNumber,
+            quantityBase: result.input.quantityBase,
+            unitCostMicros: result.input.unitCostMicros,
+          ));
+          return;
+        }
+      }
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.batchesAddedMessage)));
@@ -164,9 +180,7 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
     final typography = context.appTypography;
     final name = _item == null
         ? ''
-        : (_item!.tradeName.isNotEmpty
-            ? _item!.tradeName
-            : (_item!.primaryBarcode ?? _item!.id));
+        : itemDisplayName(_item!);
 
     final header = Padding(
       padding: const EdgeInsets.fromLTRB(

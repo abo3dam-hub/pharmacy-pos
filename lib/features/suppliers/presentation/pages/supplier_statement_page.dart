@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/providers.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -97,13 +98,8 @@ class _SupplierStatementPageState extends ConsumerState<SupplierStatementView> {
     _load();
   }
 
-  String _message(Failure failure) {
-    final l10n = AppLocalizations.of(context);
-    return switch (failure) {
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      _ => l10n.authSaveError,
-    };
-  }
+  String _message(Failure failure) =>
+      failureMessage(AppLocalizations.of(context), failure);
 
   String _fmtDate(int millis) {
     final d = DateTime.fromMillisecondsSinceEpoch(millis);

@@ -181,6 +181,7 @@ if ((path == AppSection.settings.path ||
                     path: 'batches/:itemId',
                     builder: (context, state) => BatchesPage(
                       itemId: state.pathParameters['itemId']!,
+                      autoOpenAddBatch: state.uri.queryParameters['add'] == '1',
                     ),
                   ),
                 if (section == AppSection.suppliers)
@@ -193,7 +194,11 @@ if ((path == AppSection.settings.path ||
                 if (section == AppSection.purchases) ...[
                   GoRoute(
                     path: 'new',
-                    builder: (context, _) => const PurchaseFormPage(),
+                    builder: (context, state) => PurchaseFormPage(
+                      prefill: state.extra is PurchasePrefill
+                          ? state.extra! as PurchasePrefill
+                          : null,
+                    ),
                   ),
                   GoRoute(
                     path: 'edit/:id',

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -129,14 +130,9 @@ class _RolesPageState extends ConsumerState<RolesPage> {
     String successMessage,
   ) {
     if (!context.mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final message = switch (failure) {
-      null => successMessage,
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      DuplicateFailure() => l10n.rolesNameExists,
-      InvalidOperationFailure() => failure.message,
-      _ => l10n.authSaveError,
-    };
+    final message = failure == null
+        ? successMessage
+        : failureMessage(AppLocalizations.of(context), failure);
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -321,16 +317,7 @@ class _RoleCard extends ConsumerWidget {
     String successMessage,
   ) {
     if (!context.mounted || failure == null) return;
-    final l10n = AppLocalizations.of(context);
-    final message = switch (failure) {
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      DuplicateFailure() => l10n.rolesNameExists,
-      InvalidOperationFailure() => failure.message,
-      _ => l10n.authSaveError,
-    };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showFailureSnack(context, failure);
   }
 }
 
