@@ -1084,5 +1084,18 @@
   "@dataManagementBackupSize": {"placeholders": {"size": {"type": "String"}}},
   "@dataManagementRestoreSchemaNote": {"placeholders": {"version": {"type": "int"}}},
   "@dataManagementFilesCount": {"placeholders": {"count": {"type": "int"}}},
-  "@dataManagementExportSummary": {"placeholders": {"rows": {"type": "int"}, "tables": {"type": "int"}}}
+  "@dataManagementExportSummary": {"placeholders": {"rows": {"type": "int"}, "tables": {"type": "int"}}},
+  "inventoryDeleteTitle": "حذف المنتج",
+  "inventoryDeleteConfirm": "هل تريد حذف المنتج \"{name}\" نهائيًا؟ لا يمكن التراجع بعد الحذف، ويُسمح فقط للمنتجات غير المستخدمة.",
+  "inventoryDeleteBlocked": "لا يمكن حذف منتج مرتبط بمخزون أو تشغيلات أو فواتير؛ لاستبعاده استخدم الإيقاف.",
+  "inventoryDeleteMessage": "تم حذف المنتج",
+  "masterDataDeleteTitle": "حذف",
+  "masterDataDeleteConfirm": "هل تريد حذف \"{name}\" نهائيًا؟ لا يمكن حذف أي عنصر مستخدم في منتجات.",
+  "masterDataDeleteBlocked": "لا يمكن حذف عنصر مستخدم في منتجات أو فواتير؛ استخدم الإيقاف بدلاً من الحذف.",
+  "masterDataDeletedMessage": "تم حذف العنصر",
+  "masterDataSearchHint": "ابحث بالاسم",
+  "masterDataCount": "{count} عنصر",
+  "@masterDataCount": {"placeholders": {"count": {"type": "int"}}},
+  "@inventoryDeleteConfirm": {"placeholders": {"name": {"type": "String"}}},
+  "@masterDataDeleteConfirm": {"placeholders": {"name": {"type": "String"}}}
 }

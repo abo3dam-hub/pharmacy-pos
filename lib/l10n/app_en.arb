@@ -1084,5 +1084,18 @@
   "@dataManagementBackupSize": {"placeholders": {"size": {"type": "String"}}},
   "@dataManagementRestoreSchemaNote": {"placeholders": {"version": {"type": "int"}}},
   "@dataManagementFilesCount": {"placeholders": {"count": {"type": "int"}}},
-  "@dataManagementExportSummary": {"placeholders": {"rows": {"type": "int"}, "tables": {"type": "int"}}}
+  "@dataManagementExportSummary": {"placeholders": {"rows": {"type": "int"}, "tables": {"type": "int"}}},
+  "inventoryDeleteTitle": "Delete item",
+  "inventoryDeleteConfirm": "Permanently delete the item \"{name}\"? This cannot be undone; only unused items can be deleted.",
+  "inventoryDeleteBlocked": "Cannot delete an item linked to stock, batches or invoices. Deactivate it instead.",
+  "inventoryDeleteMessage": "Item deleted",
+  "masterDataDeleteTitle": "Delete",
+  "masterDataDeleteConfirm": "Permanently delete \"{name}\"? An entry used by any product cannot be deleted.",
+  "masterDataDeleteBlocked": "Cannot delete an entry used by products or invoices. Deactivate it instead.",
+  "masterDataDeletedMessage": "Entry deleted",
+  "masterDataSearchHint": "Search by name",
+  "masterDataCount": "{count} entries",
+  "@masterDataCount": {"placeholders": {"count": {"type": "int"}}},
+  "@inventoryDeleteConfirm": {"placeholders": {"name": {"type": "String"}}},
+  "@masterDataDeleteConfirm": {"placeholders": {"name": {"type": "String"}}}
 }

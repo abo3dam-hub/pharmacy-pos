@@ -166,6 +166,51 @@ class InventoryRepositoryImpl implements InventoryRepository {
   Future<void> setItemActive(String id, bool active) =>
       _itemDao.setActive(id, active);
 
+  /// Any persisted document (ledger, batch, invoice line or prescription line)
+  /// pins an item into history. Deleting such an item would corrupt reports
+  /// and stock bookkeeping, so it is rejected outright; discontinued products
+  /// are deactivated instead (§28 soft delete).
+  Future<bool> _itemHasHistory(String id) =>
+      _db.customSelect(
+        'SELECT (EXISTS(SELECT 1 FROM batches WHERE item_id = ?1 LIMIT 1))'
+        ' + (EXISTS(SELECT 1 FROM stock_movements WHERE item_id = ?1 LIMIT 1))'
+        ' + (EXISTS(SELECT 1 FROM sales_invoice_items WHERE item_id = ?1 LIMIT 1))'
+        ' + (EXISTS(SELECT 1 FROM purchase_invoice_items WHERE item_id = ?1 LIMIT 1))'
+        ' + (EXISTS(SELECT 1 FROM prescription_items WHERE item_id = ?1 LIMIT 1))'
+        ' AS n',
+        variables: [Variable(id)],
+      ).getSingle().then((r) => r.read<int>('n') > 0);
+
+  @override
+  Future<void> deleteItem(String id) async {
+    final item = await _itemDao.byId(id);
+    if (item == null) throw NotFoundException('المنتج رقم $id غير موجود');
+    if (item.currentStockBase != 0) {
+      throw InvalidOperationException(
+          'لا يمكن حذف منتج لديه مخزون؛ أوقفه واستهلك أو سوِّ مخزونه أولاً');
+    }
+    if (await _itemHasHistory(id)) {
+      throw InvalidOperationException(
+          'لا يمكن حذف منتج مرتبط بتشغيلات أو حركات أو فواتير؛ أوقفه بدلاً من ذلك');
+    }
+    await _guarded(() => _db.transaction(() async {
+          await _deleteItemRelations(id);
+          await (_db.delete(_db.items)..where((i) => i.id.equals(id))).go();
+        }));
+  }
+
+  Future<void> _deleteItemRelations(String id) async {
+    await (_db.delete(_db.itemSuppliers)..where((r) => r.itemId.equals(id)))
+        .go();
+    await (_db.delete(_db.itemActiveIngredients)
+          ..where((r) => r.itemId.equals(id)))
+        .go();
+    await (_db.delete(_db.itemIndications)
+          ..where((r) => r.itemId.equals(id)))
+        .go();
+    await (_db.delete(_db.itemUnits)..where((r) => r.itemId.equals(id))).go();
+  }
+
   Future<void> _applyUnits(ItemUnitRelation? relation, {required String itemId}) async {
     if (relation == null) return;
     await _unitDao.setBaseLargeRelation(
@@ -357,6 +402,20 @@ class InventoryRepositoryImpl implements InventoryRepository {
   Future<void> setCategoryActive(String id, bool active) =>
       _categoryDao.setCategoryActive(id, active);
 
+  @override
+  Future<void> deleteCategory(String id) async {
+    final category = await _categoryDao.byId(id);
+    if (category == null) throw NotFoundException('التصنيف رقم $id غير موجود');
+    if (await _existsRaw(
+        'SELECT 1 FROM items WHERE category_id = ?1 LIMIT 1', id: id)) {
+      throw InvalidOperationException(
+          'لا يمكن حذف تصنيف مرتبط بمنتجات؛ انقل المنتجات أو أوقف التصنيف');
+    }
+    await _guarded(() async {
+      await (_db.delete(_db.categories)..where((c) => c.id.equals(id))).go();
+    });
+  }
+
   // ----- Manufacturers -----
 
   @override
@@ -411,6 +470,23 @@ class InventoryRepositoryImpl implements InventoryRepository {
   Future<void> setManufacturerActive(String id, bool active) =>
       _manufacturerDao.setActive(id, active);
 
+  @override
+  Future<void> deleteManufacturer(String id) async {
+    final manufacturer = await (_db.select(_db.manufacturers)
+          ..where((m) => m.id.equals(id)))
+        .getSingleOrNull();
+    if (manufacturer == null) throw NotFoundException('الشركة رقم $id غير موجودة');
+    if (await _existsRaw(
+        'SELECT 1 FROM items WHERE manufacturer_id = ?1 LIMIT 1', id: id)) {
+      throw InvalidOperationException(
+          'لا يمكن حذف شركة مرتبطة بمنتجات؛ انقل منتجاتها أو أوقفها');
+    }
+    await _guarded(() async {
+      await (_db.delete(_db.manufacturers)..where((m) => m.id.equals(id)))
+          .go();
+    });
+  }
+
   // ----- Active ingredients -----
 
   @override
@@ -456,6 +532,27 @@ class InventoryRepositoryImpl implements InventoryRepository {
   Future<void> setActiveIngredientActive(String id, bool active) =>
       _activeIngredientDao.setActive(id, active);
 
+  @override
+  Future<void> deleteActiveIngredient(String id) async {
+    final ingredient = await _activeIngredientDao.byId(id);
+    if (ingredient == null) {
+      throw NotFoundException('المادة الفعالة رقم $id غير موجودة');
+    }
+    if (await _existsRaw(
+        'SELECT 1 FROM item_active_ingredients WHERE active_ingredient_id = ?1 '
+        'LIMIT 1',
+        id: id)) {
+      throw InvalidOperationException(
+          'لا يمكن حذف مادة فعالة مستخدمة في منتجات؛ أزل المادة من منتجاتها '
+          'أو أوقفها');
+    }
+    await _guarded(() async {
+      await (_db.delete(_db.activeIngredients)
+            ..where((a) => a.id.equals(id)))
+          .go();
+    });
+  }
+
   // ----- Indications -----
 
   @override
@@ -499,6 +596,21 @@ class InventoryRepositoryImpl implements InventoryRepository {
   @override
   Future<void> setIndicationActive(String id, bool active) =>
       _indicationDao.setActive(id, active);
+
+  @override
+  Future<void> deleteIndication(String id) async {
+    final indication = await _indicationDao.byId(id);
+    if (indication == null) throw NotFoundException('الاستطباب رقم $id غير موجود');
+    if (await _existsRaw(
+        'SELECT 1 FROM item_indications WHERE indication_id = ?1 LIMIT 1',
+        id: id)) {
+      throw InvalidOperationException(
+          'لا يمكن حذف استطباب مستخدم في منتجات؛ أوقفه بدلاً من ذلك');
+    }
+    await _guarded(() async {
+      await (_db.delete(_db.indications)..where((i) => i.id.equals(id))).go();
+    });
+  }
 
   // ----- Per-item taxonomy relations -----
 
@@ -621,6 +733,36 @@ class InventoryRepositoryImpl implements InventoryRepository {
     );
     await _guarded(() => _unitDao.update(row));
     return row;
+  }
+
+  /// A unit is reusable only when nothing references it: item unit relations,
+  /// items sold by the part, or a sales-history line typed in that unit.
+  @override
+  Future<void> deleteUnit(String id) async {
+    final unit = await _unitDao.byId(id);
+    if (unit == null) throw NotFoundException('الوحدة رقم $id غير موجودة');
+    if (await _existsRaw(
+            'SELECT 1 FROM item_units WHERE base_unit_id = ?1 '
+            'OR large_unit_id = ?1 LIMIT 1',
+            id: id) ||
+        await _existsRaw(
+            'SELECT 1 FROM items WHERE sellable_part_unit_id = ?1 LIMIT 1',
+            id: id) ||
+        await _existsRaw(
+            'SELECT 1 FROM sales_invoice_items WHERE unit_type_id = ?1 LIMIT 1',
+            id: id)) {
+      throw InvalidOperationException(
+          'لا يمكن حذف وحدة مستخدمة في منتجات أو فواتير؛ أوقفها بدلاً من ذلك');
+    }
+    await _guarded(() async {
+      await (_db.delete(_db.units)..where((u) => u.id.equals(id))).go();
+    });
+  }
+
+  Future<bool> _existsRaw(String sql, {required String id}) async {
+    final result =
+        await _db.customSelect(sql, variables: [Variable(id)]).getSingleOrNull();
+    return result != null;
   }
 
   // ----- Batches & ledger -----

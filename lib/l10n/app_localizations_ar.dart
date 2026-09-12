@@ -3260,4 +3260,42 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get auditLogDateTo => 'إلى';
+
+  @override
+  String get inventoryDeleteTitle => 'حذف المنتج';
+
+  @override
+  String inventoryDeleteConfirm(String name) {
+    return 'هل تريد حذف المنتج \"$name\" نهائيًا؟ لا يمكن التراجع بعد الحذف، ويُسمح فقط للمنتجات غير المستخدمة.';
+  }
+
+  @override
+  String get inventoryDeleteBlocked =>
+      'لا يمكن حذف منتج مرتبط بمخزون أو تشغيلات أو فواتير؛ لاستبعاده استخدم الإيقاف.';
+
+  @override
+  String get inventoryDeleteMessage => 'تم حذف المنتج';
+
+  @override
+  String get masterDataDeleteTitle => 'حذف';
+
+  @override
+  String masterDataDeleteConfirm(String name) {
+    return 'هل تريد حذف \"$name\" نهائيًا؟ لا يمكن حذف أي عنصر مستخدم في منتجات.';
+  }
+
+  @override
+  String get masterDataDeleteBlocked =>
+      'لا يمكن حذف عنصر مستخدم في منتجات أو فواتير؛ استخدم الإيقاف بدلاً من الحذف.';
+
+  @override
+  String get masterDataDeletedMessage => 'تم حذف العنصر';
+
+  @override
+  String get masterDataSearchHint => 'ابحث بالاسم';
+
+  @override
+  String masterDataCount(int count) {
+    return '$count عنصر';
+  }
 }

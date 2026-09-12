@@ -9,6 +9,7 @@ import '../domain/repositories/inventory_repository.dart';
 import '../domain/usecases/batches_use_cases.dart';
 import '../domain/usecases/bulk_use_cases.dart';
 import '../domain/usecases/create_item.dart';
+import '../domain/usecases/delete_item.dart';
 import '../domain/usecases/excel_use_cases.dart';
 import '../domain/usecases/list_items.dart';
 import '../domain/usecases/set_item_active.dart';
@@ -96,6 +97,7 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     this._createItem,
     this._updateItem,
     this._setItemActive,
+    this._deleteItem,
     this._addBatch,
     this._voidBatch,
     this._listBatches,
@@ -109,6 +111,7 @@ class InventoryController extends StateNotifier<InventoryViewState> {
   final CreateItemUseCase _createItem;
   final UpdateItemUseCase _updateItem;
   final SetItemActiveUseCase _setItemActive;
+  final DeleteItemUseCase _deleteItem;
   final AddBatchUseCase _addBatch;
   final VoidBatchUseCase _voidBatch;
   final ListBatchesUseCase _listBatches;
@@ -229,6 +232,26 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     state = state.copyWith(busy: true, error: () => null);
     try {
       await _updateItem.call(id, draft,
+          actingUserId: actingUserId, actingRoleId: actingRoleId);
+      await reload(actingRoleId: actingRoleId);
+      return null;
+    } on AppException catch (e) {
+      state = state.copyWith(busy: false, error: () => e.failure);
+      return e.failure;
+    } on Exception {
+      state = state.copyWith(busy: false);
+      return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
+    }
+  }
+
+  Future<Failure?> deleteItem(
+    String id, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) async {
+    state = state.copyWith(busy: true, error: () => null);
+    try {
+      await _deleteItem.call(id,
           actingUserId: actingUserId, actingRoleId: actingRoleId);
       await reload(actingRoleId: actingRoleId);
       return null;

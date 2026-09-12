@@ -24,6 +24,7 @@ import 'package:pharmacy_pos/features/inventory/domain/services/inventory_view_b
 import 'package:pharmacy_pos/features/inventory/domain/usecases/batches_use_cases.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/bulk_use_cases.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/create_item.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/delete_item.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/excel_use_cases.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/list_items.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/set_item_active.dart';
@@ -316,6 +317,7 @@ void main() {
         UpdateItemUseCase(repo, const PermissionService(), const AuditService()),
         SetItemActiveUseCase(
             repo, const PermissionService(), const AuditService()),
+        DeleteItemUseCase(repo, const PermissionService(), const AuditService()),
         AddBatchUseCase(repo, const PermissionService(), const AuditService()),
         VoidBatchUseCase(
             repo, const PermissionService(), const AuditService()),

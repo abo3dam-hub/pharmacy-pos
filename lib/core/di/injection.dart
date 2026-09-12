@@ -78,6 +78,8 @@ import '../../features/inventory/domain/usecases/batches_use_cases.dart';
 import '../../features/inventory/domain/usecases/bulk_use_cases.dart';
 import '../../features/inventory/domain/usecases/categories_use_cases.dart';
 import '../../features/inventory/domain/usecases/create_item.dart';
+import '../../features/inventory/domain/usecases/delete_item.dart';
+import '../../features/inventory/domain/usecases/delete_master_data.dart';
 import '../../features/inventory/domain/usecases/excel_use_cases.dart';
 import '../../features/inventory/domain/usecases/indications_use_cases.dart';
 import '../../features/inventory/domain/usecases/list_items.dart';
@@ -548,6 +550,8 @@ void _registerInventory(AppDatabase db) {
       () => UpdateItemUseCase(repo, perms, audit));
   getIt.registerLazySingleton<SetItemActiveUseCase>(
       () => SetItemActiveUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<DeleteItemUseCase>(
+      () => DeleteItemUseCase(repo, perms, audit));
   getIt.registerLazySingleton<BulkUpdateItemsUseCase>(
       () => BulkUpdateItemsUseCase(repo, perms, audit));
 
@@ -568,6 +572,8 @@ void _registerInventory(AppDatabase db) {
       () => SaveCategoryUseCase(repo, perms, audit));
   getIt.registerLazySingleton<SetCategoryActiveUseCase>(
       () => SetCategoryActiveUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<DeleteCategoryUseCase>(
+      () => DeleteCategoryUseCase(repo, perms, audit));
   getIt.registerLazySingleton<ListManufacturersUseCase>(
       () => ListManufacturersUseCase(repo, perms));
   getIt.registerLazySingleton<SaveManufacturerUseCase>(
@@ -586,12 +592,20 @@ void _registerInventory(AppDatabase db) {
       () => SaveActiveIngredientUseCase(repo, perms, audit));
   getIt.registerLazySingleton<SetActiveIngredientActiveUseCase>(
       () => SetActiveIngredientActiveUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<DeleteActiveIngredientUseCase>(
+      () => DeleteActiveIngredientUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<DeleteUnitUseCase>(
+      () => DeleteUnitUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<DeleteManufacturerUseCase>(
+      () => DeleteManufacturerUseCase(repo, perms, audit));
   getIt.registerLazySingleton<ListIndicationsUseCase>(
       () => ListIndicationsUseCase(repo, perms));
   getIt.registerLazySingleton<SaveIndicationUseCase>(
       () => SaveIndicationUseCase(repo, perms, audit));
   getIt.registerLazySingleton<SetIndicationActiveUseCase>(
       () => SetIndicationActiveUseCase(repo, perms, audit));
+  getIt.registerLazySingleton<DeleteIndicationUseCase>(
+      () => DeleteIndicationUseCase(repo, perms, audit));
 
   // Excel
   getIt.registerLazySingleton<ExportItemsUseCase>(
@@ -605,6 +619,7 @@ void _registerInventory(AppDatabase db) {
         getIt<CreateItemUseCase>(),
         getIt<UpdateItemUseCase>(),
         getIt<SetItemActiveUseCase>(),
+        getIt<DeleteItemUseCase>(),
         getIt<AddBatchUseCase>(),
         getIt<VoidBatchUseCase>(),
         getIt<ListBatchesUseCase>(),
@@ -619,17 +634,22 @@ void _registerInventory(AppDatabase db) {
             getIt<ListCategoriesUseCase>(),
             getIt<SaveCategoryUseCase>(),
             getIt<SetCategoryActiveUseCase>(),
+            getIt<DeleteCategoryUseCase>(),
             getIt<SaveManufacturerUseCase>(),
             getIt<SetManufacturerActiveUseCase>(),
+            getIt<DeleteManufacturerUseCase>(),
             getIt<AllManufacturersUseCase>(),
             getIt<ListUnitsUseCase>(),
             getIt<SaveUnitUseCase>(),
+            getIt<DeleteUnitUseCase>(),
             getIt<ListActiveIngredientsUseCase>(),
             getIt<SaveActiveIngredientUseCase>(),
             getIt<SetActiveIngredientActiveUseCase>(),
+            getIt<DeleteActiveIngredientUseCase>(),
             getIt<ListIndicationsUseCase>(),
             getIt<SaveIndicationUseCase>(),
             getIt<SetIndicationActiveUseCase>(),
+            getIt<DeleteIndicationUseCase>(),
           ));
 }
 

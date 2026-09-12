@@ -317,6 +317,12 @@ abstract class InventoryRepository {
   Future<ItemRow> createItem(ItemDraft draft);
   Future<ItemRow> updateItem(String id, ItemDraft draft);
   Future<void> setItemActive(String id, bool active);
+
+  /// Physically removes an item after the safety checks run: an item with any
+  /// live stock, batch, ledger movement or sale/purchase/prescription
+  /// reference is rejected (`InvalidOperationException`). All junction rows are
+  /// removed with it in one transaction.
+  Future<void> deleteItem(String id);
   Future<ItemUnitRow?> itemUnitsFor(String itemId);
   Future<List<String>> supplierIdsForItem(String itemId);
   Future<List<String>> itemIdsForSupplier(String supplierId);
@@ -332,6 +338,9 @@ abstract class InventoryRepository {
   Future<CategoryRow> updateCategory(String id, MasterDataDraft draft);
   Future<void> setCategoryActive(String id, bool active);
 
+  /// Deletes a category; rejected while any item still references it.
+  Future<void> deleteCategory(String id);
+
   // Manufacturers (§4.1)
   Future<List<ManufacturerRow>> manufacturers();
   Future<PageResult<ManufacturerRow>> searchManufacturers(PageRequest page);
@@ -339,10 +348,16 @@ abstract class InventoryRepository {
   Future<ManufacturerRow> updateManufacturer(String id, MasterDataDraft draft);
   Future<void> setManufacturerActive(String id, bool active);
 
+  /// Deletes a manufacturer; rejected while any item still references it.
+  Future<void> deleteManufacturer(String id);
+
   // Units (§4.5)
   Future<List<UnitRow>> units({bool? activeOnly});
   Future<UnitRow> createUnit(MasterDataDraft draft);
   Future<UnitRow> updateUnit(String id, MasterDataDraft draft);
+
+  /// Deletes a unit; rejected while any item relation or sale line uses it.
+  Future<void> deleteUnit(String id);
 
   // Active ingredients (§4.2b)
   Future<List<ActiveIngredientRow>> activeIngredients({bool? activeOnly});
@@ -351,11 +366,17 @@ abstract class InventoryRepository {
       String id, MasterDataDraft draft);
   Future<void> setActiveIngredientActive(String id, bool active);
 
+  /// Deletes an active ingredient; rejected while any item still uses it.
+  Future<void> deleteActiveIngredient(String id);
+
   // Indications (§4.2c)
   Future<List<IndicationRow>> indications({bool? activeOnly});
   Future<IndicationRow> createIndication(MasterDataDraft draft);
   Future<IndicationRow> updateIndication(String id, MasterDataDraft draft);
   Future<void> setIndicationActive(String id, bool active);
+
+  /// Deletes an indication; rejected while any item still uses it.
+  Future<void> deleteIndication(String id);
 
   // Per-item taxonomy relations
   Future<List<String>> activeIngredientIdsForItem(String itemId);

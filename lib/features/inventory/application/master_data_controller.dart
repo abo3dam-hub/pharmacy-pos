@@ -6,6 +6,7 @@ import '../../../shared/database/app_database.dart';
 import '../domain/repositories/inventory_repository.dart';
 import '../domain/usecases/active_ingredients_use_cases.dart';
 import '../domain/usecases/categories_use_cases.dart';
+import '../domain/usecases/delete_master_data.dart';
 import '../domain/usecases/indications_use_cases.dart';
 import '../domain/usecases/manufacturers_use_cases.dart';
 import '../domain/usecases/units_use_cases.dart';
@@ -65,33 +66,43 @@ class MasterDataController extends StateNotifier<MasterDataViewState> {
     this._listCategories,
     this._saveCategory,
     this._setCategoryActive,
+    this._deleteCategory,
     this._saveManufacturer,
     this._setManufacturerActive,
+    this._deleteManufacturer,
     this._allManufacturers,
     this._listUnits,
     this._saveUnit,
+    this._deleteUnit,
     this._listActiveIngredients,
     this._saveActiveIngredient,
     this._setActiveIngredientActive,
+    this._deleteActiveIngredient,
     this._listIndications,
     this._saveIndication,
     this._setIndicationActive,
+    this._deleteIndication,
   ) : super(const MasterDataViewState());
 
   final ListCategoriesUseCase _listCategories;
   final SaveCategoryUseCase _saveCategory;
   final SetCategoryActiveUseCase _setCategoryActive;
+  final DeleteCategoryUseCase _deleteCategory;
   final SaveManufacturerUseCase _saveManufacturer;
   final SetManufacturerActiveUseCase _setManufacturerActive;
+  final DeleteManufacturerUseCase _deleteManufacturer;
   final AllManufacturersUseCase _allManufacturers;
   final ListUnitsUseCase _listUnits;
   final SaveUnitUseCase _saveUnit;
+  final DeleteUnitUseCase _deleteUnit;
   final ListActiveIngredientsUseCase _listActiveIngredients;
   final SaveActiveIngredientUseCase _saveActiveIngredient;
   final SetActiveIngredientActiveUseCase _setActiveIngredientActive;
+  final DeleteActiveIngredientUseCase _deleteActiveIngredient;
   final ListIndicationsUseCase _listIndications;
   final SaveIndicationUseCase _saveIndication;
   final SetIndicationActiveUseCase _setIndicationActive;
+  final DeleteIndicationUseCase _deleteIndication;
 
   Future<Failure?> load({String? actingRoleId}) async {
     state = state.copyWith(status: MasterDataStatus.loading, error: () => null);
@@ -152,6 +163,15 @@ class MasterDataController extends StateNotifier<MasterDataViewState> {
           actingUserId: actingUserId, actingRoleId: actingRoleId),
           actingRoleId: actingRoleId);
 
+  Future<Failure?> deleteCategory(
+    String id, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) =>
+      _run(() => _deleteCategory.call(id,
+          actingUserId: actingUserId, actingRoleId: actingRoleId),
+          actingRoleId: actingRoleId);
+
   // ----- manufacturers -----
 
   Future<Failure?> createManufacturer(
@@ -183,6 +203,15 @@ class MasterDataController extends StateNotifier<MasterDataViewState> {
           actingUserId: actingUserId, actingRoleId: actingRoleId),
           actingRoleId: actingRoleId);
 
+  Future<Failure?> deleteManufacturer(
+    String id, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) =>
+      _run(() => _deleteManufacturer.call(id,
+          actingUserId: actingUserId, actingRoleId: actingRoleId),
+          actingRoleId: actingRoleId);
+
   // ----- units -----
 
   Future<Failure?> createUnit(
@@ -201,6 +230,15 @@ class MasterDataController extends StateNotifier<MasterDataViewState> {
     String? actingRoleId,
   }) =>
       _run(() => _saveUnit.update(id, draft,
+          actingUserId: actingUserId, actingRoleId: actingRoleId),
+          actingRoleId: actingRoleId);
+
+  Future<Failure?> deleteUnit(
+    String id, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) =>
+      _run(() => _deleteUnit.call(id,
           actingUserId: actingUserId, actingRoleId: actingRoleId),
           actingRoleId: actingRoleId);
 
@@ -235,6 +273,15 @@ class MasterDataController extends StateNotifier<MasterDataViewState> {
           actingUserId: actingUserId, actingRoleId: actingRoleId),
           actingRoleId: actingRoleId);
 
+  Future<Failure?> deleteActiveIngredient(
+    String id, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) =>
+      _run(() => _deleteActiveIngredient.call(id,
+          actingUserId: actingUserId, actingRoleId: actingRoleId),
+          actingRoleId: actingRoleId);
+
   // ----- indications -----
 
   Future<Failure?> createIndication(
@@ -263,6 +310,15 @@ class MasterDataController extends StateNotifier<MasterDataViewState> {
     String? actingRoleId,
   }) =>
       _run(() => _setIndicationActive.call(id, active,
+          actingUserId: actingUserId, actingRoleId: actingRoleId),
+          actingRoleId: actingRoleId);
+
+  Future<Failure?> deleteIndication(
+    String id, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) =>
+      _run(() => _deleteIndication.call(id,
           actingUserId: actingUserId, actingRoleId: actingRoleId),
           actingRoleId: actingRoleId);
 

@@ -77,6 +77,8 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       ref.read(authControllerProvider).permissions.contains(Perm.inventoryEdit);
   bool get _canChangePrices =>
       ref.read(authControllerProvider).permissions.contains(Perm.changePrices);
+  bool get _canDelete =>
+      ref.read(authControllerProvider).permissions.contains(Perm.inventoryDelete);
   String? get _actingUserId => ref.read(authControllerProvider).user?.id;
   String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
 
@@ -317,6 +319,29 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
         ));
     } else {
       _showFailure(outcome);
+    }
+  }
+
+  Future<void> _deleteItem(InventoryItemView view) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: l10n.inventoryDeleteTitle,
+      message: l10n.inventoryDeleteConfirm(view.primaryLabel),
+      confirmLabel: l10n.commonDelete,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    final failure = await ref
+        .read(inventoryControllerProvider.notifier)
+        .deleteItem(view.item.id,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure == null && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.inventoryDeleteMessage)));
+    } else {
+      _showFailure(failure);
     }
   }
 
@@ -701,7 +726,15 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
                       style: typography.label,
                     ),
                   ),
-                  if (_canEdit) ...[
+if (_canDelete)
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: l10n.commonDelete,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+            onPressed: () => _deleteItem(row),
+          ),
+        if (_canEdit) ...[
                     const SizedBox(height: AppSpacing.s),
                     Align(
                       alignment: AlignmentDirectional.centerEnd,

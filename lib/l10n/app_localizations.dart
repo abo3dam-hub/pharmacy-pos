@@ -6433,6 +6433,66 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'إلى'**
   String get auditLogDateTo;
+
+  /// No description provided for @inventoryDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف المنتج'**
+  String get inventoryDeleteTitle;
+
+  /// No description provided for @inventoryDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد حذف المنتج \"{name}\" نهائيًا؟ لا يمكن التراجع بعد الحذف، ويُسمح فقط للمنتجات غير المستخدمة.'**
+  String inventoryDeleteConfirm(String name);
+
+  /// No description provided for @inventoryDeleteBlocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن حذف منتج مرتبط بمخزون أو تشغيلات أو فواتير؛ لاستبعاده استخدم الإيقاف.'**
+  String get inventoryDeleteBlocked;
+
+  /// No description provided for @inventoryDeleteMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حذف المنتج'**
+  String get inventoryDeleteMessage;
+
+  /// No description provided for @masterDataDeleteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get masterDataDeleteTitle;
+
+  /// No description provided for @masterDataDeleteConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'هل تريد حذف \"{name}\" نهائيًا؟ لا يمكن حذف أي عنصر مستخدم في منتجات.'**
+  String masterDataDeleteConfirm(String name);
+
+  /// No description provided for @masterDataDeleteBlocked.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا يمكن حذف عنصر مستخدم في منتجات أو فواتير؛ استخدم الإيقاف بدلاً من الحذف.'**
+  String get masterDataDeleteBlocked;
+
+  /// No description provided for @masterDataDeletedMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حذف العنصر'**
+  String get masterDataDeletedMessage;
+
+  /// No description provided for @masterDataSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث بالاسم'**
+  String get masterDataSearchHint;
+
+  /// No description provided for @masterDataCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} عنصر'**
+  String masterDataCount(int count);
 }
 
 class _AppLocalizationsDelegate

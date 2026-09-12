@@ -6,7 +6,6 @@ import '../../../../core/di/providers.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_data_table.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -14,6 +13,7 @@ import '../../../../shared/database/app_database.dart';
 import '../../application/master_data_controller.dart';
 import '../../domain/repositories/inventory_repository.dart';
 import '../widgets/master_data_dialog.dart';
+import '../widgets/paged_master_table.dart';
 import '../widgets/status_chips.dart';
 
 /// §4.3 + §4.4 — main categories with expandable sub-categories.
@@ -27,21 +27,10 @@ class CategoriesTab extends ConsumerStatefulWidget {
 class _CategoriesTabState extends ConsumerState<CategoriesTab> {
   bool get _canEdit =>
       ref.read(authControllerProvider).permissions.contains(Perm.inventoryEdit);
+  bool get _canDelete =>
+      ref.read(authControllerProvider).permissions.contains(Perm.inventoryDelete);
   String? get _actingUserId => ref.read(authControllerProvider).user?.id;
   String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
-
-  void _showFailure(Failure? failure) {
-    if (failure == null || !mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final message = switch (failure) {
-      UnauthorizedFailure() => l10n.authPermissionDenied,
-      DatabaseFailure(message: final m) when (m).trim().isNotEmpty => m,
-      _ => l10n.authSaveError,
-    };
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
 
   Future<void> _addCategory() async {
     final l10n = AppLocalizations.of(context);
@@ -55,7 +44,7 @@ class _CategoriesTabState extends ConsumerState<CategoriesTab> {
         .createCategory(result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
     if (failure == null && mounted) _saved();
-    if (failure != null) _showFailure(failure);
+    if (failure != null && mounted) _showFailure(context, failure);
   }
 
   Future<void> _editCategory(CategoryRow row) async {
@@ -75,7 +64,7 @@ class _CategoriesTabState extends ConsumerState<CategoriesTab> {
         .updateCategory(row.id, result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
     if (failure == null && mounted) _saved();
-    if (failure != null) _showFailure(failure);
+    if (failure != null && mounted) _showFailure(context, failure);
   }
 
   Future<void> _toggleCategory(CategoryRow row) async {
@@ -95,7 +84,28 @@ class _CategoriesTabState extends ConsumerState<CategoriesTab> {
         .setCategoryActive(row.id, activating,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
     if (failure == null && mounted) _saved();
-    if (failure != null) _showFailure(failure);
+    if (failure != null && mounted) _showFailure(context, failure);
+  }
+
+  Future<void> _deleteCategory(CategoryRow row) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: l10n.masterDataDeleteTitle,
+      message: l10n.masterDataDeleteConfirm(row.name),
+      confirmLabel: l10n.commonDelete,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    final failure = await ref.read(masterDataControllerProvider.notifier)
+        .deleteCategory(row.id,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure == null && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.masterDataDeletedMessage)));
+    }
+    if (failure != null && mounted) _showFailure(context, failure);
   }
 
   void _saved() {
@@ -129,28 +139,29 @@ class _CategoriesTabState extends ConsumerState<CategoriesTab> {
                     child: Text(l10n.commonError,
                         style: context.appTypography.labelSmall),
                   )
-                : AppDataTable(
+                : PagedMasterTable<CategoryRow>(
                     emptyMessage: l10n.categoriesEmpty,
+                    data: state.categories,
+                    searchText: (c) => '${c.name} ${c.nameEn ?? ''}',
                     columns: [
                       DataColumn(label: Text(l10n.categoryName)),
                       DataColumn(label: Text(l10n.categoryNameEn)),
                       DataColumn(label: Text(l10n.userStatusActive)),
                       DataColumn(label: Text('')),
                     ],
-                    rows: [
-                      for (final c in state.categories)
-                        DataRow(cells: [
-                          DataCell(Text(c.name)),
-                          DataCell(Text(c.nameEn ?? '')),
-                          DataCell(_ActiveStatusChipBox(active: c.isActive)),
-                          DataCell(_MasterActions(
-                            canEdit: _canEdit,
-                            onEdit: () => _editCategory(c),
-                            onToggle: () => _toggleCategory(c),
-                            active: c.isActive,
-                          )),
-                        ]),
-                    ],
+                    rowBuilder: (c) => DataRow(cells: [
+                      DataCell(Text(c.name)),
+                      DataCell(Text(c.nameEn ?? '')),
+                      DataCell(_ActiveStatusChipBox(active: c.isActive)),
+                      DataCell(_MasterActions(
+                        canEdit: _canEdit,
+                        canDelete: _canDelete,
+                        onEdit: () => _editCategory(c),
+                        onToggle: () => _toggleCategory(c),
+                        onDelete: () => _deleteCategory(c),
+                        active: c.isActive,
+                      )),
+                    ]),
                   ),
           ),
         ),
@@ -170,6 +181,8 @@ class ManufacturersTab extends ConsumerStatefulWidget {
 class _ManufacturersTabState extends ConsumerState<ManufacturersTab> {
   bool get _canEdit =>
       ref.read(authControllerProvider).permissions.contains(Perm.inventoryEdit);
+  bool get _canDelete =>
+      ref.read(authControllerProvider).permissions.contains(Perm.inventoryDelete);
   String? get _actingUserId => ref.read(authControllerProvider).user?.id;
   String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
 
@@ -193,7 +206,10 @@ class _ManufacturersTabState extends ConsumerState<ManufacturersTab> {
     final failure = await ref.read(masterDataControllerProvider.notifier)
         .createManufacturer(result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
+    if (failure != null && mounted) {
+      _showFailure(context, failure);
+      return;
+    }
     _snack(true);
   }
 
@@ -215,7 +231,10 @@ class _ManufacturersTabState extends ConsumerState<ManufacturersTab> {
     final failure = await ref.read(masterDataControllerProvider.notifier)
         .updateManufacturer(row.id, result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
+    if (failure != null && mounted) {
+      _showFailure(context, failure);
+      return;
+    }
     _snack(true);
   }
 
@@ -223,8 +242,32 @@ class _ManufacturersTabState extends ConsumerState<ManufacturersTab> {
     final failure = await ref.read(masterDataControllerProvider.notifier)
         .setManufacturerActive(row.id, active,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
+    if (failure != null && mounted) {
+      _showFailure(context, failure);
+      return;
+    }
     _snack(true);
+  }
+
+  Future<void> _delete(ManufacturerRow row) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: l10n.masterDataDeleteTitle,
+      message: l10n.masterDataDeleteConfirm(row.name),
+      confirmLabel: l10n.commonDelete,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    final failure = await ref.read(masterDataControllerProvider.notifier)
+        .deleteManufacturer(row.id,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure == null && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.masterDataDeletedMessage)));
+    }
+    if (failure != null && mounted) _showFailure(context, failure);
   }
 
   @override
@@ -251,8 +294,10 @@ class _ManufacturersTabState extends ConsumerState<ManufacturersTab> {
                     child: Text(l10n.commonError,
                         style: context.appTypography.labelSmall),
                   )
-                : AppDataTable(
+                : PagedMasterTable<ManufacturerRow>(
                     emptyMessage: l10n.manufacturersEmpty,
+                    data: state.manufacturers,
+                    searchText: (m) => '${m.name} ${m.country ?? ''}',
                     columns: [
                       DataColumn(label: Text(l10n.manufacturerName)),
                       DataColumn(label: Text(l10n.manufacturerCountry)),
@@ -260,21 +305,20 @@ class _ManufacturersTabState extends ConsumerState<ManufacturersTab> {
                       DataColumn(label: Text(l10n.userStatusActive)),
                       DataColumn(label: Text('')),
                     ],
-                    rows: [
-                      for (final m in state.manufacturers)
-                        DataRow(cells: [
-                          DataCell(Text(m.name)),
-                          DataCell(Text(m.country ?? '')),
-                          DataCell(Text(m.phone ?? '')),
-                          DataCell(_ActiveStatusChipBox(active: m.isActive)),
-                          DataCell(_MasterActions(
-                            canEdit: _canEdit,
-                            onEdit: () => _edit(m),
-                            onToggle: () => _toggle(m, !m.isActive),
-                            active: m.isActive,
-                          )),
-                        ]),
-                    ],
+                    rowBuilder: (m) => DataRow(cells: [
+                      DataCell(Text(m.name)),
+                      DataCell(Text(m.country ?? '')),
+                      DataCell(Text(m.phone ?? '')),
+                      DataCell(_ActiveStatusChipBox(active: m.isActive)),
+                      DataCell(_MasterActions(
+                        canEdit: _canEdit,
+                        canDelete: _canDelete,
+                        onEdit: () => _edit(m),
+                        onToggle: () => _toggle(m, !m.isActive),
+                        onDelete: () => _delete(m),
+                        active: m.isActive,
+                      )),
+                    ]),
                   ),
           ),
         ),
@@ -294,6 +338,8 @@ class UnitsTab extends ConsumerStatefulWidget {
 class _UnitsTabState extends ConsumerState<UnitsTab> {
   bool get _canEdit =>
       ref.read(authControllerProvider).permissions.contains(Perm.inventoryEdit);
+  bool get _canDelete =>
+      ref.read(authControllerProvider).permissions.contains(Perm.inventoryDelete);
   String? get _actingUserId => ref.read(authControllerProvider).user?.id;
   String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
 
@@ -317,7 +363,10 @@ class _UnitsTabState extends ConsumerState<UnitsTab> {
     final failure = await ref.read(masterDataControllerProvider.notifier)
         .createUnit(result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
+    if (failure != null && mounted) {
+      _showFailure(context, failure);
+      return;
+    }
     _snack(true);
   }
 
@@ -338,8 +387,32 @@ class _UnitsTabState extends ConsumerState<UnitsTab> {
     final failure = await ref.read(masterDataControllerProvider.notifier)
         .updateUnit(row.id, result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
+    if (failure != null && mounted) {
+      _showFailure(context, failure);
+      return;
+    }
     _snack(true);
+  }
+
+  Future<void> _delete(UnitRow row) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: l10n.masterDataDeleteTitle,
+      message: l10n.masterDataDeleteConfirm(row.name),
+      confirmLabel: l10n.commonDelete,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    final failure = await ref.read(masterDataControllerProvider.notifier)
+        .deleteUnit(row.id,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure == null && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.masterDataDeletedMessage)));
+    }
+    if (failure != null && mounted) _showFailure(context, failure);
   }
 
   @override
@@ -366,26 +439,27 @@ class _UnitsTabState extends ConsumerState<UnitsTab> {
                     child: Text(l10n.commonError,
                         style: context.appTypography.labelSmall),
                   )
-                : AppDataTable(
+                : PagedMasterTable<UnitRow>(
                     emptyMessage: l10n.unitsEmpty,
+                    data: state.units,
+                    searchText: (u) => '${u.name} ${u.nameEn ?? ''}',
                     columns: [
                       DataColumn(label: Text(l10n.unitName)),
                       DataColumn(label: Text(l10n.unitAbbreviation)),
                       DataColumn(label: Text(l10n.userStatusActive)),
                       DataColumn(label: Text('')),
                     ],
-                    rows: [
-                      for (final u in state.units)
-                        DataRow(cells: [
-                          DataCell(Text(u.name)),
-                          DataCell(Text(u.abbreviation ?? '')),
-                          DataCell(_ActiveStatusChipBox(active: u.isActive)),
-                          DataCell(_MasterActions(
-                            canEdit: _canEdit,
-                            onEdit: () => _edit(u),
-                          )),
-                        ]),
-                    ],
+                    rowBuilder: (u) => DataRow(cells: [
+                      DataCell(Text(u.name)),
+                      DataCell(Text(u.abbreviation ?? '')),
+                      DataCell(_ActiveStatusChipBox(active: u.isActive)),
+                      DataCell(_MasterActions(
+                        canEdit: _canEdit,
+                        canDelete: _canDelete,
+                        onEdit: () => _edit(u),
+                        onDelete: () => _delete(u),
+                      )),
+                    ]),
                   ),
           ),
         ),
@@ -406,6 +480,8 @@ class ActiveIngredientsTab extends ConsumerStatefulWidget {
 class _ActiveIngredientsTabState extends ConsumerState<ActiveIngredientsTab> {
   bool get _canEdit =>
       ref.read(authControllerProvider).permissions.contains(Perm.inventoryEdit);
+  bool get _canDelete =>
+      ref.read(authControllerProvider).permissions.contains(Perm.inventoryDelete);
   String? get _actingUserId => ref.read(authControllerProvider).user?.id;
   String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
 
@@ -429,7 +505,10 @@ class _ActiveIngredientsTabState extends ConsumerState<ActiveIngredientsTab> {
     final failure = await ref.read(masterDataControllerProvider.notifier)
         .createActiveIngredient(result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
+    if (failure != null && mounted) {
+      _showFailure(context, failure);
+      return;
+    }
     _snack(true);
   }
 
@@ -449,7 +528,10 @@ class _ActiveIngredientsTabState extends ConsumerState<ActiveIngredientsTab> {
     final failure = await ref.read(masterDataControllerProvider.notifier)
         .updateActiveIngredient(row.id, result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
+    if (failure != null && mounted) {
+      _showFailure(context, failure);
+      return;
+    }
     _snack(true);
   }
 
@@ -457,8 +539,32 @@ class _ActiveIngredientsTabState extends ConsumerState<ActiveIngredientsTab> {
     final failure = await ref.read(masterDataControllerProvider.notifier)
         .setActiveIngredientActive(row.id, active,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
+    if (failure != null && mounted) {
+      _showFailure(context, failure);
+      return;
+    }
     _snack(true);
+  }
+
+  Future<void> _delete(ActiveIngredientRow row) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: l10n.masterDataDeleteTitle,
+      message: l10n.masterDataDeleteConfirm(row.name),
+      confirmLabel: l10n.commonDelete,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    final failure = await ref.read(masterDataControllerProvider.notifier)
+        .deleteActiveIngredient(row.id,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure == null && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.masterDataDeletedMessage)));
+    }
+    if (failure != null && mounted) _showFailure(context, failure);
   }
 
   @override
@@ -485,8 +591,10 @@ class _ActiveIngredientsTabState extends ConsumerState<ActiveIngredientsTab> {
                     child: Text(l10n.commonError,
                         style: context.appTypography.labelSmall),
                   )
-                : AppDataTable(
+                : PagedMasterTable<ActiveIngredientRow>(
                     emptyMessage: l10n.activeIngredientsEmpty,
+                    data: state.activeIngredients,
+                    searchText: (a) => '${a.name} ${a.nameEn ?? ''}',
                     columns: [
                       DataColumn(label: Text(l10n.activeIngredientName)),
                       DataColumn(label: Text(l10n.masterDataNameEn)),
@@ -494,21 +602,20 @@ class _ActiveIngredientsTabState extends ConsumerState<ActiveIngredientsTab> {
                       DataColumn(label: Text(l10n.userStatusActive)),
                       DataColumn(label: Text('')),
                     ],
-                    rows: [
-                      for (final a in state.activeIngredients)
-                        DataRow(cells: [
-                          DataCell(Text(a.name)),
-                          DataCell(Text(a.nameEn ?? '')),
-                          DataCell(Text(a.description ?? '')),
-                          DataCell(_ActiveStatusChipBox(active: a.isActive)),
-                          DataCell(_MasterActions(
-                            canEdit: _canEdit,
-                            onEdit: () => _edit(a),
-                            onToggle: () => _toggle(a, !a.isActive),
-                            active: a.isActive,
-                          )),
-                        ]),
-                    ],
+                    rowBuilder: (a) => DataRow(cells: [
+                      DataCell(Text(a.name)),
+                      DataCell(Text(a.nameEn ?? '')),
+                      DataCell(Text(a.description ?? '')),
+                      DataCell(_ActiveStatusChipBox(active: a.isActive)),
+                      DataCell(_MasterActions(
+                        canEdit: _canEdit,
+                        canDelete: _canDelete,
+                        onEdit: () => _edit(a),
+                        onToggle: () => _toggle(a, !a.isActive),
+                        onDelete: () => _delete(a),
+                        active: a.isActive,
+                      )),
+                    ]),
                   ),
           ),
         ),
@@ -528,6 +635,8 @@ class IndicationsTab extends ConsumerStatefulWidget {
 class _IndicationsTabState extends ConsumerState<IndicationsTab> {
   bool get _canEdit =>
       ref.read(authControllerProvider).permissions.contains(Perm.inventoryEdit);
+  bool get _canDelete =>
+      ref.read(authControllerProvider).permissions.contains(Perm.inventoryDelete);
   String? get _actingUserId => ref.read(authControllerProvider).user?.id;
   String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
 
@@ -551,7 +660,10 @@ class _IndicationsTabState extends ConsumerState<IndicationsTab> {
     final failure = await ref.read(masterDataControllerProvider.notifier)
         .createIndication(result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
+    if (failure != null && mounted) {
+      _showFailure(context, failure);
+      return;
+    }
     _snack(true);
   }
 
@@ -571,7 +683,10 @@ class _IndicationsTabState extends ConsumerState<IndicationsTab> {
     final failure = await ref.read(masterDataControllerProvider.notifier)
         .updateIndication(row.id, result.draft,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
+    if (failure != null && mounted) {
+      _showFailure(context, failure);
+      return;
+    }
     _snack(true);
   }
 
@@ -579,8 +694,32 @@ class _IndicationsTabState extends ConsumerState<IndicationsTab> {
     final failure = await ref.read(masterDataControllerProvider.notifier)
         .setIndicationActive(row.id, active,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
-    if (failure != null) return;
+    if (failure != null && mounted) {
+      _showFailure(context, failure);
+      return;
+    }
     _snack(true);
+  }
+
+  Future<void> _delete(IndicationRow row) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showAppConfirmDialog(
+      context,
+      title: l10n.masterDataDeleteTitle,
+      message: l10n.masterDataDeleteConfirm(row.name),
+      confirmLabel: l10n.commonDelete,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    final failure = await ref.read(masterDataControllerProvider.notifier)
+        .deleteIndication(row.id,
+            actingUserId: _actingUserId, actingRoleId: _actingRoleId);
+    if (failure == null && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.masterDataDeletedMessage)));
+    }
+    if (failure != null && mounted) _showFailure(context, failure);
   }
 
   @override
@@ -607,8 +746,10 @@ class _IndicationsTabState extends ConsumerState<IndicationsTab> {
                     child: Text(l10n.commonError,
                         style: context.appTypography.labelSmall),
                   )
-                : AppDataTable(
+                : PagedMasterTable<IndicationRow>(
                     emptyMessage: l10n.indicationsEmpty,
+                    data: state.indications,
+                    searchText: (i) => '${i.name} ${i.nameEn ?? ''}',
                     columns: [
                       DataColumn(label: Text(l10n.indicationName)),
                       DataColumn(label: Text(l10n.masterDataNameEn)),
@@ -616,21 +757,20 @@ class _IndicationsTabState extends ConsumerState<IndicationsTab> {
                       DataColumn(label: Text(l10n.userStatusActive)),
                       DataColumn(label: Text('')),
                     ],
-                    rows: [
-                      for (final i in state.indications)
-                        DataRow(cells: [
-                          DataCell(Text(i.name)),
-                          DataCell(Text(i.nameEn ?? '')),
-                          DataCell(Text(i.description ?? '')),
-                          DataCell(_ActiveStatusChipBox(active: i.isActive)),
-                          DataCell(_MasterActions(
-                            canEdit: _canEdit,
-                            onEdit: () => _edit(i),
-                            onToggle: () => _toggle(i, !i.isActive),
-                            active: i.isActive,
-                          )),
-                        ]),
-                    ],
+                    rowBuilder: (i) => DataRow(cells: [
+                      DataCell(Text(i.name)),
+                      DataCell(Text(i.nameEn ?? '')),
+                      DataCell(Text(i.description ?? '')),
+                      DataCell(_ActiveStatusChipBox(active: i.isActive)),
+                      DataCell(_MasterActions(
+                        canEdit: _canEdit,
+                        canDelete: _canDelete,
+                        onEdit: () => _edit(i),
+                        onToggle: () => _toggle(i, !i.isActive),
+                        onDelete: () => _delete(i),
+                        active: i.isActive,
+                      )),
+                    ]),
                   ),
           ),
         ),
@@ -639,34 +779,48 @@ class _IndicationsTabState extends ConsumerState<IndicationsTab> {
   }
 }
 
-/// Per-row action buttons for master-data grids.
+/// Per-row action buttons for master-data grids. Edit + toggle sit behind
+/// `inventory.edit`; the destructive delete behind `inventory.delete`.
 class _MasterActions extends StatelessWidget {
   const _MasterActions({
     required this.canEdit,
+    required this.canDelete,
     required this.onEdit,
     this.onToggle,
+    this.onDelete,
     this.active = true,
   });
 
   final bool canEdit;
+  final bool canDelete;
   final VoidCallback onEdit;
   final VoidCallback? onToggle;
+  final VoidCallback? onDelete;
   final bool active;
 
   @override
   Widget build(BuildContext context) {
-    if (!canEdit) return const SizedBox.shrink();
+    if (!canEdit && !canDelete) return const SizedBox.shrink();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: const Icon(Icons.edit_outlined),
-          tooltip: AppLocalizations.of(context).commonEdit,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints.tightFor(width: 32, height: 32),
-          onPressed: onEdit,
-        ),
-        if (onToggle != null)
+        if (canEdit)
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: AppLocalizations.of(context).commonEdit,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+            onPressed: onEdit,
+          ),
+        if (canDelete && onDelete != null)
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: AppLocalizations.of(context).commonDelete,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+            onPressed: onDelete,
+          ),
+        if (canEdit && onToggle != null)
           IconButton(
             icon: Icon(active ? Icons.block : Icons.check_circle_outline),
             tooltip: active
@@ -691,6 +845,25 @@ class _ActiveStatusChipBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return ActiveStatusChip(active: active);
   }
+}
+
+/// Shared error presentation for master-data mutations. Callers guard for
+/// `mounted` before invoking.
+void _showFailure(BuildContext context, Failure? failure) {
+  if (failure == null) return;
+  final l10n = AppLocalizations.of(context);
+  final message = switch (failure) {
+    UnauthorizedFailure() => l10n.authPermissionDenied,
+    InvalidOperationFailure(message: final m) => m,
+    ValidationFailure(message: final m) => m,
+    DuplicateFailure(message: final m) => m,
+    NotFoundFailure(message: final m) => m,
+    DatabaseFailure(message: final m) when (m).trim().isNotEmpty => m,
+    _ => l10n.authSaveError,
+  };
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(message)));
 }
 
 /// Shared master-data tab header: title + add button (edit permission only).

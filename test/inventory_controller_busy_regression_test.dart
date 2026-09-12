@@ -22,6 +22,7 @@ import 'package:pharmacy_pos/features/inventory/domain/services/inventory_view_b
 import 'package:pharmacy_pos/features/inventory/domain/usecases/batches_use_cases.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/bulk_use_cases.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/create_item.dart';
+import 'package:pharmacy_pos/features/inventory/domain/usecases/delete_item.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/excel_use_cases.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/list_items.dart';
 import 'package:pharmacy_pos/features/inventory/domain/usecases/set_item_active.dart';
@@ -74,6 +75,7 @@ ManufacturerDao(db),
     CreateItemUseCase(repo, perms, audit),
     UpdateItemUseCase(repo, perms, audit),
     SetItemActiveUseCase(repo, perms, audit),
+    DeleteItemUseCase(repo, perms, audit),
     AddBatchUseCase(repo, perms, audit),
     VoidBatchUseCase(repo, perms, audit),
     ListBatchesUseCase(repo, perms),

@@ -3271,4 +3271,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get auditLogDateTo => 'To';
+
+  @override
+  String get inventoryDeleteTitle => 'Delete item';
+
+  @override
+  String inventoryDeleteConfirm(String name) {
+    return 'Permanently delete the item \"$name\"? This cannot be undone; only unused items can be deleted.';
+  }
+
+  @override
+  String get inventoryDeleteBlocked =>
+      'Cannot delete an item linked to stock, batches or invoices. Deactivate it instead.';
+
+  @override
+  String get inventoryDeleteMessage => 'Item deleted';
+
+  @override
+  String get masterDataDeleteTitle => 'Delete';
+
+  @override
+  String masterDataDeleteConfirm(String name) {
+    return 'Permanently delete \"$name\"? An entry used by any product cannot be deleted.';
+  }
+
+  @override
+  String get masterDataDeleteBlocked =>
+      'Cannot delete an entry used by products or invoices. Deactivate it instead.';
+
+  @override
+  String get masterDataDeletedMessage => 'Entry deleted';
+
+  @override
+  String get masterDataSearchHint => 'Search by name';
+
+  @override
+  String masterDataCount(int count) {
+    return '$count entries';
+  }
 }

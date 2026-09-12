@@ -43,16 +43,19 @@ class AppDataTable extends StatelessWidget {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: columns,
-        rows: rows,
-        headingRowHeight: AppLayoutTokens.tableHeaderHeight,
-        dataRowMaxHeight: AppLayoutTokens.tableRowHeight,
-        dataRowMinHeight: AppLayoutTokens.tableRowHeight,
-        sortColumnIndex: sortColumnIndex,
-        sortAscending: sortAscending,
-        showCheckboxColumn: showCheckboxColumn,
-        onSelectAll: showCheckboxColumn ? (value) {} : null,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: DataTable(
+          columns: columns,
+          rows: rows,
+          headingRowHeight: AppLayoutTokens.tableHeaderHeight,
+          dataRowMaxHeight: AppLayoutTokens.tableRowHeight,
+          dataRowMinHeight: AppLayoutTokens.tableRowHeight,
+          sortColumnIndex: sortColumnIndex,
+          sortAscending: sortAscending,
+          showCheckboxColumn: showCheckboxColumn,
+          onSelectAll: showCheckboxColumn ? (value) {} : null,
+        ),
       ),
     );
   }
