@@ -9,6 +9,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/loading_overlay.dart';
+import '../../../../features/inventory/domain/entities/inventory_item.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../domain/repositories/prescription_repository.dart';
@@ -88,9 +89,7 @@ class _PrescriptionFormPageState extends ConsumerState<PrescriptionFormPage> {
     if (item == null || !mounted) return;
     setState(() => _lines.add(_RxItemLine(
           itemId: item.id,
-          itemName: item.tradeName.isEmpty
-              ? (item.primaryBarcode ?? item.id)
-              : item.tradeName,
+          itemName: itemDisplayName(item),
         )));
   }
 
@@ -615,9 +614,7 @@ class _ItemSearchDialogState extends ConsumerState<_ItemSearchDialog> {
                           itemBuilder: (context, i) {
                             final item = _results[i];
                             return ListTile(
-                              title: Text(item.tradeName.isEmpty
-                                  ? (item.primaryBarcode ?? item.id)
-                                  : item.tradeName),
+                              title: Text(itemDisplayName(item)),
                               subtitle: Text(item.scientificName ?? ''),
                               onTap: () => Navigator.of(context).pop(item),
                             );

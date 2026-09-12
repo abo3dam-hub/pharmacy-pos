@@ -679,7 +679,7 @@ class _ProductList extends StatelessWidget {
               size: 20,
             ),
           ),
-          title: Text(item.tradeName, style: context.appTypography.body.copyWith(fontWeight: FontWeight.w600)),
+          title: Text(item.displayName, style: context.appTypography.body.copyWith(fontWeight: FontWeight.w600)),
           subtitle: Text(
             '${item.scientificName}'
             '${(item.activeIngredient?.isNotEmpty ?? false) ? ' · ${item.activeIngredient}' : ''}'
@@ -782,7 +782,7 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                           dense: true,
                           selected: true,
                           onTap: () => widget.onLineSelected(index),
-                          title: Text(line.item.tradeName,
+                          title: Text(line.item.displayName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis),
                           subtitle: Text(
@@ -1515,7 +1515,7 @@ class _AlternativesDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text('${l10n.posAlternativesTitle} ${requested.tradeName}'),
+      title: Text('${l10n.posAlternativesTitle} ${requested.displayName}'),
       content: SizedBox(
         width: 460,
         child: FutureBuilder<List<SmartAlternative>>(
@@ -1542,7 +1542,7 @@ class _AlternativesDialog extends ConsumerWidget {
                 return ListTile(
                   dense: true,
                   leading: _TierBadge(tier: alt.tier),
-                  title: Text(alt.item.tradeName),
+                  title: Text(alt.item.displayName),
                   subtitle: Text(
                     '${alt.item.scientificName}'
                     '${(alt.item.dose?.isNotEmpty ?? false) ? ' · ${alt.item.dose}' : ''}'

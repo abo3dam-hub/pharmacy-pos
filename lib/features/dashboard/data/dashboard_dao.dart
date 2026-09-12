@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../../core/util/bilingual_name.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/models/enums.dart';
 import '../domain/entities/dashboard_snapshot.dart';
@@ -156,7 +157,7 @@ class DashboardDao {
       for (final row in rows)
         LowStockItem(
           itemId: row.id,
-          name: row.tradeName,
+          name: bilingualName(row.tradeName, row.tradeNameEn ?? ''),
           barcode: row.primaryBarcode,
           currentStockBase: row.currentStockBase,
           minimumStockBase: row.minimumStockBase,
@@ -186,7 +187,8 @@ class DashboardDao {
       for (final r in rows)
         NearExpiryBatch(
           itemId: r.readTable(items).id,
-          itemName: r.readTable(items).tradeName,
+          itemName: bilingualName(r.readTable(items).tradeName,
+              r.readTable(items).tradeNameEn ?? ''),
           batchId: r.readTable(batches).id,
           batchNumber: r.readTable(batches).batchNumber,
           expiryDate: r.readTable(batches).expiryDate!,

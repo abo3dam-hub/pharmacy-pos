@@ -189,7 +189,7 @@ class PosCartValidator {
     if ((item.requiresPrescription || item.isControlledDrug) &&
         prescriptionItemId == null) {
       throw ValidationException(
-        '${item.tradeName} يتطلب ربطه بوصفة طبية (الأدوية المقيّدة أو المخدرة)',
+        '${item.displayName} يتطلب ربطه بوصفة طبية (الأدوية المقيّدة أو المخدرة)',
       );
     }
   }
@@ -200,7 +200,7 @@ class PosCartValidator {
   }) {
     if (quantityBase > item.availableStockBase) {
       throw ValidationException(
-        'المخزون المتاح غير كافٍ لـ ${item.tradeName}: المطلوب $quantityBase '
+        'المخزون المتاح غير كافٍ لـ ${item.displayName}: المطلوب $quantityBase '
         'والمتاح ${item.availableStockBase}',
       );
     }
@@ -214,14 +214,14 @@ class PosCartValidator {
     if (quantityBase > rxRemainingBase) {
       throw ValidationException(
         'الكمية المطلوبة ($quantityBase) أكبر من المتبقي على الوصفة '
-        '($rxRemainingBase) لـ ${item.tradeName}',
+        '($rxRemainingBase) لـ ${item.displayName}',
       );
     }
   }
 
   void requireActiveItem(PosCatalogItem item) {
     if (!item.isActive) {
-      throw ValidationException('${item.tradeName} غير نشط ولا يمكن بيعه');
+      throw ValidationException('${item.displayName} غير نشط ولا يمكن بيعه');
     }
   }
 }

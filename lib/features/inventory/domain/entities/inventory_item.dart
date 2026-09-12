@@ -1,4 +1,5 @@
 import '../../../../core/quantity/quantity.dart';
+import '../../../../core/util/bilingual_name.dart';
 import '../../../../shared/database/app_database.dart';
 
 /// Threshold (days) used to derive `nearExpiry` from `batch.expiryDate`.
@@ -40,9 +41,7 @@ String itemDisplayName(ItemRow item) {
   if (ar.isEmpty && en.isEmpty) {
     return item.primaryBarcode ?? item.scientificName ?? item.id;
   }
-  if (ar.isEmpty) return en;
-  if (en.isEmpty) return ar;
-  return '$ar ($en)';
+  return bilingualName(ar, en);
 }
 
 /// A row of the product's active-ingredient selector: the ingredient's master

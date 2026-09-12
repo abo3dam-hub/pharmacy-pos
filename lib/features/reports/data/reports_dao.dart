@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/constants/account_codes.dart';
+import '../../../core/util/bilingual_name.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/models/enums.dart';
 import '../domain/entities/report_models.dart';
@@ -135,7 +136,8 @@ class ReportsDao {
         } else {
           expenses.add(IncomeStatementExpenseRow(
             code: code,
-            name: row.read<String>('name'),
+name: bilingualName(row.read<String>('name'),
+            row.read<String? >('name_en') ?? ''),
             amountMicros: contribution,
           ));
         }
@@ -546,6 +548,7 @@ class ReportsDao {
         i.id AS item_id,
         i.primary_barcode AS barcode,
         i.trade_name AS name,
+        i.trade_name_en AS name_en,
         i.current_stock_base AS current_stock,
         i.minimum_stock_base AS minimum_stock,
         i.maximum_stock_base AS maximum_stock,

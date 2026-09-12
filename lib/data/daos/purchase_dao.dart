@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../core/data_grid/page_request.dart';
+import '../../core/util/bilingual_name.dart';
 import '../../core/util/ids.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/models/enums.dart';
@@ -197,7 +198,7 @@ class PurchaseDao {
   Future<Map<String, String>> _itemNames(Set<String> ids) async {
     if (ids.isEmpty) return const {};
     final rows = await (_db.select(_db.items)..where((i) => i.id.isIn(ids))).get();
-    return {for (final r in rows) r.id: r.tradeName};
+    return {for (final r in rows) r.id: bilingualName(r.tradeName, r.tradeNameEn ?? '')};
   }
 
   static String newInvoiceId() => newId('piv');

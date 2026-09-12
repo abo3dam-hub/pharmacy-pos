@@ -14,7 +14,7 @@ Current date: 2026-09-12 · Branch: `main` · Remote: `abo3dam-hub/pharmacy-pos`
 | Framework | Flutter (stable), Arabic-first RTL UI |
 | Persistence | SQLite via Drift (code-gen `app_database.g.dart`) |
 | L10n | `flutter gen-l10n` — `app_ar.arb` / `app_en.arb` |
-| Tests | 85 test files · **614 tests pass** · `flutter analyze` clean |
+| Tests | 86 test files · **622 tests pass** · `flutter analyze` clean |
 | CI | GitHub Actions: `analyze-test`, `perf-file-db`, `build-windows`, `build-android` |
 | Last CI | Run `34665548031` (commit `a7243c6`) — **all 4 jobs success** |
 
@@ -164,8 +164,18 @@ plus clearer failure messages everywhere and AR+EN item-name display:
   - `InventoryItemView.displayName` → `'عربي (English)'`; top-level
     `itemDisplayName(ItemRow)` for row-level use (inventory_item.dart). Used in
     the items grid + cards, the batches page header, and the purchase item
-    picker/search + invoice lines. POS search/cart intentionally keep the
-    single customer-facing name (tests assert exact labels).
+    picker/search + invoice lines.
+  - Follow-up sweep (committed after `6294101`): a single shared rule
+    (`bilingualName` in `lib/core/util/bilingual_name.dart` — both names when
+    available, English preferred when forced to pick one) now drives **every**
+    item/product surface: POS catalog list + cart lines + alternatives /
+    "similar by composition" panels, POS checkout Rx/stock/stock-validation
+    messages, POS invoice line views + PDF receipts + returns list (resolved
+    live from `items`, bilingual for historical records too), prescription
+    form picker + stored lines + prescription detail, purchase/receive detail
+    lines + bonuses, the dashboard low-stock and near-expiry widgets, and the
+    inventory report. Row/card "confirm" dialogs keep the compact
+    `primaryLabel` (customer-facing EN preferred) for full-width names.
 - **Controller:** `InventoryController.lastCreatedItemId` (String?) set on
   successful `createItem` (reset each attempt) so the continue flow knows the
   new item id — `createItem` still returns `Failure?`, keeping
@@ -174,8 +184,11 @@ plus clearer failure messages everywhere and AR+EN item-name display:
   item form shows the continue button only on create and returns
   `saveContinue`; edit mode hides it; an expiry-tracked batch blocks inline and
   keeps the dialog open; the save-and-add-invoice button returns its action
-  with the filled input (quantity + money units). Full suite: **614 tests
-  green**, `flutter analyze` clean.
+  with the filled input (quantity + money units). Plus
+  `test/bilingual_name_test.dart` (8 tests) locking the AR+EN display rule and
+  its POS fallbacks, and updated POS/perf/prescription name assertions
+  (`بانادول (Panadol)`). Full suite: **622 tests green**, `flutter analyze`
+  clean.
 
 ---
 
@@ -255,7 +268,7 @@ All four tracked issues are fixed, tested, and committed.
 
 ## 6. Test conventions
 
-- 85 files under `test/`; shared helpers in `helpers.dart` (`ensureSqlite`,
+- 86 files under `test/`; shared helpers in `helpers.dart` (`ensureSqlite`,
   `newDatabase`, role constants `_adminRole = 'role_admin'`,
   `_pharmacistRole = 'role_pharmacist'`).
 - Perf/count-heavy tests: `inventory_import_scalability_test.dart` exercises

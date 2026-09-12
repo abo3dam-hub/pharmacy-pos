@@ -144,7 +144,7 @@ void main() {
       final detail = h.controller.state.detail!;
       expect(detail.customerName, 'عميل الوصفات');
       expect(detail.items, hasLength(1));
-      expect(detail.items.single.itemTradeName, 'بانادول');
+      expect(detail.items.single.itemTradeName, 'بانادول (Panadol)');
       expect(detail.items.single.quantityBase, 3);
       expect(detail.items.single.lineTotalMicros, 3 * _micros);
     });

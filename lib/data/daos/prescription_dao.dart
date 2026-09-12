@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../core/data_grid/page_request.dart';
+import '../../core/util/bilingual_name.dart';
 import '../../core/util/ids.dart';
 import '../../shared/database/app_database.dart';
 import '../../shared/models/enums.dart';
@@ -180,7 +181,7 @@ class PrescriptionDao {
     final names = <String, String>{};
     final prices = <String, int>{};
     for (final r in rows) {
-      names[r.id] = r.tradeName;
+      names[r.id] = bilingualName(r.tradeName, r.tradeNameEn ?? '');
       prices[r.id] = r.sellingPriceMicros;
     }
     return (names, prices);

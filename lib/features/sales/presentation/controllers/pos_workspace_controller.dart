@@ -129,7 +129,7 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
       if (match == null) {
         state = state.copyWith(
           errorMessage:
-              '${item.tradeName} يتطلب ارتباطاً بوصفة طبية نشطة (أدوية مقيّدة)',
+              '${item.displayName} يتطلب ارتباطاً بوصفة طبية نشطة (أدوية مقيّدة)',
         );
         return;
       }

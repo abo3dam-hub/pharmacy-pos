@@ -224,8 +224,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 700));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(ListTile, 'بانادول'), findsOneWidget);
-      await tester.tap(find.widgetWithText(ListTile, 'بانادول'));
+      expect(find.widgetWithText(ListTile, 'بانادول (Panadol)'), findsOneWidget);
+      await tester.tap(find.widgetWithText(ListTile, 'بانادول (Panadol)'));
       await tester.pumpAndSettle();
 
       expect(find.text('1 علبة'), findsOneWidget);
@@ -252,7 +252,7 @@ void main() {
 
       expect(find.text('ملخص الإيصال'), findsOneWidget);
       expect(find.textContaining('رقم الفاتورة: SI-'), findsOneWidget);
-      expect(find.text('بانادول × 200'), findsOneWidget);
+      expect(find.text('بانادول (Panadol) × 200'), findsOneWidget);
 
       final search = await pos.repo.searchSaleInvoices(
         const PageRequest(page: 1, pageSize: 10),
@@ -364,7 +364,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 700));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(ListTile, 'بانادول'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'بانادول (Panadol)'), findsOneWidget);
 
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
@@ -403,7 +403,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ListTile), findsNWidgets(2));
-      expect(find.widgetWithText(ListTile, 'بانادول'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'بانادول (Panadol)'), findsOneWidget);
 
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();

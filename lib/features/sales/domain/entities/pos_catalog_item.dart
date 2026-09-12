@@ -1,4 +1,5 @@
 import '../../../../core/money/money.dart';
+import '../../../../core/util/bilingual_name.dart';
 
 /// Immutable catalog snapshot served to the POS workspace (pure Dart, no
 /// Flutter / Drift types). Built by the sales data layer from the master
@@ -124,6 +125,13 @@ class PosCatalogItem {
   String get primaryLabel => (tradeNameEn?.isNotEmpty ?? false)
       ? tradeNameEn!
       : tradeName;
+
+  /// Arabic + English together ("الاسم (English)"); falls back to barcode.
+  String get displayName {
+    final name = bilingualName(tradeName, tradeNameEn ?? '');
+    if (name.isNotEmpty) return name;
+    return primaryBarcode ?? tradeName;
+  }
 
   @override
   String toString() =>

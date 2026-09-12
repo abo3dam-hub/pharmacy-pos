@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/data_grid/page_request.dart';
 import '../../../core/errors/exceptions.dart';
+import '../../../core/util/bilingual_name.dart';
 import '../../../core/util/ids.dart';
 import '../../../domain/services/return_service.dart';
 import '../../../domain/services/sale_service.dart';
@@ -108,7 +109,7 @@ class SalesRepositoryImpl implements SalesRepository {
       final itemRows =
           await (_db.select(_db.items)..where((i) => i.id.isIn(itemIds))).get();
       for (final r in itemRows) {
-        names[r.id] = r.tradeName;
+        names[r.id] = bilingualName(r.tradeName, r.tradeNameEn ?? '');
       }
     }
 
@@ -370,7 +371,7 @@ class SalesRepositoryImpl implements SalesRepository {
       final items =
           await (_db.select(_db.items)..where((i) => i.id.isIn(itemIds))).get();
       for (final r in items) {
-        names[r.id] = r.tradeName;
+        names[r.id] = bilingualName(r.tradeName, r.tradeNameEn ?? '');
       }
     }
     final batchNumbers = <String, String>{};

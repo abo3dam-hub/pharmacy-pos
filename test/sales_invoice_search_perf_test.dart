@@ -135,7 +135,7 @@ void main() {
       expect(page.total, 1);
       final view = page.items.single;
       expect(view.lines, hasLength(1));
-      expect(view.lines.single.itemName, 'بانادول');
+      expect(view.lines.single.itemName, 'بانادول (Panadol)');
       expect(view.lines.single.batchNumber, isNotEmpty);
       expect(view.lines.single.unitTypeName, isNotEmpty);
       expect(view.totalMicros, 100000);
