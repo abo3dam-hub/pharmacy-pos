@@ -25,6 +25,7 @@ class PosInvoiceLineView {
     required this.unitCostMicros,
     required this.costTotalMicros,
     required this.profitMicros,
+    this.unitsPerLarge = 0,
     this.prescriptionItemId,
     required this.returnQuantityBase,
   });
@@ -59,7 +60,8 @@ class PosInvoiceLineView {
   final int returnQuantityBase;
 
   /// What can still be returned on this line (over-return is prevented).
-  int get returnableBase => (quantityBaseSigned - returnQuantityBase).clamp(0, quantityBaseSigned);
+  int get returnableBase =>
+      (quantityBaseSigned - returnQuantityBase).clamp(0, quantityBaseSigned);
 
   /// Number of whole sell units this line represents (e.g. boxes), derived from
   /// the persisted per-sell-unit base quantity. Null when [quantityBaseSigned]
@@ -71,6 +73,20 @@ class PosInvoiceLineView {
     if (quantityBaseSigned % unitBaseQuantity != 0) return null;
     return quantityBaseSigned ~/ unitBaseQuantity;
   }
+
+  /// Item's package size in base units at view-build time (hydrated from
+  /// `item_units.unitsPerLarge`). 0 when the item has no configured package.
+  final int unitsPerLarge;
+
+  /// True when this line was sold as the full commercial package: the
+  /// persisted per-sell-unit base quantity equals the item's package size.
+  /// Sale mode is never stored explicitly — it is derived here (§18.4).
+  bool get isPackageSale =>
+      unitsPerLarge > 0 && unitBaseQuantity == unitsPerLarge;
+
+  /// True when sold by the sellable part (any per-sell-unit base quantity
+  /// smaller than the full package — strip of a box, tablet of a syrup, …).
+  bool get isPartialSale => unitsPerLarge > 0 && !isPackageSale;
 }
 
 /// Immutable, persisted sale invoice view (header + customer + lines).
@@ -84,6 +100,7 @@ class PosInvoiceView {
     required this.customerId,
     required this.customerName,
     required this.userId,
+    this.userName = '',
     required this.subtotalMicros,
     required this.discountTotalMicros,
     required this.vatTotalMicros,
@@ -111,6 +128,10 @@ class PosInvoiceView {
   final String? customerId;
   final String customerName;
   final String userId;
+
+  /// Display name of the cashier who recorded the sale (hydrated at
+  /// view-build time from `users.full_name`).
+  final String userName;
   final int subtotalMicros;
   final int discountTotalMicros;
   final int vatTotalMicros;

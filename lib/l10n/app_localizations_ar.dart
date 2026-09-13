@@ -1632,7 +1632,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get posPayButton => 'دفع (F12)';
 
   @override
-  String get posHoldBill => 'حفظ فاتورة (F5)';
+  String get posHoldBill => 'تعليق الفاتورة (F5)';
 
   @override
   String get posHoldBillSaved => 'تم حفظ الفاتورة مؤقتاً';
@@ -1955,6 +1955,85 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get posVoidInvoiceFailed => 'تعذر إلغاء الفاتورة';
+
+  @override
+  String get posVoidInvoiceConfirm =>
+      'سيتم إلغاء الفاتورة وإرجاع الكميات للمخزون. هل أنت متأكد؟';
+
+  @override
+  String get posVoidReason => 'سبب الإلغاء';
+
+  @override
+  String get posStatusLabel => 'الحالة';
+
+  @override
+  String get posPaymentLabel => 'طريقة الدفع';
+
+  @override
+  String get posCashierLabel => 'الكاشير';
+
+  @override
+  String get posSaleModeLabel => 'طريقة البيع';
+
+  @override
+  String get posSaleModePackage => 'عبوة كاملة';
+
+  @override
+  String get posSaleModePart => 'بالجزء';
+
+  @override
+  String get saleStatusDraft => 'مسودة';
+
+  @override
+  String get saleStatusCompleted => 'مكتملة';
+
+  @override
+  String get saleStatusPartiallyReturned => 'مرتجع جزئي';
+
+  @override
+  String get saleStatusFullyReturned => 'مرتجع كامل';
+
+  @override
+  String get saleStatusVoided => 'ملغاة';
+
+  @override
+  String get salesHistoryTitle => 'سجل المبيعات';
+
+  @override
+  String get salesHistoryEmpty => 'لا توجد مبيعات مطابقة';
+
+  @override
+  String get salesHistorySearchHint => 'ابحث برقم الفاتورة أو اسم العميل...';
+
+  @override
+  String get salesHistoryColNumber => 'رقم الفاتورة';
+
+  @override
+  String get salesHistoryColCustomer => 'العميل';
+
+  @override
+  String get salesHistoryColDate => 'التاريخ';
+
+  @override
+  String get salesHistoryColTotal => 'الإجمالي';
+
+  @override
+  String get salesHistoryColStatus => 'الحالة';
+
+  @override
+  String get salesHistoryColPayment => 'الدفع';
+
+  @override
+  String get salesHistoryColCashier => 'الكاشير';
+
+  @override
+  String get salesHistoryFilterStatus => 'كل الحالات';
+
+  @override
+  String get salesHistoryFilterPayment => 'كل طرق الدفع';
+
+  @override
+  String get salesHistoryFilterCashier => 'كل الكاشير';
 
   @override
   String get cashboxTitle => 'الصندوق';

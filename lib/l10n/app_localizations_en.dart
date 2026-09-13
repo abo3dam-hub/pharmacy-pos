@@ -1962,6 +1962,86 @@ class AppLocalizationsEn extends AppLocalizations {
   String get posVoidInvoiceFailed => 'Could not void invoice';
 
   @override
+  String get posVoidInvoiceConfirm =>
+      'The invoice will be voided and its stock restored. Continue?';
+
+  @override
+  String get posVoidReason => 'Void reason';
+
+  @override
+  String get posStatusLabel => 'Status';
+
+  @override
+  String get posPaymentLabel => 'Payment method';
+
+  @override
+  String get posCashierLabel => 'Cashier';
+
+  @override
+  String get posSaleModeLabel => 'Sale mode';
+
+  @override
+  String get posSaleModePackage => 'Full package';
+
+  @override
+  String get posSaleModePart => 'Partial';
+
+  @override
+  String get saleStatusDraft => 'Draft';
+
+  @override
+  String get saleStatusCompleted => 'Completed';
+
+  @override
+  String get saleStatusPartiallyReturned => 'Partially returned';
+
+  @override
+  String get saleStatusFullyReturned => 'Fully returned';
+
+  @override
+  String get saleStatusVoided => 'Voided';
+
+  @override
+  String get salesHistoryTitle => 'Sales History';
+
+  @override
+  String get salesHistoryEmpty => 'No matching sales';
+
+  @override
+  String get salesHistorySearchHint =>
+      'Search by invoice number or customer...';
+
+  @override
+  String get salesHistoryColNumber => 'Invoice No.';
+
+  @override
+  String get salesHistoryColCustomer => 'Customer';
+
+  @override
+  String get salesHistoryColDate => 'Date';
+
+  @override
+  String get salesHistoryColTotal => 'Total';
+
+  @override
+  String get salesHistoryColStatus => 'Status';
+
+  @override
+  String get salesHistoryColPayment => 'Payment';
+
+  @override
+  String get salesHistoryColCashier => 'Cashier';
+
+  @override
+  String get salesHistoryFilterStatus => 'All statuses';
+
+  @override
+  String get salesHistoryFilterPayment => 'All payment methods';
+
+  @override
+  String get salesHistoryFilterCashier => 'All cashiers';
+
+  @override
   String get cashboxTitle => 'Cash Box';
 
   @override

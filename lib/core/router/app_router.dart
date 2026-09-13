@@ -35,6 +35,7 @@ import '../../features/purchases/presentation/pages/purchase_form_page.dart';
 import '../../features/purchases/presentation/pages/purchases_page.dart';
 import '../../features/sales/presentation/pages/pos_invoice_page.dart';
 import '../../features/sales/presentation/pages/pos_workspace_page.dart';
+import '../../features/sales/presentation/pages/sales_history_page.dart';
 import '../../features/sales/presentation/pages/z_report_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/backup/presentation/pages/data_management_page.dart';
@@ -101,7 +102,7 @@ if ((path == AppSection.settings.path ||
           !authState.permissions.contains(Perm.salesView)) {
         return '/access-denied';
       }
-      if (path == '${AppSection.sale.path}/z-report' &&
+      if (path == saleZReportPath() &&
           !authState.permissions.contains(Perm.reportsViewSales)) {
         return '/access-denied';
       }
@@ -223,6 +224,10 @@ if ((path == AppSection.settings.path ||
                   GoRoute(
                     path: 'z-report',
                     builder: (context, _) => const ZReportPage(),
+                  ),
+                  GoRoute(
+                    path: 'history',
+                    builder: (context, _) => const SalesHistoryPage(),
                   ),
                 ],
                 if (section == AppSection.customers) ...[

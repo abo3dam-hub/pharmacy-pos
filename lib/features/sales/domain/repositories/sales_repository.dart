@@ -1,4 +1,5 @@
 import '../../../../core/data_grid/page_request.dart';
+import '../../../../shared/models/enums.dart';
 import '../entities/pos_catalog_item.dart';
 import '../entities/pos_customer.dart';
 import '../entities/pos_invoice.dart';
@@ -65,8 +66,17 @@ abstract interface class SalesRepository {
   /// financial + prescription reversal) — atomic and audited.
   Future<PosReturnOutcome> returnSaleLine(PosReturnCommand command);
 
-  /// Paginated search over persisted sales invoices (return panel).
-  Future<PageResult<PosInvoiceView>> searchSaleInvoices(PageRequest request);
+  /// Paginated search over persisted sales invoices. All filters are
+  /// additive and applied DB-side (IN clause / range scan) — the page stays a
+  /// LIMIT/OFFSET query. [request.search] matches invoice number or customer.
+  Future<PageResult<PosInvoiceView>> searchSaleInvoices(
+    PageRequest request, {
+    SaleStatus? status,
+    PaymentMethod? paymentMethod,
+    String? userId,
+    int? fromMillis,
+    int? toMillis,
+  });
 
   Future<PosInvoiceView?> invoiceViewById(String invoiceId);
 

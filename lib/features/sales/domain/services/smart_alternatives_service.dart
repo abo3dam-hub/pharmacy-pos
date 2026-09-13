@@ -12,9 +12,12 @@ import '../entities/smart_alternative.dart';
 ///   * [SmartAlternativeTier.tier3] (blue): shares at least one active
 ///     ingredient with the requested product.
 ///
-/// Candidates are ranked by tier first, then by available stock (desc), then
-/// by same-manufacturer (tie-break), then alphabetically — so the pharmacist
-/// picks a stocked, equivalent item from the same supplier family first.
+/// Candidates are ranked by availability first (in-stock alternatives always
+/// lead; out-of-stock equivalents still appear — sorted after, ordered by
+/// tier), then by tier, then by available stock (desc), then by
+/// same-manufacturer (tie-break), then alphabetically — so the pharmacist
+/// picks a stocked, equivalent item from the same supplier family first
+/// while still seeing a momentarily unavailable therapeutic equal (§18.4).
 class SmartAlternativesService {
   const SmartAlternativesService();
 
@@ -49,7 +52,8 @@ class SmartAlternativesService {
   }
 
   /// Ranks [candidates] against [requested] and keeps the closest [limit]
-  /// alternatives. Out-of-stock and non-active candidates are dropped.
+  /// alternatives. Non-active candidates are dropped; out-of-stock candidates
+  /// are kept but always ranked after the available ones.
   List<SmartAlternative> rank(
     PosCatalogItem requested,
     List<PosCatalogItem> candidates, {
@@ -61,7 +65,6 @@ class SmartAlternativesService {
     for (final candidate in candidates) {
       if (candidate.id == requested.id) continue;
       if (!candidate.isActive) continue;
-      if (candidate.availableStockBase <= 0) continue;
       final tokens = compositionTokens(candidate);
       if (tokens.isEmpty) continue;
       final tier = _tierFor(requested, candidate, targets: targets, tokens: tokens);
@@ -69,10 +72,21 @@ class SmartAlternativesService {
     }
 
     scored.sort((a, b) {
+      // Availability is the primary grouping: in-stock first, then the
+      // out-of-stock equivalents (stock is an ordering signal, never a drop
+      // rule — see §18.4 smart alternative fix).
+      final aInStock = a.item.availableStockBase > 0 ? 1 : 0;
+      final bInStock = b.item.availableStockBase > 0 ? 1 : 0;
+      final byAvailability = bInStock.compareTo(aInStock);
+      if (byAvailability != 0) return byAvailability;
       final byTier = a.tier.index.compareTo(b.tier.index);
       if (byTier != 0) return byTier;
-      final byStock = b.item.availableStockBase.compareTo(a.item.availableStockBase);
-      if (byStock != 0) return byStock;
+      // Stock still breaks ties within the in-stock group; it adds no signal
+      // inside the all-zero out-of-stock group.
+      if (aInStock == 1) {
+        final byStock = b.item.availableStockBase.compareTo(a.item.availableStockBase);
+        if (byStock != 0) return byStock;
+      }
       // Same manufacturer is preferred over the same tier + stock (§18.1).
       final aMfr = a.item.manufacturerId != null &&
               a.item.manufacturerId == requested.manufacturerId

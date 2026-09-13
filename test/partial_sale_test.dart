@@ -495,6 +495,26 @@ void main() {
       expect(box.quantityBase + part.quantityBase, 4);
     });
 
+    test('E — 19,601 regression guard: mixed mode is 19,600, never 19,601', () {
+      final box = pricer.priceLine(
+        PosCartLine(
+          item: mkItem(),
+          quantity: 1,
+          unitMode: PosLineUnitMode.largeUnit,
+        ),
+      );
+      final part = pricer.priceLine(
+        PosCartLine(
+          item: mkItem(),
+          quantity: 1,
+          unitMode: PosLineUnitMode.sellablePart,
+        ),
+      );
+      expect(box.grossMicros + part.grossMicros, isNot(19601));
+      expect(box.grossMicros, 14000);
+      expect(part.grossMicros, 5600);
+    });
+
     test('manual override on a part: per sell-unit price, not a ratio', () {
       final p = pricer.priceLine(
         PosCartLine(

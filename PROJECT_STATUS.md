@@ -1,10 +1,11 @@
 # Pharmacy POS — Project Status Report
 
-Current date: 2026-09-12 · Branch: `main` · Remote: `abo3dam-hub/pharmacy-pos`
+Current date: 2026-09-13 · Branch: `main` · Remote: `abo3dam-hub/pharmacy-pos`
 
 > Report for guiding subsequent development. Reflects the state after the
-> post-18.3 audit & harden cycle (commits `c5a57d5` → `ba5d1c6`; completion
-> report: [`POST-18.3-AUDIT-HARDEN-COMPLETION-REPORT.md`](./POST-18.3-AUDIT-HARDEN-COMPLETION-REPORT.md)).
+> Phase 18.4 sales-management cycle (routing overhaul, permanent sales history,
+> invoice detail returns/voids, exact-COGS regression). Earlier cycles:
+> [`POST-18.3-AUDIT-HARDEN-COMPLETION-REPORT.md`](./POST-18.3-AUDIT-HARDEN-COMPLETION-REPORT.md).
 
 ---
 
@@ -15,7 +16,7 @@ Current date: 2026-09-12 · Branch: `main` · Remote: `abo3dam-hub/pharmacy-pos`
 | Framework | Flutter (stable), Arabic-first RTL UI |
 | Persistence | SQLite via Drift (code-gen `app_database.g.dart`) |
 | L10n | `flutter gen-l10n` — `app_ar.arb` / `app_en.arb` |
-| Tests | 86 test files · **630 tests pass** · `flutter analyze` clean |
+| Tests | 87 test files · **640 tests pass** · `flutter analyze` clean |
 | CI | GitHub Actions: `analyze-test`, `perf-file-db`, `build-windows`, `build-android` |
 | Last CI | Run `34665548031` (commit `a7243c6`) — **all 4 jobs success**; `ba5d1c6` pushed, CI re-running |
 
@@ -62,7 +63,47 @@ Local env used by this workflow:
 | `ba5d1c6` | **feat(harden)**: audit-and-harden cycle — pricing v13, COGS reconciliation, financial dashboard |
 | `632ee7e` | **fix(import)**: EN-name tie-breaker closes re-import gap on real 11.3k file + commit `test1.xlsx` |
 | `20ef12c` | docs: status report — real-file acceptance green, EN tie-breaker notes |
-| `(next)` | **feat(ux/errors/i18n)**: chained save-and-continue (item→batch→invoice), reason-based failure messages, AR+EN item names |
+| `37abc4a`/`14f90a8`/`81e7651` | **feat(ux/errors/i18n)**: chained save-and-continue (item→batch→invoice), reason-based failure messages, AR+EN item names |
+| `(next)` | **feat(sales)**: Phase 18.4 — routing overhaul, permanent sales history, invoice detail returns/voids, exact-COGS + 19,601 regressions |
+
+---
+
+## 3e. Phase 18.4 — sales management & routing closure (complete)
+
+Fixes the `//sale/z-report` / `//sale/invoice/<id>` routing bugs, adds a
+**permanent Sales History** (سجل المبيعات) and an **actionable invoice detail**,
+relabels the F5 hold shortcut, and locks the two-mode-pricing + COGS numbers
+with regression tests. Full detail:
+[`PHASE18.4-SALES-MANAGEMENT-ROUTING-ACCOUNTING-CLOSURE-COMPLETION-REPORT.md`](./PHASE18.4-SALES-MANAGEMENT-ROUTING-ACCOUNTING-CLOSURE-COMPLETION-REPORT.md).
+
+- **Routing root cause:** call sites built `'/' + AppSection.sale.path` then
+  appended the sub-route → `//sale/...`, which GoRouter failed to resolve
+  (`no matching sublocation`). Resolved in `app_sections.dart` with canonical
+  helpers `saleZReportPath()`, `salesHistoryPath()`, `saleInvoiceDetailPath(id)`
+  used by BOTH the router and every call site; guarded by a route-path contract
+  test (`test/route_paths_test.dart`).
+- **Sales History:** `/sale/history` → `SalesHistoryPage` — search + status /
+  payment / cashier / date-range filters, paginated `AppDataTable` (or cards on
+  compact), each row opens the invoice detail and reloads on return (no timers).
+- **Invoice detail:** status / payment / cashier chips, credit remaining, money
+  and sale mode per line (package vs part, derived at build-time from persisted
+  `unitBaseQuantity` vs `unitsPerLarge`), per-line return dialogs
+  (`Perm.salesReturnCreate`/`Perm.returnProducts`) and a void action
+  (`Perm.salesVoid`), each reloading the view after the mutation. Sale history
+  icon added to the POS toolbar.
+- **Smart Alternatives:** out-of-stock candidates are no longer excluded —
+  they rank *behind* in-stock ones (tail position) instead of vanishing;
+  unrelated + inactive items still drop. `_addAlternative` now surfaces the
+  real reason (`e.failure.message`) instead of ErrorService text.
+- **Exact-COGS regression** (`test/cogs_mixed_part_regression_test.dart`):
+  box (3 base units @ 14,000) + 1 part (@ 5,600) = **196,000,000 micros**
+  (exactly 19,600 units, never 19,601); COGS = **146,666,668** (4 × the
+  per-base cost 36,666,667 = 11,000 ÷ 3 half-up), profit 49,333,332 —
+  reconciled across invoice chain, GL account 5000, and the Income Statement,
+  asserting `isNot(44,000,000×10)` for the historic box-cost-per-unit bug.
+  Plus a `19,601` guard test in `partial_sale_test.dart` (pricing level).
+- **F5 / labels:** `posHoldBill`= تعليق الفاتورة (F5); held-bill label
+  سلة محفوظة → فاتورة محفوظة; 20 new AR+EN l10n keys; `gen-l10n` clean.
 
 ---
 
@@ -308,6 +349,14 @@ All four tracked issues are fixed, tested, and committed.
    isolate) is the remaining big item for "zero frame drops during 11k import";
    with progress + cancel + single-transaction already shipping, it is lower
    priority now.
+6. **Phase 18.4 residual debt:** (a) sale-mode on history/detail lines is
+   derived from the *current* `item_units.unitsPerLarge` at view-build time —
+   if an item's package size changes (or the item is deleted) after a sale, the
+   old line degrades to base-unit display; the sell-unit base quantity is
+   already persisted (`salesInvoiceItems.unit_base_quantity`), so a stored
+   `units_per_large` snapshot would remove the coupling. (b) the phone-URL
+   routing fix shipped without a manual Windows/Android smoke; CI builds cover
+   compilation only.
 
 ---
 

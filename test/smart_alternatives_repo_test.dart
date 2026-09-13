@@ -217,9 +217,11 @@ void main() {
         reason: 'no shared ingredient → not a candidate (no therapeutic group)',
       );
       expect(
-        candidates.any((c) => c.id == 'item_out'),
-        isFalse,
-        reason: 'unavailable items are excluded from the candidate set',
+        ids,
+        contains('item_out'),
+        reason:
+            'out-of-stock candidates remain in the candidate set so they can '
+            'be ranked behind in-stock ones (§18.4)',
       );
 
       // A legacy item (no relational ingredients) still gets the flat fallback.
@@ -236,47 +238,51 @@ void main() {
     },
   );
 
-  test(
-    'smartAlternatives ranks tiers and drops unrelated / empty stock',
-    () async {
-      final requested = (await dao.byId('item_req'))!;
-      final alts = await repo.smartAlternatives(requested);
+  test('smartAlternatives ranks tiers and back-orders empty stock', () async {
+    final requested = (await dao.byId('item_req'))!;
+    final alts = await repo.smartAlternatives(requested);
 
-      // item_other shares nothing → never ranked; item_out has no stock → dropped;
-      // item_legacy is not a candidate for a relational requested item (18.1).
-      expect(alts.map((a) => a.item.id), isNot(contains('item_other')));
-      expect(alts.map((a) => a.item.id), isNot(contains('item_out')));
-      expect(alts.map((a) => a.item.id), isNot(contains('item_legacy')));
+    // item_other shares nothing → never ranked; item_out has no stock →
+    // ranked LAST (behind in-stock candidates); item_legacy is not a
+    // candidate for a relational requested item (18.1).
+    expect(alts.map((a) => a.item.id), isNot(contains('item_other')));
+    expect(alts.map((a) => a.item.id), isNot(contains('item_legacy')));
 
-      expect(
-        alts.map((a) => a.item.id),
-        containsAll(['item_t1', 'item_t2', 'item_t3']),
-      );
-      expect(
-        alts.firstWhere((a) => a.item.id == 'item_t1').tier,
-        SmartAlternativeTier.tier1,
-      );
-      expect(
-        alts.firstWhere((a) => a.item.id == 'item_t2').tier,
-        SmartAlternativeTier.tier2,
-      );
-      expect(
-        alts.firstWhere((a) => a.item.id == 'item_t3').tier,
-        SmartAlternativeTier.tier3,
-        reason: 'multi-ingredient candidate keeps tier3 via relational names',
-      );
+    expect(
+      alts.map((a) => a.item.id),
+      containsAll(['item_t1', 'item_t2', 'item_t3']),
+    );
+    final rankedIds = alts.map((a) => a.item.id).toList();
+    expect(
+      rankedIds.last,
+      'item_out',
+      reason: 'out-of-stock candidates are still offered but at the tail',
+    );
+    expect(alts, isNotEmpty);
+    expect(
+      alts.firstWhere((a) => a.item.id == 'item_t1').tier,
+      SmartAlternativeTier.tier1,
+    );
+    expect(
+      alts.firstWhere((a) => a.item.id == 'item_t2').tier,
+      SmartAlternativeTier.tier2,
+    );
+    expect(
+      alts.firstWhere((a) => a.item.id == 'item_t3').tier,
+      SmartAlternativeTier.tier3,
+      reason: 'multi-ingredient candidate keeps tier3 via relational names',
+    );
 
-      // Legacy requested item → the flat fallback still ranks equivalents.
-      final legacyRequested = (await dao.byId('item_legacy'))!;
-      final legacyAlts = await repo.smartAlternatives(legacyRequested);
-      expect(legacyAlts.map((a) => a.item.id), contains('item_req'));
-      expect(
-        legacyAlts.firstWhere((a) => a.item.id == 'item_req').tier,
-        SmartAlternativeTier.tier1,
-        reason: 'legacy flat ingredient ranks via the flat fallback token',
-      );
-    },
-  );
+    // Legacy requested item → the flat fallback still ranks equivalents.
+    final legacyRequested = (await dao.byId('item_legacy'))!;
+    final legacyAlts = await repo.smartAlternatives(legacyRequested);
+    expect(legacyAlts.map((a) => a.item.id), contains('item_req'));
+    expect(
+      legacyAlts.firstWhere((a) => a.item.id == 'item_req').tier,
+      SmartAlternativeTier.tier1,
+      reason: 'legacy flat ingredient ranks via the flat fallback token',
+    );
+  });
 
   test('same-manufacturer candidates and ranking tie-break', () async {
     await _item(

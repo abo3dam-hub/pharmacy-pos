@@ -190,7 +190,13 @@ class _FakeSalesRepository implements SalesRepository {
 
   @override
   Future<PageResult<PosInvoiceView>> searchSaleInvoices(
-          PageRequest request) async =>
+    PageRequest request, {
+    SaleStatus? status,
+    PaymentMethod? paymentMethod,
+    String? userId,
+    int? fromMillis,
+    int? toMillis,
+  }) async =>
       PageResult(items: const [], total: 0, request: request);
 
   @override
@@ -1060,7 +1066,7 @@ void main() {
       expect(ranked.single.tier, SmartAlternativeTier.tier3);
     });
 
-    test('drops unrelated, inactive and out-of-stock candidates', () {
+    test('drops unrelated and inactive; keeps out-of-stock as last resort', () {
       final ranked = engine.rank(requested(), [
         _altItem(
           id: 'x1',
@@ -1084,7 +1090,30 @@ void main() {
           availableStockBase: 0,
         ),
       ]);
-      expect(ranked, isEmpty);
+      expect(ranked.map((a) => a.item.id), equals(['x3']));
+    });
+
+    test('orders in-stock candidates ahead of out-of-stock ones', () {
+      final ranked = engine.rank(requested(), [
+        _altItem(
+          id: 'oos',
+          tradeName: 'Out But Green Tier',
+          activeIngredient: 'Paracetamol',
+          dose: '500 mg',
+          pharmaForm: 'tablet',
+          availableStockBase: 0,
+        ),
+        _altItem(
+          id: 'instock-partial',
+          tradeName: 'In Stock Blue Tier',
+          activeIngredient: 'Paracetamol + Caffeine',
+          availableStockBase: 3,
+        ),
+      ]);
+      expect(
+        ranked.map((a) => a.item.id),
+        equals(['instock-partial', 'oos']),
+      );
     });
 
     test('ranks tier1 before tier2 before tier3', () {

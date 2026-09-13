@@ -3251,7 +3251,7 @@ abstract class AppLocalizations {
   /// No description provided for @posHoldBill.
   ///
   /// In ar, this message translates to:
-  /// **'حفظ فاتورة (F5)'**
+  /// **'تعليق الفاتورة (F5)'**
   String get posHoldBill;
 
   /// No description provided for @posHoldBillSaved.
@@ -3889,6 +3889,162 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعذر إلغاء الفاتورة'**
   String get posVoidInvoiceFailed;
+
+  /// No description provided for @posVoidInvoiceConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم إلغاء الفاتورة وإرجاع الكميات للمخزون. هل أنت متأكد؟'**
+  String get posVoidInvoiceConfirm;
+
+  /// No description provided for @posVoidReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبب الإلغاء'**
+  String get posVoidReason;
+
+  /// No description provided for @posStatusLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get posStatusLabel;
+
+  /// No description provided for @posPaymentLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة الدفع'**
+  String get posPaymentLabel;
+
+  /// No description provided for @posCashierLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكاشير'**
+  String get posCashierLabel;
+
+  /// No description provided for @posSaleModeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة البيع'**
+  String get posSaleModeLabel;
+
+  /// No description provided for @posSaleModePackage.
+  ///
+  /// In ar, this message translates to:
+  /// **'عبوة كاملة'**
+  String get posSaleModePackage;
+
+  /// No description provided for @posSaleModePart.
+  ///
+  /// In ar, this message translates to:
+  /// **'بالجزء'**
+  String get posSaleModePart;
+
+  /// No description provided for @saleStatusDraft.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسودة'**
+  String get saleStatusDraft;
+
+  /// No description provided for @saleStatusCompleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتملة'**
+  String get saleStatusCompleted;
+
+  /// No description provided for @saleStatusPartiallyReturned.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع جزئي'**
+  String get saleStatusPartiallyReturned;
+
+  /// No description provided for @saleStatusFullyReturned.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرتجع كامل'**
+  String get saleStatusFullyReturned;
+
+  /// No description provided for @saleStatusVoided.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغاة'**
+  String get saleStatusVoided;
+
+  /// No description provided for @salesHistoryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل المبيعات'**
+  String get salesHistoryTitle;
+
+  /// No description provided for @salesHistoryEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مبيعات مطابقة'**
+  String get salesHistoryEmpty;
+
+  /// No description provided for @salesHistorySearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابحث برقم الفاتورة أو اسم العميل...'**
+  String get salesHistorySearchHint;
+
+  /// No description provided for @salesHistoryColNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الفاتورة'**
+  String get salesHistoryColNumber;
+
+  /// No description provided for @salesHistoryColCustomer.
+  ///
+  /// In ar, this message translates to:
+  /// **'العميل'**
+  String get salesHistoryColCustomer;
+
+  /// No description provided for @salesHistoryColDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get salesHistoryColDate;
+
+  /// No description provided for @salesHistoryColTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي'**
+  String get salesHistoryColTotal;
+
+  /// No description provided for @salesHistoryColStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة'**
+  String get salesHistoryColStatus;
+
+  /// No description provided for @salesHistoryColPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدفع'**
+  String get salesHistoryColPayment;
+
+  /// No description provided for @salesHistoryColCashier.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكاشير'**
+  String get salesHistoryColCashier;
+
+  /// No description provided for @salesHistoryFilterStatus.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الحالات'**
+  String get salesHistoryFilterStatus;
+
+  /// No description provided for @salesHistoryFilterPayment.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل طرق الدفع'**
+  String get salesHistoryFilterPayment;
+
+  /// No description provided for @salesHistoryFilterCashier.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الكاشير'**
+  String get salesHistoryFilterCashier;
 
   /// No description provided for @cashboxTitle.
   ///

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_sections.dart';
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
+import '../../../../core/errors/exceptions.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/pdf/pdf_arabic.dart';
 import '../../../../core/pdf/pdf_documents.dart';
@@ -161,10 +162,14 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
                       if (_permissions.contains(Perm.reportsViewSales))
                         IconButton(
                           tooltip: _l10n.zReportTitle,
-                          onPressed: () =>
-                              context.push('/${AppSection.sale.path}/z-report'),
+                          onPressed: () => context.push(saleZReportPath()),
                           icon: const Icon(Icons.summarize_outlined),
                         ),
+                      IconButton(
+                        tooltip: _l10n.salesHistoryTitle,
+                        onPressed: () => context.push(salesHistoryPath()),
+                        icon: const Icon(Icons.receipt_long_outlined),
+                      ),
                     ],
                   ),
                 ),
@@ -278,6 +283,15 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
   ) async {
     try {
       await notifier.addToCart(item);
+    } on AppException catch (e) {
+      // Surface the domain reason (e.g. "المخزون المتاح غير كافٍ…") — never a
+      // silent failure that leaves the workspace blank (§18.4).
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text(e.failure.message)),
+        );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -1448,8 +1462,10 @@ class _ReceiptDialog extends ConsumerWidget {
           label: Text(l10n.posPrintReceipt),
         ),
         TextButton.icon(
-          onPressed: () =>
-              context.push('/${AppSection.sale.path}/invoice/${invoice.id}'),
+          onPressed: () {
+            Navigator.of(context).pop();
+            context.push(saleInvoiceDetailPath(invoice.id));
+          },
           icon: const Icon(Icons.article_outlined),
           label: Text(l10n.posInvoiceTitle),
         ),

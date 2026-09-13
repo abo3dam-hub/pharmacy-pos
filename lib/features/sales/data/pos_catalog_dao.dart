@@ -135,11 +135,14 @@ class PosCatalogDao {
   /// Bounded candidate set for the smart-alternatives engine (§18): products
   /// sharing a relational active ingredient (`item_active_ingredients`), a
   /// relational indication (`item_indications`) or the same manufacturer with
-  /// the requested item — always active + currently available. The legacy flat
-  /// `activeIngredient` column is ONLY consulted as a fallback for legacy
-  /// items that carry no relational active-ingredient data (relational is
-  /// primary, Phase 18.1). The engine does the authoritative tier ranking
-  /// afterwards (candidates here are a superset).
+  /// the requested item — always active. The legacy flat `activeIngredient`
+  /// column is ONLY consulted as a fallback for legacy items that carry no
+  /// relational active-ingredient data (relational is primary, Phase 18.1).
+  /// The engine does the authoritative tier ranking afterwards (candidates
+  /// here are a superset). Out-of-stock products intentionally stay in the
+  /// superset — the engine shows them *after* available ones so the cashier
+  /// sees the full therapeutic family (§18.4 — availability is ordering
+  /// signal, not an exclusion).
   Future<List<PosCatalogItem>> alternativeCandidates({
     required String itemId,
     int limit = 18,
@@ -225,10 +228,7 @@ class PosCatalogDao {
               ..limit(limit * 3))
             .get();
     final hydrated = await hydrate(candidates);
-    return [
-      for (final item in hydrated)
-        if (item.availableStockBase > 0) item,
-    ].take(limit).toList();
+    return hydrated.take(limit).toList();
   }
 
   /// Builds [PosCatalogItem] snapshots for a page of item rows with minimal

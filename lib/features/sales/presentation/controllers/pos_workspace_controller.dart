@@ -317,7 +317,7 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
     if (state.cart.isEmpty) return;
     final held = PosHeldBill(
       id: newId('hold'),
-      label: 'سلة محفوظة ${state.heldBills.length + 1}',
+      label: 'فاتورة محفوظة ${state.heldBills.length + 1}',
       customerId: state.customer?.id,
       customerName: state.customer?.name,
       prescriptionId: state.activePrescriptionId,

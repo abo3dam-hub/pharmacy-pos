@@ -246,38 +246,66 @@ class SalesRepositoryImpl implements SalesRepository {
 
   @override
   Future<PageResult<PosInvoiceView>> searchSaleInvoices(
-      PageRequest request) async {
+    PageRequest request, {
+    SaleStatus? status,
+    PaymentMethod? paymentMethod,
+    String? userId,
+    int? fromMillis,
+    int? toMillis,
+  }) async {
     final q = request.search.trim();
     final hasQ = q.isNotEmpty;
     final pattern = '%${_escapeLike(q)}%';
 
-    final whereSql = hasQ
-        ? '(si.invoice_number LIKE ?1 OR cus.name LIKE ?1)'
-        : '1=1';
+    final where = <String>[];
+    final variables = <Variable>[];
+    if (hasQ) {
+      where.add('(si.invoice_number LIKE ?${variables.length + 1} '
+          'OR cus.name LIKE ?${variables.length + 1})');
+      variables.add(Variable.withString(pattern));
+    }
+    if (status != null) {
+      where.add('si.sale_status = ?${variables.length + 1}');
+      variables.add(Variable.withString(status.name));
+    }
+    if (paymentMethod != null) {
+      where.add('si.payment_method = ?${variables.length + 1}');
+      variables.add(Variable.withString(paymentMethod.name));
+    }
+    if (userId != null && userId.isNotEmpty) {
+      where.add('si.user_id = ?${variables.length + 1}');
+      variables.add(Variable.withString(userId));
+    }
+    if (fromMillis != null) {
+      where.add('si.created_at >= ?${variables.length + 1}');
+      variables.add(Variable.withInt(fromMillis));
+    }
+    if (toMillis != null) {
+      where.add('si.created_at <= ?${variables.length + 1}');
+      variables.add(Variable.withInt(toMillis));
+    }
+    final whereSql = where.isEmpty ? '1=1' : where.join(' AND ');
+
     final countRows = await _db.customSelect(
       'SELECT COUNT(*) AS c FROM sales_invoices si '
       'LEFT JOIN customers cus ON si.customer_id = cus.id '
       'WHERE $whereSql',
-      variables: hasQ ? [Variable.withString(pattern)] : const [],
+      variables: variables,
     ).get();
     final total = countRows.single.read<int>('c');
 
+    final pageVars = [
+      ...variables,
+      Variable.withInt(request.pageSize),
+      Variable.withInt(request.offset),
+    ];
     final rows = await _db.customSelect(
       'SELECT si.* FROM sales_invoices si '
       'LEFT JOIN customers cus ON si.customer_id = cus.id '
       'WHERE $whereSql '
       'ORDER BY si.created_at DESC, si.invoice_number DESC '
-      '${hasQ ? 'LIMIT ?2 OFFSET ?3' : 'LIMIT ?1 OFFSET ?2'}',
-      variables: hasQ
-          ? [
-              Variable.withString(pattern),
-              Variable.withInt(request.pageSize),
-              Variable.withInt(request.offset),
-            ]
-          : [
-              Variable.withInt(request.pageSize),
-              Variable.withInt(request.offset),
-            ],
+      'LIMIT ?${variables.length + 1} OFFSET ?${variables.length + 2}',
+      variables: pageVars,
     ).get();
 
     final headers = <SalesInvoiceRow>[
@@ -328,8 +356,8 @@ class SalesRepositoryImpl implements SalesRepository {
   }
 
   /// Builds views for many headers with a fixed set of batched queries:
-  /// customers, lines, item names, batch numbers and unit names loaded once
-  /// for the whole set ([IN] clauses), then grouped per invoice.
+  /// customers, users, lines, item names/sizes, batch numbers and unit names
+  /// loaded once for the whole set ([IN] clauses), then grouped per invoice.
   Future<List<PosInvoiceView>> _buildInvoiceViews(
       List<SalesInvoiceRow> headers) async {
     if (headers.isEmpty) return const [];
@@ -339,6 +367,7 @@ class SalesRepositoryImpl implements SalesRepository {
       for (final h in headers)
         if (h.customerId != null) h.customerId!,
     };
+    final userIds = {for (final h in headers) h.userId};
 
     final customers = <String, CustomerRow>{};
     if (customerIds.isNotEmpty) {
@@ -347,6 +376,16 @@ class SalesRepositoryImpl implements SalesRepository {
           .get();
       for (final r in rows) {
         customers[r.id] = r;
+      }
+    }
+
+    final userNames = <String, String>{};
+    if (userIds.isNotEmpty) {
+      final rows = await (_db.select(_db.users)
+            ..where((u) => u.id.isIn(userIds)))
+          .get();
+      for (final r in rows) {
+        userNames[r.id] = r.fullName;
       }
     }
 
@@ -368,11 +407,18 @@ class SalesRepositoryImpl implements SalesRepository {
     }
 
     final names = <String, String>{};
+    final unitsPerLarge = <String, int>{};
     if (itemIds.isNotEmpty) {
       final items =
           await (_db.select(_db.items)..where((i) => i.id.isIn(itemIds))).get();
       for (final r in items) {
         names[r.id] = bilingualName(r.tradeName, r.tradeNameEn ?? '');
+      }
+      final sizeRows = await (_db.select(_db.itemUnits)
+            ..where((u) => u.itemId.isIn(itemIds)))
+          .get();
+      for (final u in sizeRows) {
+        if (u.unitsPerLarge > 1) unitsPerLarge[u.itemId] = u.unitsPerLarge;
       }
     }
     final batchNumbers = <String, String>{};
@@ -398,8 +444,10 @@ class SalesRepositoryImpl implements SalesRepository {
         _toInvoiceView(
           header,
           customer: customers[header.customerId],
+          userName: userNames[header.userId] ?? '',
           lines: linesByInvoice[header.id] ?? const [],
           names: names,
+          unitsPerLarge: unitsPerLarge,
           batchNumbers: batchNumbers,
           unitNames: unitNames,
         ),
@@ -409,8 +457,10 @@ class SalesRepositoryImpl implements SalesRepository {
   PosInvoiceView _toInvoiceView(
     SalesInvoiceRow header, {
     required CustomerRow? customer,
+    required String userName,
     required List<SalesInvoiceItemRow> lines,
     required Map<String, String> names,
+    required Map<String, int> unitsPerLarge,
     required Map<String, String> batchNumbers,
     required Map<String, String> unitNames,
   }) {
@@ -423,6 +473,7 @@ class SalesRepositoryImpl implements SalesRepository {
       customerId: header.customerId,
       customerName: customer?.name ?? '',
       userId: header.userId,
+      userName: userName,
       subtotalMicros: header.subtotalMicros,
       discountTotalMicros: header.discountTotalMicros,
       vatTotalMicros: header.vatTotalMicros,
@@ -461,6 +512,7 @@ class SalesRepositoryImpl implements SalesRepository {
             unitCostMicros: l.unitCostMicros,
             costTotalMicros: l.costTotalMicros,
             profitMicros: l.profitMicros,
+            unitsPerLarge: unitsPerLarge[l.itemId] ?? 0,
             prescriptionItemId: l.prescriptionItemId,
             returnQuantityBase: l.returnQuantityBase,
           ),

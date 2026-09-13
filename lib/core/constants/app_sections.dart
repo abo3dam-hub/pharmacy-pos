@@ -68,3 +68,16 @@ enum AppSection {
         AppSection.audit => l10n.navAudit,
       };
 }
+
+/// Canonical sale-section sub-route paths (§18.4).
+///
+/// These are the single source of truth for every navigation target under
+/// `/sale`. Call sites (and the router) MUST build sale routes through these
+/// helpers — hand-concatenating `'/' + AppSection.sale.path` produced
+/// malformed `//sale/...` URLs that GoRouter then failed to resolve.
+String saleZReportPath() => '${AppSection.sale.path}/z-report';
+
+String salesHistoryPath() => '${AppSection.sale.path}/history';
+
+String saleInvoiceDetailPath(String invoiceId) =>
+    '${AppSection.sale.path}/invoice/$invoiceId';
