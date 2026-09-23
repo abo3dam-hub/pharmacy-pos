@@ -140,6 +140,10 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
       _fail(l10n.batchCostInvalid);
       return;
     }
+    // Bonus is ALWAYS in base units (same as PurchaseBonus quantityBase) —
+    // never scaled by the package toggle. The label below names the base
+    // unit explicitly while in package mode so the entry basis is
+    // unambiguous.
     final bonus = int.tryParse(_bonus.text.trim()) ?? 0;
     if ((bonus < 0)) {
       _fail(l10n.quantity);
@@ -241,7 +245,16 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
                 const SizedBox(height: AppSpacing.m),
                 TextFormField(
                   controller: _bonus,
-                  decoration: InputDecoration(labelText: l10n.batchBonusQty),
+                  decoration: InputDecoration(
+                    // Bonus stays in base units regardless of the package
+                    // toggle (see _submit); name the unit explicitly while in
+                    // package mode so there is no ambiguity.
+                    labelText: (_inPackages && hasPackage)
+                        ? (widget.baseUnitName.isNotEmpty
+                            ? '${l10n.batchBonusQty} (${widget.baseUnitName})'
+                            : l10n.batchBonusQty)
+                        : l10n.batchBonusQty,
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: AppSpacing.m),
