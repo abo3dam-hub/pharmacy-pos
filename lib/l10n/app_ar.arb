@@ -212,6 +212,8 @@
   "inventoryUnitsPerLargeInvalid": "عدد الأجزاء يجب أن يكون أكبر من صفر",
   "itemClassificationSection": "التصنيف والمعلومات الدوائية",
   "itemPricePartsSection": "التكلفة / السعر / الأجزاء",
+  "itemQuickEntry": "إدخال سريع",
+  "itemDetailedEntry": "إدخال مفصّل",
   "itemCurrentStock": "الرصيد الحالي",
   "itemProfitMargin": "هامش الربح",
   "statusNormal": "مخزون طبيعي",
@@ -269,7 +271,13 @@
   "bulkPriceScopeManufacturer": "منتجات مصنّع محدد",
   "bulkPriceScopeSupplier": "منتجات من مورد محدد",
   "bulkPriceScopeManual": "المنتجات المحددة ({count})",
-  "@bulkPriceScopeManual": {"placeholders": {"count": {"type": "int"}}},
+  "@bulkPriceScopeManual": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "categoriesTitle": "التصنيفات",
   "categoriesAdd": "إضافة تصنيف",
   "categoriesAddTitle": "إضافة تصنيف جديد",
@@ -315,15 +323,78 @@
   "inventoryBatches": "التشغيلات",
   "inventoryAdjustStock": "تسوية المخزون",
   "inventoryBatchView": "عرض التشغيلات",
-  "@userDeactivateConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
-  "@userActivateConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
-  "@inventoryImportDone": {"placeholders": {"created": {"type": "int"}, "updated": {"type": "int"}}},
-  "@inventoryImportProgress": {"placeholders": {"processed": {"type": "int"}, "total": {"type": "int"}}},
-  "@inventoryImportIssues": {"placeholders": {"skipped": {"type": "int"}}},
-  "@inventoryImportMaster": {"placeholders": {"count": {"type": "int"}}},
-  "@inventoryStockTooltip": {"placeholders": {"stock": {"type": "String"}, "price": {"type": "String"}}},
-  "@bulkSelectedCount": {"placeholders": {"count": {"type": "int"}}},
-  "@bulkDone": {"placeholders": {"count": {"type": "int"}}},
+  "@userDeactivateConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@userActivateConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@inventoryImportDone": {
+    "placeholders": {
+      "created": {
+        "type": "int"
+      },
+      "updated": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryImportProgress": {
+    "placeholders": {
+      "processed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryImportIssues": {
+    "placeholders": {
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryImportMaster": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryStockTooltip": {
+    "placeholders": {
+      "stock": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "@bulkSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@bulkDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "suppliersTab": "الموردون",
   "suppliersBalancesTab": "الأرصدة",
   "suppliersEmpty": "لا يوجد موردون",
@@ -514,12 +585,48 @@
   "prescriptionPrepareForSale": "تجهيز للبيع",
   "prescriptionPreparedMessage": "الوصفة جاهزة للربط في نقطة البيع",
   "prescriptionCannotPrepare": "لا يمكن ربط هذه الوصفة بالبيع",
-  "@customerDeactivateConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
-  "@customerActivateConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
-  "@customerAccountDisableConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
-  "@customerAccountEnableConfirmMessage": {"placeholders": {"name": {"type": "String"}}},
-  "@statementRowSaleInvoice": {"placeholders": {"number": {"type": "String"}}},
-  "@statementRowSaleReturn": {"placeholders": {"number": {"type": "String"}}},
+  "@customerDeactivateConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@customerActivateConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@customerAccountDisableConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@customerAccountEnableConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@statementRowSaleInvoice": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "@statementRowSaleReturn": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
   "partialSaleSection": "إعدادات البيع الجزئي",
   "partialSaleEnabled": "السماح بالبيع الجزئي",
   "partialSalePartsPerFull": "عدد الأجزاء في العبوة",
@@ -674,7 +781,13 @@
   "salesHistoryFilterStatus": "كل الحالات",
   "salesHistoryFilterPayment": "كل طرق الدفع",
   "salesHistoryFilterCashier": "كل الكاشير",
-  "@posItemCount": {"placeholders": {"count": {"type": "int"}}},
+  "@posItemCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "cashboxTitle": "الصندوق",
   "cashboxReadOnly": "وضع العرض فقط — تحتاج صلاحية «التعامل مع الصندوق» لإجراء العمليات",
   "cashboxActionOpen": "فتح الصندوق",
@@ -800,9 +913,19 @@
   "expenseCategoryDeactivated": "تم تعطيل الفئة",
   "@expenseCancelConfirmMessage": {
     "description": "Cancel/void an expense — confirmation message",
-    "placeholders": {"number": {"type": "String"}}
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
   },
-  "@posCustomerTab": {"placeholders": {"tab": {"type": "int"}}},
+  "@posCustomerTab": {
+    "placeholders": {
+      "tab": {
+        "type": "int"
+      }
+    }
+  },
   "navCashbox": "الصندوق",
   "navChartAccounts": "دليل الحسابات",
   "navJournal": "دفتر اليومية",
@@ -1114,14 +1237,65 @@
   "dataManagementRestartRequiredTitle": "إعادة التشغيل مطلوبة",
   "auditLogDateFrom": "من",
   "auditLogDateTo": "إلى",
-  "@rolesPermissionsCount": {"placeholders": {"count": {"type": "int"}}},
-  "@rolesUsersCount": {"placeholders": {"count": {"type": "int"}}},
-  "@rolesPermissionsFor": {"placeholders": {"name": {"type": "String"}}},
-  "@rolesDeleteConfirm": {"placeholders": {"name": {"type": "String"}}},
-  "@dataManagementBackupSize": {"placeholders": {"size": {"type": "String"}}},
-  "@dataManagementRestoreSchemaNote": {"placeholders": {"version": {"type": "int"}}},
-  "@dataManagementFilesCount": {"placeholders": {"count": {"type": "int"}}},
-  "@dataManagementExportSummary": {"placeholders": {"rows": {"type": "int"}, "tables": {"type": "int"}}},
+  "@rolesPermissionsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@rolesUsersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@rolesPermissionsFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@rolesDeleteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@dataManagementBackupSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "@dataManagementRestoreSchemaNote": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "@dataManagementFilesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@dataManagementExportSummary": {
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "tables": {
+        "type": "int"
+      }
+    }
+  },
   "inventoryDeleteTitle": "حذف المنتج",
   "inventoryDeleteConfirm": "هل تريد حذف المنتج \"{name}\" نهائيًا؟ لا يمكن التراجع بعد الحذف، ويُسمح فقط للمنتجات غير المستخدمة.",
   "inventoryDeleteBlocked": "لا يمكن حذف منتج مرتبط بمخزون أو تشغيلات أو فواتير؛ لاستبعاده استخدم الإيقاف.",
@@ -1132,7 +1306,25 @@
   "masterDataDeletedMessage": "تم حذف العنصر",
   "masterDataSearchHint": "ابحث بالاسم",
   "masterDataCount": "{count} عنصر",
-  "@masterDataCount": {"placeholders": {"count": {"type": "int"}}},
-  "@inventoryDeleteConfirm": {"placeholders": {"name": {"type": "String"}}},
-  "@masterDataDeleteConfirm": {"placeholders": {"name": {"type": "String"}}}
+  "@masterDataCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryDeleteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@masterDataDeleteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -662,6 +662,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemPricePartsSection => 'Cost / Price / Parts';
 
   @override
+  String get itemQuickEntry => 'Quick entry';
+
+  @override
+  String get itemDetailedEntry => 'Detailed entry';
+
+  @override
   String get itemCurrentStock => 'Current stock';
 
   @override

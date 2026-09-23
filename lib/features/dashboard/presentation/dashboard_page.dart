@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/permission_codes.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/money/money.dart';
+import '../../../core/motion/app_motion.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../l10n/app_localizations.dart';
@@ -67,122 +68,149 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.l),
       children: [
-        Text(l10n.dashboardKpis, style: context.appTypography.sectionTitle),
+        Entrance(
+          child: Text(
+            l10n.dashboardKpis,
+            style: context.appTypography.sectionTitle,
+          ),
+        ),
         const SizedBox(height: AppSpacing.m),
         LayoutBuilder(
           builder: (context, constraints) {
+            final cards = <_KpiCard>[
+              _KpiCard(
+                label: l10n.dashboardDailySales,
+                target: snapshot.todayTotalMicros.toDouble(),
+                format: (v) => Money.fromUnits(v.round()).format(),
+                icon: Icons.attach_money,
+              ),
+              _KpiCard(
+                label: l10n.dashboardTodayOrders,
+                target: snapshot.todayInvoiceCount.toDouble(),
+                format: (v) => '${v.round()}',
+                icon: Icons.receipt_long,
+              ),
+              _KpiCard(
+                label: l10n.dashboardProfitToday,
+                target: snapshot.todayProfitMicros.toDouble(),
+                format: (v) => Money.fromUnits(v.round()).format(),
+                icon: Icons.trending_up,
+              ),
+              _KpiCard(
+                label: l10n.dashboardUnitsSold,
+                target: snapshot.todayUnitsSold.toDouble(),
+                format: (v) => '${v.round()}',
+                icon: Icons.inventory_2,
+              ),
+              _KpiCard(
+                label: l10n.dashboardActiveItems,
+                target: snapshot.activeItems.toDouble(),
+                format: (v) => '${v.round()}',
+                icon: Icons.inventory,
+              ),
+              _KpiCard(
+                label: l10n.dashboardStockValue,
+                target: snapshot.stockValueMicros.toDouble(),
+                format: (v) => Money.fromUnits(v.round()).format(),
+                icon: Icons.payments,
+              ),
+            ];
             return Wrap(
               spacing: AppSpacing.m,
               runSpacing: AppSpacing.m,
               children: [
-                _KpiCard(
-                  label: l10n.dashboardDailySales,
-                  value: Money.fromUnits(snapshot.todayTotalMicros).format(),
-                  icon: Icons.attach_money,
-                ),
-                _KpiCard(
-                  label: l10n.dashboardTodayOrders,
-                  value: '${snapshot.todayInvoiceCount}',
-                  icon: Icons.receipt_long,
-                ),
-                _KpiCard(
-                  label: l10n.dashboardProfitToday,
-                  value: Money.fromUnits(snapshot.todayProfitMicros).format(),
-                  icon: Icons.trending_up,
-                ),
-                _KpiCard(
-                  label: l10n.dashboardUnitsSold,
-                  value: '${snapshot.todayUnitsSold}',
-                  icon: Icons.inventory_2,
-                ),
-                _KpiCard(
-                  label: l10n.dashboardActiveItems,
-                  value: '${snapshot.activeItems}',
-                  icon: Icons.inventory,
-                ),
-                _KpiCard(
-                  label: l10n.dashboardStockValue,
-                  value: Money.fromUnits(snapshot.stockValueMicros).format(),
-                  icon: Icons.payments,
-                ),
+                for (var i = 0; i < cards.length; i++)
+                  Entrance(delay: AppMotion.stagger * i, child: cards[i]),
               ],
             );
           },
         ),
         const SizedBox(height: AppSpacing.xl),
         if (financialsVisible) ...[
-          Text(
-            l10n.reportIncomeStatement,
-            style: context.appTypography.sectionTitle,
+          Entrance(
+            delay: AppMotion.stagger * 2,
+            child: Text(
+              l10n.reportIncomeStatement,
+              style: context.appTypography.sectionTitle,
+            ),
           ),
           const SizedBox(height: AppSpacing.m),
-          _FinancialSummaryCard(financials: snapshot.financials),
+          Entrance(
+            delay: AppMotion.stagger * 3,
+            child: _FinancialSummaryCard(financials: snapshot.financials),
+          ),
           const SizedBox(height: AppSpacing.xl),
         ],
-        _TwoColumnGrid(
-          left: _AlertCard(
-            title: l10n.dashboardLowStock,
-            icon: Icons.warning_amber,
-            children: snapshot.lowStockItems.isEmpty
-                ? [_EmptyRow(label: l10n.dashboardLowStockEmpty)]
-                : [
-                    for (final row in snapshot.lowStockItems)
-                      _AlertRow(
-                        primary: row.name,
-                        secondary:
-                            '${Money.fromUnits(row.currentStockBase).format()} / '
-                            '${Money.fromUnits(row.minimumStockBase).format()}',
-                        icon: Icons.arrow_downward,
-                        iconColor: Theme.of(context).colorScheme.error,
-                      ),
-                  ],
-          ),
-          right: _AlertCard(
-            title: l10n.dashboardNearExpiry,
-            icon: Icons.update,
-            children: snapshot.nearExpiryBatches.isEmpty
-                ? [_EmptyRow(label: l10n.dashboardNearExpiryEmpty)]
-                : [
-                    for (final b in snapshot.nearExpiryBatches)
-                      _AlertRow(
-                        primary: b.itemName,
-                        secondary:
-                            '${_date(b.expiryDate)} · ${_qty(b.quantityBase)}',
-                        icon: Icons.event,
-                        iconColor: Theme.of(context).colorScheme.tertiary,
-                      ),
-                  ],
+        Entrance(
+          delay: AppMotion.stagger * 3,
+          child: _TwoColumnGrid(
+            left: _AlertCard(
+              title: l10n.dashboardLowStock,
+              icon: Icons.warning_amber,
+              children: snapshot.lowStockItems.isEmpty
+                  ? [_EmptyRow(label: l10n.dashboardLowStockEmpty)]
+                  : [
+                      for (final row in snapshot.lowStockItems)
+                        _AlertRow(
+                          primary: row.name,
+                          secondary:
+                              '${Money.fromUnits(row.currentStockBase).format()} / '
+                              '${Money.fromUnits(row.minimumStockBase).format()}',
+                          icon: Icons.arrow_downward,
+                          iconColor: Theme.of(context).colorScheme.error,
+                        ),
+                    ],
+            ),
+            right: _AlertCard(
+              title: l10n.dashboardNearExpiry,
+              icon: Icons.update,
+              children: snapshot.nearExpiryBatches.isEmpty
+                  ? [_EmptyRow(label: l10n.dashboardNearExpiryEmpty)]
+                  : [
+                      for (final b in snapshot.nearExpiryBatches)
+                        _AlertRow(
+                          primary: b.itemName,
+                          secondary:
+                              '${_date(b.expiryDate)} · ${_qty(b.quantityBase)}',
+                          icon: Icons.event,
+                          iconColor: Theme.of(context).colorScheme.tertiary,
+                        ),
+                    ],
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
-        _TwoColumnGrid(
-          left: _AlertCard(
-            title: l10n.dashboardRecentSales,
-            icon: Icons.history,
-            children: snapshot.recentSales.isEmpty
-                ? [_EmptyRow(label: l10n.dashboardRecentEmpty)]
-                : [
-                    for (final r in snapshot.recentSales)
-                      _ActivityRow(
-                        primary: r.number,
-                        secondary: _time(r.atMillis),
-                        value: Money.fromUnits(r.totalMicros).format(),
-                      ),
-                  ],
-          ),
-          right: _AlertCard(
-            title: l10n.dashboardRecentPurchases,
-            icon: Icons.local_shipping,
-            children: snapshot.recentPurchases.isEmpty
-                ? [_EmptyRow(label: l10n.dashboardRecentEmpty)]
-                : [
-                    for (final r in snapshot.recentPurchases)
-                      _ActivityRow(
-                        primary: r.number,
-                        secondary: _time(r.atMillis),
-                        value: Money.fromUnits(r.totalMicros).format(),
-                      ),
-                  ],
+        Entrance(
+          delay: AppMotion.stagger * 4,
+          child: _TwoColumnGrid(
+            left: _AlertCard(
+              title: l10n.dashboardRecentSales,
+              icon: Icons.history,
+              children: snapshot.recentSales.isEmpty
+                  ? [_EmptyRow(label: l10n.dashboardRecentEmpty)]
+                  : [
+                      for (final r in snapshot.recentSales)
+                        _ActivityRow(
+                          primary: r.number,
+                          secondary: _time(r.atMillis),
+                          value: Money.fromUnits(r.totalMicros).format(),
+                        ),
+                    ],
+            ),
+            right: _AlertCard(
+              title: l10n.dashboardRecentPurchases,
+              icon: Icons.local_shipping,
+              children: snapshot.recentPurchases.isEmpty
+                  ? [_EmptyRow(label: l10n.dashboardRecentEmpty)]
+                  : [
+                      for (final r in snapshot.recentPurchases)
+                        _ActivityRow(
+                          primary: r.number,
+                          secondary: _time(r.atMillis),
+                          value: Money.fromUnits(r.totalMicros).format(),
+                        ),
+                    ],
+            ),
           ),
         ),
       ],
@@ -207,18 +235,21 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 class _KpiCard extends StatelessWidget {
   const _KpiCard({
     required this.label,
-    required this.value,
+    required this.target,
+    required this.format,
     required this.icon,
   });
 
   final String label;
-  final String value;
+  final double target;
+  final String Function(double value) format;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final typography = context.appTypography;
+    final primary = theme.colorScheme.primary;
     return Card(
       margin: EdgeInsets.zero,
       child: Container(
@@ -226,7 +257,26 @@ class _KpiCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.l),
         child: Row(
           children: [
-            Icon(icon, color: theme.colorScheme.primary, size: 36),
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [primary, primary.withValues(alpha: 0.72)],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: primary.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: Colors.white, size: 28),
+            ),
             const SizedBox(width: AppSpacing.m),
             Expanded(
               child: Column(
@@ -234,7 +284,11 @@ class _KpiCard extends StatelessWidget {
                 children: [
                   Text(label, style: typography.bodySecondary),
                   const SizedBox(height: AppSpacing.xs),
-                  Text(value, style: typography.sectionTitle),
+                  CountUp(
+                    target: target,
+                    format: format,
+                    style: typography.sectionTitle,
+                  ),
                 ],
               ),
             ),

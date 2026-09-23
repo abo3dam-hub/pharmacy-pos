@@ -1370,6 +1370,18 @@ abstract class AppLocalizations {
   /// **'التكلفة / السعر / الأجزاء'**
   String get itemPricePartsSection;
 
+  /// No description provided for @itemQuickEntry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدخال سريع'**
+  String get itemQuickEntry;
+
+  /// No description provided for @itemDetailedEntry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إدخال مفصّل'**
+  String get itemDetailedEntry;
+
   /// No description provided for @itemCurrentStock.
   ///
   /// In ar, this message translates to:

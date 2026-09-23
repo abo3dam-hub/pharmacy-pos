@@ -662,6 +662,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get itemPricePartsSection => 'التكلفة / السعر / الأجزاء';
 
   @override
+  String get itemQuickEntry => 'إدخال سريع';
+
+  @override
+  String get itemDetailedEntry => 'إدخال مفصّل';
+
+  @override
   String get itemCurrentStock => 'الرصيد الحالي';
 
   @override

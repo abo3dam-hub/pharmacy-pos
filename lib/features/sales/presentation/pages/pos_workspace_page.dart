@@ -9,6 +9,7 @@ import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/money/money.dart';
+import '../../../../core/motion/app_motion.dart';
 import '../../../../core/pdf/pdf_arabic.dart';
 import '../../../../core/pdf/pdf_documents.dart';
 import '../../../../core/shortcuts/barcode_buffer.dart';
@@ -289,9 +290,7 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(content: Text(e.failure.message)),
-        );
+        ..showSnackBar(SnackBar(content: Text(e.failure.message)));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -495,9 +494,18 @@ class _CompactLayout extends ConsumerWidget {
                             onLineSelected,
                           ),
                     icon: const Icon(Icons.shopping_cart),
-                    label: Text(
-                      '${state.cart.length} '
-                      '· ${Money.fromUnits(notifier.totals.totalMicros).formatArabicDigits()}',
+                    label: AnimatedSwitcher(
+                      duration: AppMotion.fast,
+                      transitionBuilder: (child, animation) => ScaleTransition(
+                        scale: animation,
+                        child: FadeTransition(opacity: animation, child: child),
+                      ),
+                      child: Text(
+                        // Keyed by cart size: adding an item pops the total.
+                        key: ValueKey(state.cart.length),
+                        '${state.cart.length} '
+                        '· ${Money.fromUnits(notifier.totals.totalMicros).formatArabicDigits()}',
+                      ),
                     ),
                   ),
                 ),
@@ -644,8 +652,10 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
                               widget.tabIndex,
                             ).notifier,
                           )
-                          .addToCart(item,
-                              unitMode: PosLineUnitMode.sellablePart),
+                          .addToCart(
+                            item,
+                            unitMode: PosLineUnitMode.sellablePart,
+                          ),
                       canViewAlternatives: ref
                           .read(authControllerProvider)
                           .permissions
@@ -782,9 +792,7 @@ class _ProductList extends StatelessWidget {
                       ),
                     ),
                     icon: const Icon(Icons.content_cut, size: 16),
-                    label: Text(
-                      item.sellablePartUnitName ?? l10n.posUnitStrip,
-                    ),
+                    label: Text(item.sellablePartUnitName ?? l10n.posUnitStrip),
                     onPressed: () => onAddAsPart!(item),
                   ),
                 ),
@@ -914,9 +922,9 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                                     ),
                                     decoration: BoxDecoration(
                                       border: Border.all(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .outline,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outline,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -927,9 +935,9 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                                         const SizedBox(width: 4),
                                         Text(
                                           _otherUnitLabel(l10n, line),
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
                                         ),
                                       ],
                                     ),
@@ -1039,9 +1047,10 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
   /// configured sellable-part name for parts).
   String _unitLabel(AppLocalizations l10n, PosCartLine line) =>
       switch (line.unitMode) {
-        PosLineUnitMode.largeUnit => line.item.largeUnitName.isNotEmpty
-            ? line.item.largeUnitName
-            : l10n.posUnitBox,
+        PosLineUnitMode.largeUnit =>
+          line.item.largeUnitName.isNotEmpty
+              ? line.item.largeUnitName
+              : l10n.posUnitBox,
         PosLineUnitMode.sellablePart =>
           (line.item.sellablePartUnitName?.isNotEmpty ?? false)
               ? line.item.sellablePartUnitName!
@@ -1055,9 +1064,10 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
           (line.item.sellablePartUnitName?.isNotEmpty ?? false)
               ? line.item.sellablePartUnitName!
               : l10n.posUnitStrip,
-        PosLineUnitMode.sellablePart => line.item.largeUnitName.isNotEmpty
-            ? line.item.largeUnitName
-            : l10n.posUnitBox,
+        PosLineUnitMode.sellablePart =>
+          line.item.largeUnitName.isNotEmpty
+              ? line.item.largeUnitName
+              : l10n.posUnitBox,
       };
 
   int _lineQty(PosCartLine line) => line.quantity;

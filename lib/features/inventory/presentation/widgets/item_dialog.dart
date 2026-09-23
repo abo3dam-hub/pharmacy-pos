@@ -51,7 +51,7 @@ Future<ItemFormResult?> showItemFormDialog(
   List<ActiveIngredientRow> activeIngredients = const [],
   List<IndicationRow> indications = const [],
   Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
-      onCreateMasterData,
+  onCreateMasterData,
   Future<SupplierRow?> Function(SupplierDraft draft)? onCreateSupplier,
   int defaultPartialSaleMarkupBasisPoints = 2000,
   bool showContinueAction = false,
@@ -101,7 +101,7 @@ class _ItemFormDialog extends StatefulWidget {
   final List<ActiveIngredientRow> activeIngredients;
   final List<IndicationRow> indications;
   final Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
-      onCreateMasterData;
+  onCreateMasterData;
   final Future<SupplierRow?> Function(SupplierDraft draft)? onCreateSupplier;
   final int defaultPartialSaleMarkupBasisPoints;
 
@@ -174,8 +174,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     final unitsPerLarge = _initial.units?.unitsPerLarge ?? 1;
     _partsCount =
         '${_initial.partialSaleEnabled ? (_initial.partsPerFullProduct ?? unitsPerLarge) : unitsPerLarge}';
-    _sellablePartBaseQuantity =
-        _initial.sellablePartBaseQuantity ?? 1;
+    _sellablePartBaseQuantity = _initial.sellablePartBaseQuantity ?? 1;
     _partialSaleEnabled = _initial.partialSaleEnabled;
     _partPriceManual = _initial.partialSalePriceMicros != null;
 
@@ -211,23 +210,29 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       'cost',
       Money.fromUnits(
         baseUnitCostToPackageCost(
-            _initial.costMicros, _initial.units?.unitsPerLarge ?? 1),
+          _initial.costMicros,
+          _initial.units?.unitsPerLarge ?? 1,
+        ),
       ).format(),
     );
     seed('discount', _pct(_initial.purchaseDiscountBasisPoints));
     seed('selling', Money.fromUnits(_initial.sellingPriceMicros).format());
     seed('wholesale', Money.fromUnits(_initial.wholesalePriceMicros).format());
-    seed('halfWholesale',
-        Money.fromUnits(_initial.halfWholesalePriceMicros).format());
+    seed(
+      'halfWholesale',
+      Money.fromUnits(_initial.halfWholesalePriceMicros).format(),
+    );
     seed('custom1', Money.fromUnits(_initial.customPrice1Micros).format());
     seed('custom2', Money.fromUnits(_initial.customPrice2Micros).format());
     seed('vat', _pct(_initial.vatRateBasisPoints));
     seed('minStock', '${_initial.minimumStockBase}');
     seed('maxStock', '${_initial.maximumStockBase}');
-    seed('partialSaleMarkupBasisPoints',
-        _initial.partialSaleMarkupBasisPoints != null
-            ? _pct(_initial.partialSaleMarkupBasisPoints!)
-            : _defaultMarkupPercent);
+    seed(
+      'partialSaleMarkupBasisPoints',
+      _initial.partialSaleMarkupBasisPoints != null
+          ? _pct(_initial.partialSaleMarkupBasisPoints!)
+          : _defaultMarkupPercent,
+    );
     final partPriceText = _initial.partialSalePriceMicros != null
         ? Money.fromUnits(_initial.partialSalePriceMicros!).format()
         : '';
@@ -237,7 +242,8 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   static String _pct(int basisPoints) =>
       (basisPoints / 100).toStringAsFixed(basisPoints % 100 == 0 ? 0 : 2);
 
-  int get _defaultMarkupBasisPoints => widget.defaultPartialSaleMarkupBasisPoints;
+  int get _defaultMarkupBasisPoints =>
+      widget.defaultPartialSaleMarkupBasisPoints;
   String get _defaultMarkupPercent => _pct(_defaultMarkupBasisPoints);
 
   TextEditingController _c(String key, {String? hint}) {
@@ -250,7 +256,10 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     return existing;
   }
 
-  TextEditingController _strengthController(String ingredientId, String initial) {
+  TextEditingController _strengthController(
+    String ingredientId,
+    String initial,
+  ) {
     final existing = _strengthControllers[ingredientId];
     if (existing != null) return existing;
     final c = TextEditingController(text: initial);
@@ -358,16 +367,23 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         ? _defaultMarkupBasisPoints
         : (double.tryParse(markupText.replaceAll(',', ''))! * 100).round();
 
-    if (cost == null || selling == null || wholesale == null ||
-        halfWholesale == null || custom1 == null || custom2 == null ||
-        vat == null || discount == null || minStock == null ||
+    if (cost == null ||
+        selling == null ||
+        wholesale == null ||
+        halfWholesale == null ||
+        custom1 == null ||
+        custom2 == null ||
+        vat == null ||
+        discount == null ||
+        minStock == null ||
         maxStock == null) {
       _snack(l10n.authSaveError);
       return;
     }
 
     final partPrice = _microsFrom('partialSalePartPrice');
-    final manualPrice = _partialSaleEnabled &&
+    final manualPrice =
+        _partialSaleEnabled &&
         _partPriceManual &&
         _c('partialSalePartPrice').text.trim().isNotEmpty;
     if (_partialSaleEnabled && manualPrice && partPrice == null) {
@@ -387,9 +403,10 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       tradeNameEn: _emptyToNull(_c('tradeNameEn').text),
       scientificName: _emptyToNull(_c('scientificName').text),
       activeIngredient:
-          _selectedActiveIngredientIds.isEmpty && _initial.activeIngredientIds.isNotEmpty
-              ? null
-              : _emptyToNull(_c('activeIngredient').text),
+          _selectedActiveIngredientIds.isEmpty &&
+              _initial.activeIngredientIds.isNotEmpty
+          ? null
+          : _emptyToNull(_c('activeIngredient').text),
       equivalentDrug: _emptyToNull(_c('equivalentDrug').text),
       manufacturerId: _manufacturerId,
       categoryId: _categoryId,
@@ -465,10 +482,12 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     final q = query.trim().toLowerCase();
     if (q.isEmpty) return const [];
     return _activeIngredients
-        .where((i) =>
-            !_selectedActiveIngredientIds.contains(i.id) &&
-            (i.name.toLowerCase().contains(q) ||
-                (i.nameEn ?? '').toLowerCase().contains(q)))
+        .where(
+          (i) =>
+              !_selectedActiveIngredientIds.contains(i.id) &&
+              (i.name.toLowerCase().contains(q) ||
+                  (i.nameEn ?? '').toLowerCase().contains(q)),
+        )
         .toList();
   }
 
@@ -541,7 +560,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     final markup = markupText.isEmpty
         ? _defaultMarkupBasisPoints
         : ((double.tryParse(markupText.replaceAll(',', '')) ?? 0) * 100)
-            .round();
+              .round();
     if (markup < 0) return;
     final auto = PartialPriceCalculator().calculatePartialPrice(
       sellingPriceMicros: selling,
@@ -558,6 +577,550 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     });
   }
 
+  bool _quickMode = true;
+
+  /// Quick / detailed entry toggle. Quick is the default: the pharmacist
+  /// sees only what a new item needs 90% of the time; one tap reveals the
+  /// full master-data form. No feature is removed.
+  Widget _modeToggle(AppLocalizations l10n) => Padding(
+    padding: const EdgeInsets.only(bottom: AppSpacing.m),
+    child: Row(
+      children: [
+        const Icon(Icons.bolt_outlined, size: 18),
+        const SizedBox(width: AppSpacing.s),
+        SegmentedButton<bool>(
+          segments: [
+            ButtonSegment(
+              value: true,
+              label: Text(l10n.itemQuickEntry),
+              icon: const Icon(Icons.flash_on_outlined, size: 16),
+            ),
+            ButtonSegment(
+              value: false,
+              label: Text(l10n.itemDetailedEntry),
+              icon: const Icon(Icons.tune_outlined, size: 16),
+            ),
+          ],
+          selected: {_quickMode},
+          onSelectionChanged: (s) => setState(() => _quickMode = s.first),
+          style: const ButtonStyle(visualDensity: VisualDensity.compact),
+        ),
+      ],
+    ),
+  );
+
+  /// Essentials for the 90% case: identity, classification, units,
+  /// partial-sale and the two prices that matter. Everything else lives in
+  /// [_fullSections] ("detailed" mode). Nothing is removed — only hidden
+  /// until needed.
+  List<Widget> _quickSections(AppLocalizations l10n) => [
+    _section('${l10n.itemBarcodePrimary} / ${l10n.itemTradeName}'),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _text(_c('primaryBarcode'), l10n.itemBarcodePrimary, 220),
+        _text(_c('secondaryBarcode'), l10n.itemSecondaryBarcode, 220),
+        _text(_c('tradeName'), l10n.itemTradeName, 220, required: true),
+        _text(_c('tradeNameEn'), l10n.itemTradeNameEn, 220),
+      ],
+    ),
+    _section(l10n.itemClassificationSection),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      crossAxisAlignment: WrapCrossAlignment.start,
+      children: [
+        _masterDropdown(
+          value: _categoryId,
+          label: l10n.itemCategory,
+          items: _categories,
+          nameOf: (c) => c.name,
+          onChanged: (v) => setState(() => _categoryId = v),
+          kind: MasterDataKind.category,
+          width: 200,
+        ),
+        _masterDropdown(
+          value: _manufacturerId,
+          label: l10n.itemManufacturer,
+          items: _manufacturers,
+          nameOf: (m) => m.name,
+          onChanged: (v) => setState(() => _manufacturerId = v),
+          kind: MasterDataKind.manufacturer,
+          width: 200,
+        ),
+      ],
+    ),
+    _section(l10n.itemPricePartsSection),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _unitDropdown(
+          value: _largeUnitId,
+          label: l10n.itemPackagingUnit,
+          onChanged: (v) => setState(() => _largeUnitId = v),
+          width: 220,
+        ),
+        _unitDropdown(
+          value: _partUnitId,
+          label: l10n.itemBaseUnit,
+          onChanged: (v) => setState(() {
+            _partUnitId = v;
+            if (v != null) _largeUnitId ??= v;
+          }),
+          width: 200,
+        ),
+        SizedBox(
+          width: 160,
+          child: TextFormField(
+            controller: _c('unitsPerLarge', hint: '1'),
+            decoration: InputDecoration(
+              labelText: l10n.itemUnitsPerLarge,
+              isDense: true,
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (v) {
+              setState(() {
+                _partsCount = v.trim();
+                _recomputePartPrice();
+              });
+            },
+          ),
+        ),
+      ],
+    ),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _switch(
+          'partialSaleEnabled',
+          l10n.partialSaleEnabled,
+          _partialSaleEnabled,
+          (v) => setState(() {
+            _partialSaleEnabled = v;
+            if (v) {
+              if (_c('partialSaleMarkupBasisPoints').text.isEmpty) {
+                _c('partialSaleMarkupBasisPoints').text = _defaultMarkupPercent;
+              }
+              if (_c('partialSalePartPrice').text.isEmpty) {
+                _recomputePartPrice();
+              }
+            }
+          }),
+        ),
+        if (_partialSaleEnabled) ...[
+          _text(
+            _c('partialSaleMarkupBasisPoints'),
+            l10n.partialSaleMarkupPercent,
+            180,
+            onChanged: (_) => _recomputePartPrice(),
+          ),
+          _text(
+            _c('partialSalePartPrice'),
+            l10n.partialSalePartPrice,
+            180,
+            onChanged: (v) {
+              if (v.trim().isNotEmpty) {
+                _partPriceManual = true;
+              }
+            },
+          ),
+          TextButton.icon(
+            onPressed: _restoreAutoPartPrice,
+            icon: const Icon(Icons.auto_fix_high, size: 18),
+            label: Text(l10n.partialSaleRestoreAuto),
+          ),
+        ],
+      ],
+    ),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _text(
+          _c('cost'),
+          _costLabel(l10n),
+          160,
+          onChanged: (_) => _recomputePartPrice(),
+        ),
+        _text(
+          _c('selling'),
+          l10n.itemPrice,
+          150,
+          onChanged: (_) => _recomputePartPrice(),
+        ),
+      ],
+    ),
+
+    _section(l10n.itemHasExpiry),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.s,
+      children: [
+        _switch(
+          'hasExpiry',
+          l10n.itemHasExpiry,
+          _hasExpiry,
+          (v) => setState(() => _hasExpiry = v),
+        ),
+      ],
+    ),
+  ];
+
+  /// Every field, in the documented Phase 17 order. Shown in "detailed"
+  /// mode; the quick mode above is just a subset of this.
+  List<Widget> _fullSections(AppLocalizations l10n) => [
+    _section('${l10n.itemBarcodePrimary} / ${l10n.itemTradeName}'),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _text(_c('primaryBarcode'), l10n.itemBarcodePrimary, 220),
+        _text(_c('secondaryBarcode'), l10n.itemSecondaryBarcode, 220),
+        _text(_c('tradeName'), l10n.itemTradeName, 220, required: true),
+        _text(_c('tradeNameEn'), l10n.itemTradeNameEn, 220),
+      ],
+    ),
+    _section(l10n.itemClassificationSection),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      crossAxisAlignment: WrapCrossAlignment.start,
+      children: [
+        _masterDropdown(
+          value: _categoryId,
+          label: l10n.itemCategory,
+          items: _categories,
+          nameOf: (c) => c.name,
+          onChanged: (v) => setState(() => _categoryId = v),
+          kind: MasterDataKind.category,
+          width: 200,
+        ),
+        _masterDropdown(
+          value: _manufacturerId,
+          label: l10n.itemManufacturer,
+          items: _manufacturers,
+          nameOf: (m) => m.name,
+          onChanged: (v) => setState(() => _manufacturerId = v),
+          kind: MasterDataKind.manufacturer,
+          width: 200,
+        ),
+      ],
+    ),
+    _section(l10n.itemIndications),
+    Wrap(
+      spacing: AppSpacing.s,
+      runSpacing: AppSpacing.s,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (final indication in _indications)
+          FilterChip(
+            label: Text(indication.name, overflow: TextOverflow.ellipsis),
+            visualDensity: VisualDensity.compact,
+            selected: _selectedIndicationIds.contains(indication.id),
+            onSelected: (on) => setState(() {
+              if (on) {
+                _selectedIndicationIds.add(indication.id);
+              } else {
+                _selectedIndicationIds.remove(indication.id);
+              }
+            }),
+          ),
+        if (widget.onCreateMasterData != null)
+          _addButton(
+            l10n.itemAddNew,
+            () => _addMasterData(MasterDataKind.indication),
+          ),
+      ],
+    ),
+    _section(l10n.itemScientificName),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _text(_c('scientificName'), l10n.itemScientificName, 250),
+        _text(_c('equivalentDrug'), l10n.itemEquivalentDrug, 250),
+      ],
+    ),
+    _section(l10n.itemActiveIngredients),
+    if (widget.onCreateMasterData != null)
+      _addButton(
+        l10n.itemAddNew,
+        () => _addMasterData(MasterDataKind.activeIngredient),
+      ),
+    const SizedBox(height: AppSpacing.xs),
+    SizedBox(
+      width: 380,
+      child: TextField(
+        onChanged: (v) => setState(() => _ingredientSearch = v),
+        decoration: InputDecoration(
+          labelText: l10n.itemActiveIngredientsSearch,
+          isDense: true,
+          prefixIcon: const Icon(Icons.search, size: 18),
+        ),
+      ),
+    ),
+    const SizedBox(height: AppSpacing.xs),
+    if (_ingredientSearch.trim().isNotEmpty)
+      for (final ingredient in _matchingIngredients(_ingredientSearch).take(8))
+        ListTile(
+          dense: true,
+          visualDensity: VisualDensity.compact,
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.add_circle_outline, size: 18),
+          title: Text(ingredient.name, overflow: TextOverflow.ellipsis),
+          onTap: () => setState(() {
+            _selectedActiveIngredientIds.add(ingredient.id);
+            _ingredientSearch = '';
+          }),
+        ),
+    if (_selectedActiveIngredientIds.isEmpty &&
+        _ingredientSearch.trim().isEmpty)
+      Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+        child: Text(
+          l10n.itemActiveIngredientsHint,
+          style: context.appTypography.labelSmall,
+        ),
+      ),
+    for (final id in _selectedActiveIngredientIds.toList())
+      Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.remove_circle_outline, size: 18),
+              visualDensity: VisualDensity.compact,
+              tooltip: l10n.itemActiveIngredientsRemove,
+              onPressed: () => setState(() {
+                _selectedActiveIngredientIds.remove(id);
+                _strengthControllers.remove(id)?.dispose();
+              }),
+            ),
+            SizedBox(
+              width: 220,
+              child: Text(
+                _ingredientName(id),
+                overflow: TextOverflow.ellipsis,
+                style: context.appTypography.label,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.m),
+            SizedBox(
+              width: 180,
+              child: TextFormField(
+                controller: _strengthController(
+                  id,
+                  _initial.activeIngredientStrengths[id] ?? '',
+                ),
+                decoration: InputDecoration(
+                  labelText: l10n.activeIngredientStrength,
+                  isDense: true,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    _section(l10n.itemSuppliers),
+    Wrap(
+      spacing: AppSpacing.s,
+      runSpacing: AppSpacing.s,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (final supplier in _suppliers)
+          FilterChip(
+            label: Text(supplier.name, overflow: TextOverflow.ellipsis),
+            visualDensity: VisualDensity.compact,
+            selected: _selectedSupplierIds.contains(supplier.id),
+            onSelected: (on) => setState(() {
+              if (on) {
+                _selectedSupplierIds.add(supplier.id);
+              } else {
+                _selectedSupplierIds.remove(supplier.id);
+              }
+            }),
+          ),
+        if (widget.onCreateSupplier != null)
+          _addButton(l10n.itemAddNew, _addSupplier),
+      ],
+    ),
+    _section(l10n.itemPharmaForm),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _text(_c('pharmaForm'), l10n.itemPharmaForm, 140),
+        _text(_c('dose'), l10n.itemDose, 140),
+        _text(_c('sizeVolume'), l10n.itemSizeVolume, 140),
+        _text(_c('shelfLocation'), l10n.itemShelfLocation, 140),
+      ],
+    ),
+    _section(l10n.itemPricePartsSection),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _unitDropdown(
+          value: _largeUnitId,
+          label: l10n.itemPackagingUnit,
+          onChanged: (v) => setState(() => _largeUnitId = v),
+          width: 220,
+        ),
+        _unitDropdown(
+          value: _partUnitId,
+          label: l10n.itemBaseUnit,
+          onChanged: (v) => setState(() {
+            _partUnitId = v;
+            if (v != null) _largeUnitId ??= v;
+          }),
+          width: 200,
+        ),
+        SizedBox(
+          width: 160,
+          child: TextFormField(
+            controller: _c('unitsPerLarge', hint: '1'),
+            decoration: InputDecoration(
+              labelText: l10n.itemUnitsPerLarge,
+              isDense: true,
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (v) {
+              setState(() {
+                _partsCount = v.trim();
+                _recomputePartPrice();
+              });
+            },
+          ),
+        ),
+      ],
+    ),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _switch(
+          'partialSaleEnabled',
+          l10n.partialSaleEnabled,
+          _partialSaleEnabled,
+          (v) => setState(() {
+            _partialSaleEnabled = v;
+            if (v) {
+              if (_c('partialSaleMarkupBasisPoints').text.isEmpty) {
+                _c('partialSaleMarkupBasisPoints').text = _defaultMarkupPercent;
+              }
+              if (_c('partialSalePartPrice').text.isEmpty) {
+                _recomputePartPrice();
+              }
+            }
+          }),
+        ),
+        if (_partialSaleEnabled) ...[
+          _text(
+            _c('partialSaleMarkupBasisPoints'),
+            l10n.partialSaleMarkupPercent,
+            180,
+            onChanged: (_) => _recomputePartPrice(),
+          ),
+          _text(
+            _c('partialSalePartPrice'),
+            l10n.partialSalePartPrice,
+            180,
+            onChanged: (v) {
+              if (v.trim().isNotEmpty) {
+                _partPriceManual = true;
+              }
+            },
+          ),
+          TextButton.icon(
+            onPressed: _restoreAutoPartPrice,
+            icon: const Icon(Icons.auto_fix_high, size: 18),
+            label: Text(l10n.partialSaleRestoreAuto),
+          ),
+        ],
+      ],
+    ),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _text(
+          _c('cost'),
+          _costLabel(l10n),
+          160,
+          onChanged: (_) => _recomputePartPrice(),
+        ),
+        _text(_c('discount'), l10n.itemPurchaseDiscount, 160),
+        _text(
+          _c('selling'),
+          l10n.itemPrice,
+          150,
+          onChanged: (_) => _recomputePartPrice(),
+        ),
+        _text(_c('wholesale'), l10n.itemWholesalePrice, 150),
+        _text(_c('halfWholesale'), l10n.itemHalfWholesalePrice, 150),
+        _text(_c('custom1'), l10n.itemCustomPrice1, 140),
+        _text(_c('custom2'), l10n.itemCustomPrice2, 140),
+        _text(_c('vat'), l10n.itemVatRate, 140),
+      ],
+    ),
+    _section(l10n.itemStock),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _text(_c('minStock'), l10n.itemMinimumStock, 180),
+        _text(_c('maxStock'), l10n.itemMaximumStock, 180),
+      ],
+    ),
+    _section(''),
+    Wrap(
+      spacing: AppSpacing.l,
+      runSpacing: AppSpacing.s,
+      children: [
+        _switch(
+          'hasExpiry',
+          l10n.itemHasExpiry,
+          _hasExpiry,
+          (v) => setState(() => _hasExpiry = v),
+        ),
+        _switch(
+          'isControlled',
+          l10n.itemIsControlled,
+          _isControlled,
+          (v) => setState(() => _isControlled = v),
+        ),
+        _switch(
+          'lockAutoPrice',
+          l10n.itemLockPriceAutoUpdate,
+          _lockAutoPrice,
+          (v) => setState(() => _lockAutoPrice = v),
+        ),
+        _switch(
+          'requiresPrescription',
+          l10n.itemRequiresPrescription,
+          _requiresPrescription,
+          (v) => setState(() => _requiresPrescription = v),
+        ),
+      ],
+    ),
+    _section(l10n.itemUsageInstructions),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _text(_c('usageInstructions'), l10n.itemUsageInstructions, 300),
+        _text(_c('generalNotes'), l10n.itemGeneralNotes, 300),
+        _text(_c('licenseNumber'), l10n.itemLicenseNumber, 220),
+      ],
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -572,324 +1135,11 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _section('${l10n.itemBarcodePrimary} / ${l10n.itemTradeName}'),
-                Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
-                  children: [
-                    _text(_c('primaryBarcode'), l10n.itemBarcodePrimary, 220),
-                    _text(_c('secondaryBarcode'), l10n.itemSecondaryBarcode, 220),
-                    _text(_c('tradeName'), l10n.itemTradeName, 220,
-                        required: true),
-                    _text(_c('tradeNameEn'), l10n.itemTradeNameEn, 220),
-                  ],
-                ),
-                _section(l10n.itemClassificationSection),
-                Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
-                  crossAxisAlignment: WrapCrossAlignment.start,
-                  children: [
-                    _masterDropdown(
-                      value: _categoryId,
-                      label: l10n.itemCategory,
-                      items: _categories,
-                      nameOf: (c) => c.name,
-                      onChanged: (v) => setState(() => _categoryId = v),
-                      kind: MasterDataKind.category,
-                      width: 200,
-                    ),
-                    _masterDropdown(
-                      value: _manufacturerId,
-                      label: l10n.itemManufacturer,
-                      items: _manufacturers,
-                      nameOf: (m) => m.name,
-                      onChanged: (v) => setState(() => _manufacturerId = v),
-                      kind: MasterDataKind.manufacturer,
-                      width: 200,
-                    ),
-                  ],
-                ),
-                _section(l10n.itemIndications),
-                Wrap(
-                  spacing: AppSpacing.s,
-                  runSpacing: AppSpacing.s,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    for (final indication in _indications)
-                      FilterChip(
-                        label: Text(indication.name,
-                            overflow: TextOverflow.ellipsis),
-                        visualDensity: VisualDensity.compact,
-                        selected:
-                            _selectedIndicationIds.contains(indication.id),
-                        onSelected: (on) => setState(() {
-                          if (on) {
-                            _selectedIndicationIds.add(indication.id);
-                          } else {
-                            _selectedIndicationIds.remove(indication.id);
-                          }
-                        }),
-                      ),
-                    if (widget.onCreateMasterData != null)
-                      _addButton(l10n.itemAddNew,
-                          () => _addMasterData(MasterDataKind.indication)),
-                  ],
-                ),
-                _section(l10n.itemScientificName),
-                Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
-                  children: [
-                    _text(_c('scientificName'), l10n.itemScientificName, 250),
-                    _text(_c('equivalentDrug'), l10n.itemEquivalentDrug, 250),
-                  ],
-                ),
-                _section(l10n.itemActiveIngredients),
-                if (widget.onCreateMasterData != null)
-                  _addButton(l10n.itemAddNew,
-                      () => _addMasterData(MasterDataKind.activeIngredient)),
-                const SizedBox(height: AppSpacing.xs),
-                SizedBox(
-                  width: 380,
-                  child: TextField(
-                    onChanged: (v) => setState(() => _ingredientSearch = v),
-                    decoration: InputDecoration(
-                      labelText: l10n.itemActiveIngredientsSearch,
-                      isDense: true,
-                      prefixIcon: const Icon(Icons.search, size: 18),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                if (_ingredientSearch.trim().isNotEmpty)
-                  for (final ingredient
-                      in _matchingIngredients(_ingredientSearch).take(8))
-                    ListTile(
-                      dense: true,
-                      visualDensity: VisualDensity.compact,
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.add_circle_outline, size: 18),
-                      title: Text(ingredient.name,
-                          overflow: TextOverflow.ellipsis),
-                      onTap: () => setState(() {
-                        _selectedActiveIngredientIds.add(ingredient.id);
-                        _ingredientSearch = '';
-                      }),
-                    ),
-                if (_selectedActiveIngredientIds.isEmpty &&
-                    _ingredientSearch.trim().isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                    child: Text(l10n.itemActiveIngredientsHint,
-                        style: context.appTypography.labelSmall),
-                  ),
-                for (final id in _selectedActiveIngredientIds.toList())
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.remove_circle_outline,
-                              size: 18),
-                          visualDensity: VisualDensity.compact,
-                          tooltip: l10n.itemActiveIngredientsRemove,
-                          onPressed: () => setState(() {
-                            _selectedActiveIngredientIds.remove(id);
-                            _strengthControllers.remove(id)?.dispose();
-                          }),
-                        ),
-                        SizedBox(
-                          width: 220,
-                          child: Text(
-                            _ingredientName(id),
-                            overflow: TextOverflow.ellipsis,
-                            style: context.appTypography.label,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.m),
-                        SizedBox(
-                          width: 180,
-                          child: TextFormField(
-                            controller:
-                                _strengthController(id,
-                                    _initial.activeIngredientStrengths[id] ?? ''),
-                            decoration: InputDecoration(
-                              labelText: l10n.activeIngredientStrength,
-                              isDense: true,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                _section(l10n.itemSuppliers),
-                Wrap(
-                  spacing: AppSpacing.s,
-                  runSpacing: AppSpacing.s,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    for (final supplier in _suppliers)
-                      FilterChip(
-                        label: Text(supplier.name,
-                            overflow: TextOverflow.ellipsis),
-                        visualDensity: VisualDensity.compact,
-                        selected: _selectedSupplierIds.contains(supplier.id),
-                        onSelected: (on) => setState(() {
-                          if (on) {
-                            _selectedSupplierIds.add(supplier.id);
-                          } else {
-                            _selectedSupplierIds.remove(supplier.id);
-                          }
-                        }),
-                      ),
-                    if (widget.onCreateSupplier != null)
-                      _addButton(l10n.itemAddNew, _addSupplier),
-                  ],
-                ),
-                _section(l10n.itemPharmaForm),
-                Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
-                  children: [
-                    _text(_c('pharmaForm'), l10n.itemPharmaForm, 140),
-                    _text(_c('dose'), l10n.itemDose, 140),
-                    _text(_c('sizeVolume'), l10n.itemSizeVolume, 140),
-                    _text(_c('shelfLocation'), l10n.itemShelfLocation, 140),
-                  ],
-                ),
-                _section(l10n.itemPricePartsSection),
-                Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
-                  children: [
-                    _unitDropdown(
-                      value: _largeUnitId,
-                      label: l10n.itemPackagingUnit,
-                      onChanged: (v) => setState(() => _largeUnitId = v),
-                      width: 220,
-                    ),
-                    _unitDropdown(
-                      value: _partUnitId,
-                      label: l10n.itemBaseUnit,
-                      onChanged: (v) => setState(() {
-                        _partUnitId = v;
-                        if (v != null) _largeUnitId ??= v;
-                      }),
-                      width: 200,
-                    ),
-                    SizedBox(
-                      width: 160,
-                      child: TextFormField(
-                        controller: _c('unitsPerLarge', hint: '1'),
-                        decoration: InputDecoration(
-                          labelText: l10n.itemUnitsPerLarge,
-                          isDense: true,
-                        ),
-                        keyboardType: TextInputType.number,
-                        onChanged: (v) {
-                          setState(() {
-                            _partsCount = v.trim();
-                            _recomputePartPrice();
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    _switch('partialSaleEnabled', l10n.partialSaleEnabled,
-                        _partialSaleEnabled, (v) => setState(() {
-                      _partialSaleEnabled = v;
-                      if (v) {
-                        if (_c('partialSaleMarkupBasisPoints').text.isEmpty) {
-                          _c('partialSaleMarkupBasisPoints').text =
-                              _defaultMarkupPercent;
-                        }
-                        if (_c('partialSalePartPrice').text.isEmpty) {
-                          _recomputePartPrice();
-                        }
-                      }
-                    })),
-                    if (_partialSaleEnabled) ...[
-                      _text(
-                          _c('partialSaleMarkupBasisPoints'),
-                          l10n.partialSaleMarkupPercent,
-                          180,
-                          onChanged: (_) => _recomputePartPrice()),
-                      _text(
-                          _c('partialSalePartPrice'),
-                          l10n.partialSalePartPrice,
-                          180,
-                          onChanged: (v) {
-                            if (v.trim().isNotEmpty) {
-                              _partPriceManual = true;
-                            }
-                          }),
-                      TextButton.icon(
-                        onPressed: _restoreAutoPartPrice,
-                        icon: const Icon(Icons.auto_fix_high, size: 18),
-                        label: Text(l10n.partialSaleRestoreAuto),
-                      ),
-                    ],
-                  ],
-                ),
-                Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
-                  children: [
-                    _text(_c('cost'), _costLabel(l10n), 160,
-                        onChanged: (_) => _recomputePartPrice()),
-                    _text(_c('discount'), l10n.itemPurchaseDiscount, 160),
-                    _text(_c('selling'), l10n.itemPrice, 150,
-                        onChanged: (_) => _recomputePartPrice()),
-                    _text(_c('wholesale'), l10n.itemWholesalePrice, 150),
-                    _text(_c('halfWholesale'), l10n.itemHalfWholesalePrice, 150),
-                    _text(_c('custom1'), l10n.itemCustomPrice1, 140),
-                    _text(_c('custom2'), l10n.itemCustomPrice2, 140),
-                    _text(_c('vat'), l10n.itemVatRate, 140),
-                  ],
-                ),
-                _section(l10n.itemStock),
-                Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
-                  children: [
-                    _text(_c('minStock'), l10n.itemMinimumStock, 180),
-                    _text(_c('maxStock'), l10n.itemMaximumStock, 180),
-                  ],
-                ),
-                _section(''),
-                Wrap(
-                  spacing: AppSpacing.l,
-                  runSpacing: AppSpacing.s,
-                  children: [
-                    _switch('hasExpiry', l10n.itemHasExpiry, _hasExpiry, (v) =>
-                        setState(() => _hasExpiry = v)),
-                    _switch('isControlled', l10n.itemIsControlled,
-                        _isControlled, (v) => setState(() => _isControlled = v)),
-                    _switch('lockAutoPrice', l10n.itemLockPriceAutoUpdate,
-                        _lockAutoPrice, (v) => setState(() => _lockAutoPrice = v)),
-                    _switch('requiresPrescription', l10n.itemRequiresPrescription,
-                        _requiresPrescription,
-                        (v) => setState(() => _requiresPrescription = v)),
-                  ],
-                ),
-                _section(l10n.itemUsageInstructions),
-                Wrap(
-                  spacing: AppSpacing.m,
-                  runSpacing: AppSpacing.m,
-                  children: [
-                    _text(_c('usageInstructions'), l10n.itemUsageInstructions, 300),
-                    _text(_c('generalNotes'), l10n.itemGeneralNotes, 300),
-                    _text(_c('licenseNumber'), l10n.itemLicenseNumber, 220),
-                  ],
-                ),
+                _modeToggle(l10n),
+                if (_quickMode)
+                  ..._quickSections(l10n)
+                else
+                  ..._fullSections(l10n),
               ],
             ),
           ),
@@ -906,21 +1156,15 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
             icon: const Icon(Icons.add_card_outlined),
             label: Text(l10n.itemSaveAndContinueBatch),
           ),
-        FilledButton(
-          onPressed: _submit,
-          child: Text(l10n.commonSave),
-        ),
+        FilledButton(onPressed: _submit, child: Text(l10n.commonSave)),
       ],
     );
   }
 
   Widget _section(String title) => Padding(
-        padding: const EdgeInsets.only(top: AppSpacing.l, bottom: AppSpacing.s),
-        child: Text(
-          title,
-          style: context.appTypography.sectionTitle,
-        ),
-      );
+    padding: const EdgeInsets.only(top: AppSpacing.l, bottom: AppSpacing.s),
+    child: Text(title, style: context.appTypography.sectionTitle),
+  );
 
   /// Cost label names the commercial (packaging) unit so the pharmacist knows
   /// the amount is entered per package, not per base unit.
@@ -952,8 +1196,8 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         ),
         validator: required
             ? (v) => (v == null || v.trim().isEmpty)
-                ? AppLocalizations.of(context).inventoryRequiredName
-                : null
+                  ? AppLocalizations.of(context).inventoryRequiredName
+                  : null
             : null,
         onChanged: onChanged,
       ),
@@ -1013,8 +1257,11 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     );
   }
 
-  Widget _addButton(String tooltip, VoidCallback onPressed,
-      {bool compact = false}) {
+  Widget _addButton(
+    String tooltip,
+    VoidCallback onPressed, {
+    bool compact = false,
+  }) {
     return IconButton(
       icon: const Icon(Icons.add_circle_outline),
       tooltip: tooltip,

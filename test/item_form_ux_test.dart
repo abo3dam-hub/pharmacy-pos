@@ -98,6 +98,36 @@ Future<void> _tapSave(WidgetTester tester) async {
 
 /// Opens the item form dialog via a real button; [onResult] receives the
 /// returned draft on save.
+
+/// Opens the dialog and switches it to detailed mode, for tests that cover
+/// fields living outside the quick-entry subset.
+Future<void> _openDetailedDialog(
+  WidgetTester tester, {
+  required void Function(ItemFormResult? result) onResult,
+  ItemDraft? initial,
+  List<CategoryRow> categories = const [_category],
+  List<ManufacturerRow> manufacturers = const [_manufacturer],
+  List<UnitRow> units = const [_part, _box],
+  List<SupplierRow> suppliers = const [],
+  List<ActiveIngredientRow> activeIngredients = const [_ingredient],
+  Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
+      onCreateMasterData,
+}) async {
+  await _openDialog(
+    tester,
+    onResult: onResult,
+    initial: initial,
+    categories: categories,
+    manufacturers: manufacturers,
+    units: units,
+    suppliers: suppliers,
+    activeIngredients: activeIngredients,
+    onCreateMasterData: onCreateMasterData,
+  );
+  await tester.tap(find.text('إدخال مفصّل'));
+  await tester.pumpAndSettle();
+}
+
 Future<void> _openDialog(
   WidgetTester tester, {
   required void Function(ItemFormResult? result) onResult,
@@ -232,7 +262,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await _openDialog(tester, onResult: (_) {});
+    await _openDetailedDialog(tester, onResult: (_) {});
 
     // Phase 17 packaging/parts labels are used (no legacy unit naming).
     expect(find.text('التعبئة التجارية'), findsOneWidget);
@@ -256,7 +286,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     ItemFormResult? submitted;
-    await _openDialog(
+    await _openDetailedDialog(
       tester,
       onResult: (r) => submitted = r,
       suppliers: [_supplier('sup_a', 'مورد الأول'), _supplier('sup_b', 'مورد الثاني')],
@@ -276,7 +306,7 @@ void main() {
     // Re-open in edit mode with both suppliers pre-selected; untoggling a
     // chip removes it on save.
     submitted = null;
-    await _openDialog(
+    await _openDetailedDialog(
       tester,
       onResult: (r) => submitted = r,
       suppliers: [_supplier('sup_a', 'مورد الأول'), _supplier('sup_b', 'مورد الثاني')],
@@ -303,7 +333,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     ItemFormResult? submitted;
-    await _openDialog(
+    await _openDetailedDialog(
       tester,
       onResult: (r) => submitted = r,
       onCreateMasterData: (kind, draft) async => CategoryRow(
@@ -339,7 +369,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     ItemFormResult? submitted;
-    await _openDialog(tester, onResult: (r) => submitted = r);
+    await _openDetailedDialog(tester, onResult: (r) => submitted = r);
 
     await _enterTradeName(tester, 'منتج بالعيار');
     await _selectCombo(tester, 'التصنيف', 'أدوية');
@@ -434,5 +464,38 @@ void main() {
     expect(manual, isNotNull);
     expect(manual!.draft.partialSalePriceMicros, isNotNull,
         reason: 'a manual سعر بيع الجزء is persisted as the override');
+  });
+
+  testWidgets('quick mode shows essentials; detailed reveals the rest',
+      (tester) async {
+    tester.view.physicalSize = const Size(1100, 1500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await _openDialog(tester, onResult: (_) {});
+
+    // Quick is the default: identity, classification, units, prices visible…
+    expect(find.text('إدخال سريع'), findsOneWidget);
+    expect(find.text('إدخال مفصّل'), findsOneWidget);
+    expect(find.text('التعبئة التجارية'), findsOneWidget);
+    expect(find.text('الأجزاء'), findsOneWidget);
+    expect(find.text('عدد الأجزاء'), findsOneWidget);
+    // …but master-data sections stay hidden until detailed mode.
+    expect(find.text('الموردون'), findsNothing);
+    expect(find.text('الاسم العلمي'), findsNothing);
+    expect(find.text('تعليمات الاستخدام'), findsNothing);
+
+    await tester.tap(find.text('إدخال مفصّل'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('الموردون'), findsOneWidget);
+    // Section header + field share the label.
+    expect(find.text('الاسم العلمي'), findsWidgets);
+    expect(find.text('تعليمات الاستخدام'), findsWidgets);
+    // Switching back hides them again — nothing is lost, only tucked away.
+    await tester.tap(find.text('إدخال سريع'));
+    await tester.pumpAndSettle();
+    expect(find.text('الموردون'), findsNothing);
+    expect(find.text('التعبئة التجارية'), findsOneWidget);
   });
 }

@@ -9,6 +9,7 @@ import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
+import '../../../../core/motion/app_motion.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/units/package_cost.dart';
@@ -71,10 +72,10 @@ class _PurchLine {
     this.unitsPerLarge = 1,
     this.largeUnitName = '',
     bool? entryInPackages,
-  })  : bonuses = bonuses ?? [],
-        // Default to package entry when the item actually has a package with
-        // more than one base unit; otherwise package == base unit.
-        entryInPackages = entryInPackages ?? (unitsPerLarge > 1);
+  }) : bonuses = bonuses ?? [],
+       // Default to package entry when the item actually has a package with
+       // more than one base unit; otherwise package == base unit.
+       entryInPackages = entryInPackages ?? (unitsPerLarge > 1);
 
   String itemId;
   String itemName;
@@ -165,7 +166,8 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
           unitCostMicros: prefill.unitCostMicros,
           unitsPerLarge: pkg.unitsPerLarge,
           largeUnitName: pkg.largeName,
-          entryInPackages: pkg.unitsPerLarge > 1 &&
+          entryInPackages:
+              pkg.unitsPerLarge > 1 &&
               prefill.quantityBase % pkg.unitsPerLarge == 0,
         ),
       );
@@ -196,7 +198,8 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
         final pkg = await _packageInfo(v.line.itemId);
         // Show package entry when the stored base quantity divides evenly
         // into whole packages; otherwise fall back to base-unit entry.
-        final evenPack = pkg.unitsPerLarge > 1 &&
+        final evenPack =
+            pkg.unitsPerLarge > 1 &&
             v.line.quantityBase % pkg.unitsPerLarge == 0;
         _lines.add(
           _PurchLine(
@@ -301,12 +304,9 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
   /// name, package (large) unit name and units-per-package. Powers the
   /// package/base entry toggle on each line.
   Future<
-      ({
-        String baseUnitId,
-        String baseName,
-        String largeName,
-        int unitsPerLarge,
-      })> _packageInfo(String itemId) async {
+    ({String baseUnitId, String baseName, String largeName, int unitsPerLarge})
+  >
+  _packageInfo(String itemId) async {
     final repo = ref.read(inventoryRepositoryProvider);
     final units = await repo.itemUnitsFor(itemId);
     final baseName = units == null
@@ -533,10 +533,10 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
   /// pharmacist always sees which unit the numbers refer to.
   String _entryUnitName(_PurchLine line) =>
       (line.entryInPackages &&
-              line.unitsPerLarge > 1 &&
-              line.largeUnitName.isNotEmpty)
-          ? line.largeUnitName
-          : line.unitTypeName;
+          line.unitsPerLarge > 1 &&
+          line.largeUnitName.isNotEmpty)
+      ? line.largeUnitName
+      : line.unitTypeName;
 
   int get _subtotalMicros {
     var total = 0;
@@ -762,7 +762,11 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
             ),
           )
         else
-          for (int i = 0; i < _lines.length; i++) _lineCard(l10n, i, _lines[i]),
+          for (int i = 0; i < _lines.length; i++)
+            Entrance(
+              key: ValueKey(_lines[i]),
+              child: _lineCard(l10n, i, _lines[i]),
+            ),
       ],
     );
   }
@@ -839,8 +843,7 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                           labelText:
                               '${l10n.purchaseQty} (${_entryUnitName(line)})',
                         ),
-                        onChanged: (v) =>
-                            setCard(() => _applyQty(line, v)),
+                        onChanged: (v) => setCard(() => _applyQty(line, v)),
                       ),
                     ),
                     SizedBox(
@@ -855,8 +858,7 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                           labelText:
                               '${l10n.purchaseUnitCost} (${_entryUnitName(line)})',
                         ),
-                        onChanged: (v) =>
-                            setCard(() => _applyCost(line, v)),
+                        onChanged: (v) => setCard(() => _applyCost(line, v)),
                       ),
                     ),
                     SizedBox(
