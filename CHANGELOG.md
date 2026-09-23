@@ -6,6 +6,36 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **Package-vs-base-unit cost basis** (2026-09-24) — costs are entered per
+  commercial package but stored per base unit (the COGS basis). New single
+  conversion point `lib/core/units/package_cost.dart` (half-up), applied in
+  the item dialog, purchase form, manual batch dialog, and Excel import/
+  export; stored margin now compares package cost vs package price; POS has
+  a labeled "sell as part" button and a box/part toggle chip on cart lines.
+  Ali's scenario: box cost 11,000 ÷ 3 parts → one part sells at 5,600 with
+  COGS ≈ 3,666.6667, never 11,000. See
+  `COST-BASIS-FIX-REPORT-2026-09-24.pdf` and PROJECT_STATUS §3f.
+
+### Changed
+- **Item entry: quick vs detailed** (2026-09-24) — the item dialog now opens
+  in **إدخال سريع** (quick entry, the default), showing only the essential
+  fields (barcode, trade name, category, manufacturer, commercial packaging,
+  parts count, partial-sale setup, package cost, sale price, expiry toggle).
+  The full detailed form is one toggle away and keeps every previous field —
+  simplification without removing features.
+- **Lightweight motion language** (2026-09-24) — new
+  `lib/core/motion/app_motion.dart` (entrance, stagger, count-up, press
+  feedback) applied to the dashboard (staggered KPI cards, animated
+  counters), purchase-invoice rows, and the POS cart totals. Short,
+  subtle animations; pricing, COGS, and accounting behaviour unchanged.
+- Verification: `flutter analyze` clean, **649 tests pass**. See
+  `UX-SIMPLIFICATION-REPORT-2026-09-24.pdf` and PROJECT_STATUS §3g.
+
+---
+
 ## [1.1.0] — 2026-09-08 — Product Management UX fixes
 
 Complete rework of the product (item) management experience plus the

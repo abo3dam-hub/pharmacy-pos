@@ -285,6 +285,40 @@ plus clearer failure messages everywhere and AR+EN item-name display:
 
 ---
 
+## 3g. UX simplification: quick/detailed item entry + lightweight motion language (complete, commit `b0bd81f`)
+
+Ali's direction: simplify without removing features — the app felt complex,
+rigid, and plain; he wanted colour, motion, and life, especially in the
+dashboard, but kept light and never garish.
+
+- **Item dialog: progressive disclosure** — new toggle
+  **إدخال سريع / إدخال مفصّل** (quick entry default). Quick mode shows only
+  the essential fields: barcode + trade name, category + manufacturer,
+  commercial packaging, parts count, partial-sale setup, package cost, sale
+  price, and the expiry toggle. The detailed mode keeps **every** Phase 17
+  field in its previous order — nothing was removed, the advanced fields are
+  just hidden until needed. 2 new AR+EN l10n keys; `localization_parity_test`
+  updated.
+- **Lightweight motion language** — new `lib/core/motion/app_motion.dart`:
+  `Entrance` (short fade+slide with optional delay), `Stagger` (cascading
+  entry), `CountUp` (animated numeric counters), `PressScale` (subtle press
+  feedback). All built on `TweenAnimationBuilder` — short, cheap animations,
+  no heavy rive/lottie assets.
+- **Dashboard**: staggered KPI card entrance, numbers count up from zero,
+  icon badges with a calm colour gradient + soft shadow; financial-visibility
+  permissions unchanged.
+- **Purchase invoice**: newly added item rows enter with a light
+  fade/slide; package/part, bonus, and all accounting behaviour untouched.
+- **POS**: cart-lines total/count animates gently via `AnimatedSwitcher` on
+  line-count changes; pricing, COGS, and selling rules unchanged.
+- **Tests**: 1 new test locking the quick/detailed mode behaviour; 4 existing
+  tests adjusted to open the detailed mode via a new `_openDetailedDialog`
+  helper. Verification (2026-09-24): `flutter analyze` clean, **649 tests
+  pass**.
+- Report: `UX-SIMPLIFICATION-REPORT-2026-09-24.pdf`.
+
+---
+
 ## 4. The 4 post-18.3 issues → resolutions (complete)
 
 All four tracked issues are fixed, tested, and committed.
