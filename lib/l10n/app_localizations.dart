@@ -6721,6 +6721,30 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'{count} عنصر'**
   String masterDataCount(int count);
+
+  /// No description provided for @scanBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح باركود'**
+  String get scanBarcode;
+
+  /// No description provided for @scanBarcodeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الباركود'**
+  String get scanBarcodeTitle;
+
+  /// No description provided for @scanBarcodeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'وجّه الكاميرا نحو الباركود'**
+  String get scanBarcodeHint;
+
+  /// No description provided for @cameraPermissionDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم رفض إذن الكاميرا. فعّله من إعدادات التطبيق ثم حاول مجدداً.'**
+  String get cameraPermissionDenied;
 }
 
 class _AppLocalizationsDelegate

@@ -474,6 +474,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
             child: SearchField(
               hintText: l10n.inventorySearchHint,
               onChanged: _onSearch,
+              onScan: _onSearch,
             ),
           ),
           Wrap(

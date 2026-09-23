@@ -319,6 +319,26 @@ dashboard, but kept light and never garish.
 
 ---
 
+## 3h. Camera barcode scanning on Android (complete)
+
+- New `lib/core/scanning/` module on top of `mobile_scanner` (^7.4.2):
+  `BarcodeScanService` (platform gate + injectable `current` for tests),
+  `BarcodeScannerPage` (full-screen viewfinder, torch/camera-switch, first
+  decode auto-pops, friendly camera-permission-denied message),
+  `ScanBarcodeButton` (renders nothing where camera scanning is unsupported).
+- Scan button wired into every barcode entry point: item dialog barcode
+  fields (quick + detailed), POS search (camera scan follows the hardware
+  scan path: search + quick-add), inventory `SearchField` (new optional
+  `onScan`), purchase-invoice item search dialog.
+- Desktop/web unchanged: the button hides itself, the HID `BarcodeBuffer`
+  pipeline keeps working.
+- AndroidManifest gains the `CAMERA` permission; 4 new AR+EN l10n keys.
+- **Tests**: `test/barcode_camera_scan_test.dart` (7 tests: unsupported
+  platforms, fake-service delivery, cancel no-op, SearchField wiring).
+- Verification (2026-09-24): `flutter analyze` clean, **656 tests pass**.
+
+---
+
 ## 4. The 4 post-18.3 issues → resolutions (complete)
 
 All four tracked issues are fixed, tested, and committed.

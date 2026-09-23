@@ -20,6 +20,15 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   `COST-BASIS-FIX-REPORT-2026-09-24.pdf` and PROJECT_STATUS §3f.
 
 ### Changed
+- **Camera barcode scanning (Android)** (2026-09-24) — new
+  `lib/core/scanning/` module built on `mobile_scanner`: a camera scan button
+  (📷 icon) now appears in every place a barcode is expected — the item
+  dialog barcode fields (quick + detailed entry), the POS search, the
+  inventory search, and the purchase-invoice item search. On POS, a camera
+  scan follows the same path as a hardware scan (search + quick-add on an
+  unambiguous hit). The button hides itself automatically on desktop/web,
+  where the existing HID scanner pipeline keeps working. Includes camera
+  permission handling and 7 new tests.
 - **Item entry: quick vs detailed** (2026-09-24) — the item dialog now opens
   in **إدخال سريع** (quick entry, the default), showing only the essential
   fields (barcode, trade name, category, manufacturer, commercial packaging,

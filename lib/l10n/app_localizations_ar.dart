@@ -3415,4 +3415,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String masterDataCount(int count) {
     return '$count عنصر';
   }
+
+  @override
+  String get scanBarcode => 'مسح باركود';
+
+  @override
+  String get scanBarcodeTitle => 'مسح الباركود';
+
+  @override
+  String get scanBarcodeHint => 'وجّه الكاميرا نحو الباركود';
+
+  @override
+  String get cameraPermissionDenied =>
+      'تم رفض إذن الكاميرا. فعّله من إعدادات التطبيق ثم حاول مجدداً.';
 }

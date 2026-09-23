@@ -3428,4 +3428,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String masterDataCount(int count) {
     return '$count entries';
   }
+
+  @override
+  String get scanBarcode => 'Scan barcode';
+
+  @override
+  String get scanBarcodeTitle => 'Scan barcode';
+
+  @override
+  String get scanBarcodeHint => 'Point the camera at the barcode';
+
+  @override
+  String get cameraPermissionDenied =>
+      'Camera permission was denied. Enable it in the app settings and try again.';
 }

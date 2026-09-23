@@ -10,6 +10,7 @@ import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/motion/app_motion.dart';
+import '../../../../core/scanning/scan_barcode_button.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/units/package_cost.dart';
@@ -1009,6 +1010,9 @@ class _ItemSearchDialogState extends ConsumerState<_ItemSearchDialog> {
               decoration: InputDecoration(
                 hintText: l10n.purchaseItemSearchHint,
                 prefixIcon: const Icon(Icons.search),
+                suffixIcon: ScanBarcodeButton(
+                  onScanned: (code) => _search.text = code,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.s),

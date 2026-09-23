@@ -12,6 +12,7 @@ import '../../../../core/money/money.dart';
 import '../../../../core/motion/app_motion.dart';
 import '../../../../core/pdf/pdf_arabic.dart';
 import '../../../../core/pdf/pdf_documents.dart';
+import '../../../../core/scanning/scan_barcode_button.dart';
 import '../../../../core/shortcuts/barcode_buffer.dart';
 import '../../../../core/shortcuts/pos_shortcuts.dart';
 import '../../../../core/shortcuts/shortcut_manager.dart';
@@ -584,6 +585,19 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
     _quickAdd(value, notifier);
   }
 
+  /// Camera scan result: fills the query and follows the same path as a
+  /// hardware scan — search the code, then quick-add on an unambiguous hit.
+  Future<void> _onCameraScanned(String code) async {
+    _debounce?.cancel();
+    widget.barcodeBuffer.reset();
+    _lastText = code;
+    _query.text = code;
+    final notifier = ref.read(
+      posWorkspaceControllerProvider(widget.tabIndex).notifier,
+    );
+    await _quickAdd(code, notifier);
+  }
+
   /// Enter on a bare search (no scanner event): re-search the trimmed query and,
   /// when it resolves to exactly one product, add it to the cart and clear the
   /// field for the next item. Multi-result queries still show the list — they
@@ -626,6 +640,7 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
               decoration: InputDecoration(
                 hintText: l10n.posSearchHint,
                 prefixIcon: const Icon(Icons.search),
+                suffixIcon: ScanBarcodeButton(onScanned: _onCameraScanned),
                 border: const OutlineInputBorder(),
                 isDense: true,
               ),

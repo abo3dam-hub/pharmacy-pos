@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/money/money.dart';
+import '../../../../core/scanning/scan_barcode_button.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/units/package_cost.dart';
@@ -619,8 +620,18 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       spacing: AppSpacing.m,
       runSpacing: AppSpacing.m,
       children: [
-        _text(_c('primaryBarcode'), l10n.itemBarcodePrimary, 220),
-        _text(_c('secondaryBarcode'), l10n.itemSecondaryBarcode, 220),
+        _text(
+          _c('primaryBarcode'),
+          l10n.itemBarcodePrimary,
+          220,
+          suffixIcon: _scanButton('primaryBarcode'),
+        ),
+        _text(
+          _c('secondaryBarcode'),
+          l10n.itemSecondaryBarcode,
+          220,
+          suffixIcon: _scanButton('secondaryBarcode'),
+        ),
         _text(_c('tradeName'), l10n.itemTradeName, 220, required: true),
         _text(_c('tradeNameEn'), l10n.itemTradeNameEn, 220),
       ],
@@ -778,8 +789,18 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       spacing: AppSpacing.m,
       runSpacing: AppSpacing.m,
       children: [
-        _text(_c('primaryBarcode'), l10n.itemBarcodePrimary, 220),
-        _text(_c('secondaryBarcode'), l10n.itemSecondaryBarcode, 220),
+        _text(
+          _c('primaryBarcode'),
+          l10n.itemBarcodePrimary,
+          220,
+          suffixIcon: _scanButton('primaryBarcode'),
+        ),
+        _text(
+          _c('secondaryBarcode'),
+          l10n.itemSecondaryBarcode,
+          220,
+          suffixIcon: _scanButton('secondaryBarcode'),
+        ),
         _text(_c('tradeName'), l10n.itemTradeName, 220, required: true),
         _text(_c('tradeNameEn'), l10n.itemTradeNameEn, 220),
       ],
@@ -1179,12 +1200,17 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     return l10n.itemCost;
   }
 
+  /// Camera scan button for barcode fields — fills the field's controller.
+  Widget _scanButton(String fieldKey) =>
+      ScanBarcodeButton(onScanned: (code) => _c(fieldKey).text = code);
+
   Widget _text(
     TextEditingController controller,
     String label,
     double width, {
     bool required = false,
     ValueChanged<String>? onChanged,
+    Widget? suffixIcon,
   }) {
     return SizedBox(
       width: width,
@@ -1193,6 +1219,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         decoration: InputDecoration(
           labelText: required ? '$label *' : label,
           isDense: true,
+          suffixIcon: suffixIcon,
         ),
         validator: required
             ? (v) => (v == null || v.trim().isEmpty)

@@ -1326,5 +1326,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "scanBarcode": "مسح باركود",
+  "scanBarcodeTitle": "مسح الباركود",
+  "scanBarcodeHint": "وجّه الكاميرا نحو الباركود",
+  "cameraPermissionDenied": "تم رفض إذن الكاميرا. فعّله من إعدادات التطبيق ثم حاول مجدداً."
 }
