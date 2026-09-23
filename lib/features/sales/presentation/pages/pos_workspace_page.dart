@@ -638,6 +638,14 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
                             ).notifier,
                           )
                           .addToCart(item),
+                      onAddAsPart: (item) => ref
+                          .read(
+                            posWorkspaceControllerProvider(
+                              widget.tabIndex,
+                            ).notifier,
+                          )
+                          .addToCart(item,
+                              unitMode: PosLineUnitMode.sellablePart),
                       canViewAlternatives: ref
                           .read(authControllerProvider)
                           .permissions
@@ -686,6 +694,7 @@ class _ProductList extends StatelessWidget {
   const _ProductList({
     required this.items,
     required this.onAdd,
+    this.onAddAsPart,
     this.canViewAlternatives = false,
     this.onAlternatives,
     this.onLostSale,
@@ -693,6 +702,10 @@ class _ProductList extends StatelessWidget {
 
   final List<PosCatalogItem> items;
   final ValueChanged<PosCatalogItem> onAdd;
+
+  /// Adds the item to the cart directly in sellable-part mode (only invoked
+  /// for items configured for partial selling).
+  final ValueChanged<PosCatalogItem>? onAddAsPart;
   final bool canViewAlternatives;
   final ValueChanged<PosCatalogItem>? onAlternatives;
   final VoidCallback? onLostSale;
@@ -752,6 +765,29 @@ class _ProductList extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Direct "sell as part" action for partial-sale-configured
+              // items — a labeled button (the actual part name), not an
+              // icon-only button, so the option is discoverable at a glance.
+              // Equivalent to adding the item then toggling the unit mode in
+              // the cart.
+              if (item.partialSaleConfigured && onAddAsPart != null && !isOut)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 4),
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 0,
+                      ),
+                    ),
+                    icon: const Icon(Icons.content_cut, size: 16),
+                    label: Text(
+                      item.sellablePartUnitName ?? l10n.posUnitStrip,
+                    ),
+                    onPressed: () => onAddAsPart!(item),
+                  ),
+                ),
               if (canViewAlternatives && !isOut)
                 IconButton(
                   tooltip: l10n.navAlternatives,
@@ -853,9 +889,53 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          subtitle: Text(
-                            '${_lineQty(line)} $unitLabel'
-                            '${line.isRxLinked ? ' · ${l10n.posRx}' : ''}',
+                          subtitle: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${_lineQty(line)} $unitLabel'
+                                  '${line.isRxLinked ? ' · ${l10n.posRx}' : ''}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              // Visible box/part toggle for partial-sale
+                              // items (touch-friendly alternative to the F2
+                              // shortcut).
+                              if (line.item.partialSaleConfigured)
+                                InkWell(
+                                  onTap: () =>
+                                      widget.notifier.toggleUnitMode(index),
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .outline,
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.swap_horiz, size: 14),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          _otherUnitLabel(l10n, line),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -954,10 +1034,30 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
     );
   }
 
+  /// Unit label for a cart line — always the item's real unit names, never a
+  /// hard-coded generic (the commercial package name for boxes, the
+  /// configured sellable-part name for parts).
   String _unitLabel(AppLocalizations l10n, PosCartLine line) =>
       switch (line.unitMode) {
-        PosLineUnitMode.largeUnit => l10n.posUnitBox,
-        PosLineUnitMode.sellablePart => l10n.posUnitStrip,
+        PosLineUnitMode.largeUnit => line.item.largeUnitName.isNotEmpty
+            ? line.item.largeUnitName
+            : l10n.posUnitBox,
+        PosLineUnitMode.sellablePart =>
+          (line.item.sellablePartUnitName?.isNotEmpty ?? false)
+              ? line.item.sellablePartUnitName!
+              : l10n.posUnitStrip,
+      };
+
+  /// Label of the *other* unit mode — shown on the toggle chip.
+  String _otherUnitLabel(AppLocalizations l10n, PosCartLine line) =>
+      switch (line.unitMode) {
+        PosLineUnitMode.largeUnit =>
+          (line.item.sellablePartUnitName?.isNotEmpty ?? false)
+              ? line.item.sellablePartUnitName!
+              : l10n.posUnitStrip,
+        PosLineUnitMode.sellablePart => line.item.largeUnitName.isNotEmpty
+            ? line.item.largeUnitName
+            : l10n.posUnitBox,
       };
 
   int _lineQty(PosCartLine line) => line.quantity;

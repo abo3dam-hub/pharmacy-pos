@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/searchable_dropdown_field.dart';
 import '../../../../domain/services/partial_price_calculator.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -184,6 +185,11 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       return key;
     }
 
+    // The visible "units per large" field must reflect the stored value when
+    // editing — it was previously created lazily with hint '1', so every edit
+    // showed 1 regardless of the real configuration.
+    seed('unitsPerLarge', _partsCount);
+
     seed('primaryBarcode', _initial.primaryBarcode ?? '');
     seed('secondaryBarcode', _initial.secondaryBarcode ?? '');
     seed('tradeName', _initial.tradeName);
@@ -198,7 +204,16 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     seed('usageInstructions', _initial.usageInstructions ?? '');
     seed('generalNotes', _initial.generalNotes ?? '');
     seed('licenseNumber', _initial.licenseNumber ?? '');
-    seed('cost', Money.fromUnits(_initial.costMicros).format());
+    // The cost field is entered per commercial package (the pharmacist's
+    // unit); costMicros is stored per base unit, so seed the package-scale
+    // value here (converted back to per-base on save).
+    seed(
+      'cost',
+      Money.fromUnits(
+        baseUnitCostToPackageCost(
+            _initial.costMicros, _initial.units?.unitsPerLarge ?? 1),
+      ).format(),
+    );
     seed('discount', _pct(_initial.purchaseDiscountBasisPoints));
     seed('selling', Money.fromUnits(_initial.sellingPriceMicros).format());
     seed('wholesale', Money.fromUnits(_initial.wholesalePriceMicros).format());
@@ -386,7 +401,10 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       isControlledDrug: _isControlled,
       lockAutoPriceUpdate: _lockAutoPrice,
       requiresPrescription: _requiresPrescription,
-      costMicros: cost,
+      // The cost field is entered per commercial package (the pharmacist's
+      // unit); storage and COGS are per base unit, so convert here (half-up).
+      // E.g. a package cost of 11,000 with 3 parts stores ≈3,666.667 per part.
+      costMicros: packageCostToBaseUnitCost(cost, unitsPerLarge),
       purchaseDiscountBasisPoints: discount,
       sellingPriceMicros: selling,
       subUnitPriceMicros: _initial.subUnitPriceMicros,
@@ -825,7 +843,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                   spacing: AppSpacing.m,
                   runSpacing: AppSpacing.m,
                   children: [
-                    _text(_c('cost'), l10n.itemCost, 160,
+                    _text(_c('cost'), _costLabel(l10n), 160,
                         onChanged: (_) => _recomputePartPrice()),
                     _text(_c('discount'), l10n.itemPurchaseDiscount, 160),
                     _text(_c('selling'), l10n.itemPrice, 150,
@@ -903,6 +921,19 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           style: context.appTypography.sectionTitle,
         ),
       );
+
+  /// Cost label names the commercial (packaging) unit so the pharmacist knows
+  /// the amount is entered per package, not per base unit.
+  String _costLabel(AppLocalizations l10n) {
+    final largeId = _largeUnitId;
+    if (largeId == null) return l10n.itemCost;
+    for (final u in _units) {
+      if (u.id == largeId && u.name.isNotEmpty) {
+        return '${l10n.itemCost} (${u.name})';
+      }
+    }
+    return l10n.itemCost;
+  }
 
   Widget _text(
     TextEditingController controller,

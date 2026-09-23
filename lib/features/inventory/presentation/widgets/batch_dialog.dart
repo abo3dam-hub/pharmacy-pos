@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/repositories/inventory_repository.dart';
 
@@ -18,23 +19,44 @@ class BatchFormResult {
 }
 
 /// Manual batch-entry dialog (§4.8). [hasExpiry] toggles expiry requirement.
+/// [unitsPerLarge]/[baseUnitName]/[largeUnitName] describe the item's
+/// commercial package so the dialog can offer package-vs-base-unit entry;
+/// the returned [AddBatchInput] always carries canonical base-unit values.
 Future<BatchFormResult?> showBatchFormDialog(
   BuildContext context, {
   required String itemId,
   required bool hasExpiry,
+  int unitsPerLarge = 1,
+  String baseUnitName = '',
+  String largeUnitName = '',
 }) async {
   final result = await showDialog<BatchFormResult>(
     context: context,
-    builder: (_) => _BatchFormDialog(itemId: itemId, hasExpiry: hasExpiry),
+    builder: (_) => _BatchFormDialog(
+      itemId: itemId,
+      hasExpiry: hasExpiry,
+      unitsPerLarge: unitsPerLarge,
+      baseUnitName: baseUnitName,
+      largeUnitName: largeUnitName,
+    ),
   );
   return result;
 }
 
 class _BatchFormDialog extends StatefulWidget {
-  const _BatchFormDialog({required this.itemId, required this.hasExpiry});
+  const _BatchFormDialog({
+    required this.itemId,
+    required this.hasExpiry,
+    this.unitsPerLarge = 1,
+    this.baseUnitName = '',
+    this.largeUnitName = '',
+  });
 
   final String itemId;
   final bool hasExpiry;
+  final int unitsPerLarge;
+  final String baseUnitName;
+  final String largeUnitName;
 
   @override
   State<_BatchFormDialog> createState() => _BatchFormDialogState();
@@ -51,6 +73,16 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
   DateTime? _expiry;
   DateTime? _received;
   String? _expiryError;
+
+  /// Entry mode: package quantities + package cost (default when the item has
+  /// a multi-unit package) vs base-unit quantities + base-unit cost.
+  late bool _inPackages;
+
+  @override
+  void initState() {
+    super.initState();
+    _inPackages = widget.unitsPerLarge > 1;
+  }
 
   @override
   void dispose() {
@@ -92,11 +124,18 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
       _fail(l10n.quantity);
       return;
     }
-    int? cost;
+    // The form is entered per commercial package by default; the batch (and
+    // COGS) is stored per base unit — convert here (half-up).
+    final upl = widget.unitsPerLarge;
+    final inPackages = _inPackages && upl > 1;
+    final quantityBase = inPackages ? qty * upl : qty;
+    int cost;
     try {
-      cost = _cost.text.trim().isEmpty
+      final entered = _cost.text.trim().isEmpty
           ? 0
           : Money.parse(_cost.text.trim()).units;
+      cost =
+          inPackages ? packageCostToBaseUnitCost(entered, upl) : entered;
     } on FormatException {
       _fail(l10n.batchCostInvalid);
       return;
@@ -111,7 +150,7 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
         itemId: widget.itemId,
         batchNumber: _batchNumber.text.trim(),
         expiryDate: _expiry?.millisecondsSinceEpoch,
-        quantityBase: qty,
+        quantityBase: quantityBase,
         unitCostMicros: cost,
         receivedDate: _received?.millisecondsSinceEpoch,
         bonusQtyBase: bonus,
@@ -130,6 +169,20 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final hasPackage = widget.unitsPerLarge > 1;
+    // Unit name shown in the quantity/cost labels — always explicit about the
+    // basis so a package cost is never mistaken for a base-unit cost. Only
+    // shown when the real unit name is known; otherwise the plain label is
+    // kept (no redundant "الكمية (الكمية)").
+    final String? entryUnitName = (_inPackages && hasPackage)
+        ? (widget.largeUnitName.isNotEmpty ? widget.largeUnitName : null)
+        : (widget.baseUnitName.isNotEmpty ? widget.baseUnitName : null);
+    final quantityLabel = entryUnitName == null
+        ? l10n.quantity
+        : '${l10n.quantity} ($entryUnitName)';
+    final costLabel = entryUnitName == null
+        ? l10n.batchUnitCost
+        : '${l10n.batchUnitCost} ($entryUnitName)';
     return AlertDialog(
       title: Text(l10n.batchesAddTitle),
       content: SizedBox(
@@ -149,15 +202,40 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
                       : null,
                 ),
                 const SizedBox(height: AppSpacing.m),
+                if (hasPackage && widget.largeUnitName.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.m),
+                    child: SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment(
+                          value: true,
+                          label: Text(widget.largeUnitName),
+                        ),
+                        ButtonSegment(
+                          value: false,
+                          label: Text(widget.baseUnitName.isNotEmpty
+                              ? widget.baseUnitName
+                              : l10n.quantity),
+                        ),
+                      ],
+                      selected: {_inPackages},
+                      onSelectionChanged: (s) =>
+                          setState(() => _inPackages = s.first),
+                    ),
+                  ),
                 TextFormField(
                   controller: _quantity,
-                  decoration: InputDecoration(labelText: l10n.quantity),
+                  decoration: InputDecoration(
+                    labelText: quantityLabel,
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: AppSpacing.m),
                 TextFormField(
                   controller: _cost,
-                  decoration: InputDecoration(labelText: l10n.batchUnitCost),
+                  decoration: InputDecoration(
+                    labelText: costLabel,
+                  ),
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: AppSpacing.m),

@@ -65,6 +65,7 @@ Local env used by this workflow:
 | `20ef12c` | docs: status report — real-file acceptance green, EN tie-breaker notes |
 | `37abc4a`/`14f90a8`/`81e7651` | **feat(ux/errors/i18n)**: chained save-and-continue (item→batch→invoice), reason-based failure messages, AR+EN item names |
 | `(next)` | **feat(sales)**: Phase 18.4 — routing overhaul, permanent sales history, invoice detail returns/voids, exact-COGS + 19,601 regressions |
+| `(next)` | **fix(cost-basis)**: package-vs-base-unit cost conversion at every entry point (item dialog, purchase form, batch dialog, Excel) + package-basis margin + POS sell-as-part option |
 
 ---
 
@@ -104,6 +105,53 @@ with regression tests. Full detail:
   Plus a `19,601` guard test in `partial_sale_test.dart` (pricing level).
 - **F5 / labels:** `posHoldBill`= تعليق الفاتورة (F5); held-bill label
   سلة محفوظة → فاتورة محفوظة; 20 new AR+EN l10n keys; `gen-l10n` clean.
+
+---
+
+## 3f. Package-vs-base cost-basis fix (complete)
+
+Ali's report: selling one part posted COGS = the whole box cost (11,000
+instead of ≈3,666.667), and the partial-sale option wasn't where he wanted
+it. Root cause: costs are **entered per commercial package** (the
+pharmacist's unit) but **stored per base unit** (the COGS basis), and several
+entry points stored the package figure without converting. Design rule Ali
+set: partial selling stays an *option* during sale and in stock — never the
+base unit of measure anywhere.
+
+- **New helper** `lib/core/units/package_cost.dart`:
+  `packageCostToBaseUnitCost` (half-up division) /
+  `baseUnitCostToPackageCost` (exact multiplication) — one conversion point
+  for every entry path.
+- **Item dialog** (`item_dialog.dart`): `unitsPerLarge` field now seeds the
+  stored value (was always `1` on edit); the cost field is labeled with the
+  commercial-package name and seeds/displays the package cost, converting to
+  per-base on save.
+- **Purchase form** (`purchase_form_page.dart`): per-line package/base
+  `SegmentedButton` (default package when `unitsPerLarge > 1`); stored values
+  stay canonical base-unit; edit/prefill show package entry when the base
+  quantity divides evenly.
+- **Manual batch dialog** (`batch_dialog.dart` + `batches_page.dart`):
+  same package/base toggle; quantity × and cost ÷ on submit in package mode.
+- **Excel** (`inventory_excel_service.dart`): import converts the sheet's
+  package cost to per-base (blank still preserves); export writes the
+  package-scale cost back.
+- **Margin** (`inventory_repository_impl.dart`,
+  `purchases_repository_impl.dart`): stored `profitMarginBasisPoints` now
+  compares package-scale cost vs package price (was 281% on a 27.27% item).
+- **POS** (`pos_workspace_page.dart`, `pos_workspace_controller.dart`):
+  labeled "sell as part" button (actual part name) in search results for
+  partial-sale-configured items; visible box/part toggle chip on cart lines
+  (touch alternative to F2); box and part stay separate lines via `cartKey`
+  (`item.id::unitMode`); defensive guard in `addToCart` rejects part mode for
+  non-configured items; unit labels use real unit names.
+- **Tests**: `test/package_cost_basis_regression_test.dart` — helper
+  unit tests (11,000 ÷ 3 → 3,666.6667), Excel import/export cost basis,
+  package-basis margin (2727 bp), and Ali's end-to-end scenario (one part @
+  5,600 → COGS 3,666.6667, never 11,000).
+- **Verification (2026-09-24):** `flutter analyze` clean on the whole project;
+  full suite **648 tests pass** (640 existing + 8 new), including the
+  pre-existing COGS, Excel-contract, partial-sale, POS-integration and
+  purchase suites.
 
 ---
 

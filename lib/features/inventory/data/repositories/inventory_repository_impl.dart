@@ -362,7 +362,13 @@ class InventoryRepositoryImpl implements InventoryRepository {
       customPrice1Micros: Value(d.customPrice1Micros),
       customPrice2Micros: Value(d.customPrice2Micros),
       vatRateBasisPoints: Value(d.vatRateBasisPoints),
-      profitMarginBasisPoints: Value(marginFor(d.costMicros, d.sellingPriceMicros)),
+      profitMarginBasisPoints: Value(marginFor(
+        // costMicros is per base unit while sellingPriceMicros is per
+        // commercial package — scale the cost up so the margin is
+        // computed on the same (package) basis.
+        d.costMicros * (d.units?.unitsPerLarge ?? 1),
+        d.sellingPriceMicros,
+      )),
       minimumStockBase: Value(d.minimumStockBase),
       maximumStockBase: Value(d.maximumStockBase),
       usageInstructions: Value(d.usageInstructions),
@@ -407,7 +413,13 @@ class InventoryRepositoryImpl implements InventoryRepository {
       customPrice1Micros: Value(d.customPrice1Micros),
       customPrice2Micros: Value(d.customPrice2Micros),
       vatRateBasisPoints: Value(d.vatRateBasisPoints),
-      profitMarginBasisPoints: Value(marginFor(d.costMicros, d.sellingPriceMicros)),
+      profitMarginBasisPoints: Value(marginFor(
+        // costMicros is per base unit while sellingPriceMicros is per
+        // commercial package — scale the cost up so the margin is
+        // computed on the same (package) basis.
+        d.costMicros * (d.units?.unitsPerLarge ?? 1),
+        d.sellingPriceMicros,
+      )),
       minimumStockBase: Value(d.minimumStockBase),
       maximumStockBase: Value(d.maximumStockBase),
       usageInstructions: Value(d.usageInstructions),
@@ -425,6 +437,8 @@ class InventoryRepositoryImpl implements InventoryRepository {
 
   /// Derived profit margin = (retail − cost) ÷ cost, in basis points (§8).
   /// Computed with integer math only via [Money]; 0 when cost is not yet set.
+  /// Both arguments must be on the same unit basis (callers scale the
+  /// per-base-unit cost up to the commercial-package basis before calling).
   static int marginFor(int costMicros, int sellingMicros) {
     if (costMicros <= 0) return 0;
     final cost = Money.fromUnits(costMicros);

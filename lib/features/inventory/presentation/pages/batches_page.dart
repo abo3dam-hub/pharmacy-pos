@@ -69,10 +69,25 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
 
   Future<void> _addBatch() async {
     final l10n = AppLocalizations.of(context);
+    // Resolve the item's commercial package so the batch dialog can offer
+    // package-vs-base-unit entry (package cost is converted to per-base-unit
+    // cost on submit — the COGS basis).
+    final repo = ref.read(inventoryRepositoryProvider);
+    final units = await repo.itemUnitsFor(widget.itemId);
+    final baseName = units == null
+        ? ''
+        : (await repo.unitById(units.baseUnitId))?.name ?? '';
+    final largeName = units == null
+        ? ''
+        : (await repo.unitById(units.largeUnitId))?.name ?? '';
+    if (!mounted) return;
     final result = await showBatchFormDialog(
       context,
       itemId: widget.itemId,
       hasExpiry: _item?.hasExpiry ?? false,
+      unitsPerLarge: units?.unitsPerLarge ?? 1,
+      baseUnitName: baseName,
+      largeUnitName: largeName,
     );
     if (result == null || !mounted) return;
     final failure = await ref

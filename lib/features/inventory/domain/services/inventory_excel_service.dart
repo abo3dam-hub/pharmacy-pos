@@ -2,6 +2,7 @@ import 'package:excel/excel.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/money/money.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/util/smart_search.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../domain/entities/inventory_item.dart';
@@ -141,7 +142,13 @@ class InventoryExcelService {
         TextCellValue(Money.fromUnits(item.wholesalePriceMicros).format()),
         TextCellValue(Money.fromUnits(item.halfWholesalePriceMicros).format()),
         IntCellValue(item.vatRateBasisPoints ~/ 100),
-        TextCellValue(Money.fromUnits(item.costMicros).format()),
+        // Exported per commercial package (the sheet's unit for "سعر
+        // التكلفة"); costMicros is stored per base unit.
+        TextCellValue(
+          Money.fromUnits(
+            baseUnitCostToPackageCost(item.costMicros, units?.unitsPerLarge ?? 1),
+          ).format(),
+        ),
         IntCellValue(item.minimumStockBase),
         IntCellValue(item.maximumStockBase),
         IntCellValue(item.currentStockBase),
@@ -497,7 +504,12 @@ class InventoryExcelService {
         vatRateBasisPoints: vatRaw.trim().isEmpty
             ? (existing?.vatRateBasisPoints ?? 0)
             : (_parseInt(vatRaw) ?? 0) * 100,
-        costMicros: cost ?? existing?.costMicros ?? 0,
+        // The sheet's "سعر التكلفة" is entered per commercial package (the
+        // pharmacist's unit); costMicros is stored per base unit, so convert
+        // here (half-up). A blank cell preserves the current value.
+        costMicros: cost == null
+            ? (existing?.costMicros ?? 0)
+            : packageCostToBaseUnitCost(cost, relation?.unitsPerLarge ?? 1),
         minimumStockBase: minRaw.trim().isEmpty
             ? (existing?.minimumStockBase ?? 0)
             : (_parseInt(minRaw) ?? 0),

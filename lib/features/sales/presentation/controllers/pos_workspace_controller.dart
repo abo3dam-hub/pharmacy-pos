@@ -113,6 +113,17 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
       return;
     }
 
+    // Defense in depth: part mode is only meaningful for items explicitly
+    // configured for partial selling. Without this guard, baseUnitsFor would
+    // silently fall back to unitsPerLarge and sell a whole box as "one part".
+    if (unitMode == PosLineUnitMode.sellablePart &&
+        !item.partialSaleConfigured) {
+      state = state.copyWith(
+        errorMessage: '${item.displayName} غير مفعّل للبيع الجزئي',
+      );
+      return;
+    }
+
     String? rxItemId;
     int? rxRemaining;
     if (item.requiresPrescription || item.isControlledDrug) {

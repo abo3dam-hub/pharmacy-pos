@@ -11,6 +11,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
@@ -67,16 +68,30 @@ class _PurchLine {
     this.unitCostMicros = 0,
     this.discountBasisPoints = 0,
     List<_BonusDraft>? bonuses,
-  }) : bonuses = bonuses ?? [];
+    this.unitsPerLarge = 1,
+    this.largeUnitName = '',
+    bool? entryInPackages,
+  })  : bonuses = bonuses ?? [],
+        // Default to package entry when the item actually has a package with
+        // more than one base unit; otherwise package == base unit.
+        entryInPackages = entryInPackages ?? (unitsPerLarge > 1);
 
   String itemId;
   String itemName;
   String unitTypeId;
   String unitTypeName;
+
+  /// Canonical stored values — always in BASE units (what the repo persists).
   int quantityBase;
   int unitCostMicros;
   int discountBasisPoints;
   final List<_BonusDraft> bonuses;
+
+  /// Commercial-package info for the entry-mode toggle. The toggle only shows
+  /// when [unitsPerLarge] > 1.
+  int unitsPerLarge;
+  String largeUnitName;
+  bool entryInPackages;
 }
 
 class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
@@ -138,27 +153,20 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
         .read(inventoryRepositoryProvider)
         .findItem(prefill.itemId);
     if (!mounted || item == null) return;
-    final units = await ref
-        .read(inventoryRepositoryProvider)
-        .itemUnitsFor(item.id);
-    String unitName = '';
-    if (units != null) {
-      unitName =
-          (await ref
-                  .read(inventoryRepositoryProvider)
-                  .unitById(units.baseUnitId))
-              ?.name ??
-          '';
-    }
+    final pkg = await _packageInfo(item.id);
     setState(() {
       _lines.add(
         _PurchLine(
           itemId: item.id,
           itemName: itemDisplayName(item),
-          unitTypeId: units?.baseUnitId ?? '',
-          unitTypeName: unitName,
+          unitTypeId: pkg.baseUnitId,
+          unitTypeName: pkg.baseName,
           quantityBase: prefill.quantityBase,
           unitCostMicros: prefill.unitCostMicros,
+          unitsPerLarge: pkg.unitsPerLarge,
+          largeUnitName: pkg.largeName,
+          entryInPackages: pkg.unitsPerLarge > 1 &&
+              prefill.quantityBase % pkg.unitsPerLarge == 0,
         ),
       );
     });
@@ -185,15 +193,23 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
       if (detail.invoice.notes != null) _notes.text = detail.invoice.notes!;
       _supplierId = detail.invoice.supplierId;
       for (final v in detail.lines) {
+        final pkg = await _packageInfo(v.line.itemId);
+        // Show package entry when the stored base quantity divides evenly
+        // into whole packages; otherwise fall back to base-unit entry.
+        final evenPack = pkg.unitsPerLarge > 1 &&
+            v.line.quantityBase % pkg.unitsPerLarge == 0;
         _lines.add(
           _PurchLine(
             itemId: v.line.itemId,
             itemName: v.itemName,
             unitTypeId: v.line.unitTypeId,
-            unitTypeName: '',
+            unitTypeName: pkg.baseName,
             quantityBase: v.line.quantityBase,
             unitCostMicros: v.line.unitCostMicros,
             discountBasisPoints: v.line.discountBasisPoints,
+            unitsPerLarge: pkg.unitsPerLarge,
+            largeUnitName: pkg.largeName,
+            entryInPackages: evenPack,
             bonuses: [
               for (final b
                   in detail.bonuses
@@ -281,25 +297,48 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
     if (picked != null && mounted) setState(() => _expectedDate = picked);
   }
 
+  /// Resolves the commercial-package info for a purchase line: base unit id +
+  /// name, package (large) unit name and units-per-package. Powers the
+  /// package/base entry toggle on each line.
+  Future<
+      ({
+        String baseUnitId,
+        String baseName,
+        String largeName,
+        int unitsPerLarge,
+      })> _packageInfo(String itemId) async {
+    final repo = ref.read(inventoryRepositoryProvider);
+    final units = await repo.itemUnitsFor(itemId);
+    final baseName = units == null
+        ? ''
+        : (await repo.unitById(units.baseUnitId))?.name ?? '';
+    final largeName = units == null
+        ? ''
+        : (await repo.unitById(units.largeUnitId))?.name ?? '';
+    return (
+      baseUnitId: units?.baseUnitId ?? '',
+      baseName: baseName,
+      largeName: largeName,
+      unitsPerLarge: units?.unitsPerLarge ?? 1,
+    );
+  }
+
   Future<void> _pickItem(StateSetter setCard, _PurchLine line) async {
     final item = await _showItemSearchDialog(context);
     if (item == null || !mounted) return;
-    final units = await ref
-        .read(inventoryRepositoryProvider)
-        .itemUnitsFor(item.id);
-    if (units == null) {
+    final pkg = await _packageInfo(item.id);
+    if (pkg.baseUnitId.isEmpty) {
       _showSnack(const DatabaseFailure('no item units'));
       return;
     }
-    final unitName =
-        (await ref.read(inventoryRepositoryProvider).unitById(units.baseUnitId))
-            ?.name ??
-        '';
     setCard(() {
       line.itemId = item.id;
       line.itemName = itemDisplayName(item);
-      line.unitTypeId = units.baseUnitId;
-      line.unitTypeName = unitName;
+      line.unitTypeId = pkg.baseUnitId;
+      line.unitTypeName = pkg.baseName;
+      line.unitsPerLarge = pkg.unitsPerLarge;
+      line.largeUnitName = pkg.largeName;
+      line.entryInPackages = pkg.unitsPerLarge > 1;
       if (line.unitCostMicros == 0) line.unitCostMicros = item.costMicros;
     });
   }
@@ -321,25 +360,21 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
   Future<void> _addLine() async {
     final item = await _showItemSearchDialog(context);
     if (item == null || !mounted) return;
-    final units = await ref
-        .read(inventoryRepositoryProvider)
-        .itemUnitsFor(item.id);
-    if (units == null) {
+    final pkg = await _packageInfo(item.id);
+    if (pkg.baseUnitId.isEmpty) {
       _showSnack(const DatabaseFailure('no item units'));
       return;
     }
-    final unitName =
-        (await ref.read(inventoryRepositoryProvider).unitById(units.baseUnitId))
-            ?.name ??
-        '';
     setState(() {
       _lines.add(
         _PurchLine(
           itemId: item.id,
           itemName: itemDisplayName(item),
-          unitTypeId: units.baseUnitId,
-          unitTypeName: unitName,
+          unitTypeId: pkg.baseUnitId,
+          unitTypeName: pkg.baseName,
           unitCostMicros: item.costMicros,
+          unitsPerLarge: pkg.unitsPerLarge,
+          largeUnitName: pkg.largeName,
         ),
       );
     });
@@ -460,6 +495,48 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
       return 0;
     }
   }
+
+  /// Displayed quantity for a line: whole packages in package-entry mode,
+  /// base units otherwise.
+  String _displayQty(_PurchLine line) {
+    if (line.entryInPackages && line.unitsPerLarge > 1) {
+      return '${line.quantityBase ~/ line.unitsPerLarge}';
+    }
+    return '${line.quantityBase}';
+  }
+
+  void _applyQty(_PurchLine line, String v) {
+    final n = int.tryParse(v.trim());
+    if (n == null || n < 0) return;
+    line.quantityBase = (line.entryInPackages && line.unitsPerLarge > 1)
+        ? n * line.unitsPerLarge
+        : n;
+  }
+
+  /// Displayed unit cost: per commercial package in package-entry mode,
+  /// per base unit otherwise.
+  String _displayCost(_PurchLine line) {
+    final micros = (line.entryInPackages && line.unitsPerLarge > 1)
+        ? baseUnitCostToPackageCost(line.unitCostMicros, line.unitsPerLarge)
+        : line.unitCostMicros;
+    return micros == 0 ? '' : Money.fromUnits(micros).format(4);
+  }
+
+  void _applyCost(_PurchLine line, String v) {
+    final micros = _parseMoney(v);
+    line.unitCostMicros = (line.entryInPackages && line.unitsPerLarge > 1)
+        ? packageCostToBaseUnitCost(micros, line.unitsPerLarge)
+        : micros;
+  }
+
+  /// Unit name matching the current entry mode — used in field labels so the
+  /// pharmacist always sees which unit the numbers refer to.
+  String _entryUnitName(_PurchLine line) =>
+      (line.entryInPackages &&
+              line.unitsPerLarge > 1 &&
+              line.largeUnitName.isNotEmpty)
+          ? line.largeUnitName
+          : line.unitTypeName;
 
   int get _subtotalMicros {
     var total = 0;
@@ -722,6 +799,31 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.s),
+                // Package/base entry toggle — visible only when the item has
+                // a commercial package holding more than one base unit. The
+                // pharmacist enters package quantities + package cost; the
+                // line stores canonical base-unit values for the repo.
+                if (line.unitsPerLarge > 1 &&
+                    line.largeUnitName.isNotEmpty &&
+                    line.unitTypeName.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.s),
+                    child: SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment(
+                          value: true,
+                          label: Text(line.largeUnitName),
+                        ),
+                        ButtonSegment(
+                          value: false,
+                          label: Text(line.unitTypeName),
+                        ),
+                      ],
+                      selected: {line.entryInPackages},
+                      onSelectionChanged: (s) =>
+                          setCard(() => line.entryInPackages = s.first),
+                    ),
+                  ),
                 Wrap(
                   spacing: AppSpacing.m,
                   runSpacing: AppSpacing.m,
@@ -730,32 +832,31 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                     SizedBox(
                       width: 130,
                       child: TextFormField(
-                        initialValue: '${line.quantityBase}',
+                        key: ValueKey('qty_${line.entryInPackages}'),
+                        initialValue: _displayQty(line),
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: l10n.purchaseQty,
+                          labelText:
+                              '${l10n.purchaseQty} (${_entryUnitName(line)})',
                         ),
-                        onChanged: (v) => setCard(() {
-                          line.quantityBase =
-                              int.tryParse(v.trim()) ?? (line.quantityBase);
-                        }),
+                        onChanged: (v) =>
+                            setCard(() => _applyQty(line, v)),
                       ),
                     ),
                     SizedBox(
                       width: 150,
                       child: TextFormField(
-                        initialValue: line.unitCostMicros == 0
-                            ? ''
-                            : Money.fromUnits(line.unitCostMicros).format(4),
+                        key: ValueKey('cost_${line.entryInPackages}'),
+                        initialValue: _displayCost(line),
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         decoration: InputDecoration(
-                          labelText: l10n.purchaseUnitCost,
+                          labelText:
+                              '${l10n.purchaseUnitCost} (${_entryUnitName(line)})',
                         ),
-                        onChanged: (v) => setCard(() {
-                          line.unitCostMicros = _parseMoney(v);
-                        }),
+                        onChanged: (v) =>
+                            setCard(() => _applyCost(line, v)),
                       ),
                     ),
                     SizedBox(

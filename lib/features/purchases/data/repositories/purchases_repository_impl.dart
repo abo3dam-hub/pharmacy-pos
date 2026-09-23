@@ -417,6 +417,19 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
 
         if (!item.lockAutoPriceUpdate &&
             item.costMicros != calc.effectiveUnitCostMicros) {
+          // effectiveUnitCostMicros is per base unit while sellingPriceMicros
+          // is per commercial package — scale the cost up so the stored margin
+          // is computed on the same (package) basis.
+          final unitsPerLarge =
+              (await (_db.select(_db.itemUnits)
+                        ..where((u) => u.itemId.equals(item.id)))
+                      .getSingleOrNull())
+                  ?.unitsPerLarge ??
+              1;
+          final margin = _marginFor(
+            calc.effectiveUnitCostMicros * unitsPerLarge,
+            item.sellingPriceMicros,
+          );
           final before = {
             'cost_micros': item.costMicros,
             'profit_margin_basis_points': item.profitMarginBasisPoints,
@@ -424,8 +437,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           await (_db.update(_db.items)..where((x) => x.id.equals(item.id))).write(
             ItemsCompanion(
               costMicros: Value(calc.effectiveUnitCostMicros),
-              profitMarginBasisPoints:
-                  Value(_marginFor(calc.effectiveUnitCostMicros, item.sellingPriceMicros)),
+              profitMarginBasisPoints: Value(margin),
               updatedAt: Value(now),
             ),
           );
@@ -438,8 +450,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
             before: before,
             after: {
               'cost_micros': calc.effectiveUnitCostMicros,
-              'profit_margin_basis_points':
-                  _marginFor(calc.effectiveUnitCostMicros, item.sellingPriceMicros),
+              'profit_margin_basis_points': margin,
             },
             note: 'تحديث تلقائي من فاتورة شراء ${invoice.invoiceNumber}',
           );
@@ -757,6 +768,8 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
 
   static int _lineDiscountFor(PurchaseInvoiceItemRow line) => line.lineDiscountMicros;
 
+  /// Both arguments must be on the same unit basis (callers scale the
+  /// per-base-unit cost up to the commercial-package basis before calling).
   static int _marginFor(int costMicros, int sellingMicros) {
     if (costMicros <= 0) return 0;
     final diff = Money.fromUnits(sellingMicros) - Money.fromUnits(costMicros);
