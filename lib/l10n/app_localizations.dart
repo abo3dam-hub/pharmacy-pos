@@ -1031,8 +1031,13 @@ abstract class AppLocalizations {
   /// No description provided for @inventoryStockTooltip.
   ///
   /// In ar, this message translates to:
-  /// **'الرصيد الحالي: {stock} · سعر البيع: {price}'**
-  String inventoryStockTooltip(String stock, String price);
+  /// **'الرصيد الحالي: {stock} · سعر البيع: {price} · الشركة: {manufacturer} · الشكل الدوائي: {form}'**
+  String inventoryStockTooltip(
+    String stock,
+    String price,
+    String manufacturer,
+    String form,
+  );
 
   /// No description provided for @inventoryCreatedMessage.
   ///
@@ -3757,6 +3762,42 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تعذر تحميل البدائل'**
   String get posAlternativesFailed;
+
+  /// No description provided for @posAlternativesMatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة المطابقة'**
+  String get posAlternativesMatch;
+
+  /// No description provided for @posAlternativesInStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوفر في المخزون'**
+  String get posAlternativesInStock;
+
+  /// No description provided for @posAlternativesOutOfStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'غير متوفر في المخزون'**
+  String get posAlternativesOutOfStock;
+
+  /// No description provided for @posAlternativesExtra.
+  ///
+  /// In ar, this message translates to:
+  /// **'زيادة'**
+  String get posAlternativesExtra;
+
+  /// No description provided for @posAlternativesMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقص'**
+  String get posAlternativesMissing;
+
+  /// No description provided for @posAlternativesStrengthDiff.
+  ///
+  /// In ar, this message translates to:
+  /// **'عيار مختلف'**
+  String get posAlternativesStrengthDiff;
 
   /// No description provided for @posAvailableStock.
   ///
@@ -6745,6 +6786,66 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'تم رفض إذن الكاميرا. فعّله من إعدادات التطبيق ثم حاول مجدداً.'**
   String get cameraPermissionDenied;
+
+  /// No description provided for @salesReturnsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المرتجعات'**
+  String get salesReturnsTitle;
+
+  /// No description provided for @salesReturnsSearchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث برقم المرتجع أو العميل أو السبب…'**
+  String get salesReturnsSearchHint;
+
+  /// No description provided for @salesReturnsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مرتجعات مسجلة'**
+  String get salesReturnsEmpty;
+
+  /// No description provided for @salesReturnsOriginalInvoice.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفاتورة الأصلية'**
+  String get salesReturnsOriginalInvoice;
+
+  /// No description provided for @salesReturnsReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'السبب'**
+  String get salesReturnsReason;
+
+  /// No description provided for @salesReturnsVoided.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملغي'**
+  String get salesReturnsVoided;
+
+  /// No description provided for @salesReturnsLines.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنود المرتجع'**
+  String get salesReturnsLines;
+
+  /// No description provided for @salesReturnsTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي المرتجع'**
+  String get salesReturnsTotal;
+
+  /// No description provided for @salesReturnsCustomer.
+  ///
+  /// In ar, this message translates to:
+  /// **'العميل'**
+  String get salesReturnsCustomer;
+
+  /// No description provided for @salesReturnsQuantity.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get salesReturnsQuantity;
 }
 
 class _AppLocalizationsDelegate

@@ -143,9 +143,15 @@ class PosCatalogDao {
   /// superset — the engine shows them *after* available ones so the cashier
   /// sees the full therapeutic family (§18.4 — availability is ordering
   /// signal, not an exclusion).
+  /// All items sharing an active ingredient, indication, or manufacturer
+  /// with [itemId] — hydrated with relational strengths for the tier engine.
+  ///
+  /// No alphabetical pre-truncation: the [SmartAlternativesService] ranks the
+  /// full candidate set and applies the display limit, so the closest matches
+  /// are never cut by name ordering. A generous safety cap guards against
+  /// pathological master data (e.g. one indication on thousands of items).
   Future<List<PosCatalogItem>> alternativeCandidates({
     required String itemId,
-    int limit = 18,
   }) async {
     final requested = await (_db.select(
       _db.items,
@@ -221,14 +227,13 @@ class PosCatalogDao {
       clauses.reduce((a, b) => a | b),
     ].reduce((a, b) => a & b);
 
-    final candidates =
-        await (_db.select(_db.items)
-              ..where((i) => filter)
-              ..orderBy([(_) => OrderingTerm.asc(_db.items.tradeName)])
-              ..limit(limit * 3))
-            .get();
-    final hydrated = await hydrate(candidates);
-    return hydrated.take(limit).toList();
+    // No LIMIT: the filter above already restricts candidates to items
+    // sharing active ingredients, indications, or the manufacturer, so the
+    // result set is naturally bounded and every relevant item is ranked.
+    final candidates = await (_db.select(
+      _db.items,
+    )..where((i) => filter)).get();
+    return hydrate(candidates);
   }
 
   /// Builds [PosCatalogItem] snapshots for a page of item rows with minimal
@@ -260,6 +265,9 @@ class PosCatalogDao {
     final relationalIngredients = await _relationalIngredientNamesByItem({
       for (final r in rows) r.id,
     });
+    final relationalStrengths = await _relationalIngredientStrengthsByItem({
+      for (final r in rows) r.id,
+    });
     final manufacturerNames = await _manufacturerNamesByItem({
       for (final r in rows) r.id,
     });
@@ -277,6 +285,8 @@ class PosCatalogDao {
           unitNames: unitNames,
           availableStockBase: availability[r.id] ?? 0,
           relationalIngredientNames: relationalIngredients[r.id] ?? const [],
+          relationalIngredientStrengths:
+              relationalStrengths[r.id] ?? const {},
           manufacturerName: manufacturerNames[r.id],
         ),
     ];
@@ -332,6 +342,31 @@ class PosCatalogDao {
     return out;
   }
 
+  /// Per-ingredient strengths (`item_active_ingredients.strength`) keyed by
+  /// ingredient name, per item — one aggregate query so the tier engine can
+  /// compare strength-aware compositions without per-row round trips.
+  Future<Map<String, Map<String, String>>> _relationalIngredientStrengthsByItem(
+    Set<String> itemIds,
+  ) async {
+    if (itemIds.isEmpty) return const {};
+    final relations = await (_db.select(
+      _db.itemActiveIngredients,
+    )..where((r) => r.itemId.isIn(itemIds))).get();
+    if (relations.isEmpty) return const {};
+    final names = {
+      for (final ai in await (_db.select(_db.activeIngredients)).get())
+        ai.id: ai.name,
+    };
+    final out = <String, Map<String, String>>{};
+    for (final r in relations) {
+      final strength = r.strength?.trim();
+      if (strength == null || strength.isEmpty) continue;
+      final name = names[r.activeIngredientId] ?? r.activeIngredientId;
+      out.putIfAbsent(r.itemId, () => {})[name] = strength;
+    }
+    return out;
+  }
+
   /// FEFO-available base quantity per item (non-voided, positive, not yet
   /// expired batches) aggregated in SQL.
   Future<Map<String, int>> _availableByItem(Set<String> itemIds) async {
@@ -360,6 +395,7 @@ class PosCatalogDao {
     required Map<String, String> unitNames,
     required int availableStockBase,
     List<String> relationalIngredientNames = const [],
+    Map<String, String> relationalIngredientStrengths = const {},
     String? manufacturerName,
   }) {
     final baseUnitId =
@@ -375,6 +411,7 @@ class PosCatalogDao {
       manufacturerId: r.manufacturerId,
       manufacturerName: manufacturerName,
       relationalIngredientNames: relationalIngredientNames,
+      relationalIngredientStrengths: relationalIngredientStrengths,
       dose: r.dose,
       pharmaForm: r.pharmaForm,
       sizeVolume: r.sizeVolume,

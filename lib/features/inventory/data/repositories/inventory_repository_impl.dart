@@ -4,6 +4,7 @@ import 'package:sqlite3/sqlite3.dart' show SqliteException;
 import '../../../../core/data_grid/page_request.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/money/money.dart';
+import '../../../../core/search/item_search_text.dart';
 import '../../../../core/util/ids.dart';
 import '../../../../data/daos/active_ingredient_dao.dart';
 import '../../../../data/daos/batch_dao.dart';
@@ -338,6 +339,21 @@ class InventoryRepositoryImpl implements InventoryRepository {
     }
   }
 
+
+  /// Precomputed normalized search text (§search-perf): kept in sync with
+  /// every insert/update so searches stay a single cheap LIKE.
+  String _searchTextFor(ItemDraft d) => ItemSearchText.build(
+        tradeName: d.tradeName,
+        tradeNameEn: d.tradeNameEn,
+        scientificName: d.scientificName,
+        activeIngredient: d.activeIngredient,
+        equivalentDrug: d.equivalentDrug,
+        primaryBarcode: d.primaryBarcode,
+        secondaryBarcode: d.secondaryBarcode,
+        dose: d.dose,
+        pharmaForm: d.pharmaForm,
+      );
+
   ItemsCompanion _toInsertCompanion(ItemDraft d,
       {required String id, required int at}) {
     return ItemsCompanion.insert(
@@ -386,6 +402,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       sellablePartBaseQuantity: Value(d.sellablePartBaseQuantity),
       partialSaleMarkupBasisPoints: Value(d.partialSaleMarkupBasisPoints),
       partialSalePriceMicros: Value(d.partialSalePriceMicros),
+      searchText: Value(_searchTextFor(d)),
       createdAt: at,
       updatedAt: at,
     );
@@ -437,6 +454,7 @@ class InventoryRepositoryImpl implements InventoryRepository {
       sellablePartBaseQuantity: Value(d.sellablePartBaseQuantity),
       partialSaleMarkupBasisPoints: Value(d.partialSaleMarkupBasisPoints),
       partialSalePriceMicros: Value(d.partialSalePriceMicros),
+      searchText: Value(_searchTextFor(d)),
       updatedAt: Value(at),
     );
   }

@@ -2398,6 +2398,17 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _searchTextMeta = const VerificationMeta(
+    'searchText',
+  );
+  @override
+  late final GeneratedColumn<String> searchText = GeneratedColumn<String>(
+    'search_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -2477,6 +2488,7 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
     usageInstructions,
     generalNotes,
     licenseNumber,
+    searchText,
     isActive,
     createdAt,
     updatedAt,
@@ -2830,6 +2842,12 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
         ),
       );
     }
+    if (data.containsKey('search_text')) {
+      context.handle(
+        _searchTextMeta,
+        searchText.isAcceptableOrUnknown(data['search_text']!, _searchTextMeta),
+      );
+    }
     if (data.containsKey('is_active')) {
       context.handle(
         _isActiveMeta,
@@ -3021,6 +3039,10 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, ItemRow> {
         DriftSqlType.string,
         data['${effectivePrefix}license_number'],
       ),
+      searchText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}search_text'],
+      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -3118,6 +3140,12 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
   final String? usageInstructions;
   final String? generalNotes;
   final String? licenseNumber;
+
+  /// Precomputed normalized search text (§search-perf): concatenation of the
+  /// searchable text columns, normalized with [SmartSearch.normalize] in Dart
+  /// at every write. Searches run a single `LIKE` on this column instead of
+  /// applying the SQL `replace()` chain per row per keystroke.
+  final String? searchText;
   final bool isActive;
   final int createdAt;
   final int updatedAt;
@@ -3162,6 +3190,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     this.usageInstructions,
     this.generalNotes,
     this.licenseNumber,
+    this.searchText,
     required this.isActive,
     required this.createdAt,
     required this.updatedAt,
@@ -3257,6 +3286,9 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     if (!nullToAbsent || licenseNumber != null) {
       map['license_number'] = Variable<String>(licenseNumber);
     }
+    if (!nullToAbsent || searchText != null) {
+      map['search_text'] = Variable<String>(searchText);
+    }
     map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
@@ -3344,6 +3376,9 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       licenseNumber: licenseNumber == null && nullToAbsent
           ? const Value.absent()
           : Value(licenseNumber),
+      searchText: searchText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(searchText),
       isActive: Value(isActive),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -3420,6 +3455,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       ),
       generalNotes: serializer.fromJson<String?>(json['generalNotes']),
       licenseNumber: serializer.fromJson<String?>(json['licenseNumber']),
+      searchText: serializer.fromJson<String?>(json['searchText']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
@@ -3479,6 +3515,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       'usageInstructions': serializer.toJson<String?>(usageInstructions),
       'generalNotes': serializer.toJson<String?>(generalNotes),
       'licenseNumber': serializer.toJson<String?>(licenseNumber),
+      'searchText': serializer.toJson<String?>(searchText),
       'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
@@ -3526,6 +3563,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     Value<String?> usageInstructions = const Value.absent(),
     Value<String?> generalNotes = const Value.absent(),
     Value<String?> licenseNumber = const Value.absent(),
+    Value<String?> searchText = const Value.absent(),
     bool? isActive,
     int? createdAt,
     int? updatedAt,
@@ -3601,6 +3639,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     licenseNumber: licenseNumber.present
         ? licenseNumber.value
         : this.licenseNumber,
+    searchText: searchText.present ? searchText.value : this.searchText,
     isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -3719,6 +3758,9 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
       licenseNumber: data.licenseNumber.present
           ? data.licenseNumber.value
           : this.licenseNumber,
+      searchText: data.searchText.present
+          ? data.searchText.value
+          : this.searchText,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -3770,6 +3812,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           ..write('usageInstructions: $usageInstructions, ')
           ..write('generalNotes: $generalNotes, ')
           ..write('licenseNumber: $licenseNumber, ')
+          ..write('searchText: $searchText, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -3819,6 +3862,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
     usageInstructions,
     generalNotes,
     licenseNumber,
+    searchText,
     isActive,
     createdAt,
     updatedAt,
@@ -3869,6 +3913,7 @@ class ItemRow extends DataClass implements Insertable<ItemRow> {
           other.usageInstructions == this.usageInstructions &&
           other.generalNotes == this.generalNotes &&
           other.licenseNumber == this.licenseNumber &&
+          other.searchText == this.searchText &&
           other.isActive == this.isActive &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -3915,6 +3960,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
   final Value<String?> usageInstructions;
   final Value<String?> generalNotes;
   final Value<String?> licenseNumber;
+  final Value<String?> searchText;
   final Value<bool> isActive;
   final Value<int> createdAt;
   final Value<int> updatedAt;
@@ -3960,6 +4006,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     this.usageInstructions = const Value.absent(),
     this.generalNotes = const Value.absent(),
     this.licenseNumber = const Value.absent(),
+    this.searchText = const Value.absent(),
     this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -4006,6 +4053,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     this.usageInstructions = const Value.absent(),
     this.generalNotes = const Value.absent(),
     this.licenseNumber = const Value.absent(),
+    this.searchText = const Value.absent(),
     this.isActive = const Value.absent(),
     required int createdAt,
     required int updatedAt,
@@ -4055,6 +4103,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     Expression<String>? usageInstructions,
     Expression<String>? generalNotes,
     Expression<String>? licenseNumber,
+    Expression<String>? searchText,
     Expression<bool>? isActive,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
@@ -4118,6 +4167,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
       if (usageInstructions != null) 'usage_instructions': usageInstructions,
       if (generalNotes != null) 'general_notes': generalNotes,
       if (licenseNumber != null) 'license_number': licenseNumber,
+      if (searchText != null) 'search_text': searchText,
       if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -4166,6 +4216,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     Value<String?>? usageInstructions,
     Value<String?>? generalNotes,
     Value<String?>? licenseNumber,
+    Value<String?>? searchText,
     Value<bool>? isActive,
     Value<int>? createdAt,
     Value<int>? updatedAt,
@@ -4218,6 +4269,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
       usageInstructions: usageInstructions ?? this.usageInstructions,
       generalNotes: generalNotes ?? this.generalNotes,
       licenseNumber: licenseNumber ?? this.licenseNumber,
+      searchText: searchText ?? this.searchText,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -4360,6 +4412,9 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
     if (licenseNumber.present) {
       map['license_number'] = Variable<String>(licenseNumber.value);
     }
+    if (searchText.present) {
+      map['search_text'] = Variable<String>(searchText.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -4420,6 +4475,7 @@ class ItemsCompanion extends UpdateCompanion<ItemRow> {
           ..write('usageInstructions: $usageInstructions, ')
           ..write('generalNotes: $generalNotes, ')
           ..write('licenseNumber: $licenseNumber, ')
+          ..write('searchText: $searchText, ')
           ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
@@ -29950,6 +30006,7 @@ typedef $$ItemsTableCreateCompanionBuilder =
       Value<String?> usageInstructions,
       Value<String?> generalNotes,
       Value<String?> licenseNumber,
+      Value<String?> searchText,
       Value<bool> isActive,
       required int createdAt,
       required int updatedAt,
@@ -29997,6 +30054,7 @@ typedef $$ItemsTableUpdateCompanionBuilder =
       Value<String?> usageInstructions,
       Value<String?> generalNotes,
       Value<String?> licenseNumber,
+      Value<String?> searchText,
       Value<bool> isActive,
       Value<int> createdAt,
       Value<int> updatedAt,
@@ -30208,6 +30266,11 @@ class $$ItemsTableFilterComposer extends Composer<_$AppDatabase, $ItemsTable> {
 
   ColumnFilters<String> get licenseNumber => $composableBuilder(
     column: $table.licenseNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get searchText => $composableBuilder(
+    column: $table.searchText,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -30436,6 +30499,11 @@ class $$ItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get searchText => $composableBuilder(
+    column: $table.searchText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -30653,6 +30721,11 @@ class $$ItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get searchText => $composableBuilder(
+    column: $table.searchText,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
@@ -30731,6 +30804,7 @@ class $$ItemsTableTableManager
                 Value<String?> usageInstructions = const Value.absent(),
                 Value<String?> generalNotes = const Value.absent(),
                 Value<String?> licenseNumber = const Value.absent(),
+                Value<String?> searchText = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
@@ -30776,6 +30850,7 @@ class $$ItemsTableTableManager
                 usageInstructions: usageInstructions,
                 generalNotes: generalNotes,
                 licenseNumber: licenseNumber,
+                searchText: searchText,
                 isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -30823,6 +30898,7 @@ class $$ItemsTableTableManager
                 Value<String?> usageInstructions = const Value.absent(),
                 Value<String?> generalNotes = const Value.absent(),
                 Value<String?> licenseNumber = const Value.absent(),
+                Value<String?> searchText = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
@@ -30868,6 +30944,7 @@ class $$ItemsTableTableManager
                 usageInstructions: usageInstructions,
                 generalNotes: generalNotes,
                 licenseNumber: licenseNumber,
+                searchText: searchText,
                 isActive: isActive,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

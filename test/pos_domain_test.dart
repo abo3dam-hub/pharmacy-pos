@@ -7,6 +7,7 @@ import 'package:pharmacy_pos/features/sales/domain/entities/pos_cart.dart';
 import 'package:pharmacy_pos/features/sales/domain/entities/pos_catalog_item.dart';
 import 'package:pharmacy_pos/features/sales/domain/entities/pos_customer.dart';
 import 'package:pharmacy_pos/features/sales/domain/entities/pos_invoice.dart';
+import 'package:pharmacy_pos/features/sales/domain/entities/pos_return.dart';
 import 'package:pharmacy_pos/features/sales/domain/entities/smart_alternative.dart';
 import 'package:pharmacy_pos/features/sales/domain/repositories/sales_repository.dart';
 import 'package:pharmacy_pos/features/sales/domain/services/smart_alternatives_service.dart';
@@ -187,6 +188,15 @@ class _FakeSalesRepository implements SalesRepository {
         reversalMicros: 0,
         restoredQuantityBase: command.quantityBase,
       );
+
+  @override
+  Future<PageResult<PosReturnView>> listReturns(PageRequest request) async =>
+      PageResult<PosReturnView>(request: request, items: const [], total: 0);
+
+  @override
+  Future<({PosReturnView header, List<PosReturnLineView> lines})?>
+      returnDetail(String returnId) async => null;
+
 
   @override
   Future<PageResult<PosInvoiceView>> searchSaleInvoices(
@@ -1064,6 +1074,94 @@ void main() {
         ),
       ]);
       expect(ranked.single.tier, SmartAlternativeTier.tier3);
+    });
+
+    test('strength-aware: 100% green when relational strengths match', () {
+      PosCatalogItem relItem({
+        required String id,
+        required String tradeName,
+        required Map<String, String> strengths,
+        int stock = 10,
+      }) =>
+          PosCatalogItem(
+            id: id,
+            tradeName: tradeName,
+            tradeNameEn: tradeName,
+            scientificName: 'Sci $id',
+            relationalIngredientNames: strengths.keys.toList(),
+            relationalIngredientStrengths: strengths,
+            isControlledDrug: false,
+            requiresPrescription: false,
+            isActive: true,
+            sellingPriceMicros: 1000,
+            vatRateBasisPoints: 1500,
+            currentStockBase: stock,
+            availableStockBase: stock,
+            baseUnitId: 'unit_strip',
+            baseUnitName: 'شريط',
+            largeUnitId: 'unit_box',
+            largeUnitName: 'علبة',
+            unitsPerLarge: 24,
+            partialSaleEnabled: false,
+          );
+      final req = relItem(
+        id: 'req',
+        tradeName: 'Augmentin',
+        strengths: {'amoxicillin': '500 mg', 'clavulanic acid': '125 mg'},
+      );
+      final ranked = engine.rank(req, [
+        // Same ingredients, same strengths -> green 100%.
+        relItem(
+          id: 'c1',
+          tradeName: 'Clavamox',
+          strengths: {'amoxicillin': '500 mg', 'clavulanic acid': '125 mg'},
+        ),
+        // Same ingredients, different strengths -> yellow, < 100%.
+        relItem(
+          id: 'c2',
+          tradeName: 'Augmentin Forte',
+          strengths: {'amoxicillin': '875 mg', 'clavulanic acid': '125 mg'},
+        ),
+        // One shared ingredient, one missing, one extra -> blue, < yellow.
+        relItem(
+          id: 'c3',
+          tradeName: 'Amoxil + Caffeine',
+          strengths: {'amoxicillin': '500 mg', 'caffeine': '50 mg'},
+        ),
+        // Out-of-stock exact equivalent still listed, after in-stock ones.
+        relItem(
+          id: 'c4',
+          tradeName: 'Clavamox OOS',
+          strengths: {'amoxicillin': '500 mg', 'clavulanic acid': '125 mg'},
+          stock: 0,
+        ),
+      ]);
+      expect(ranked, hasLength(4));
+
+      final green = ranked[0];
+      expect(green.item.id, 'c1');
+      expect(green.tier, SmartAlternativeTier.tier1);
+      expect(green.matchPercent, 100);
+      expect(green.inStock, isTrue);
+
+      final yellow = ranked[1];
+      expect(yellow.item.id, 'c2');
+      expect(yellow.tier, SmartAlternativeTier.tier2);
+      expect(yellow.matchPercent, lessThan(100));
+      expect(yellow.strengthDifferences, contains('amoxicillin'));
+
+      final blue = ranked[2];
+      expect(blue.item.id, 'c3');
+      expect(blue.tier, SmartAlternativeTier.tier3);
+      expect(blue.matchPercent, lessThan(yellow.matchPercent));
+      expect(blue.missingIngredients, contains('clavulanic acid'));
+      expect(blue.extraIngredients, contains('caffeine'));
+
+      final oos = ranked[3];
+      expect(oos.item.id, 'c4');
+      expect(oos.tier, SmartAlternativeTier.tier1);
+      expect(oos.matchPercent, 100);
+      expect(oos.inStock, isFalse);
     });
 
     test('drops unrelated and inactive; keeps out-of-stock as last resort', () {

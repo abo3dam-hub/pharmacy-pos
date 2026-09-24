@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:pharmacy_pos/core/units/package_cost.dart';
 
 import '../../../core/constants/account_codes.dart';
 import '../../../core/util/bilingual_name.dart';
@@ -554,9 +555,11 @@ name: bilingualName(row.read<String>('name'),
         i.maximum_stock_base AS maximum_stock,
         COALESCE(SUM(b.quantity_base), 0) AS qty_sum,
         COALESCE(SUM(b.quantity_base * b.unit_cost_micros), 0) AS value_sum,
-        i.cost_micros AS item_cost
+        i.cost_micros AS item_cost,
+        COALESCE(u.units_per_large, 1) AS units_per_large
       FROM items i
       LEFT JOIN batches b ON b.item_id = i.id AND b.is_voided = 0
+      LEFT JOIN item_units u ON u.item_id = i.id
       WHERE i.is_active = 1
       GROUP BY i.id
       ORDER BY i.trade_name
@@ -566,6 +569,10 @@ name: bilingualName(row.read<String>('name'),
     final items = itemRows.map((row) {
       final qty = row.read<int>('qty_sum');
       final value = row.read<int>('value_sum');
+      final unitsPerLarge = row.read<int>('units_per_large');
+      // §cost-display: batches store per-base-unit cost; the report shows the
+      // full-package cost via the single conversion point.
+      final baseCost = qty > 0 ? value ~/ qty : row.read<int>('item_cost');
       return InventoryReportItemRow(
         itemId: row.read<String>('item_id'),
         barcode: row.read<String? >('barcode'),
@@ -573,8 +580,9 @@ name: bilingualName(row.read<String>('name'),
         currentStockBase: row.read<int>('current_stock'),
         minimumStockBase: row.read<int>('minimum_stock'),
         maximumStockBase: row.read<int>('maximum_stock'),
-        unitCostMicros: qty > 0 ? value ~/ qty : row.read<int>('item_cost'),
+        unitCostMicros: baseUnitCostToPackageCost(baseCost, unitsPerLarge),
         stockValueMicros: value,
+        unitsPerLarge: unitsPerLarge,
       );
     }).toList();
 

@@ -111,6 +111,12 @@ class Items extends Table {
   TextColumn get generalNotes => text().nullable()();
   TextColumn get licenseNumber => text().nullable()();
 
+  /// Precomputed normalized search text (§search-perf): concatenation of the
+  /// searchable text columns, normalized with [SmartSearch.normalize] in Dart
+  /// at every write. Searches run a single `LIKE` on this column instead of
+  /// applying the SQL `replace()` chain per row per keystroke.
+  TextColumn get searchText => text().nullable()();
+
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();

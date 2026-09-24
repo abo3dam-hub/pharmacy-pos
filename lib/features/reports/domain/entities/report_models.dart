@@ -350,6 +350,7 @@ class InventoryReportItemRow {
     required this.maximumStockBase,
     required this.unitCostMicros,
     required this.stockValueMicros,
+    this.unitsPerLarge = 1,
   });
 
   final String itemId;
@@ -360,8 +361,15 @@ class InventoryReportItemRow {
   final int maximumStockBase;
 
   /// Historic batch unit cost (FIFO per batch) used for valuation.
+  ///
+  /// Displayed as a full-package cost (§cost-display): the DAO converts the
+  /// stored per-base-unit cost via `baseUnitCostToPackageCost`.
   final int unitCostMicros;
   final int stockValueMicros;
+
+  /// Base units per commercial package; used to express [unitCostMicros] at
+  /// package scale.
+  final int unitsPerLarge;
 
   bool get isLowStock =>
       minimumStockBase > 0 && currentStockBase < minimumStockBase;

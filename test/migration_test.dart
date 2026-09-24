@@ -4,20 +4,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:pharmacy_pos/shared/database/app_database.dart';
+import 'package:pharmacy_pos/core/util/smart_search.dart';
 import 'package:pharmacy_pos/shared/database/seed_data.dart';
 import 'package:pharmacy_pos/shared/models/enums.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
 import 'helpers.dart';
 
-/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5/9/10/16/17/18/13)
-/// for v1→v13 upgrade — implementers must keep this mirror in lockstep with
+/// Mirrors the forward-only `_migrate` contract (§29, Phase 7.5/9/10/16/17/18/13, §search-perf)
+/// for v1→v14 upgrade — implementers must keep this mirror in lockstep with
 /// `AppDatabase._migrate` in `app_database.dart`.
 class _V1Database extends AppDatabase {
   _V1Database(super.e);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -197,6 +198,38 @@ class _V1Database extends AppDatabase {
           salesInvoiceItems.unitBaseQuantity,
         );
       }
+      if (from < 14) {
+        final existing = await customSelect(
+          "SELECT name FROM pragma_table_info('items')",
+        ).get();
+        final hasSearchText =
+            existing.any((r) => r.read<String>('name') == 'search_text');
+        if (!hasSearchText) {
+          await m.addColumn(items, items.searchText);
+        }
+        // Unconditional recompute: the `from < 12` TableMigration rebuild
+        // fills columns missing from the old table with their literal column
+        // name (observed: 'search_text'), so a skip-if-present guard would
+        // keep garbage. Recomputing is idempotent.
+        final rows = await select(items).get();
+        for (final row in rows) {
+          final parts = [
+            row.tradeName,
+            row.tradeNameEn,
+            row.scientificName,
+            row.activeIngredient,
+            row.equivalentDrug,
+            row.primaryBarcode,
+            row.secondaryBarcode,
+            row.dose,
+            row.pharmaForm,
+          ].where((p) => p != null && p.trim().isNotEmpty).cast<String>();
+          final searchText = SmartSearch.normalize(parts.join(' '));
+          await (update(items)..where((i) => i.id.equals(row.id))).write(
+            ItemsCompanion(searchText: Value(searchText)),
+          );
+        }
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -221,7 +254,7 @@ void main() {
 
     File dbFile() => File('${dir.path}/store.db');
 
-    test('fresh database creates at schema v13 with all columns', () async {
+    test('fresh database creates at schema v14 with all columns', () async {
       ensureSqlite();
       final path = dbFile().path;
 
@@ -241,8 +274,8 @@ void main() {
           .getSingle();
       expect(
         userVersion.data.values.first,
-        13,
-        reason: 'fresh DB must be schema v13',
+        14,
+        reason: 'fresh DB must be schema v14',
       );
 
       // Verify v7 Phase 9 additions: category master seeded + expenses columns.
@@ -383,8 +416,8 @@ void main() {
           .getSingle();
       expect(
         reopenedVersion.data.values.first,
-        13,
-        reason: 'reopened DB stays on schema v13',
+        14,
+        reason: 'reopened DB stays on schema v14',
       );
 
       // Verify v8 Phase 10 additions: reversing columns on journal_entries,
@@ -540,16 +573,16 @@ void main() {
     });
 
     test(
-      'v1 → v13 migration adds all Phase 6/7.5/9/10/16/17/18/13 additions without data loss',
+      'v1 → v14 migration adds all Phase 6/7.5/9/10/16/17/18/13/§search-perf additions without data loss',
       () async {
         ensureSqlite();
         final path = dbFile().path;
 
-        // Create a v13 database with data (fresh createAll seeds v11 features +
+        // Create a v14 database with data (fresh createAll seeds v11 features +
         // an expense row that must survive the simulated downgrade).
         final db = AppDatabase.fromFilePath(path);
         final itemId = await insertItem(db);
-        expect(db.schemaVersion, 13);
+        expect(db.schemaVersion, 14);
         final preNow = DateTime.now().millisecondsSinceEpoch;
         await db
             .into(db.expenses)
@@ -623,6 +656,7 @@ void main() {
         raw.execute('DROP TABLE IF EXISTS accounting_periods');
         raw.execute('DELETE FROM accounts WHERE code = \'1099\'');
         raw.execute('DELETE FROM accounts WHERE code = \'4002\'');
+        raw.execute('ALTER TABLE items DROP COLUMN search_text');
         raw.execute('DROP TABLE IF EXISTS item_suppliers');
         raw.execute('DROP TABLE IF EXISTS item_active_ingredients');
         raw.execute('DROP TABLE IF EXISTS active_ingredients');
@@ -632,7 +666,7 @@ void main() {
         raw.dispose();
         await db.close();
 
-        // Reopen under the working schema: onUpgrade(1 → 13) recreates everything.
+        // Reopen under the working schema: onUpgrade(1 → 14) recreates everything.
         final upgraded = _V1Database(NativeDatabase(File(path)));
 
         // Verify user_version is 13 after migration.
@@ -641,8 +675,8 @@ void main() {
             .getSingle();
         expect(
           userVersion.data.values.first,
-          13,
-          reason: 'v1 → v13 migration must set user_version to 13',
+          14,
+          reason: 'v1 → v14 migration must set user_version to 14',
         );
 
         // Verify app_settings created.
@@ -659,6 +693,12 @@ void main() {
           reason: 'existing data preserved through upgrade',
         );
         expect(item.partialSaleEnabled, false);
+
+        // Verify §search-perf backfill: the preserved item's normalized
+        // search text covers its Arabic + English names.
+        expect(item.searchText, isNotNull);
+        expect(item.searchText, contains('بانادول'));
+        expect(item.searchText, contains('panadol'));
 
         // Verify prescription linkage columns exist.
         final now = DateTime.now().millisecondsSinceEpoch;

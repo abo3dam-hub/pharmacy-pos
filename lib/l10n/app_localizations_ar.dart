@@ -480,8 +480,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get inventoryProductTree => 'شجرة المواد';
 
   @override
-  String inventoryStockTooltip(String stock, String price) {
-    return 'الرصيد الحالي: $stock · سعر البيع: $price';
+  String inventoryStockTooltip(
+    String stock,
+    String price,
+    String manufacturer,
+    String form,
+  ) {
+    return 'الرصيد الحالي: $stock · سعر البيع: $price · الشركة: $manufacturer · الشكل الدوائي: $form';
   }
 
   @override
@@ -1885,6 +1890,24 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get posAlternativesFailed => 'تعذر تحميل البدائل';
+
+  @override
+  String get posAlternativesMatch => 'نسبة المطابقة';
+
+  @override
+  String get posAlternativesInStock => 'متوفر في المخزون';
+
+  @override
+  String get posAlternativesOutOfStock => 'غير متوفر في المخزون';
+
+  @override
+  String get posAlternativesExtra => 'زيادة';
+
+  @override
+  String get posAlternativesMissing => 'نقص';
+
+  @override
+  String get posAlternativesStrengthDiff => 'عيار مختلف';
 
   @override
   String get posAvailableStock => 'متاح';
@@ -3428,4 +3451,34 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get cameraPermissionDenied =>
       'تم رفض إذن الكاميرا. فعّله من إعدادات التطبيق ثم حاول مجدداً.';
+
+  @override
+  String get salesReturnsTitle => 'المرتجعات';
+
+  @override
+  String get salesReturnsSearchHint => 'بحث برقم المرتجع أو العميل أو السبب…';
+
+  @override
+  String get salesReturnsEmpty => 'لا توجد مرتجعات مسجلة';
+
+  @override
+  String get salesReturnsOriginalInvoice => 'الفاتورة الأصلية';
+
+  @override
+  String get salesReturnsReason => 'السبب';
+
+  @override
+  String get salesReturnsVoided => 'ملغي';
+
+  @override
+  String get salesReturnsLines => 'بنود المرتجع';
+
+  @override
+  String get salesReturnsTotal => 'إجمالي المرتجع';
+
+  @override
+  String get salesReturnsCustomer => 'العميل';
+
+  @override
+  String get salesReturnsQuantity => 'الكمية';
 }

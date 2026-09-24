@@ -77,6 +77,8 @@ enum AppSection {
 /// malformed `//sale/...` URLs that GoRouter then failed to resolve.
 String saleZReportPath() => '${AppSection.sale.path}/z-report';
 
+String salesReturnsPath() => '${AppSection.sale.path}/returns';
+
 String salesHistoryPath() => '${AppSection.sale.path}/history';
 
 String saleInvoiceDetailPath(String invoiceId) =>

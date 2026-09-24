@@ -155,7 +155,7 @@
   "inventoryActiveFilter": "Active only",
   "inventoryInStock": "Items in stock",
   "inventoryProductTree": "Product tree",
-  "inventoryStockTooltip": "Current stock: {stock} · Selling price: {price}",
+  "inventoryStockTooltip": "Current stock: {stock} · Selling price: {price} · Manufacturer: {manufacturer} · Dosage form: {form}",
   "inventoryCreatedMessage": "Item created",
   "inventoryUpdatedMessage": "Item updated",
   "inventoryActivatedMessage": "Item activated",
@@ -377,6 +377,12 @@
         "type": "String"
       },
       "price": {
+        "type": "String"
+      },
+      "manufacturer": {
+        "type": "String"
+      },
+      "form": {
         "type": "String"
       }
     }
@@ -731,6 +737,12 @@
   "posAlternativesTier3": "Shares an active ingredient",
   "posAlternativesEmpty": "No alternatives available",
   "posAlternativesFailed": "Could not load alternatives",
+  "posAlternativesMatch": "Match",
+  "posAlternativesInStock": "In stock",
+  "posAlternativesOutOfStock": "Out of stock",
+  "posAlternativesExtra": "extra",
+  "posAlternativesMissing": "missing",
+  "posAlternativesStrengthDiff": "different strength",
   "posAvailableStock": "Available",
   "posCreditLabel": "Credit",
   "posCreditDownCash": "Cash down payment",
@@ -1330,5 +1342,15 @@
   "scanBarcode": "Scan barcode",
   "scanBarcodeTitle": "Scan barcode",
   "scanBarcodeHint": "Point the camera at the barcode",
-  "cameraPermissionDenied": "Camera permission was denied. Enable it in the app settings and try again."
+  "cameraPermissionDenied": "Camera permission was denied. Enable it in the app settings and try again.",
+  "salesReturnsTitle": "Returns",
+  "salesReturnsSearchHint": "Search by return number, customer, or reason…",
+  "salesReturnsEmpty": "No returns recorded",
+  "salesReturnsOriginalInvoice": "Original invoice",
+  "salesReturnsReason": "Reason",
+  "salesReturnsVoided": "Voided",
+  "salesReturnsLines": "Return lines",
+  "salesReturnsTotal": "Return total",
+  "salesReturnsCustomer": "Customer",
+  "salesReturnsQuantity": "Qty"
 }

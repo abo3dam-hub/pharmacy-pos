@@ -6,6 +6,7 @@ import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/searchable_dropdown_field.dart';
+import '../../../../core/widgets/searchable_multi_select_field.dart';
 import '../../../../domain/services/partial_price_calculator.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
@@ -141,7 +142,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   late final Set<String> _selectedSupplierIds;
   late final Set<String> _selectedActiveIngredientIds;
   late final Set<String> _selectedIndicationIds;
-  String _ingredientSearch = '';
   bool _partialSaleEnabled = false;
   bool _partPriceManual = false;
 
@@ -477,21 +477,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     return id;
   }
 
-  /// Active ingredients matching the search query that are not already
-  /// selected (case-insensitive over name and English name).
-  List<ActiveIngredientRow> _matchingIngredients(String query) {
-    final q = query.trim().toLowerCase();
-    if (q.isEmpty) return const [];
-    return _activeIngredients
-        .where(
-          (i) =>
-              !_selectedActiveIngredientIds.contains(i.id) &&
-              (i.name.toLowerCase().contains(q) ||
-                  (i.nameEn ?? '').toLowerCase().contains(q)),
-        )
-        .toList();
-  }
-
   // ----- inline master-data + supplier creation -----
 
   Future<void> _addMasterData(MasterDataKind kind) async {
@@ -533,6 +518,51 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           _selectedIndicationIds.add(created.id);
       }
     });
+  }
+
+  /// Creates a master-data row with [name] prefilled (used by the
+  /// searchable multi-select "add new" row). Returns the created row, or null
+  /// if the user cancelled.
+  Future<Object?> _addMasterDataWithName(
+    MasterDataKind kind,
+    String name,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final title = switch (kind) {
+      MasterDataKind.category => l10n.categoriesAddTitle,
+      MasterDataKind.manufacturer => l10n.manufacturersAdd,
+      MasterDataKind.unit => l10n.unitsAdd,
+      MasterDataKind.activeIngredient => l10n.activeIngredientsAdd,
+      MasterDataKind.indication => l10n.indicationsAdd,
+    };
+    final result = await showMasterDataFormDialog(
+      context,
+      kind: kind,
+      title: title,
+      categories: _categories,
+      initial: MasterDataDraft(name: name),
+    );
+    if (result == null || !mounted) return null;
+    final created = await widget.onCreateMasterData?.call(kind, result.draft);
+    if (created == null || !mounted) return null;
+    setState(() {
+      switch (kind) {
+        case MasterDataKind.category:
+          _categories = [..._categories, created as CategoryRow];
+        case MasterDataKind.manufacturer:
+          _manufacturers = [..._manufacturers, created as ManufacturerRow];
+        case MasterDataKind.unit:
+          _units = [..._units, created as UnitRow];
+        case MasterDataKind.activeIngredient:
+          _activeIngredients = [
+            ..._activeIngredients,
+            created as ActiveIngredientRow,
+          ];
+        case MasterDataKind.indication:
+          _indications = [..._indications, created as IndicationRow];
+      }
+    });
+    return created;
   }
 
   Future<void> _addSupplier() async {
@@ -660,6 +690,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           kind: MasterDataKind.manufacturer,
           width: 200,
         ),
+        _text(_c('pharmaForm'), l10n.itemPharmaForm, 200),
       ],
     ),
     _section(l10n.itemPricePartsSection),
@@ -831,36 +862,29 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         ),
       ],
     ),
-    // The chip list below is the full master-data picker (every indication
-    // defined in the system), not the item's own set: the header counter
-    // shows how many are actually attached to this item, and selected chips
-    // carry the checkmark. This keeps "all indications visible" from reading
-    // as "all indications assigned".
+    // Searchable multi-select dropdown: long master lists no longer render
+    // every option as chips inside the dialog.
     _section('${l10n.itemIndications} (${_selectedIndicationIds.length})'),
-    Wrap(
-      spacing: AppSpacing.s,
-      runSpacing: AppSpacing.s,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        for (final indication in _indications)
-          FilterChip(
-            label: Text(indication.name, overflow: TextOverflow.ellipsis),
-            visualDensity: VisualDensity.compact,
-            selected: _selectedIndicationIds.contains(indication.id),
-            onSelected: (on) => setState(() {
-              if (on) {
-                _selectedIndicationIds.add(indication.id);
-              } else {
-                _selectedIndicationIds.remove(indication.id);
-              }
-            }),
-          ),
-        if (widget.onCreateMasterData != null)
-          _addButton(
-            l10n.itemAddNew,
-            () => _addMasterData(MasterDataKind.indication),
-          ),
-      ],
+    SearchableMultiSelectField<IndicationRow>(
+      selectedIds: _selectedIndicationIds,
+      items: _indications,
+      idOf: (i) => i.id,
+      nameOf: (i) => i.name,
+      onChanged: (next) => setState(() {
+        _selectedIndicationIds
+          ..clear()
+          ..addAll(next);
+      }),
+      onAddNew: widget.onCreateMasterData == null
+          ? null
+          : (name) async {
+              final created =
+                  await _addMasterDataWithName(MasterDataKind.indication, name);
+              return created as IndicationRow?;
+            },
+      addNewLabel: l10n.itemAddNew,
+      searchHint: l10n.itemIndications,
+      width: 380,
     ),
     _section(l10n.itemScientificName),
     Wrap(
@@ -871,40 +895,38 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         _text(_c('equivalentDrug'), l10n.itemEquivalentDrug, 250),
       ],
     ),
-    _section(l10n.itemActiveIngredients),
-    if (widget.onCreateMasterData != null)
-      _addButton(
-        l10n.itemAddNew,
-        () => _addMasterData(MasterDataKind.activeIngredient),
-      ),
-    const SizedBox(height: AppSpacing.xs),
-    SizedBox(
+    _section(
+        '${l10n.itemActiveIngredients} (${_selectedActiveIngredientIds.length})'),
+    SearchableMultiSelectField<ActiveIngredientRow>(
+      selectedIds: _selectedActiveIngredientIds,
+      items: _activeIngredients,
+      idOf: (i) => i.id,
+      nameOf: (i) => i.name,
+      onChanged: (next) => setState(() {
+        // Drop strength controllers for deselected ingredients.
+        for (final removed
+            in _selectedActiveIngredientIds.difference(next)) {
+          _strengthControllers.remove(removed)?.dispose();
+        }
+        _selectedActiveIngredientIds
+          ..clear()
+          ..addAll(next);
+      }),
+      onAddNew: widget.onCreateMasterData == null
+          ? null
+          : (name) async {
+              final created = await _addMasterDataWithName(
+                MasterDataKind.activeIngredient,
+                name,
+              );
+              return created as ActiveIngredientRow?;
+            },
+      addNewLabel: l10n.itemAddNew,
+      searchHint: l10n.itemActiveIngredientsSearch,
       width: 380,
-      child: TextField(
-        onChanged: (v) => setState(() => _ingredientSearch = v),
-        decoration: InputDecoration(
-          labelText: l10n.itemActiveIngredientsSearch,
-          isDense: true,
-          prefixIcon: const Icon(Icons.search, size: 18),
-        ),
-      ),
     ),
     const SizedBox(height: AppSpacing.xs),
-    if (_ingredientSearch.trim().isNotEmpty)
-      for (final ingredient in _matchingIngredients(_ingredientSearch).take(8))
-        ListTile(
-          dense: true,
-          visualDensity: VisualDensity.compact,
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.add_circle_outline, size: 18),
-          title: Text(ingredient.name, overflow: TextOverflow.ellipsis),
-          onTap: () => setState(() {
-            _selectedActiveIngredientIds.add(ingredient.id);
-            _ingredientSearch = '';
-          }),
-        ),
-    if (_selectedActiveIngredientIds.isEmpty &&
-        _ingredientSearch.trim().isEmpty)
+    if (_selectedActiveIngredientIds.isEmpty)
       Padding(
         padding: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: Text(
@@ -952,35 +974,34 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           ],
         ),
       ),
-    _section(l10n.itemSuppliers),
-    Wrap(
-      spacing: AppSpacing.s,
-      runSpacing: AppSpacing.s,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        for (final supplier in _suppliers)
-          FilterChip(
-            label: Text(supplier.name, overflow: TextOverflow.ellipsis),
-            visualDensity: VisualDensity.compact,
-            selected: _selectedSupplierIds.contains(supplier.id),
-            onSelected: (on) => setState(() {
-              if (on) {
-                _selectedSupplierIds.add(supplier.id);
-              } else {
-                _selectedSupplierIds.remove(supplier.id);
-              }
-            }),
-          ),
-        if (widget.onCreateSupplier != null)
-          _addButton(l10n.itemAddNew, _addSupplier),
-      ],
+    _section('${l10n.itemSuppliers} (${_selectedSupplierIds.length})'),
+    SearchableMultiSelectField<SupplierRow>(
+      selectedIds: _selectedSupplierIds,
+      items: _suppliers,
+      idOf: (sup) => sup.id,
+      nameOf: (sup) => sup.name,
+      onChanged: (next) => setState(() {
+        _selectedSupplierIds
+          ..clear()
+          ..addAll(next);
+      }),
+      // _addSupplier auto-selects the created row itself, so the
+      // multi-select only needs the dialog opened.
+      onAddNew: widget.onCreateSupplier == null
+          ? null
+          : (_) async {
+              await _addSupplier();
+              return null;
+            },
+      addNewLabel: l10n.itemAddNew,
+      searchHint: l10n.itemSuppliers,
+      width: 380,
     ),
     _section(l10n.itemPharmaForm),
     Wrap(
       spacing: AppSpacing.m,
       runSpacing: AppSpacing.m,
       children: [
-        _text(_c('pharmaForm'), l10n.itemPharmaForm, 140),
         _text(_c('dose'), l10n.itemDose, 140),
         _text(_c('sizeVolume'), l10n.itemSizeVolume, 140),
         _text(_c('shelfLocation'), l10n.itemShelfLocation, 140),

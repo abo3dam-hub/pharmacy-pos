@@ -480,8 +480,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryProductTree => 'Product tree';
 
   @override
-  String inventoryStockTooltip(String stock, String price) {
-    return 'Current stock: $stock · Selling price: $price';
+  String inventoryStockTooltip(
+    String stock,
+    String price,
+    String manufacturer,
+    String form,
+  ) {
+    return 'Current stock: $stock · Selling price: $price · Manufacturer: $manufacturer · Dosage form: $form';
   }
 
   @override
@@ -1889,6 +1894,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get posAlternativesFailed => 'Could not load alternatives';
+
+  @override
+  String get posAlternativesMatch => 'Match';
+
+  @override
+  String get posAlternativesInStock => 'In stock';
+
+  @override
+  String get posAlternativesOutOfStock => 'Out of stock';
+
+  @override
+  String get posAlternativesExtra => 'extra';
+
+  @override
+  String get posAlternativesMissing => 'missing';
+
+  @override
+  String get posAlternativesStrengthDiff => 'different strength';
 
   @override
   String get posAvailableStock => 'Available';
@@ -3441,4 +3464,35 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cameraPermissionDenied =>
       'Camera permission was denied. Enable it in the app settings and try again.';
+
+  @override
+  String get salesReturnsTitle => 'Returns';
+
+  @override
+  String get salesReturnsSearchHint =>
+      'Search by return number, customer, or reason…';
+
+  @override
+  String get salesReturnsEmpty => 'No returns recorded';
+
+  @override
+  String get salesReturnsOriginalInvoice => 'Original invoice';
+
+  @override
+  String get salesReturnsReason => 'Reason';
+
+  @override
+  String get salesReturnsVoided => 'Voided';
+
+  @override
+  String get salesReturnsLines => 'Return lines';
+
+  @override
+  String get salesReturnsTotal => 'Return total';
+
+  @override
+  String get salesReturnsCustomer => 'Customer';
+
+  @override
+  String get salesReturnsQuantity => 'Qty';
 }

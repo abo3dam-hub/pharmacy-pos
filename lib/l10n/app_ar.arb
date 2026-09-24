@@ -155,7 +155,7 @@
   "inventoryActiveFilter": "المفعّلة فقط",
   "inventoryInStock": "المواد الموجودة في المخزون",
   "inventoryProductTree": "شجرة المواد",
-  "inventoryStockTooltip": "الرصيد الحالي: {stock} · سعر البيع: {price}",
+  "inventoryStockTooltip": "الرصيد الحالي: {stock} · سعر البيع: {price} · الشركة: {manufacturer} · الشكل الدوائي: {form}",
   "inventoryCreatedMessage": "تم إنشاء المنتج",
   "inventoryUpdatedMessage": "تم تحديث المنتج",
   "inventoryActivatedMessage": "تم تفعيل المنتج",
@@ -377,6 +377,12 @@
         "type": "String"
       },
       "price": {
+        "type": "String"
+      },
+      "manufacturer": {
+        "type": "String"
+      },
+      "form": {
         "type": "String"
       }
     }
@@ -731,6 +737,12 @@
   "posAlternativesTier3": "يشارك مكوناً فعالاً",
   "posAlternativesEmpty": "لا توجد بدائل متاحة حالياً",
   "posAlternativesFailed": "تعذر تحميل البدائل",
+  "posAlternativesMatch": "نسبة المطابقة",
+  "posAlternativesInStock": "متوفر في المخزون",
+  "posAlternativesOutOfStock": "غير متوفر في المخزون",
+  "posAlternativesExtra": "زيادة",
+  "posAlternativesMissing": "نقص",
+  "posAlternativesStrengthDiff": "عيار مختلف",
   "posAvailableStock": "متاح",
   "posCreditLabel": "آجل",
   "posCreditDownCash": "دفعة نقدية",
@@ -1330,5 +1342,15 @@
   "scanBarcode": "مسح باركود",
   "scanBarcodeTitle": "مسح الباركود",
   "scanBarcodeHint": "وجّه الكاميرا نحو الباركود",
-  "cameraPermissionDenied": "تم رفض إذن الكاميرا. فعّله من إعدادات التطبيق ثم حاول مجدداً."
+  "cameraPermissionDenied": "تم رفض إذن الكاميرا. فعّله من إعدادات التطبيق ثم حاول مجدداً.",
+  "salesReturnsTitle": "المرتجعات",
+  "salesReturnsSearchHint": "بحث برقم المرتجع أو العميل أو السبب…",
+  "salesReturnsEmpty": "لا توجد مرتجعات مسجلة",
+  "salesReturnsOriginalInvoice": "الفاتورة الأصلية",
+  "salesReturnsReason": "السبب",
+  "salesReturnsVoided": "ملغي",
+  "salesReturnsLines": "بنود المرتجع",
+  "salesReturnsTotal": "إجمالي المرتجع",
+  "salesReturnsCustomer": "العميل",
+  "salesReturnsQuantity": "الكمية"
 }

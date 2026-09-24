@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 
 import '../models/enums.dart';
 import '../models/enum_value_converter.dart';
+import '../../core/util/smart_search.dart';
 
 import 'seed_data.dart';
 import 'tables/accounting_periods.dart';
@@ -91,6 +92,25 @@ part 'app_database.g.dart';
   AppSettings,
   AccountingPeriods,
 ])
+
+/// Normalized search text for one item row (§search-perf). Mirrors
+/// [ItemSearchText.build] without importing the UI-layer helper into the
+/// database file: the same [SmartSearch.normalize] pipeline both sides share.
+String _itemSearchText(ItemRow row) {
+  final parts = [
+    row.tradeName,
+    row.tradeNameEn,
+    row.scientificName,
+    row.activeIngredient,
+    row.equivalentDrug,
+    row.primaryBarcode,
+    row.secondaryBarcode,
+    row.dose,
+    row.pharmaForm,
+  ].where((p) => p != null && p.trim().isNotEmpty).cast<String>();
+  return SmartSearch.normalize(parts.join(' '));
+}
+
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -104,7 +124,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(NativeDatabase(File(p.absolute(path))));
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -331,6 +351,34 @@ class AppDatabase extends _$AppDatabase {
       // rows were priced per base unit — backfilled to 1 (sell unit == base
       // unit), preserving their historical display semantics.
       await m.addColumn(salesInvoiceItems, salesInvoiceItems.unitBaseQuantity);
+    }
+    if (from < 14) {
+      // §search-perf: precomputed normalized search text on items. Backfilled
+      // in Dart (same normalization as every future write) so searches stop
+      // applying the SQL replace() chain per row per keystroke.
+      //
+      // Idempotent: the `from < 12` table rebuild already materializes the
+      // current `items` shape (including `search_text`) for very old stores,
+      // so the column is only added when it is actually missing.
+      final existing = await customSelect(
+        "SELECT name FROM pragma_table_info('items')",
+      ).get();
+      final hasSearchText =
+          existing.any((r) => r.read<String>('name') == 'search_text');
+      if (!hasSearchText) {
+        await m.addColumn(items, items.searchText);
+      }
+      // Unconditional recompute: the `from < 12` TableMigration rebuild
+      // fills columns missing from the old table with their literal column
+      // name (observed: 'search_text'), so a skip-if-present guard would keep
+      // garbage. Recomputing is idempotent — same input, same output.
+      final rows = await select(items).get();
+      for (final row in rows) {
+        final searchText = _itemSearchText(row);
+        await (update(items)..where((i) => i.id.equals(row.id))).write(
+          ItemsCompanion(searchText: Value(searchText)),
+        );
+      }
     }
   }
 }

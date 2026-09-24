@@ -541,6 +541,69 @@ void main() {
           .getSingle();
       expect(batch.quantityBase, 300);
     });
+
+    test('listReturns surfaces recorded returns; returnDetail shows lines',
+        () async {
+      final itemId =
+          await _seedItem(db, barcode: 'RET001', sellingPriceMicros: 20000);
+      await insertBatch(
+          db, itemId, quantityBase: 50, unitCostMicros: 10000, batchNumber: 'RET-B');
+      final customerId = await _seedCustomer(db, name: 'عميل المرتجع');
+
+      final saleOutcome = await repo.checkout(PosCheckoutCommand(
+        invoiceNumber: 'SI-RET-1',
+        lines: [
+          PosSaleLineInput(
+            itemId: itemId,
+            quantityBase: 5,
+            unitPriceMicros: 20000,
+            unitTypeId: 'unit_strip',
+            vatRateBasisPoints: 0,
+            discountBasisPoints: 0,
+          ),
+        ],
+        paymentMethod: PosPaymentMethod.cash,
+        paidMicros: 100000,
+        userId: 'user_admin',
+        customerId: customerId,
+      ));
+      final saleLineId = saleOutcome.lines.single.id;
+
+      final ret = await repo.returnSaleLine(PosReturnCommand(
+        returnNumber: 'RT-RET-1',
+        originalInvoiceItemId: saleLineId,
+        quantityBase: 2,
+        userId: 'user_admin',
+        reason: 'سبب تجريبي',
+      ));
+      expect(ret.returnNumber, 'RT-RET-1');
+
+      final list = await repo.listReturns(
+        const PageRequest(page: 1, pageSize: 30, search: ''),
+      );
+      expect(list.total, greaterThanOrEqualTo(1));
+      final found =
+          list.items.where((r) => r.returnNumber == 'RT-RET-1').toList();
+      expect(found, hasLength(1));
+      expect(found.single.originalInvoiceNumber, 'SI-RET-1');
+      expect(found.single.customerName, 'عميل المرتجع');
+      expect(found.single.reason, 'سبب تجريبي');
+      expect(found.single.isVoided, isFalse);
+      expect(found.single.totalMicros, lessThan(0));
+
+      final searchMiss = await repo.listReturns(
+        const PageRequest(page: 1, pageSize: 30, search: 'zzz-no-match'),
+      );
+      expect(searchMiss.items, isEmpty);
+
+      final detail = await repo.returnDetail(found.single.id);
+      expect(detail, isNotNull);
+      expect(detail!.header.returnNumber, 'RT-RET-1');
+      expect(detail.lines, hasLength(1));
+      expect(detail.lines.single.quantityBase, 2);
+
+      expect(await repo.returnDetail('no-such-id'), isNull);
+    });
   });
 
   group('paid < total rollback atomicity', () {

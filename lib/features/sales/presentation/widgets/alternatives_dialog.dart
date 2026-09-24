@@ -68,19 +68,59 @@ class AlternativesDialog extends ConsumerWidget {
               separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final alt = list[index];
+                final diffBits = <String>[
+                  if (alt.strengthDifferences.isNotEmpty)
+                    '${l10n.posAlternativesStrengthDiff}: '
+                    '${alt.strengthDifferences.join('، ')}',
+                  if (alt.extraIngredients.isNotEmpty)
+                    '${l10n.posAlternativesExtra}: '
+                    '${alt.extraIngredients.join('، ')}',
+                  if (alt.missingIngredients.isNotEmpty)
+                    '${l10n.posAlternativesMissing}: '
+                    '${alt.missingIngredients.join('، ')}',
+                ];
                 return ListTile(
                   dense: true,
                   leading: TierBadge(tier: alt.tier),
                   title: Text(alt.item.displayName),
-                  subtitle: Text(
-                    '${alt.item.scientificName}'
-                    '${(alt.item.manufacturerName?.isNotEmpty ?? false) ? ' · ${alt.item.manufacturerName}' : ''}'
-                    '${(alt.item.dose?.isNotEmpty ?? false) ? ' · ${alt.item.dose}' : ''}'
-                    '${(alt.item.pharmaForm?.isNotEmpty ?? false) ? ' · ${alt.item.pharmaForm}' : ''}'
-                    ' · ${l10n.posAvailableStock}: '
-                    '${alt.item.availableStockBase}',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${alt.item.scientificName}'
+                        '${(alt.item.manufacturerName?.isNotEmpty ?? false) ? ' · ${alt.item.manufacturerName}' : ''}'
+                        '${(alt.item.dose?.isNotEmpty ?? false) ? ' · ${alt.item.dose}' : ''}'
+                        '${(alt.item.pharmaForm?.isNotEmpty ?? false) ? ' · ${alt.item.pharmaForm}' : ''}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _MatchChip(percent: alt.matchPercent),
+                          _StockChip(inStock: alt.inStock),
+                          Text(
+                            '${l10n.posAvailableStock}: '
+                            '${alt.item.availableStockBase}',
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ],
+                      ),
+                      if (diffBits.isNotEmpty)
+                        Text(
+                          diffBits.join(' · '),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(fontStyle: FontStyle.italic),
+                        ),
+                    ],
                   ),
                   trailing: Text(
                     Money.fromUnits(
@@ -100,6 +140,83 @@ class AlternativesDialog extends ConsumerWidget {
           child: Text(l10n.commonClose),
         ),
       ],
+    );
+  }
+}
+
+/// Match-percentage chip (e.g. "100%") colored by closeness.
+class _MatchChip extends StatelessWidget {
+  const _MatchChip({required this.percent});
+
+  final int percent;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final color = percent >= 100
+        ? const Color(0xFF2E7D32)
+        : percent >= 70
+            ? const Color(0xFFF9A825)
+            : const Color(0xFF1976D2);
+    return Tooltip(
+      message: l10n.posAlternativesMatch,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color),
+        ),
+        child: Text(
+          '$percent٪',
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Explicit in-stock / out-of-stock status chip — not just a quantity.
+class _StockChip extends StatelessWidget {
+  const _StockChip({required this.inStock});
+
+  final bool inStock;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final color = inStock ? const Color(0xFF2E7D32) : const Color(0xFFC62828);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            inStock ? Icons.check_circle : Icons.cancel,
+            size: 14,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            inStock
+                ? l10n.posAlternativesInStock
+                : l10n.posAlternativesOutOfStock,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

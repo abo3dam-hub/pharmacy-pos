@@ -13,6 +13,7 @@ class PosCatalogItem {
     this.manufacturerId,
     this.manufacturerName,
     this.relationalIngredientNames = const [],
+    this.relationalIngredientStrengths = const {},
     this.primaryBarcode,
     this.secondaryBarcode,
     required this.isControlledDrug,
@@ -61,6 +62,11 @@ class PosCatalogItem {
   /// column. Used (with the flat column) by the smart-alternatives tier
   /// engine so items created with only relational ingredients still rank.
   final List<String> relationalIngredientNames;
+
+  /// Per-ingredient strength (العيار) keyed by ingredient name, from the
+  /// `item_active_ingredients.strength` column. Powers the strength-aware
+  /// 100%-match tier and the match-percentage computation.
+  final Map<String, String> relationalIngredientStrengths;
   final String? primaryBarcode;
   final String? secondaryBarcode;
   final bool isControlledDrug;

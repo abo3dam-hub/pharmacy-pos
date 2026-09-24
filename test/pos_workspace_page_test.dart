@@ -228,13 +228,13 @@ void main() {
       await tester.tap(find.widgetWithText(ListTile, 'بانادول (Panadol)'));
       await tester.pumpAndSettle();
 
-      expect(find.text('1 علبة'), findsOneWidget);
+      expect(find.textContaining('1 علبة'), findsOneWidget);
       expect(find.text('1.00'), findsWidgets);
 
       await tester.tap(find.byIcon(Icons.add_circle_outline));
       await tester.pumpAndSettle();
 
-      expect(find.text('2 علبة'), findsOneWidget);
+      expect(find.textContaining('2 علبة'), findsOneWidget);
       expect(find.text('2.00'), findsWidgets);
 
       await tester.tap(find.text('دفع (F12)'));
@@ -432,7 +432,7 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
 
-      expect(find.text('1 علبة'), findsOneWidget,
+      expect(find.textContaining('1 علبة'), findsOneWidget,
           reason: 'the single result joined the cart directly');
       expect(find.text('لا توجد نتائج مطابقة'), findsOneWidget,
           reason: 'the field + results were cleared for the next item');
@@ -506,7 +506,7 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
 
-      expect(find.text('1 علبة'), findsOneWidget,
+      expect(find.textContaining('1 علبة'), findsOneWidget,
           reason: 'the completed scan adds the barcode-matched product');
     });
   });

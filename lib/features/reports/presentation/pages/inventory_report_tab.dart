@@ -11,6 +11,7 @@ import '../../../../core/widgets/app_data_table.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/models/enums.dart';
 import '../../application/reports_controller.dart';
+import '../../domain/entities/report_models.dart';
 import '../../domain/services/report_export_service.dart';
 import '../widgets/report_actions.dart';
 import '../widgets/report_page.dart';
@@ -203,45 +204,9 @@ class _InventoryReportTabState extends ConsumerState<InventoryReportTab> {
                         child: Text(l10n.reportInventoryItemName,
                             style: typography.label),
                       ),
-                      AppDataTable(
-                        columns: [
-                          DataColumn(
-                              label: Text(l10n.reportInventoryItemCode)),
-                          DataColumn(
-                              label: Text(l10n.reportInventoryItemName)),
-                          DataColumn(
-                              numeric: true,
-                              label: Text(l10n.reportInventoryCurrentStock)),
-                          DataColumn(
-                              numeric: true,
-                              label: Text(l10n.reportInventoryMin)),
-                          DataColumn(
-                              numeric: true,
-                              label: Text(l10n.reportInventoryMax)),
-                          DataColumn(
-                              numeric: true,
-                              label: Text(l10n.reportInventoryUnitCost)),
-                          DataColumn(
-                              numeric: true,
-                              label: Text(l10n.reportInventoryValue)),
-                        ],
-                        rows: [
-                          for (final i in report.items)
-                            DataRow(cells: [
-                              DataCell(Text(i.barcode ?? '')),
-                              DataCell(Text(i.name)),
-                              DataCell(Text('${i.currentStockBase}')),
-                              DataCell(Text('${i.minimumStockBase}')),
-                              DataCell(Text('${i.maximumStockBase}')),
-                              DataCell(Text(Money.fromUnits(i.unitCostMicros).format())),
-                              DataCell(Text(
-                                Money.fromUnits(i.stockValueMicros).format(),
-                                style: typography.numericStrong,
-                              )),
-                            ]),
-                        ],
-                        emptyMessage: l10n.reportNoData,
-                      ),
+                      // Paginated: building 20k+ DataRows eagerly froze
+                      // the UI (the whole catalog lands in this report).
+                      _InventoryReportTable(report: report),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(AppSpacing.xxl,
                             AppSpacing.l, AppSpacing.xxl, AppSpacing.s),
@@ -290,4 +255,89 @@ class _InventoryReportTabState extends ConsumerState<InventoryReportTab> {
     if (failure is UnauthorizedFailure) return l10n.reportNoPermission;
     return l10n.authSaveError;
   }
+}
+/// Paginated inventory-report table: renders one page at a time so a
+/// 20k-row catalog no longer freezes the UI.
+class _InventoryReportTable extends StatefulWidget {
+  const _InventoryReportTable({required this.report});
+
+  final InventoryReport report;
+
+  @override
+  State<_InventoryReportTable> createState() => _InventoryReportTableState();
+}
+
+class _InventoryReportTableState extends State<_InventoryReportTable> {
+  static const _rowsPerPage = 25;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final typography = context.appTypography;
+    if (widget.report.items.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xxl),
+          child:
+              Text(l10n.reportNoData, style: typography.labelSmall),
+        ),
+      );
+    }
+    return PaginatedDataTable(
+      columns: [
+        DataColumn(label: Text(l10n.reportInventoryItemCode)),
+        DataColumn(label: Text(l10n.reportInventoryItemName)),
+        DataColumn(
+            numeric: true,
+            label: Text(l10n.reportInventoryCurrentStock)),
+        DataColumn(
+            numeric: true, label: Text(l10n.reportInventoryMin)),
+        DataColumn(
+            numeric: true, label: Text(l10n.reportInventoryMax)),
+        DataColumn(
+            numeric: true,
+            label: Text(l10n.reportInventoryUnitCost)),
+        DataColumn(
+            numeric: true,
+            label: Text(l10n.reportInventoryValue)),
+      ],
+      source: _InventoryReportDataSource(widget.report, typography),
+      rowsPerPage: _rowsPerPage,
+      showFirstLastButtons: true,
+    );
+  }
+}
+
+class _InventoryReportDataSource extends DataTableSource {
+  _InventoryReportDataSource(this.report, this.typography);
+
+  final InventoryReport report;
+  final AppTypography typography;
+
+  @override
+  DataRow? getRow(int index) {
+    if (index >= report.items.length) return null;
+    final i = report.items[index];
+    return DataRow(cells: [
+      DataCell(Text(i.barcode ?? '')),
+      DataCell(Text(i.name)),
+      DataCell(Text('${i.currentStockBase}')),
+      DataCell(Text('${i.minimumStockBase}')),
+      DataCell(Text('${i.maximumStockBase}')),
+      DataCell(Text(Money.fromUnits(i.unitCostMicros).format())),
+      DataCell(Text(
+        Money.fromUnits(i.stockValueMicros).format(),
+        style: typography.numericStrong,
+      )),
+    ]);
+  }
+
+  @override
+  bool get isRowCountApproximate => false;
+
+  @override
+  int get rowCount => report.items.length;
+
+  @override
+  int get selectedRowCount => 0;
 }

@@ -3,6 +3,7 @@ import '../../../../shared/models/enums.dart';
 import '../entities/pos_catalog_item.dart';
 import '../entities/pos_customer.dart';
 import '../entities/pos_invoice.dart';
+import '../entities/pos_return.dart';
 import '../entities/smart_alternative.dart';
 
 /// Return input for the return panel (references the ORIGINAL invoice line).
@@ -65,6 +66,14 @@ abstract interface class SalesRepository {
   /// Returns a sold line through the return engine (stock to original batch,
   /// financial + prescription reversal) — atomic and audited.
   Future<PosReturnOutcome> returnSaleLine(PosReturnCommand command);
+
+  /// Paginated list of recorded return documents (sale returns), newest
+  /// first — the clear, easy returns list inside sales.
+  Future<PageResult<PosReturnView>> listReturns(PageRequest request);
+
+  /// Full detail of one return document: header + lines.
+  Future<({PosReturnView header, List<PosReturnLineView> lines})?>
+      returnDetail(String returnId);
 
   /// Paginated search over persisted sales invoices. All filters are
   /// additive and applied DB-side (IN clause / range scan) — the page stays a

@@ -59,6 +59,30 @@ Finder _fieldByLabel(String labelPart) => find.byWidgetPredicate(
     (w) =>
         w is TextField && (w.decoration?.labelText ?? '').contains(labelPart));
 
+Finder _fieldByHint(String hintPart) => find.byWidgetPredicate(
+    (w) =>
+        w is TextField && (w.decoration?.hintText ?? '').contains(hintPart));
+
+/// Toggles an option inside a SearchableMultiSelectField identified by its
+/// search hint text.
+Future<void> _toggleMultiOption(
+    WidgetTester tester, String hintPart, String option) async {
+  await tester.pumpAndSettle();
+  final searchField = _fieldByHint(hintPart);
+  await tester.ensureVisible(searchField);
+  await tester.pumpAndSettle();
+  // Type the option name to filter the list, then tap the single match.
+  await tester.enterText(searchField, option);
+  await tester.pumpAndSettle();
+  await tester.tap(find.widgetWithText(CheckboxListTile, option));
+  await tester.pumpAndSettle();
+  // Clear the search and dismiss the dropdown.
+  await tester.enterText(searchField, '');
+  await tester.pumpAndSettle();
+  await tester.tap(_comboByLabel('الاسم التجاري *'));
+  await tester.pumpAndSettle();
+}
+
 /// Exact label match for combobox/tapping targets.
 Finder _comboByLabel(String label) => find.byWidgetPredicate(
     (w) => w is TextField && (w.decoration?.labelText ?? '') == label);
@@ -80,13 +104,6 @@ Future<void> _selectCombo(WidgetTester tester, String label, String item) async 
   await tester.ensureVisible(tile);
   await tester.pumpAndSettle();
   await tester.tap(tile);
-  await tester.pumpAndSettle();
-}
-
-Future<void> _tapChip(WidgetTester tester, String label) async {
-  await tester.ensureVisible(find.text(label));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text(label));
   await tester.pumpAndSettle();
 }
 
@@ -294,8 +311,8 @@ void main() {
 
     await _enterTradeName(tester, 'منتج بموردين');
     await _selectCombo(tester, 'التصنيف', 'أدوية');
-    await _tapChip(tester, 'مورد الأول');
-    await _tapChip(tester, 'مورد الثاني');
+    await _toggleMultiOption(tester, 'الموردون', 'مورد الأول');
+    await _toggleMultiOption(tester, 'الموردون', 'مورد الثاني');
     await _selectCombo(tester, 'الأجزاء', 'ظرف');
     await _tapSave(tester);
 
@@ -318,7 +335,7 @@ void main() {
         supplierIds: ['sup_a', 'sup_b'],
       ),
     );
-    await _tapChip(tester, 'مورد الأول');
+    await _toggleMultiOption(tester, 'الموردون', 'مورد الأول');
     await _tapSave(tester);
 
     final withOne = submitted;
@@ -342,7 +359,10 @@ void main() {
 
     // Inline "+" exists for category / manufacturer / packaging / parts units /
     // active ingredient / indication / supplier.
-    expect(find.byIcon(Icons.add_circle_outline), findsNWidgets(7));
+    // Category / manufacturer / packaging / parts-unit add buttons; the
+    // multi-selects (indication / ingredient / supplier) carry their own
+    // inline add-new row instead.
+    expect(find.byIcon(Icons.add_circle_outline), findsNWidgets(4));
     await tester.tap(find.byIcon(Icons.add_circle_outline).at(0));
     await tester.pumpAndSettle();
     expect(find.text('إضافة تصنيف جديد'), findsOneWidget);
@@ -373,11 +393,15 @@ void main() {
 
     await _enterTradeName(tester, 'منتج بالعيار');
     await _selectCombo(tester, 'التصنيف', 'أدوية');
-    // The active-ingredient selector is searchable (§Phase 18): type to reveal
-    // matches, then tap the row to add it with its strength.
-    await tester.enterText(_fieldByLabel('ابحث عن مادة فعالة…'), 'باراسيتا');
+    // The active-ingredient multi-select is searchable: type to filter, then
+    // tap the checkbox row to add it with its strength.
+    await tester.tap(_fieldByHint('ابحث عن مادة فعالة'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('باراسيتامول').last);
+    await tester.enterText(_fieldByHint('ابحث عن مادة فعالة'), 'باراسيتا');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(CheckboxListTile, 'باراسيتامول'));
+    await tester.pumpAndSettle();
+    await tester.tap(_comboByLabel('الاسم التجاري *'));
     await tester.pumpAndSettle();
     await tester.enterText(_fieldByLabel('العيار'), '500 ملغ');
     await tester.pumpAndSettle();

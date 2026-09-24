@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import '../../core/data_grid/page_request.dart';
 import '../../core/util/ids.dart';
 import '../../core/util/smart_search.dart';
+import '../../core/search/item_search_text.dart';
 import '../../shared/database/app_database.dart';
 import 'smart_search_dao.dart';
 
@@ -25,8 +26,19 @@ class ItemDao {
     final conds = <Expression<bool>>[];
     final q = search.trim();
     if (q.isNotEmpty) {
-      final like = SmartSearch.likePattern(q);
-      final textMatches = <Expression<bool>>[
+      // §search-perf: the normalized concatenation is precomputed at every
+      // write (items.search_text), so the search is a single LIKE on a plain
+      // column — no per-row SQL replace() chain anymore. Rows written before
+      // the v14 backfill fall back to the legacy expression.
+      final normalized = ItemSearchText.normalizeQuery(q);
+      final escaped = normalized
+          .replaceAll(r'\', r'\\')
+          .replaceAll('%', r'\%')
+          .replaceAll('_', r'\_');
+      final like = '%$escaped%';
+      // Legacy fallback for rows predating the v14 backfill: the old
+      // per-column normalized expressions.
+      final legacyMatches = <Expression<bool>>[
         SmartSearch.normalizeExpr(_db.items.tradeName).like(like),
         SmartSearch.normalizeExpr(_db.items.tradeNameEn).like(like),
         SmartSearch.normalizeExpr(_db.items.scientificName).like(like),
@@ -34,6 +46,10 @@ class ItemDao {
         SmartSearch.normalizeExpr(_db.items.equivalentDrug).like(like),
         SmartSearch.normalizeExpr(_db.items.primaryBarcode).like(like),
         SmartSearch.normalizeExpr(_db.items.secondaryBarcode).like(like),
+      ].reduce((a, b) => a | b);
+      final textMatches = <Expression<bool>>[
+        _db.items.searchText.like(like),
+        _db.items.searchText.isNull() & legacyMatches,
       ];
       if (relatedItemIds.isNotEmpty) {
         textMatches.add(_db.items.id.isIn(relatedItemIds));
@@ -126,11 +142,32 @@ class ItemDao {
         .getSingleOrNull();
   }
 
-  Future<void> insert(ItemRow item) => _db.into(_db.items).insert(item);
+  /// Direct insert: keeps `search_text` in sync (§search-perf). The
+  /// repository write paths set it explicitly; this covers any direct DAO use.
+  Future<void> insert(ItemRow item) => _db.into(_db.items).insert(
+        item.toCompanion(true).copyWith(
+              searchText: Value(_searchTextForRow(item)),
+            ),
+      );
 
   Future<void> update(ItemRow item) =>
-      (_db.update(_db.items)..where((i) => i.id.equals(item.id)))
-          .write(item.toCompanion(true));
+      (_db.update(_db.items)..where((i) => i.id.equals(item.id))).write(
+        item.toCompanion(true).copyWith(
+              searchText: Value(_searchTextForRow(item)),
+            ),
+      );
+
+  static String _searchTextForRow(ItemRow row) => ItemSearchText.build(
+        tradeName: row.tradeName,
+        tradeNameEn: row.tradeNameEn,
+        scientificName: row.scientificName,
+        activeIngredient: row.activeIngredient,
+        equivalentDrug: row.equivalentDrug,
+        primaryBarcode: row.primaryBarcode,
+        secondaryBarcode: row.secondaryBarcode,
+        dose: row.dose,
+        pharmaForm: row.pharmaForm,
+      );
 
   /// Soft-delete toggle (§28) — items are never physically deleted.
   Future<void> setActive(String id, bool active) =>

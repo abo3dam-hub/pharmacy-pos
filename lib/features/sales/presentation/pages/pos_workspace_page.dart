@@ -21,6 +21,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/pos_cart.dart';
+import '../../domain/usecases/pos_pricing.dart';
 import '../../domain/entities/pos_catalog_item.dart';
 import '../../domain/entities/pos_customer.dart';
 import '../../domain/entities/pos_invoice.dart';
@@ -171,6 +172,11 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
                         tooltip: _l10n.salesHistoryTitle,
                         onPressed: () => context.push(salesHistoryPath()),
                         icon: const Icon(Icons.receipt_long_outlined),
+                      ),
+                      IconButton(
+                        tooltip: _l10n.salesReturnsTitle,
+                        onPressed: () => context.push(salesReturnsPath()),
+                        icon: const Icon(Icons.assignment_return_outlined),
                       ),
                     ],
                   ),
@@ -917,7 +923,10 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  '${_lineQty(line)} $unitLabel'
+                                  // Per-line sell price: the pharmacist sees
+                                  // each drug's price, not just the total.
+                                  '${_lineQty(line)} $unitLabel · '
+                                  '${Money.fromUnits(_lineUnitPrice(line)).formatArabicDigits()}'
                                   '${line.isRxLinked ? ' · ${l10n.posRx}' : ''}',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -1087,6 +1096,14 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
       };
 
   int _lineQty(PosCartLine line) => line.quantity;
+
+  /// Per-line sell price in the line's current sell unit (box or part),
+  /// computed through the sanctioned POS price engine.
+  int _lineUnitPrice(PosCartLine line) {
+    final priced = const PosLinePricer().priceLine(line);
+    if (priced.lines.isEmpty) return 0;
+    return priced.lines.first.unitPriceMicros;
+  }
 
   Future<void> _showHoldBillsSheet(
     BuildContext context,

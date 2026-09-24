@@ -17,6 +17,7 @@ import 'package:pharmacy_pos/core/theme/app_theme.dart';
 import 'package:pharmacy_pos/features/sales/domain/entities/pos_catalog_item.dart';
 import 'package:pharmacy_pos/features/sales/domain/entities/pos_customer.dart';
 import 'package:pharmacy_pos/features/sales/domain/entities/pos_invoice.dart';
+import 'package:pharmacy_pos/features/sales/domain/entities/pos_return.dart';
 import 'package:pharmacy_pos/features/sales/domain/entities/smart_alternative.dart';
 import 'package:pharmacy_pos/features/sales/domain/repositories/sales_repository.dart';
 import 'package:pharmacy_pos/features/sales/presentation/pages/sales_history_page.dart';
@@ -89,6 +90,15 @@ class _FakeSalesRepository implements SalesRepository {
   @override
   Future<PosReturnOutcome> returnSaleLine(PosReturnCommand command) async =>
       throw UnimplementedError();
+
+  @override
+  Future<PageResult<PosReturnView>> listReturns(PageRequest request) async =>
+      PageResult<PosReturnView>(request: request, items: const [], total: 0);
+
+  @override
+  Future<({PosReturnView header, List<PosReturnLineView> lines})?>
+      returnDetail(String returnId) async => null;
+
 
   @override
   Future<PosInvoiceView?> invoiceViewById(String invoiceId) async => null;

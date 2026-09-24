@@ -13,6 +13,7 @@ import '../../../shared/models/enums.dart';
 import '../../sales/domain/entities/pos_catalog_item.dart';
 import '../../sales/domain/entities/pos_customer.dart';
 import '../../sales/domain/entities/pos_invoice.dart';
+import '../../sales/domain/entities/pos_return.dart';
 import '../../sales/domain/entities/smart_alternative.dart';
 import '../../sales/domain/repositories/sales_repository.dart';
 import '../../sales/domain/services/smart_alternatives_service.dart';
@@ -232,6 +233,131 @@ class SalesRepositoryImpl implements SalesRepository {
         userId: userId,
         reason: reason,
       );
+
+  // ── Returns list ─────────────────────────────────────────────────────
+
+  @override
+  Future<PageResult<PosReturnView>> listReturns(PageRequest request) async {
+    final q = request.search.trim();
+    final pattern = '%${_escapeLike(q)}%';
+    final where = <String>['r.type = ?1'];
+    final variables = <Variable>[Variable.withString(ReturnType.sale_return.name)];
+    if (q.isNotEmpty) {
+      where.add('(r.return_number LIKE ?${variables.length + 1} '
+          'OR cus.name LIKE ?${variables.length + 1} '
+          'OR r.reason LIKE ?${variables.length + 1})');
+      variables.add(Variable.withString(pattern));
+    }
+    final whereSql = where.join(' AND ');
+
+    final countRows = await _db.customSelect(
+      'SELECT COUNT(*) AS c FROM returns r '
+      'LEFT JOIN customers cus ON r.customer_id = cus.id '
+      'WHERE $whereSql',
+      variables: variables,
+    ).get();
+    final total = countRows.single.read<int>('c');
+
+    final pageVars = [
+      ...variables,
+      Variable.withInt(request.pageSize),
+      Variable.withInt(request.offset),
+    ];
+    final rows = await _db.customSelect(
+      'SELECT r.*, cus.name AS customer_name, u.full_name AS user_name, '
+      'si.invoice_number AS original_number '
+      'FROM returns r '
+      'LEFT JOIN customers cus ON r.customer_id = cus.id '
+      'LEFT JOIN users u ON r.user_id = u.id '
+      'LEFT JOIN sales_invoices si ON r.original_invoice_id = si.id '
+      'WHERE $whereSql '
+      'ORDER BY r.created_at DESC, r.return_number DESC '
+      'LIMIT ?${variables.length + 1} OFFSET ?${variables.length + 2}',
+      variables: pageVars,
+    ).get();
+
+    return PageResult<PosReturnView>(
+      request: request,
+      items: [
+        for (final row in rows)
+          PosReturnView(
+            id: row.read<String>('id'),
+            returnNumber: row.read<String>('return_number'),
+            type: ReturnType.values.byName(row.read<String>('type')),
+            originalInvoiceId: row.read<String>('original_invoice_id'),
+            originalInvoiceNumber:
+                row.read<String?>('original_number') ?? '—',
+            customerName: row.read<String?>('customer_name'),
+            userName: row.read<String?>('user_name') ?? '',
+            totalMicros: row.read<int>('total_micros'),
+            reason: row.read<String?>('reason'),
+            isVoided: row.read<bool>('is_voided'),
+            createdAt: row.read<int>('created_at'),
+          ),
+      ],
+      total: total,
+    );
+  }
+
+  @override
+  Future<({PosReturnView header, List<PosReturnLineView> lines})?>
+      returnDetail(String returnId) async {
+    final header = await (_db.select(
+      _db.returns,
+    )..where((r) => r.id.equals(returnId))).getSingleOrNull();
+    if (header == null) return null;
+
+    final customer = header.customerId == null
+        ? null
+        : await (_db.select(
+          _db.customers,
+        )..where((c) => c.id.equals(header.customerId!))).getSingleOrNull();
+    final user = await (_db.select(
+      _db.users,
+    )..where((u) => u.id.equals(header.userId))).getSingleOrNull();
+    final original = await (_db.select(
+      _db.salesInvoices,
+    )..where((i) => i.id.equals(header.originalInvoiceId))).getSingleOrNull();
+
+    final itemRows = await (_db.select(
+      _db.returnItems,
+    )..where((ri) => ri.returnId.equals(returnId))).get();
+    final itemNames = <String, String>{};
+    if (itemRows.isNotEmpty) {
+      final items = await (_db.select(
+        _db.items,
+      )..where((i) => i.id.isIn({for (final r in itemRows) r.itemId}))).get();
+      for (final i in items) {
+        itemNames[i.id] = i.tradeName;
+      }
+    }
+
+    return (
+      header: PosReturnView(
+        id: header.id,
+        returnNumber: header.returnNumber,
+        type: header.type,
+        originalInvoiceId: header.originalInvoiceId,
+        originalInvoiceNumber: original?.invoiceNumber ?? '—',
+        customerName: customer?.name,
+        userName: user?.fullName ?? '',
+        totalMicros: header.totalMicros,
+        reason: header.reason,
+        isVoided: header.isVoided,
+        createdAt: header.createdAt,
+      ),
+      lines: [
+        for (final r in itemRows)
+          PosReturnLineView(
+            id: r.id,
+            itemName: itemNames[r.itemId] ?? r.itemId,
+            quantityBase: r.quantityBaseSigned,
+            amountMicros: r.amountMicros,
+            reason: r.reason,
+          ),
+      ],
+    );
+  }
 
   // ── Invoice queries ──────────────────────────────────────────────────
 

@@ -11,6 +11,7 @@ import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_data_table.dart';
@@ -666,7 +667,14 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
               DataCell(Text(row.displayName)),
               DataCell(Text(row.item.primaryBarcode ?? '')),
               DataCell(Text(row.categoryName ?? '')),
-              DataCell(Text(Money.fromUnits(row.item.costMicros).format())),
+              DataCell(
+                Text(
+                  Money.fromUnits(
+                    baseUnitCostToPackageCost(
+                        row.item.costMicros, row.unitsPerLarge),
+                  ).format(),
+                ),
+              ),
               DataCell(
                   Text(Money.fromUnits(row.item.sellingPriceMicros).format())),
               DataCell(
@@ -674,6 +682,10 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
                   message: l10n.inventoryStockTooltip(
                     _stockText(row),
                     Money.fromUnits(row.item.sellingPriceMicros).format(),
+                    row.manufacturerName ?? '—',
+                    row.item.pharmaForm?.isNotEmpty == true
+                        ? row.item.pharmaForm!
+                        : '—',
                   ),
                   child: Text(_stockText(row)),
                 ),
@@ -748,10 +760,15 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
                     message: l10n.inventoryStockTooltip(
                       _stockText(row),
                       Money.fromUnits(row.item.sellingPriceMicros).format(),
+                      row.manufacturerName ?? '—',
+                      row.item.pharmaForm?.isNotEmpty == true
+                          ? row.item.pharmaForm!
+                          : '—',
                     ),
                     child: Text(
                       '${l10n.itemStock}: ${_stockText(row)} · '
-                      '${l10n.itemCost}: ${Money.fromUnits(row.item.costMicros).format()} · '
+                      '${l10n.itemCost}: '
+                      '${Money.fromUnits(baseUnitCostToPackageCost(row.item.costMicros, row.unitsPerLarge)).format()} · '
                       '${l10n.itemPrice}: ${Money.fromUnits(row.item.sellingPriceMicros).format()}',
                       style: typography.label,
                     ),
