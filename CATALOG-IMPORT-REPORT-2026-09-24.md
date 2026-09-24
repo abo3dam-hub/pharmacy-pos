@@ -39,3 +39,34 @@
 1. **سعر البيع**: الملف بلا أسعار بيع → كل الأصناف بسعر 0. إما يعبئها يدوياً/دفعة، أو نولّد نسخة بسعر البيع = سعر التكلفة كنقطة بداية.
 2. **تاريخ الصلاحية**: تركته فارغاً (لا). تفعيله لـ 22k صنف يعني إدخال تاريخ صلاحية مع كل فاتورة شراء — قرار تشغيلي.
 3. 95 صنفاً بعدد أجزاء > 1 لم نستطع تحديد وحدته الجزئية → استوردت بلا علاقة وحدات (التكلفة تبقى للعبوة الكاملة)؛ تُضبط يدوياً عند الحاجة.
+
+## Fix (2026-09-24, 02:55): openpyxl output vs app importer
+
+Ali reported two symptoms with the generated file:
+
+1. Desktop Excel: "We found problems on some content" on open.
+2. App import: stuck on "جاري التحميل" for 15+ minutes, nothing happens.
+
+Root causes (verified by decoding with the exact Dart `excel` 4.0.6 package
+the app uses, via the repo's own `package_config.json`):
+
+- openpyxl 3.1 writes the worksheet relationship as an **absolute** target
+  (`Target="/xl/worksheets/sheet1.xml"`). The Dart parser resolves it as
+  `xl/<target>` -> null -> `Null check operator used on a null value`
+  (`TypeError`, an `Error` not an `Exception`, so it escapes the controller's
+  `on Exception` catch and the UI stays on "loading" forever).
+- Blank cells written as `''` become `<c t="inlineStr"><is></is></c>` (no `<t>`
+  node); the parser does `findAllElements('t').first` -> `Bad state: No element`.
+
+Fixes in `tool/convert_zena_catalog.py`:
+
+- `_blank()`: blank strings are written as `None` (empty `<c/>` cell), which
+  the Dart parser reads as null.
+- `_fix_workbook_rels()`: rewrites the xlsx with a relative worksheet target
+  (`Target="worksheets/sheet1.xml"`), which also removes the anomaly desktop
+  Excel flagged.
+
+Verification: `Excel.decodeBytes` on the regenerated file succeeds in ~4.2s;
+all 22,292 data rows / 27 columns iterate in ~38ms with correct values
+(barcode/name/cost/parts spot-checked). Package structure validated
+(zip test clean, content-types consistent).

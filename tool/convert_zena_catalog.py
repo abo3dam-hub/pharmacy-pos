@@ -168,6 +168,15 @@ def fallback_unit(ar_name: str) -> tuple[str, str]:
     return '', ''
 
 
+def _blank(value):
+    """Blank cells must be None, not '': the Dart `excel` package used by the
+    app crashes on `<c t="inlineStr"><is></is></c>` (empty inline string with
+    no <t> node). None produces `<c r="X"/>`, which it reads as null."""
+    if isinstance(value, str) and not value.strip():
+        return None
+    return value
+
+
 def convert(src: str, dst: str) -> dict:
     stats = Counter()
     with open(src, encoding='utf-8') as f:
@@ -225,38 +234,66 @@ def convert(src: str, dst: str) -> dict:
         indications = uses.strip().replace(',', '؛')
 
         ws.append([
-            primary,                 # الرمز الشريطي الرئيسي
-            secondary,               # الرمز الشريطي الثانوي
-            name.strip(),            # الاسم التجاري
-            name_en.strip(),         # الاسم التجاري (EN)
-            '',                      # الاسم العلمي
-            form_text,               # المادة الفعالة (free text)
-            relational,              # المواد الفعالة (relational)
-            '',                      # التصنيف
-            company.strip(),         # الشركة المصنعة
-            indications,             # الاستطبابات
-            '',                      # الموقع
-            '',                      # له تاريخ صلاحية
-            base_unit,               # الأجزاء
-            large_unit,              # التعبئة التجارية
-            n_parts,                 # عدد الأجزاء
-            '',                      # سعر البيع (0 on purpose)
-            '',                      # سعر الجملة
-            '',                      # سعر الجملة النصف
-            '',                      # ضريبة %
-            price.strip(),           # سعر التكلفة (per package; importer converts)
-            '',                      # الحد الأدنى
-            '',                      # الحد الأقصى
-            '',                      # المخزون الحالي
-            '',                      # المكافئ
-            form_ar,                 # الشكل الصيدلاني
-            dosage.strip(),          # الجرعة / العيار
-            '',                      # الحجم
+            _blank(primary),             # الرمز الشريطي الرئيسي
+            _blank(secondary),           # الرمز الشريطي الثانوي
+            name.strip(),                # الاسم التجاري
+            _blank(name_en.strip()),     # الاسم التجاري (EN)
+            None,                        # الاسم العلمي
+            _blank(form_text),           # المادة الفعالة (free text)
+            _blank(relational),          # المواد الفعالة (relational)
+            None,                        # التصنيف
+            _blank(company.strip()),     # الشركة المصنعة
+            _blank(indications),         # الاستطبابات
+            None,                        # الموقع
+            None,                        # له تاريخ صلاحية
+            _blank(base_unit),           # الأجزاء
+            _blank(large_unit),          # التعبئة التجارية
+            n_parts or None,             # عدد الأجزاء
+            None,                        # سعر البيع (0 on purpose)
+            None,                        # سعر الجملة
+            None,                        # سعر الجملة النصف
+            None,                        # ضريبة %
+            _blank(price.strip()),       # سعر التكلفة (per package; importer converts)
+            None,                        # الحد الأدنى
+            None,                        # الحد الأقصى
+            None,                        # المخزون الحالي
+            None,                        # المكافئ
+            _blank(form_ar),             # الشكل الصيدلاني
+            _blank(dosage.strip()),      # الجرعة / العيار
+            None,                        # الحجم
         ])
 
     wb.save(dst)
+    _fix_workbook_rels(dst)
     stats['written'] = ws.max_row - 1
     return dict(stats)
+
+
+def _fix_workbook_rels(path: str) -> None:
+    """Rewrite the xlsx with a *relative* worksheet target in
+    `xl/_rels/workbook.xml.rels`.
+
+    openpyxl >= 3.1 writes `Target="/xl/worksheets/sheet1.xml"` (absolute).
+    The Dart `excel` package used by the app resolves it as `xl/<target>`
+    and crashes on the resulting null (`Null check operator used on a null
+    value` at parse), which also makes desktop Excel offer a "repair".
+    """
+    import io
+    import zipfile
+
+    with zipfile.ZipFile(path, 'r') as zin:
+        items = [(i, zin.read(i.filename)) for i in zin.infolist()]
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zout:
+        for info, data in items:
+            if info.filename == 'xl/_rels/workbook.xml.rels':
+                data = data.replace(
+                    b'Target="/xl/worksheets/sheet1.xml"',
+                    b'Target="worksheets/sheet1.xml"',
+                )
+            zout.writestr(info, data)
+    with open(path, 'wb') as f:
+        f.write(buf.getvalue())
 
 
 def main() -> None:
