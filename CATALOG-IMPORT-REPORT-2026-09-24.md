@@ -70,3 +70,35 @@ Verification: `Excel.decodeBytes` on the regenerated file succeeds in ~4.2s;
 all 22,292 data rows / 27 columns iterate in ~38ms with correct values
 (barcode/name/cost/parts spot-checked). Package structure validated
 (zip test clean, content-types consistent).
+
+## Fix 2 (2026-09-24, ~03:20): Dart-generated xlsx + per-row import hardening
+
+Ali retested and reported:
+
+1. Desktop Excel STILL offered "recover content" on the openpyxl file, even
+   with the relative rel target.
+2. App import now parsed fine, then failed mid-apply around row ~4,600 with
+   "حدث خطأ غير متوقع" (unexpected error).
+
+Actions:
+
+- `tool/write_catalog_xlsx.dart` (new): the final xlsx is now written with
+  the Dart `excel` package itself — the same package and cell types the app
+  uses for export (`TextCellValue` incl. `''` blanks, `IntCellValue` for the
+  parts count). Standard package layout (`sharedStrings.xml`, relative rel
+  targets, single `products` sheet). The Python converter gained
+  `prepare_rows()` + a `.json` intermediate output feeding the Dart writer.
+- Verified: `Excel.decodeBytes` reads the Dart file; a full end-to-end
+  `ImportItemsUseCase` run on a test DB imports 22,178 items with 114
+  duplicate issues, and a second run over the populated DB updates 22,146 —
+  both clean. Neither the create path nor the update path reproduces Ali's
+  ~4,600 failure, so the trigger is specific to his device/database state.
+- Hardening in `applyImport`
+  (`lib/features/inventory/data/repositories/inventory_repository_impl.dart`):
+  per-row failures now catch ALL `Exception`s (not just `DomainException`),
+  record `الصف N: خطأ غير متوقع (<type>): <message>` as an issue, and
+  continue — a single bad row can no longer abort a 22k-row import with a
+  generic error. `ImportCancelledException` still propagates (thrown outside
+  the per-row try), so cancel keeps working. `Error`s (OOM etc.) still abort.
+- Existing import tests (contract + progress/cancel) pass; `flutter analyze`
+  clean on the touched file.

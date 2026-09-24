@@ -31,6 +31,7 @@ Usage:
 from __future__ import annotations
 
 import csv
+import json
 import re
 import sys
 from collections import Counter
@@ -188,6 +189,7 @@ def convert(src: str, dst: str) -> dict:
     ws = wb.active
     ws.title = 'products'
     ws.append(HEADERS)
+    rows_out = []
 
     for r in rows:
         stats['rows'] += 1
@@ -233,40 +235,111 @@ def convert(src: str, dst: str) -> dict:
 
         indications = uses.strip().replace(',', '؛')
 
-        ws.append([
-            _blank(primary),             # الرمز الشريطي الرئيسي
-            _blank(secondary),           # الرمز الشريطي الثانوي
-            name.strip(),                # الاسم التجاري
-            _blank(name_en.strip()),     # الاسم التجاري (EN)
-            None,                        # الاسم العلمي
-            _blank(form_text),           # المادة الفعالة (free text)
-            _blank(relational),          # المواد الفعالة (relational)
-            None,                        # التصنيف
-            _blank(company.strip()),     # الشركة المصنعة
-            _blank(indications),         # الاستطبابات
-            None,                        # الموقع
-            None,                        # له تاريخ صلاحية
-            _blank(base_unit),           # الأجزاء
-            _blank(large_unit),          # التعبئة التجارية
-            n_parts or None,             # عدد الأجزاء
-            None,                        # سعر البيع (0 on purpose)
-            None,                        # سعر الجملة
-            None,                        # سعر الجملة النصف
-            None,                        # ضريبة %
-            _blank(price.strip()),       # سعر التكلفة (per package; importer converts)
-            None,                        # الحد الأدنى
-            None,                        # الحد الأقصى
-            None,                        # المخزون الحالي
-            None,                        # المكافئ
-            _blank(form_ar),             # الشكل الصيدلاني
-            _blank(dosage.strip()),      # الجرعة / العيار
-            None,                        # الحجم
-        ])
+        row = _build_row(
+            primary, secondary, name, name_en, form_text, relational,
+            company, indications, base_unit, large_unit, n_parts,
+            price, form_ar, dosage,
+        )
+        rows_out.append(row)
+        ws.append(row)
 
     wb.save(dst)
     _fix_workbook_rels(dst)
     stats['written'] = ws.max_row - 1
     return dict(stats)
+
+
+def _build_row(primary, secondary, name, name_en, form_text, relational,
+               company, indications, base_unit, large_unit, n_parts,
+               price, form_ar, dosage) -> list:
+    """The 27-column import row (contract order of InventoryExcelService)."""
+    return [
+        _blank(primary),             # الرمز الشريطي الرئيسي
+        _blank(secondary),           # الرمز الشريطي الثانوي
+        name.strip(),                # الاسم التجاري
+        _blank(name_en.strip()),     # الاسم التجاري (EN)
+        None,                        # الاسم العلمي
+        _blank(form_text),           # المادة الفعالة (free text)
+        _blank(relational),          # المواد الفعالة (relational)
+        None,                        # التصنيف
+        _blank(company.strip()),     # الشركة المصنعة
+        _blank(indications),         # الاستطبابات
+        None,                        # الموقع
+        None,                        # له تاريخ صلاحية
+        _blank(base_unit),           # الأجزاء
+        _blank(large_unit),          # التعبئة التجارية
+        n_parts or None,             # عدد الأجزاء
+        None,                        # سعر البيع (0 on purpose)
+        None,                        # سعر الجملة
+        None,                        # سعر الجملة النصف
+        None,                        # ضريبة %
+        _blank(price.strip()),       # سعر التكلفة (per package; importer converts)
+        None,                        # الحد الأدنى
+        None,                        # الحد الأقصى
+        None,                        # المخزون الحالي
+        None,                        # المكافئ
+        _blank(form_ar),             # الشكل الصيدلاني
+        _blank(dosage.strip()),      # الجرعة / العيار
+        None,                        # الحجم
+    ]
+
+
+def prepare_rows(src: str) -> tuple:
+    """Data-prep only: returns (headers, rows) with plain Python values,
+    for writers other than openpyxl (e.g. the Dart xlsx writer)."""
+    stats = Counter()
+    rows_out = []
+    with open(src, encoding='utf-8') as f:
+        reader = csv.reader(f)
+        next(reader)  # header
+        for r in reader:
+            stats['rows'] += 1
+            barcode_cell, name, name_en, form, package, uses, dosage, price, company, fact = (
+                r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10],
+            )
+            if not name.strip():
+                stats['skipped_no_name'] += 1
+                continue
+
+            bcs = split_barcodes(barcode_cell)
+            primary = bcs[0] if len(bcs) > 0 else ''
+            secondary = bcs[1] if len(bcs) > 1 else ''
+            if len(bcs) > 2:
+                stats['extra_barcodes_dropped'] += len(bcs) - 2
+
+            relational, form_text, subunit, form_ar = form_parts(form)
+            if not subunit:
+                subunit, fb_form = fallback_unit(name)
+                if not form_ar:
+                    form_ar = fb_form
+                if subunit:
+                    stats['unit_from_arabic_name'] += 1
+
+            try:
+                parts = int(fact.strip()) if fact.strip() else 1
+            except ValueError:
+                parts = 1
+                stats['bad_fact'] += 1
+            if parts < 1:
+                parts = 1
+
+            if parts > 1 and subunit:
+                base_unit, large_unit, n_parts = subunit, 'علبة', parts
+                stats['with_unit_relation'] += 1
+            elif parts > 1:
+                base_unit, large_unit, n_parts = '', '', parts
+                stats['parts_gt1_no_subunit'] += 1
+            else:
+                base_unit, large_unit, n_parts = '', '', ''
+
+            indications = uses.strip().replace(',', '؛')
+            rows_out.append(_build_row(
+                primary, secondary, name, name_en, form_text, relational,
+                company, indications, base_unit, large_unit, n_parts,
+                price, form_ar, dosage,
+            ))
+    stats['written'] = len(rows_out)
+    return HEADERS, rows_out, dict(stats)
 
 
 def _fix_workbook_rels(path: str) -> None:
@@ -298,9 +371,16 @@ def _fix_workbook_rels(path: str) -> None:
 
 def main() -> None:
     if len(sys.argv) != 3:
-        print('usage: convert_zena_catalog.py <input.csv> <output.xlsx>')
+        print('usage: convert_zena_catalog.py <input.csv> <output.(xlsx|json)>')
         sys.exit(2)
-    stats = convert(sys.argv[1], sys.argv[2])
+    src, dst = sys.argv[1], sys.argv[2]
+    if dst.endswith('.json'):
+        headers, rows, stats = prepare_rows(src)
+        with open(dst, 'w', encoding='utf-8') as f:
+            json.dump({'headers': headers, 'rows': rows}, f, ensure_ascii=False)
+        stats['json'] = dst
+    else:
+        stats = convert(src, dst)
     for k, v in stats.items():
         print(f'{k}: {v}')
 

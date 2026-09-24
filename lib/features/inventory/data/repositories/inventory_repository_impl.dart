@@ -148,6 +148,12 @@ class InventoryRepositoryImpl implements InventoryRepository {
           }
         } on DomainException catch (e) {
           failures.add('الصف ${entry.rowNumber}: ${e.failure.message}');
+        } on Exception catch (e) {
+          // A single bad row must never abort a 22k-row import: record it
+          // and continue. The row number + exception type let us diagnose
+          // remotely instead of showing a generic "unexpected error".
+          failures.add('الصف ${entry.rowNumber}: خطأ غير متوقع '
+              '(${e.runtimeType}): $e');
         }
         // Progress/cancel checkpoint: let the UI paint and honor an abort.
         // Throwing inside the transaction rolls everything back atomically.
