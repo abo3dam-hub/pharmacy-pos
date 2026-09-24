@@ -20,6 +20,7 @@ class AppDataTable extends StatelessWidget {
     this.sortAscending = true,
     this.onSortChanged,
     this.showCheckboxColumn = false,
+    this.dataRowHeight,
   });
 
   final List<DataColumn> columns;
@@ -29,6 +30,7 @@ class AppDataTable extends StatelessWidget {
   final bool sortAscending;
   final void Function(int columnIndex, bool ascending)? onSortChanged;
   final bool showCheckboxColumn;
+  final double? dataRowHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +51,8 @@ class AppDataTable extends StatelessWidget {
           columns: columns,
           rows: rows,
           headingRowHeight: AppLayoutTokens.tableHeaderHeight,
-          dataRowMaxHeight: AppLayoutTokens.tableRowHeight,
-          dataRowMinHeight: AppLayoutTokens.tableRowHeight,
+          dataRowMaxHeight: dataRowHeight ?? AppLayoutTokens.tableRowHeight,
+          dataRowMinHeight: dataRowHeight ?? AppLayoutTokens.tableRowHeight,
           sortColumnIndex: sortColumnIndex,
           sortAscending: sortAscending,
           showCheckboxColumn: showCheckboxColumn,

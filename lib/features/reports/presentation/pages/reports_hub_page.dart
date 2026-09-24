@@ -10,6 +10,9 @@ import 'purchase_report_tab.dart';
 import 'sales_report_tab.dart';
 import 'supplier_statement_tab.dart';
 import 'trial_balance_tab.dart';
+import 'expiry_alerts_page.dart';
+import 'price_history_page.dart';
+import 'reorder_suggestions_page.dart';
 
 /// Reports section hub (التقارير): read-only financial, sales, purchase,
 /// inventory and lost-sales reports plus customer/supplier statements.
@@ -32,7 +35,7 @@ class _ReportsHubPageState extends State<ReportsHubPage>
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 9,
+      length: 12,
       vsync: this,
       initialIndex: widget.initialIndex,
     );
@@ -66,6 +69,9 @@ class _ReportsHubPageState extends State<ReportsHubPage>
               Tab(text: l10n.reportLostSales),
               Tab(text: l10n.reportCustomerStatement),
               Tab(text: l10n.reportSupplierStatement),
+              Tab(text: l10n.reorderSuggestionsTitle),
+              Tab(text: l10n.expiryAlertsTitle),
+              Tab(text: l10n.priceHistoryTitle),
             ],
           ),
         ),
@@ -82,6 +88,9 @@ class _ReportsHubPageState extends State<ReportsHubPage>
               LostSalesTab(),
               CustomerStatementTab(),
               SupplierStatementTab(),
+              ReorderSuggestionsPage(),
+              ExpiryAlertsPage(),
+              PriceHistoryPage(),
             ],
           ),
         ),

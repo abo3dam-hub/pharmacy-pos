@@ -309,7 +309,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get batchNo => 'Batch no.';
 
   @override
-  String get expiryDate => 'Expiry date';
+  String get expiryDate => 'Expiry Date';
 
   @override
   String get unitBoxes => 'Boxes';
@@ -3495,4 +3495,115 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get salesReturnsQuantity => 'Qty';
+
+  @override
+  String get priceHistoryTitle => 'Price Change History';
+
+  @override
+  String get reorderSuggestionsTitle => 'Reorder Suggestions';
+
+  @override
+  String get reorderSuggestionsEmpty => 'No items need reordering right now';
+
+  @override
+  String get reorderUrgencyCritical => 'Critical';
+
+  @override
+  String get reorderUrgencyWarning => 'Running Low';
+
+  @override
+  String get reorderUrgencyLow => 'Below Minimum';
+
+  @override
+  String get currentStock => 'Current Stock';
+
+  @override
+  String get daysOfCover => 'Days of Cover';
+
+  @override
+  String get avgDailySales => 'Avg Daily Sales';
+
+  @override
+  String get suggestedQty => 'Suggested Qty';
+
+  @override
+  String get expiryAlertsTitle => 'Expiry Alerts';
+
+  @override
+  String get expiryAlertsEmpty => 'No batches near expiry';
+
+  @override
+  String get expiryExpired => 'Expired';
+
+  @override
+  String get expiryCritical => 'Critical';
+
+  @override
+  String get expiryWarning => 'Near Expiry';
+
+  @override
+  String get expiredAgo => 'Expired';
+
+  @override
+  String get days => 'days';
+
+  @override
+  String get batchNumber => 'Batch No.';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get noResults => 'No results';
+
+  @override
+  String get searchHint => 'Search...';
+
+  @override
+  String get displayTitle => 'Display';
+
+  @override
+  String get displayDensityHint => 'Choose list and table display density';
+
+  @override
+  String get displayComfortable => 'Comfortable';
+
+  @override
+  String get displayCompact => 'Compact';
+
+  @override
+  String get receiptTemplateTitle => 'Receipt Template';
+
+  @override
+  String get receiptPharmacyName => 'Pharmacy name on receipt';
+
+  @override
+  String get receiptPromoLine => 'Promo line (optional)';
+
+  @override
+  String get receiptFontSize => 'Font size';
+
+  @override
+  String get shortcutsGuideTitle => 'Shortcut Guide';
+
+  @override
+  String get shortcutsGuideSearch => 'Focus the POS search field';
+
+  @override
+  String get shortcutsGuideToggleUnit =>
+      'Toggle line unit between box and part';
+
+  @override
+  String get shortcutsGuideHoldBill => 'Hold the current bill temporarily';
+
+  @override
+  String get shortcutsGuideCheckout => 'Go to checkout and complete the bill';
+
+  @override
+  String get shortcutsGuideAlternatives =>
+      'Open smart alternatives for the selected item';
+
+  @override
+  String get shortcutsGuideEnter =>
+      'In search: finish barcode scan or add the single result';
 }

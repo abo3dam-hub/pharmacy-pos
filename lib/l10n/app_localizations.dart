@@ -6846,6 +6846,222 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'الكمية'**
   String get salesReturnsQuantity;
+
+  /// No description provided for @priceHistoryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل تغيّر الأسعار'**
+  String get priceHistoryTitle;
+
+  /// No description provided for @reorderSuggestionsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقتراحات إعادة الطلب'**
+  String get reorderSuggestionsTitle;
+
+  /// No description provided for @reorderSuggestionsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أصناف تحتاج إعادة طلب حالياً'**
+  String get reorderSuggestionsEmpty;
+
+  /// No description provided for @reorderUrgencyCritical.
+  ///
+  /// In ar, this message translates to:
+  /// **'حرج'**
+  String get reorderUrgencyCritical;
+
+  /// No description provided for @reorderUrgencyWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'قريب النفاد'**
+  String get reorderUrgencyWarning;
+
+  /// No description provided for @reorderUrgencyLow.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحت الحد الأدنى'**
+  String get reorderUrgencyLow;
+
+  /// No description provided for @currentStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد الحالي'**
+  String get currentStock;
+
+  /// No description provided for @daysOfCover.
+  ///
+  /// In ar, this message translates to:
+  /// **'أيام التغطية'**
+  String get daysOfCover;
+
+  /// No description provided for @avgDailySales.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط البيع اليومي'**
+  String get avgDailySales;
+
+  /// No description provided for @suggestedQty.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المقترحة'**
+  String get suggestedQty;
+
+  /// No description provided for @expiryAlertsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات الصلاحية'**
+  String get expiryAlertsTitle;
+
+  /// No description provided for @expiryAlertsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد دفعات قريبة الانتهاء'**
+  String get expiryAlertsEmpty;
+
+  /// No description provided for @expiryExpired.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهي'**
+  String get expiryExpired;
+
+  /// No description provided for @expiryCritical.
+  ///
+  /// In ar, this message translates to:
+  /// **'حرج'**
+  String get expiryCritical;
+
+  /// No description provided for @expiryWarning.
+  ///
+  /// In ar, this message translates to:
+  /// **'قريب الانتهاء'**
+  String get expiryWarning;
+
+  /// No description provided for @expiredAgo.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهي منذ'**
+  String get expiredAgo;
+
+  /// No description provided for @days.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم'**
+  String get days;
+
+  /// No description provided for @batchNumber.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم الدفعة'**
+  String get batchNumber;
+
+  /// No description provided for @refresh.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث'**
+  String get refresh;
+
+  /// No description provided for @noResults.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نتائج'**
+  String get noResults;
+
+  /// No description provided for @searchHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'بحث...'**
+  String get searchHint;
+
+  /// No description provided for @displayTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'العرض'**
+  String get displayTitle;
+
+  /// No description provided for @displayDensityHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر كثافة عرض القوائم والجداول'**
+  String get displayDensityHint;
+
+  /// No description provided for @displayComfortable.
+  ///
+  /// In ar, this message translates to:
+  /// **'مريح'**
+  String get displayComfortable;
+
+  /// No description provided for @displayCompact.
+  ///
+  /// In ar, this message translates to:
+  /// **'مضغوط'**
+  String get displayCompact;
+
+  /// No description provided for @receiptTemplateTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قالب الإيصال'**
+  String get receiptTemplateTitle;
+
+  /// No description provided for @receiptPharmacyName.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الصيدلية في الإيصال'**
+  String get receiptPharmacyName;
+
+  /// No description provided for @receiptPromoLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'سطر إعلاني (اختياري)'**
+  String get receiptPromoLine;
+
+  /// No description provided for @receiptFontSize.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم الخط'**
+  String get receiptFontSize;
+
+  /// No description provided for @shortcutsGuideTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شرح الاختصارات'**
+  String get shortcutsGuideTitle;
+
+  /// No description provided for @shortcutsGuideSearch.
+  ///
+  /// In ar, this message translates to:
+  /// **'التركيز على حقل البحث في نقطة البيع'**
+  String get shortcutsGuideSearch;
+
+  /// No description provided for @shortcutsGuideToggleUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تبديل وحدة السطر بين العلبة والجزء'**
+  String get shortcutsGuideToggleUnit;
+
+  /// No description provided for @shortcutsGuideHoldBill.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعليق الفاتورة الحالية مؤقتاً'**
+  String get shortcutsGuideHoldBill;
+
+  /// No description provided for @shortcutsGuideCheckout.
+  ///
+  /// In ar, this message translates to:
+  /// **'الانتقال إلى الدفع وإتمام الفاتورة'**
+  String get shortcutsGuideCheckout;
+
+  /// No description provided for @shortcutsGuideAlternatives.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح نافذة البدائل الذكية للصنف المحدد'**
+  String get shortcutsGuideAlternatives;
+
+  /// No description provided for @shortcutsGuideEnter.
+  ///
+  /// In ar, this message translates to:
+  /// **'في البحث: إنهاء قراءة الباركود أو إضافة النتيجة الوحيدة'**
+  String get shortcutsGuideEnter;
 }
 
 class _AppLocalizationsDelegate

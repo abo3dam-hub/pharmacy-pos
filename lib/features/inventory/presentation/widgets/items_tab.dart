@@ -15,6 +15,7 @@ import '../../../../core/units/package_cost.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_data_table.dart';
+import '../../../settings/application/ui_preferences_service.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../core/widgets/responsive_layout.dart';
@@ -643,9 +644,11 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
   }
 
   Widget _buildTable(AppLocalizations l10n, InventoryViewState state) {
+    final density = ref.watch(displayDensityProvider);
     return AppDataTable(
       emptyMessage: l10n.inventoryItemsEmpty,
       showCheckboxColumn: true,
+      dataRowHeight: listRowHeight(density),
       columns: [
         DataColumn(label: Text(l10n.itemTradeName)),
         DataColumn(label: Text(l10n.itemBarcode)),

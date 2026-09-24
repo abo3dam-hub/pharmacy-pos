@@ -210,6 +210,8 @@ class ReceiptPdfService {
   Future<Uint8List> buildBytes(
     PosInvoiceView invoice, {
     required String pharmacyName,
+    String? promoLine,
+    double fontSize = 10,
   }) async {
     final font = await _docs.font();
     final doc = _docs.document();
@@ -250,7 +252,11 @@ class ReceiptPdfService {
           PdfDocuments.spacer8(),
           pw.Divider(color: const PdfColor.fromInt(0xFFB0BEC5)),
           pw.SizedBox(height: 4),
-          _docs.heading(font, 'شكراً لتسوقك معنا', size: 10),
+          _docs.heading(font, 'شكراً لتسوقك معنا', size: fontSize),
+          if (promoLine != null && promoLine.isNotEmpty) ...[
+            pw.SizedBox(height: 4),
+            _docs.heading(font, promoLine, size: fontSize),
+          ],
         ],
       ),
     ));
@@ -258,8 +264,14 @@ class ReceiptPdfService {
   }
 
   /// Sends the receipt to the platform print dialog.
-  Future<void> print(PosInvoiceView invoice, String pharmacyName) async {
-    final bytes = await buildBytes(invoice, pharmacyName: pharmacyName);
+  Future<void> print(
+    PosInvoiceView invoice,
+    String pharmacyName, {
+    String? promoLine,
+    double fontSize = 10,
+  }) async {
+    final bytes = await buildBytes(invoice,
+        pharmacyName: pharmacyName, promoLine: promoLine, fontSize: fontSize);
     await Printing.layoutPdf(onLayout: (_) async => bytes);
   }
 }

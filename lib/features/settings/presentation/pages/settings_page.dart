@@ -7,6 +7,7 @@ import '../../../../core/di/providers.dart';
 import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/shortcuts/shortcut_manager.dart';
+import '../../application/ui_preferences_service.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -277,6 +278,80 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
           ),
           Card(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.l),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l10n.displayTitle, style: typography.titleMedium),
+                  const SizedBox(height: AppSpacing.s),
+                  Text(l10n.displayDensityHint,
+                      style: typography.bodySmall),
+                  const SizedBox(height: AppSpacing.m),
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final density =
+                          ref.watch(displayDensityProvider);
+                      return SegmentedButton<DisplayDensity>(
+                        segments: [
+                          ButtonSegment(
+                            value: DisplayDensity.comfortable,
+                            label: Text(l10n.displayComfortable),
+                            icon: const Icon(Icons.view_agenda_outlined),
+                          ),
+                          ButtonSegment(
+                            value: DisplayDensity.compact,
+                            label: Text(l10n.displayCompact),
+                            icon: const Icon(Icons.view_list_outlined),
+                          ),
+                        ],
+                        selected: {density},
+                        onSelectionChanged: (v) {
+                          ref
+                              .read(displayDensityProvider.notifier)
+                              .set(v.first);
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.l),
+              child: _ReceiptTemplateCard(),
+            ),
+          ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.l),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l10n.shortcutsGuideTitle,
+                      style: typography.titleMedium),
+                  const SizedBox(height: AppSpacing.m),
+                  _ShortcutGuideRow(
+                      keys: 'F1', description: l10n.shortcutsGuideSearch),
+                  _ShortcutGuideRow(
+                      keys: 'F2', description: l10n.shortcutsGuideToggleUnit),
+                  _ShortcutGuideRow(
+                      keys: 'F5', description: l10n.shortcutsGuideHoldBill),
+                  _ShortcutGuideRow(
+                      keys: 'F12', description: l10n.shortcutsGuideCheckout),
+                  _ShortcutGuideRow(
+                      keys: 'Alt+S',
+                      description: l10n.shortcutsGuideAlternatives),
+                  _ShortcutGuideRow(
+                      keys: 'Enter',
+                      description: l10n.shortcutsGuideEnter),
+                ],
+              ),
+            ),
+          ),
+          Card(
             child: ListTile(
               leading: const Icon(Icons.backup_outlined),
               title: Text(l10n.dataManagementTitle),
@@ -287,6 +362,127 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ShortcutGuideRow extends StatelessWidget {
+  const _ShortcutGuideRow({required this.keys, required this.description});
+
+  final String keys;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    final typography = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.s, vertical: AppSpacing.xs),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(keys,
+                style: typography.labelMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: AppSpacing.m),
+          Expanded(
+              child: Text(description, style: typography.bodyMedium)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReceiptTemplateCard extends ConsumerStatefulWidget {
+  const _ReceiptTemplateCard();
+
+  @override
+  ConsumerState<_ReceiptTemplateCard> createState() =>
+      _ReceiptTemplateCardState();
+}
+
+class _ReceiptTemplateCardState
+    extends ConsumerState<_ReceiptTemplateCard> {
+  final _name = TextEditingController();
+  final _promo = TextEditingController();
+  double _fontSize = 10;
+  bool _loaded = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _promo.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load(UiPreferencesService service) async {
+    _name.text = await service.receiptPharmacyName() ?? '';
+    _promo.text = await service.receiptPromoLine() ?? '';
+    _fontSize = await service.receiptFontSize();
+    if (mounted) setState(() => _loaded = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final typography = Theme.of(context).textTheme;
+    final service = ref.watch(uiPreferencesServiceProvider);
+    if (!_loaded) {
+      _load(service);
+      return const Center(child: CircularProgressIndicator());
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(l10n.receiptTemplateTitle, style: typography.titleMedium),
+        const SizedBox(height: AppSpacing.m),
+        TextField(
+          controller: _name,
+          decoration: InputDecoration(
+            labelText: l10n.receiptPharmacyName,
+            border: const OutlineInputBorder(),
+          ),
+          onChanged: (_) => service.setReceiptPharmacyName(_name.text),
+        ),
+        const SizedBox(height: AppSpacing.m),
+        TextField(
+          controller: _promo,
+          decoration: InputDecoration(
+            labelText: l10n.receiptPromoLine,
+            border: const OutlineInputBorder(),
+          ),
+          onChanged: (_) => service.setReceiptPromoLine(_promo.text),
+        ),
+        const SizedBox(height: AppSpacing.m),
+        Row(
+          children: [
+            Expanded(
+                child: Text(l10n.receiptFontSize,
+                    style: typography.bodyMedium)),
+            SizedBox(
+              width: 180,
+              child: Slider(
+                value: _fontSize,
+                min: 8,
+                max: 14,
+                divisions: 6,
+                label: _fontSize.toStringAsFixed(0),
+                onChanged: (v) {
+                  setState(() => _fontSize = v);
+                  service.setReceiptFontSize(v);
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

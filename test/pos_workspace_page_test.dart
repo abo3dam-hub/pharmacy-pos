@@ -251,7 +251,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('ملخص الإيصال'), findsOneWidget);
-      expect(find.textContaining('رقم الفاتورة: SI-'), findsOneWidget);
+      expect(find.textContaining('رقم الفاتورة: S'), findsOneWidget);
       expect(find.text('بانادول (Panadol) × 2 علبة'), findsOneWidget);
 
       final search = await pos.repo.searchSaleInvoices(

@@ -1527,11 +1527,16 @@ class _ReceiptDialog extends ConsumerWidget {
   final PosInvoiceView invoice;
 
   Future<void> _print(BuildContext context, WidgetRef ref) async {
+    final settingsDao = ref.read(settingsDaoProvider);
     final pharmacy =
-        await ref.read(settingsDaoProvider).getString(pharmacyNameSettingKey) ??
+        await settingsDao.getString(pharmacyNameSettingKey) ??
         pharmacyFallbackName();
+    final promoLine = await settingsDao.getString('receipt.promo_line');
+    final fontSizeRaw = await settingsDao.getString('receipt.font_size');
+    final fontSize = double.tryParse(fontSizeRaw ?? '') ?? 10.0;
     try {
-      await ReceiptPdfService().print(invoice, pharmacy);
+      await ReceiptPdfService()
+          .print(invoice, pharmacy, promoLine: promoLine, fontSize: fontSize);
     } catch (_) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context)

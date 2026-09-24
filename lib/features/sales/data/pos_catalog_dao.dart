@@ -440,12 +440,29 @@ class PosCatalogDao {
     );
   }
 
-  /// Collision-safe sequential sale invoice number: `SI-YYYYMMDD-HHmmssSSS`.
-  static String nextInvoiceNumber() {
+  /// Daily sequential sale invoice number: `S<YYMMDD>-<seq>`
+  /// (e.g. `S240926-1`, `S240926-2`). The sequence restarts each day and is
+  /// derived from the highest existing number for today, so it stays
+  /// collision-safe across restarts. Callers should still handle a UNIQUE
+  /// violation on `invoiceNumber` with a retry in the (rare) case of two
+  /// concurrent checkouts.
+  Future<String> nextInvoiceNumber() async {
     final now = DateTime.now();
     String p(int n, [int pad = 2]) => n.toString().padLeft(pad, '0');
-    return 'SI-${now.year}${p(now.month)}${p(now.day)}-'
-        '${p(now.hour)}${p(now.minute)}${p(now.second)}${p(now.millisecond, 3)}';
+    final datePart = '${p(now.year % 100)}${p(now.month)}${p(now.day)}';
+    final prefix = 'S$datePart-';
+
+    final rows = await (_db.select(
+      _db.salesInvoices,
+    )..where((i) => i.invoiceNumber.like('$prefix%'))).get();
+
+    var maxSeq = 0;
+    for (final r in rows) {
+      final suffix = r.invoiceNumber.substring(prefix.length);
+      final seq = int.tryParse(suffix);
+      if (seq != null && seq > maxSeq) maxSeq = seq;
+    }
+    return '$prefix${maxSeq + 1}';
   }
 
   /// Collision-safe sequential return number: `RT-YYYYMMDD-HHmmssSSS`.

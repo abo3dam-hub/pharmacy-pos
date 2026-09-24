@@ -3481,4 +3481,114 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get salesReturnsQuantity => 'الكمية';
+
+  @override
+  String get priceHistoryTitle => 'سجل تغيّر الأسعار';
+
+  @override
+  String get reorderSuggestionsTitle => 'اقتراحات إعادة الطلب';
+
+  @override
+  String get reorderSuggestionsEmpty => 'لا توجد أصناف تحتاج إعادة طلب حالياً';
+
+  @override
+  String get reorderUrgencyCritical => 'حرج';
+
+  @override
+  String get reorderUrgencyWarning => 'قريب النفاد';
+
+  @override
+  String get reorderUrgencyLow => 'تحت الحد الأدنى';
+
+  @override
+  String get currentStock => 'الرصيد الحالي';
+
+  @override
+  String get daysOfCover => 'أيام التغطية';
+
+  @override
+  String get avgDailySales => 'متوسط البيع اليومي';
+
+  @override
+  String get suggestedQty => 'الكمية المقترحة';
+
+  @override
+  String get expiryAlertsTitle => 'تنبيهات الصلاحية';
+
+  @override
+  String get expiryAlertsEmpty => 'لا توجد دفعات قريبة الانتهاء';
+
+  @override
+  String get expiryExpired => 'منتهي';
+
+  @override
+  String get expiryCritical => 'حرج';
+
+  @override
+  String get expiryWarning => 'قريب الانتهاء';
+
+  @override
+  String get expiredAgo => 'منتهي منذ';
+
+  @override
+  String get days => 'يوم';
+
+  @override
+  String get batchNumber => 'رقم الدفعة';
+
+  @override
+  String get refresh => 'تحديث';
+
+  @override
+  String get noResults => 'لا توجد نتائج';
+
+  @override
+  String get searchHint => 'بحث...';
+
+  @override
+  String get displayTitle => 'العرض';
+
+  @override
+  String get displayDensityHint => 'اختر كثافة عرض القوائم والجداول';
+
+  @override
+  String get displayComfortable => 'مريح';
+
+  @override
+  String get displayCompact => 'مضغوط';
+
+  @override
+  String get receiptTemplateTitle => 'قالب الإيصال';
+
+  @override
+  String get receiptPharmacyName => 'اسم الصيدلية في الإيصال';
+
+  @override
+  String get receiptPromoLine => 'سطر إعلاني (اختياري)';
+
+  @override
+  String get receiptFontSize => 'حجم الخط';
+
+  @override
+  String get shortcutsGuideTitle => 'شرح الاختصارات';
+
+  @override
+  String get shortcutsGuideSearch => 'التركيز على حقل البحث في نقطة البيع';
+
+  @override
+  String get shortcutsGuideToggleUnit => 'تبديل وحدة السطر بين العلبة والجزء';
+
+  @override
+  String get shortcutsGuideHoldBill => 'تعليق الفاتورة الحالية مؤقتاً';
+
+  @override
+  String get shortcutsGuideCheckout => 'الانتقال إلى الدفع وإتمام الفاتورة';
+
+  @override
+  String get shortcutsGuideAlternatives =>
+      'فتح نافذة البدائل الذكية للصنف المحدد';
+
+  @override
+  String get shortcutsGuideEnter =>
+      'في البحث: إنهاء قراءة الباركود أو إضافة النتيجة الوحيدة';
 }

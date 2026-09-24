@@ -141,8 +141,7 @@ class SalesRepositoryImpl implements SalesRepository {
   // ── Checkout ─────────────────────────────────────────────────────────
 
   @override
-  Future<String> nextInvoiceNumber() async =>
-      PosCatalogDao.nextInvoiceNumber();
+  Future<String> nextInvoiceNumber() => _catalogDao.nextInvoiceNumber();
 
   @override
   Future<String> nextReturnNumber() async =>
