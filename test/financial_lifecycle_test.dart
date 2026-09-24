@@ -168,6 +168,34 @@ void main() {
     expect(outcome.invoice.cardMicros, 20000);
   });
 
+  test('zero-cost sale posts without COGS lines instead of failing', () async {
+    // Regression: an item with no cost basis (e.g. an imported catalog row
+    // with no purchase batch) used to throw 'بند القيد بدون مبلغ' inside
+    // postSale and block the whole sale at the payment sheet.
+    final itemId = await insertItem(db);
+    await insertBatch(db, itemId, quantityBase: 10, unitCostMicros: 0);
+    final outcome = await SaleService().recordSale(
+      db,
+      saleReq(invoiceNumber: 'SI-ZC1', itemId: itemId, unitPrice: 20000),
+    );
+    expect(outcome.invoice.totalCostMicros, 0);
+
+    // Journal balanced on cash vs. revenue alone; no COGS/inventory lines.
+    expect(await journalCount(refType: 'sale'), 1);
+    expect(await journalTotals(outcome.invoice.id), [20000, 20000]);
+    expect(await accountBalance(SystemAccountCode.cash), 20000);
+    expect(await accountBalance(SystemAccountCode.salesRevenue), 20000);
+    expect(await accountBalance(SystemAccountCode.costOfGoodsSold), 0);
+    expect(await accountBalance(SystemAccountCode.inventory), 0);
+    final entry = (await (db.select(
+      db.journalEntries,
+    )..where((e) => e.refId.equals(outcome.invoice.id))).getSingle());
+    final entryLines = await (db.select(
+      db.journalEntryLines,
+    )..where((l) => l.journalEntryId.equals(entry.id))).get();
+    expect(entryLines.length, 2);
+  });
+
   test('mixed sale splits drawer/bank and deducts change from the drawer',
       () async {
     final itemId = await seedItem();
@@ -365,6 +393,75 @@ void main() {
       ),
       throwsA(isA<InvalidOperationException>()),
     );
+  });
+
+  test(
+    'zero-cost return posts without COGS lines instead of failing',
+    () async {
+      // Regression: returning a zero-cost line used to throw
+      // 'بند القيد بدون مبلغ' inside postReturn.
+      final itemId = await insertItem(db);
+      await insertBatch(db, itemId, quantityBase: 10, unitCostMicros: 0);
+      await SaleService().recordSale(
+        db,
+        saleReq(invoiceNumber: 'SI-ZC2', itemId: itemId, unitPrice: 20000),
+      );
+      final line = await (db.select(db.salesInvoiceItems)).getSingle();
+      await ReturnService().recordSaleReturn(
+        db,
+        SaleReturnRequest(
+          returnNumber: 'RT-ZC',
+          originalInvoiceItemId: line.id,
+          quantityBase: 1,
+          userId: 'user_admin',
+        ),
+      );
+
+      // Balanced reversal journal on the revenue reversal vs. cash alone.
+      expect(await journalCount(refType: 'return'), 1);
+      expect(
+        await journalTotals((await db.select(db.returns).getSingle()).id),
+        [20000, 20000],
+      );
+      expect(await accountBalance(SystemAccountCode.salesReturns), -20000);
+      expect(await accountBalance(SystemAccountCode.cash), 0);
+      expect(await accountBalance(SystemAccountCode.costOfGoodsSold), 0);
+      expect(await accountBalance(SystemAccountCode.inventory), 0);
+    },
+  );
+
+  test('voiding a zero-cost sale posts a balanced reversal', () async {
+    // Regression: voiding a zero-cost sale used to throw
+    // 'بند القيد بدون مبلغ' inside postVoidReversal.
+    final itemId = await insertItem(db);
+    await insertBatch(db, itemId, quantityBase: 10, unitCostMicros: 0);
+    final outcome = await SaleService().recordSale(
+      db,
+      saleReq(invoiceNumber: 'SI-ZC3', itemId: itemId, unitPrice: 20000),
+    );
+    await SaleService().voidInvoice(
+      db,
+      invoiceId: outcome.invoice.id,
+      userId: 'user_admin',
+      reason: 'إدخال خاطئ',
+    );
+
+    final journals = await (db.select(
+      db.journalEntries,
+    )..where((e) => e.refId.equals(outcome.invoice.id))).get();
+    expect(journals.length, 2);
+    for (final j in journals) {
+      final row = await db
+          .customSelect(
+            'SELECT total_debit_micros AS d, total_credit_micros AS c '
+            'FROM journal_entries WHERE id = ?1',
+            variables: [Variable.withString(j.id)],
+          )
+          .getSingle();
+      expect(row.read<int>('d'), row.read<int>('c'));
+    }
+    expect(await accountBalance(SystemAccountCode.cash), 0);
+    expect(await accountBalance(SystemAccountCode.salesRevenue), 0);
   });
 
   // ── Customer payments (§18) ────────────────────────────────────────────

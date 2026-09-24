@@ -178,6 +178,22 @@ def _blank(value):
     return value
 
 
+def _is_junk_indication(text: str) -> bool:
+    """Dirty source values (a barcode or bare number leaked into the uses/
+    indication column of a supplier catalog) must never become indications."""
+    if '#' in text:
+        return True
+    compact = text.replace(' ', '').replace('-', '')
+    return bool(compact) and compact.isdigit()
+
+
+def _clean_indications(uses: str) -> str:
+    """Build the import-column value, dropping junk segments but keeping the
+    source wording (incl. typos) of real indications untouched."""
+    segments = [s.strip() for s in uses.strip().replace(',', '؛').split('؛')]
+    return '؛'.join(s for s in segments if s and not _is_junk_indication(s))
+
+
 def convert(src: str, dst: str) -> dict:
     stats = Counter()
     with open(src, encoding='utf-8') as f:
@@ -233,7 +249,7 @@ def convert(src: str, dst: str) -> dict:
         else:
             base_unit, large_unit, n_parts = '', '', ''
 
-        indications = uses.strip().replace(',', '؛')
+        indications = _clean_indications(uses)
 
         row = _build_row(
             primary, secondary, name, name_en, form_text, relational,
@@ -332,7 +348,7 @@ def prepare_rows(src: str) -> tuple:
             else:
                 base_unit, large_unit, n_parts = '', '', ''
 
-            indications = uses.strip().replace(',', '؛')
+            indications = _clean_indications(uses)
             rows_out.append(_build_row(
                 primary, secondary, name, name_en, form_text, relational,
                 company, indications, base_unit, large_unit, n_parts,

@@ -323,10 +323,15 @@ class FinancialPostingService {
             debitMicros: creditMicros),
       JournalLineDraft(
           accountCode: SystemAccountCode.salesRevenue, creditMicros: totalMicros),
-      JournalLineDraft(
-          accountCode: SystemAccountCode.costOfGoodsSold, debitMicros: costMicros),
-      JournalLineDraft(
-          accountCode: SystemAccountCode.inventory, creditMicros: costMicros),
+      // COGS lines are skipped when the cost basis is unknown (zero): a sale
+      // must never be blocked by missing cost data, and the entry stays
+      // balanced on revenue vs. cash/bank/AR alone.
+      if (costMicros > 0)
+        JournalLineDraft(
+            accountCode: SystemAccountCode.costOfGoodsSold, debitMicros: costMicros),
+      if (costMicros > 0)
+        JournalLineDraft(
+            accountCode: SystemAccountCode.inventory, creditMicros: costMicros),
     ];
     await postJournalEntry(
       db,
@@ -393,10 +398,15 @@ class FinancialPostingService {
           JournalLineDraft(
               accountCode: SystemAccountCode.cash,
               creditMicros: refundCashMicros),
-        JournalLineDraft(
-            accountCode: SystemAccountCode.inventory, debitMicros: costMicros),
-        JournalLineDraft(
-            accountCode: SystemAccountCode.costOfGoodsSold, creditMicros: costMicros),
+        // Skip the COGS pair when the cost basis is unknown (zero) so a
+        // return is never blocked by missing cost data; the entry stays
+        // balanced on the revenue reversal vs. cash/AR alone.
+        if (costMicros > 0)
+          JournalLineDraft(
+              accountCode: SystemAccountCode.inventory, debitMicros: costMicros),
+        if (costMicros > 0)
+          JournalLineDraft(
+              accountCode: SystemAccountCode.costOfGoodsSold, creditMicros: costMicros),
       ],
       createdBy: userId,
     );
@@ -565,11 +575,16 @@ class FinancialPostingService {
           JournalLineDraft(
               accountCode: SystemAccountCode.accountsReceivable,
               creditMicros: creditMicros),
-        JournalLineDraft(
-            accountCode: SystemAccountCode.inventory, debitMicros: costMicros),
-        JournalLineDraft(
-            accountCode: SystemAccountCode.costOfGoodsSold,
-            creditMicros: costMicros),
+        // Skip the COGS pair when the cost basis is unknown (zero) so a void
+        // is never blocked by missing cost data; the reversal stays balanced
+        // on the revenue reversal vs. cash/bank/AR alone.
+        if (costMicros > 0)
+          JournalLineDraft(
+              accountCode: SystemAccountCode.inventory, debitMicros: costMicros),
+        if (costMicros > 0)
+          JournalLineDraft(
+              accountCode: SystemAccountCode.costOfGoodsSold,
+              creditMicros: costMicros),
       ],
       createdBy: userId,
     );

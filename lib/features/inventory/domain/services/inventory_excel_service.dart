@@ -317,6 +317,11 @@ class InventoryExcelService {
       var indicationIds = <String>[];
       if (rawIndications.isNotEmpty) {
         for (final name in _splitEntries(rawIndications)) {
+          // Skip dirty source values (a barcode or bare number leaked into
+          // the indication column) so they never become master-data entries.
+          if (_isJunkIndication(name)) {
+            continue;
+          }
           var indication = byIndicationName[name];
           if (indication == null) {
             indication =
@@ -691,6 +696,14 @@ class InventoryExcelService {
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList();
+  }
+
+  /// Guards the indications master data against dirty source values such as
+  /// barcodes or bare numbers leaked into the indication column.
+  static bool _isJunkIndication(String name) {
+    if (name.contains('#')) return true;
+    final compact = name.replaceAll(RegExp(r'[\s\-]'), '');
+    return compact.isNotEmpty && RegExp(r'^\d+$').hasMatch(compact);
   }
 
   /// Splits one `name:strength` entry at the first separator (':', ':').

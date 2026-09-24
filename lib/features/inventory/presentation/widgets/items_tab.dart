@@ -21,6 +21,7 @@ import '../../../../core/widgets/search_field.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../../suppliers/domain/repositories/supplier_repository.dart';
+import '../../../sales/presentation/widgets/alternatives_dialog.dart';
 import '../../application/inventory_controller.dart';
 import '../../application/master_data_controller.dart';
 import '../../domain/entities/inventory_item.dart';
@@ -78,6 +79,8 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       ref.read(authControllerProvider).permissions.contains(Perm.inventoryCreate);
   bool get _canEdit =>
       ref.read(authControllerProvider).permissions.contains(Perm.inventoryEdit);
+  bool get _canViewAlternatives =>
+      ref.read(authControllerProvider).permissions.contains(Perm.viewAlternatives);
   bool get _canChangePrices =>
       ref.read(authControllerProvider).permissions.contains(Perm.changePrices);
   bool get _canDelete =>
@@ -776,10 +779,28 @@ if (_canDelete)
     );
   }
 
+  /// Smart alternatives for an inventory row — the same dialog the POS
+  /// uses. Works identically in the stock view and the product tree: the
+  /// candidate search always spans the whole product master.
+  Future<void> _showAlternatives(InventoryItemView row) {
+    return showDialog<void>(
+      context: context,
+      builder: (_) => AlternativesDialog(requestedItemId: row.item.id),
+    );
+  }
+
   Widget _actions(AppLocalizations l10n, InventoryItemView row) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (_canViewAlternatives)
+          IconButton(
+            icon: const Icon(Icons.swap_horiz),
+            tooltip: l10n.navAlternatives,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+            onPressed: () => _showAlternatives(row),
+          ),
         IconButton(
           icon: const Icon(Icons.inventory_2_outlined),
           tooltip: l10n.inventoryBatchView,

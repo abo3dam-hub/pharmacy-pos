@@ -831,7 +831,12 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         ),
       ],
     ),
-    _section(l10n.itemIndications),
+    // The chip list below is the full master-data picker (every indication
+    // defined in the system), not the item's own set: the header counter
+    // shows how many are actually attached to this item, and selected chips
+    // carry the checkmark. This keeps "all indications visible" from reading
+    // as "all indications assigned".
+    _section('${l10n.itemIndications} (${_selectedIndicationIds.length})'),
     Wrap(
       spacing: AppSpacing.s,
       runSpacing: AppSpacing.s,

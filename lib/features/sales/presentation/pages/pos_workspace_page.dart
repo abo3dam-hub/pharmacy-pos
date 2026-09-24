@@ -24,9 +24,9 @@ import '../../domain/entities/pos_cart.dart';
 import '../../domain/entities/pos_catalog_item.dart';
 import '../../domain/entities/pos_customer.dart';
 import '../../domain/entities/pos_invoice.dart';
-import '../../domain/entities/smart_alternative.dart';
 import '../../domain/usecases/payment_calculator.dart';
 import '../controllers/pos_workspace_controller.dart';
+import '../widgets/alternatives_dialog.dart';
 import '../controllers/pos_workspace_state.dart';
 
 int? _tryParseMicros(String v) {
@@ -266,8 +266,8 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
     if (picked == null || !mounted) return;
     await showDialog<void>(
       context: context,
-      builder: (_) => _AlternativesDialog(
-        requested: picked,
+      builder: (_) => AlternativesDialog(
+        requestedItemId: picked.id,
         onPick: (alt) {
           Navigator.of(context).pop();
           _addAlternative(notifier, alt.item);
@@ -382,9 +382,6 @@ class _PanelsRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Parent `_TabWorkspace` watches the controller and rebuilds this subtree
-    // on every state change; read (not watch) here is deliberate.
-    final state = ref.read(posWorkspaceControllerProvider(tabIndex));
     final notifier = ref.read(
       posWorkspaceControllerProvider(tabIndex).notifier,
     );
@@ -407,7 +404,6 @@ class _PanelsRow extends ConsumerWidget {
             flex: 4,
             child: _CartPanel(
               tabIndex: tabIndex,
-              state: state,
               notifier: notifier,
               onLineSelected: onLineSelected,
             ),
@@ -421,7 +417,7 @@ class _PanelsRow extends ConsumerWidget {
 /// Compact layout (phones): the full cart interior as a draggable bottom sheet.
 Future<void> showPosCartSheet(
   BuildContext context,
-  PosWorkspaceState state,
+  int tabIndex,
   PosWorkspaceController notifier,
   ValueChanged<int> onLineSelected,
 ) {
@@ -436,8 +432,7 @@ Future<void> showPosCartSheet(
           bottom: MediaQuery.viewInsetsOf(context).bottom,
         ),
         child: _CartPanel(
-          tabIndex: state.tabIndex,
-          state: state,
+          tabIndex: tabIndex,
           notifier: notifier,
           onLineSelected: onLineSelected,
         ),
@@ -490,7 +485,7 @@ class _CompactLayout extends ConsumerWidget {
                         ? null
                         : () => showPosCartSheet(
                             context,
-                            state,
+                            tabIndex,
                             notifier,
                             onLineSelected,
                           ),
@@ -811,7 +806,11 @@ class _ProductList extends StatelessWidget {
                     onPressed: () => onAddAsPart!(item),
                   ),
                 ),
-              if (canViewAlternatives && !isOut)
+              // Alternatives stay visible even for out-of-stock rows: finding a
+              // stocked equivalent is exactly the point when the requested
+              // item is unavailable (§18.4 ranks in-stock first, out-of-stock
+              // still listed).
+              if (canViewAlternatives)
                 IconButton(
                   tooltip: l10n.navAlternatives,
                   icon: const Icon(Icons.swap_horiz, size: 20),
@@ -849,16 +848,18 @@ class _ProductList extends StatelessWidget {
 
 // ── Cart panel ──────────────────────────────────────────────────────────
 
+/// Cart panel. Watches the workspace controller directly instead of a
+/// constructor snapshot: the mobile bottom sheet has no rebuilding ancestor,
+/// so a one-off [PosWorkspaceState] stayed frozen and unit/package toggles,
+/// quantities and removals looked dead inside it.
 class _CartPanel extends ConsumerStatefulWidget {
   const _CartPanel({
     required this.tabIndex,
-    required this.state,
     required this.notifier,
     required this.onLineSelected,
   });
 
   final int tabIndex;
-  final PosWorkspaceState state;
   final PosWorkspaceController notifier;
   final ValueChanged<int> onLineSelected;
 
@@ -870,7 +871,7 @@ class _CartPanelState extends ConsumerState<_CartPanel> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final state = widget.state;
+    final state = ref.watch(posWorkspaceControllerProvider(widget.tabIndex));
     final totals = widget.notifier.totals;
     return Card(
       elevation: 0,
@@ -1745,122 +1746,6 @@ class _HoldBillsSheet extends ConsumerWidget {
                   ),
                 ),
               ),
-      ),
-    );
-  }
-}
-
-class _AlternativesDialog extends ConsumerWidget {
-  const _AlternativesDialog({required this.requested, required this.onPick});
-
-  final PosCatalogItem requested;
-  final ValueChanged<SmartAlternative> onPick;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text('${l10n.posAlternativesTitle} ${requested.displayName}'),
-      content: SizedBox(
-        width: 460,
-        child: FutureBuilder<List<SmartAlternative>>(
-          future: ref
-              .read(salesRepositoryProvider)
-              .smartAlternatives(requested),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text(l10n.posAlternativesFailed));
-            }
-            final list = snapshot.data ?? const <SmartAlternative>[];
-            if (list.isEmpty) {
-              return Center(child: Text(l10n.posAlternativesEmpty));
-            }
-            return ListView.separated(
-              shrinkWrap: true,
-              itemCount: list.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final alt = list[index];
-                return ListTile(
-                  dense: true,
-                  leading: _TierBadge(tier: alt.tier),
-                  title: Text(alt.item.displayName),
-                  subtitle: Text(
-                    '${alt.item.scientificName}'
-                    '${(alt.item.manufacturerName?.isNotEmpty ?? false) ? ' · ${alt.item.manufacturerName}' : ''}'
-                    '${(alt.item.dose?.isNotEmpty ?? false) ? ' · ${alt.item.dose}' : ''}'
-                    '${(alt.item.pharmaForm?.isNotEmpty ?? false) ? ' · ${alt.item.pharmaForm}' : ''}'
-                    ' · ${l10n.posAvailableStock}: '
-                    '${alt.item.availableStockBase}',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Text(
-                    Money.fromUnits(
-                      alt.item.sellingPriceMicros,
-                    ).formatArabicDigits(),
-                  ),
-                  onTap: () => onPick(alt),
-                );
-              },
-            );
-          },
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.commonClose),
-        ),
-      ],
-    );
-  }
-}
-
-/// Colored tier badge (green / yellow / blue) for the alternatives panel.
-class _TierBadge extends StatelessWidget {
-  const _TierBadge({required this.tier});
-
-  final SmartAlternativeTier tier;
-
-  static const _colors = <SmartAlternativeTier, Color>{
-    SmartAlternativeTier.tier1: Color(0xFF2E7D32),
-    SmartAlternativeTier.tier2: Color(0xFFF9A825),
-    SmartAlternativeTier.tier3: Color(0xFF1976D2),
-  };
-
-  static const _labels = <SmartAlternativeTier, String>{
-    SmartAlternativeTier.tier1: '1',
-    SmartAlternativeTier.tier2: '2',
-    SmartAlternativeTier.tier3: '3',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final label = switch (tier) {
-      SmartAlternativeTier.tier1 => l10n.posAlternativesTier1,
-      SmartAlternativeTier.tier2 => l10n.posAlternativesTier2,
-      SmartAlternativeTier.tier3 => l10n.posAlternativesTier3,
-    };
-    return Tooltip(
-      message: label,
-      child: Container(
-        width: 28,
-        height: 28,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(color: _colors[tier], shape: BoxShape.circle),
-        child: Text(
-          _labels[tier]!,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
-          ),
-        ),
       ),
     );
   }
