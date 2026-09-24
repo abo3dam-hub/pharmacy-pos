@@ -102,3 +102,26 @@ Actions:
   the per-row try), so cancel keeps working. `Error`s (OOM etc.) still abort.
 - Existing import tests (contract + progress/cancel) pass; `flutter analyze`
   clean on the touched file.
+
+## Fix 3 (2026-09-24, ~03:40): Excel repair prompt on the Dart file + CI fix
+
+Ali reported the Dart-generated file STILL triggered Excel's "problem with
+some content" recovery prompt. Structural audit of the file found two
+anomalies left by the Dart `excel` writer:
+
+1. Orphan empty drawing: `xl/drawings/drawing1.xml` (+ its sheet rels entry)
+   shipped with the `Excel.createExcel()` template, but the sheet has no
+   `<drawing>` element referencing it.
+2. Stale dimension: `<dimension ref="A1"/>` while the sheet holds
+   `A1:AA22293`.
+
+`tool/sanitize_xlsx.py` (new) post-processes the file: drops the orphan
+drawing + rels + content-type override, recomputes the dimension from the
+actual cells. Verified afterwards: zip valid, all workbook rels resolve,
+shared-strings counts consistent, style indices in range, and the app's own
+Dart parser still decodes all 22,293 rows. The delivered
+`pharmacy_catalog_import.xlsx` is the sanitized build.
+
+Also fixed: CI `flutter analyze` failed on 3 info lints in
+`tool/write_catalog_xlsx.dart` (dangling library doc comment,
+unintended_html_in_doc_comment) — silenced, pushed, CI re-running.
