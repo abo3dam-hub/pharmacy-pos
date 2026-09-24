@@ -1241,17 +1241,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get purchaseCreatedMessage => 'تم حفظ فاتورة الشراء';
-  String get purchaseReceiveNow => 'استلام فوري';
-  String get purchaseSavePending => 'حفظ كطلبية معلقة';
-  String get productDetailTitle => 'بيانات المنتج';
-  String get productDetailNotFound => 'المنتج غير موجود';
-  String get productDetailTradeName => 'الاسم التجاري';
-  String get productDetailTradeNameEn => 'الاسم الإنجليزي';
-  String get productDetailScientific => 'الاسم العلمي';
-  String get productDetailBarcode => 'الباركود';
-  String get productDetailSellPrice => 'سعر البيع';
-  String get productDetailCost => 'سعر التكلفة';
-  String get productDetailStock => 'المخزون';
 
   @override
   String get purchaseUpdatedMessage => 'تم تعديل فاتورة الشراء';
@@ -2041,8 +2030,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get salesHistoryEmpty => 'لا توجد مبيعات مطابقة';
-  String get salesHistoryOpenDetail => 'فتح تفاصيل الفاتورة';
-  String get salesHistoryNoLines => 'لا توجد مواد في هذه الفاتورة';
 
   @override
   String get salesHistorySearchHint => 'ابحث برقم الفاتورة أو اسم العميل...';
@@ -3604,4 +3591,43 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get shortcutsGuideEnter =>
       'في البحث: إنهاء قراءة الباركود أو إضافة النتيجة الوحيدة';
+
+  @override
+  String get purchaseReceiveNow => 'استلام فوري';
+
+  @override
+  String get purchaseSavePending => 'حفظ كطلبية معلقة';
+
+  @override
+  String get productDetailTitle => 'بيانات المنتج';
+
+  @override
+  String get productDetailNotFound => 'المنتج غير موجود';
+
+  @override
+  String get productDetailTradeName => 'الاسم التجاري';
+
+  @override
+  String get productDetailTradeNameEn => 'الاسم الإنجليزي';
+
+  @override
+  String get productDetailScientific => 'الاسم العلمي';
+
+  @override
+  String get productDetailBarcode => 'الباركود';
+
+  @override
+  String get productDetailSellPrice => 'سعر البيع';
+
+  @override
+  String get productDetailCost => 'سعر التكلفة';
+
+  @override
+  String get productDetailStock => 'المخزون';
+
+  @override
+  String get salesHistoryOpenDetail => 'فتح التفاصيل';
+
+  @override
+  String get salesHistoryNoLines => 'لا توجد مواد في هذه الفاتورة';
 }

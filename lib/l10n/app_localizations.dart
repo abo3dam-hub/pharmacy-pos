@@ -2497,72 +2497,6 @@ abstract class AppLocalizations {
   /// **'تم حفظ فاتورة الشراء'**
   String get purchaseCreatedMessage;
 
-  /// No description provided for @purchaseReceiveNow.
-  ///
-  /// In ar, this message translates to:
-  /// **'استلام فوري'**
-  String get purchaseReceiveNow;
-
-  /// No description provided for @purchaseSavePending.
-  ///
-  /// In ar, this message translates to:
-  /// **'حفظ كطلبية معلقة'**
-  String get purchaseSavePending;
-
-  /// No description provided for @productDetailTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'بيانات المنتج'**
-  String get productDetailTitle;
-
-  /// No description provided for @productDetailNotFound.
-  ///
-  /// In ar, this message translates to:
-  /// **'المنتج غير موجود'**
-  String get productDetailNotFound;
-
-  /// No description provided for @productDetailTradeName.
-  ///
-  /// In ar, this message translates to:
-  /// **'الاسم التجاري'**
-  String get productDetailTradeName;
-
-  /// No description provided for @productDetailTradeNameEn.
-  ///
-  /// In ar, this message translates to:
-  /// **'الاسم الإنجليزي'**
-  String get productDetailTradeNameEn;
-
-  /// No description provided for @productDetailScientific.
-  ///
-  /// In ar, this message translates to:
-  /// **'الاسم العلمي'**
-  String get productDetailScientific;
-
-  /// No description provided for @productDetailBarcode.
-  ///
-  /// In ar, this message translates to:
-  /// **'الباركود'**
-  String get productDetailBarcode;
-
-  /// No description provided for @productDetailSellPrice.
-  ///
-  /// In ar, this message translates to:
-  /// **'سعر البيع'**
-  String get productDetailSellPrice;
-
-  /// No description provided for @productDetailCost.
-  ///
-  /// In ar, this message translates to:
-  /// **'سعر التكلفة'**
-  String get productDetailCost;
-
-  /// No description provided for @productDetailStock.
-  ///
-  /// In ar, this message translates to:
-  /// **'المخزون'**
-  String get productDetailStock;
-
   /// No description provided for @purchaseUpdatedMessage.
   ///
   /// In ar, this message translates to:
@@ -4098,18 +4032,6 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لا توجد مبيعات مطابقة'**
   String get salesHistoryEmpty;
-
-  /// No description provided for @salesHistoryOpenDetail.
-  ///
-  /// In ar, this message translates to:
-  /// **'فتح تفاصيل الفاتورة'**
-  String get salesHistoryOpenDetail;
-
-  /// No description provided for @salesHistoryNoLines.
-  ///
-  /// In ar, this message translates to:
-  /// **'لا توجد مواد في هذه الفاتورة'**
-  String get salesHistoryNoLines;
 
   /// No description provided for @salesHistorySearchHint.
   ///
@@ -7140,6 +7062,84 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'في البحث: إنهاء قراءة الباركود أو إضافة النتيجة الوحيدة'**
   String get shortcutsGuideEnter;
+
+  /// No description provided for @purchaseReceiveNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'استلام فوري'**
+  String get purchaseReceiveNow;
+
+  /// No description provided for @purchaseSavePending.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ كطلبية معلقة'**
+  String get purchaseSavePending;
+
+  /// No description provided for @productDetailTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيانات المنتج'**
+  String get productDetailTitle;
+
+  /// No description provided for @productDetailNotFound.
+  ///
+  /// In ar, this message translates to:
+  /// **'المنتج غير موجود'**
+  String get productDetailNotFound;
+
+  /// No description provided for @productDetailTradeName.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم التجاري'**
+  String get productDetailTradeName;
+
+  /// No description provided for @productDetailTradeNameEn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم الإنجليزي'**
+  String get productDetailTradeNameEn;
+
+  /// No description provided for @productDetailScientific.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاسم العلمي'**
+  String get productDetailScientific;
+
+  /// No description provided for @productDetailBarcode.
+  ///
+  /// In ar, this message translates to:
+  /// **'الباركود'**
+  String get productDetailBarcode;
+
+  /// No description provided for @productDetailSellPrice.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر البيع'**
+  String get productDetailSellPrice;
+
+  /// No description provided for @productDetailCost.
+  ///
+  /// In ar, this message translates to:
+  /// **'سعر التكلفة'**
+  String get productDetailCost;
+
+  /// No description provided for @productDetailStock.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون'**
+  String get productDetailStock;
+
+  /// No description provided for @salesHistoryOpenDetail.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح التفاصيل'**
+  String get salesHistoryOpenDetail;
+
+  /// No description provided for @salesHistoryNoLines.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد مواد في هذه الفاتورة'**
+  String get salesHistoryNoLines;
 }
 
 class _AppLocalizationsDelegate

@@ -376,9 +376,16 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          '${v.customerName.isEmpty ? '—' : v.customerName}'
-                          ' · ${v.userName} · ${_fmtDate(v.createdAt)}',
+                          v.customerName.isEmpty ? '—' : v.customerName,
                           style: context.appTypography.bodySecondary,
+                        ),
+                        Text(
+                          v.userName,
+                          style: context.appTypography.labelSmall,
+                        ),
+                        Text(
+                          _fmtDate(v.createdAt),
+                          style: context.appTypography.labelSmall,
                         ),
                       ],
                     ),
@@ -393,6 +400,10 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         _statusLabel(v.saleStatus),
+                        style: context.appTypography.labelSmall,
+                      ),
+                      Text(
+                        _paymentLabel(v.paymentMethod),
                         style: context.appTypography.labelSmall,
                       ),
                     ],

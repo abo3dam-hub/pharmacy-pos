@@ -1242,17 +1242,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get purchaseCreatedMessage => 'Purchase invoice saved';
-  String get purchaseReceiveNow => 'Receive now';
-  String get purchaseSavePending => 'Save as pending order';
-  String get productDetailTitle => 'Product details';
-  String get productDetailNotFound => 'Product not found';
-  String get productDetailTradeName => 'Trade name';
-  String get productDetailTradeNameEn => 'English name';
-  String get productDetailScientific => 'Scientific name';
-  String get productDetailBarcode => 'Barcode';
-  String get productDetailSellPrice => 'Sell price';
-  String get productDetailCost => 'Cost price';
-  String get productDetailStock => 'Stock';
 
   @override
   String get purchaseUpdatedMessage => 'Purchase invoice updated';
@@ -2046,8 +2035,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get salesHistoryEmpty => 'No matching sales';
-  String get salesHistoryOpenDetail => 'Open invoice details';
-  String get salesHistoryNoLines => 'No items in this invoice';
 
   @override
   String get salesHistorySearchHint =>
@@ -3619,4 +3606,43 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get shortcutsGuideEnter =>
       'In search: finish barcode scan or add the single result';
+
+  @override
+  String get purchaseReceiveNow => 'Receive now';
+
+  @override
+  String get purchaseSavePending => 'Save as pending order';
+
+  @override
+  String get productDetailTitle => 'Product details';
+
+  @override
+  String get productDetailNotFound => 'Product not found';
+
+  @override
+  String get productDetailTradeName => 'Trade name';
+
+  @override
+  String get productDetailTradeNameEn => 'English name';
+
+  @override
+  String get productDetailScientific => 'Scientific name';
+
+  @override
+  String get productDetailBarcode => 'Barcode';
+
+  @override
+  String get productDetailSellPrice => 'Sell price';
+
+  @override
+  String get productDetailCost => 'Cost price';
+
+  @override
+  String get productDetailStock => 'Stock';
+
+  @override
+  String get salesHistoryOpenDetail => 'Open details';
+
+  @override
+  String get salesHistoryNoLines => 'No lines in this invoice';
 }
