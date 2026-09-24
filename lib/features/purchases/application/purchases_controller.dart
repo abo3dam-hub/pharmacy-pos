@@ -145,7 +145,7 @@ class PurchasesController extends StateNotifier<PurchasesViewState> {
   }) async {
     final repo = _repo;
     if (repo == null) {
-      return const Failure.validation('purchases repository not provided');
+      return const ValidationFailure('purchases repository not provided');
     }
     try {
       final invoice = await _create(draft,
