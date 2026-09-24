@@ -125,3 +125,24 @@ Dart parser still decodes all 22,293 rows. The delivered
 Also fixed: CI `flutter analyze` failed on 3 info lints in
 `tool/write_catalog_xlsx.dart` (dangling library doc comment,
 unintended_html_in_doc_comment) — silenced, pushed, CI re-running.
+
+## Fix 4 (2026-09-24, ~03:50): CI follow-ups + row ~4608 investigation
+
+- Ali confirmed the sanitized xlsx opens cleanly in desktop Excel (no repair
+  prompt). The delivered file is the sanitized build.
+- CI `flutter analyze` failed on 3 info lints in `tool/write_catalog_xlsx.dart`
+  (fixed, pushed; the re-run went green).
+- The following commit only touched this report, yet `flutter test` failed on
+  CI while the full suite (656 tests) passes locally — suspected flaky CI
+  runner; a fresh run was triggered to confirm.
+- Row ~4608 "unexpected error" (old app, apply phase): the catalog data in
+  rows 4600-4680 was audited — no structural anomaly; the same rows import
+  cleanly on a fresh DB and on a simulated dirty DB (pre-existing items with
+  overlapping barcodes forcing the update path, barcode-less name matches,
+  case-variant ingredients). Zero unexpected-error issues in both runs, so the
+  trigger is specific to Ali's on-device database content and could not be
+  reproduced here. The old app aborts the whole import on any unexpected
+  per-row error with a generic message; the new app (per-row catch-all in
+  `applyImport`) completes the import and reports the exact failing rows as
+  `الصف N: خطأ غير متوقع (<type>): <message>` issues instead. Next step is for
+  Ali to retry with the updated app and send the reported rows.
