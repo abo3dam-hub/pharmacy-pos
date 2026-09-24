@@ -19,6 +19,19 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   COGS ≈ 3,666.6667, never 11,000. See
   `COST-BASIS-FIX-REPORT-2026-09-24.pdf` and PROJECT_STATUS §3f.
 
+## [Unreleased]
+
+### Added
+- **Drug catalog conversion tool** (2026-09-24) — `tool/convert_zena_catalog.py`
+  converts the Zena drug catalog CSV (22,292 items) into the app's Excel
+  import format (`products` sheet, Arabic headers): barcode cleanup
+  (multi-barcode cells → primary/secondary), active-ingredient parsing to
+  `name:strength` relational pairs, manufacturer/indication auto-creation,
+  pharma-form inference, and unit relations (part/box) only where the catalog
+  declares more than one part per package so the importer derives per-part
+  cost correctly. Report: `CATALOG-IMPORT-REPORT-2026-09-24.md`. Sale prices
+  are intentionally left blank (the catalog carries none).
+
 ### Changed
 - **Camera barcode scanning (Android)** (2026-09-24) — new
   `lib/core/scanning/` module built on `mobile_scanner`: a camera scan button
