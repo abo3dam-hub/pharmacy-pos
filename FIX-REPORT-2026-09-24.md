@@ -291,3 +291,11 @@
 - **ترجمات**: أُضيفت مفاتيح جديدة (استلام فوري، حفظ كطلبية معلقة، بيانات المنتج، إلخ) في `app_localizations.dart` والملفين العربي والإنجليزي.
 - **لا تغيير في schema**.
 - **لم يُشغّل `flutter analyze` أو `flutter test`** — بيئة العمل الحالية لا تحتوي Flutter. يُنصح بالتشغيل بعد السحب.
+
+## إصلاحات CI (2026-09-25)
+- فشل `flutter analyze` أولاً: الترجمات الجديدة كانت مضافة يدوياً لملفات مولّدة يمحوها `flutter gen-l10n` — نُقلت إلى `app_ar.arb` و`app_en.arb`.
+- ثم فشل لسبب `PurchasesController`: معامل `_repo` الإجباري كسر اختبارين — صار `purchasesRepository` اختيارياً مسمّى.
+- ثم `Failure.validation` غير موجود — استُبدل بـ `ValidationFailure`.
+- ثم تحذير import غير مستخدم في `product_detail_dialog.dart`.
+- ثم اختبار `sales_history_page_test`: بطاقة الفاتورة الجديدة دمجت اسم العميل مع التاريخ — فُصلت النصوص (العميل، الكاشير، التاريخ، طريقة الدفع) لتظهر مستقلة.
+- التحقق المحلي: `flutter analyze` نظيف، `flutter test`: **673 اختبار ناجح**.
