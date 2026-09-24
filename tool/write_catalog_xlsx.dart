@@ -2,7 +2,9 @@
 /// app itself uses for export/import, so the file is guaranteed readable by
 /// the app's importer (and by desktop Excel).
 ///
-/// Usage: dart run tool/write_catalog_xlsx.dart <catalog.json> <out.xlsx>
+/// Usage: `dart run tool/write_catalog_xlsx.dart <catalog.json> <out.xlsx>`
+library;
+
 import 'dart:convert';
 import 'dart:io';
 
