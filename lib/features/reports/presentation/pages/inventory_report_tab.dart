@@ -283,7 +283,9 @@ class _InventoryReportTableState extends State<_InventoryReportTable> {
         ),
       );
     }
-    return PaginatedDataTable(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: PaginatedDataTable(
       columns: [
         DataColumn(label: Text(l10n.reportInventoryItemCode)),
         DataColumn(label: Text(l10n.reportInventoryItemName)),
@@ -304,6 +306,7 @@ class _InventoryReportTableState extends State<_InventoryReportTable> {
       source: _InventoryReportDataSource(widget.report, typography),
       rowsPerPage: _rowsPerPage,
       showFirstLastButtons: true,
+      ),
     );
   }
 }

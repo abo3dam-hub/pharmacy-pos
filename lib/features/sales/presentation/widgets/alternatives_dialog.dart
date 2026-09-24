@@ -6,6 +6,7 @@ import '../../../../core/money/money.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/pos_catalog_item.dart';
 import '../../domain/entities/smart_alternative.dart';
+import 'product_detail_dialog.dart';
 
 /// Shared smart-alternatives dialog.
 ///
@@ -122,10 +123,21 @@ class AlternativesDialog extends ConsumerWidget {
                         ),
                     ],
                   ),
-                  trailing: Text(
-                    Money.fromUnits(
-                      alt.item.sellingPriceMicros,
-                    ).formatArabicDigits(),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        Money.fromUnits(
+                          alt.item.sellingPriceMicros,
+                        ).formatArabicDigits(),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.info_outline),
+                        tooltip: l10n.productDetailTitle,
+                        onPressed: () =>
+                            showProductDetailDialog(context, alt.item.id),
+                      ),
+                    ],
                   ),
                   onTap: onPick == null ? null : () => onPick!(alt),
                 );

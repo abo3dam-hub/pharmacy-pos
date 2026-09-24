@@ -1242,6 +1242,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get purchaseCreatedMessage => 'Purchase invoice saved';
+  String get purchaseReceiveNow => 'Receive now';
+  String get purchaseSavePending => 'Save as pending order';
+  String get productDetailTitle => 'Product details';
+  String get productDetailNotFound => 'Product not found';
+  String get productDetailTradeName => 'Trade name';
+  String get productDetailTradeNameEn => 'English name';
+  String get productDetailScientific => 'Scientific name';
+  String get productDetailBarcode => 'Barcode';
+  String get productDetailSellPrice => 'Sell price';
+  String get productDetailCost => 'Cost price';
+  String get productDetailStock => 'Stock';
 
   @override
   String get purchaseUpdatedMessage => 'Purchase invoice updated';
@@ -2035,6 +2046,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get salesHistoryEmpty => 'No matching sales';
+  String get salesHistoryOpenDetail => 'Open invoice details';
+  String get salesHistoryNoLines => 'No items in this invoice';
 
   @override
   String get salesHistorySearchHint =>

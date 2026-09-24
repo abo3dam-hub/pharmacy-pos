@@ -68,7 +68,7 @@ class PurchasesViewState {
 /// return run through the [PurchasesFeature] on form/detail pages.
 class PurchasesController extends StateNotifier<PurchasesViewState> {
   PurchasesController(this._list, this._receive, this._cancel, this._create,
-      this._update, this._return)
+      this._update, this._return, this._repo)
       : super(const PurchasesViewState());
 
   final ListPurchasesUseCase _list;
@@ -77,6 +77,7 @@ class PurchasesController extends StateNotifier<PurchasesViewState> {
   final CreatePurchaseUseCase _create;
   final UpdatePendingPurchaseUseCase _update;
   final PurchaseReturnUseCase _return;
+  final PurchasesRepository _repo;
 
   Future<Failure?> load({
     String search = '',
@@ -126,6 +127,36 @@ class PurchasesController extends StateNotifier<PurchasesViewState> {
   }) async {
     try {
       await _create(draft, actingUserId: actingUserId, actingRoleId: actingRoleId);
+      return null;
+    } on AppException catch (e) {
+      return e.failure;
+    }
+  }
+
+  /// Creates the invoice and immediately receives it (adds to stock) in one
+  /// go — for the common case where goods are received at entry time.
+  /// Batch numbers are auto-generated; expiry dates are left empty.
+  Future<Failure?> createAndReceive(
+    PurchaseDraft draft, {
+    String? actingUserId,
+    String? actingRoleId,
+  }) async {
+    try {
+      final invoice = await _create(draft,
+          actingUserId: actingUserId, actingRoleId: actingRoleId);
+      final detail = await _repo.detail(invoice.id);
+      final stamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final inputs = [
+        for (var i = 0; i < detail.lines.length; i++)
+          ReceiveLineInput(
+            lineId: detail.lines[i].line.id,
+            batchNumber: 'AUTO-$stamp-${i + 1}',
+          ),
+      ];
+      await _receive(invoice.id,
+          inputs: inputs,
+          actingUserId: actingUserId,
+          actingRoleId: actingRoleId);
       return null;
     } on AppException catch (e) {
       return e.failure;

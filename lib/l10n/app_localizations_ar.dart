@@ -1241,6 +1241,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get purchaseCreatedMessage => 'تم حفظ فاتورة الشراء';
+  String get purchaseReceiveNow => 'استلام فوري';
+  String get purchaseSavePending => 'حفظ كطلبية معلقة';
+  String get productDetailTitle => 'بيانات المنتج';
+  String get productDetailNotFound => 'المنتج غير موجود';
+  String get productDetailTradeName => 'الاسم التجاري';
+  String get productDetailTradeNameEn => 'الاسم الإنجليزي';
+  String get productDetailScientific => 'الاسم العلمي';
+  String get productDetailBarcode => 'الباركود';
+  String get productDetailSellPrice => 'سعر البيع';
+  String get productDetailCost => 'سعر التكلفة';
+  String get productDetailStock => 'المخزون';
 
   @override
   String get purchaseUpdatedMessage => 'تم تعديل فاتورة الشراء';
@@ -2030,6 +2041,8 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get salesHistoryEmpty => 'لا توجد مبيعات مطابقة';
+  String get salesHistoryOpenDetail => 'فتح تفاصيل الفاتورة';
+  String get salesHistoryNoLines => 'لا توجد مواد في هذه الفاتورة';
 
   @override
   String get salesHistorySearchHint => 'ابحث برقم الفاتورة أو اسم العميل...';

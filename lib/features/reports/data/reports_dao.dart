@@ -562,6 +562,10 @@ name: bilingualName(row.read<String>('name'),
       LEFT JOIN item_units u ON u.item_id = i.id
       WHERE i.is_active = 1
       GROUP BY i.id
+      -- Only items actually in stock: the product tree (market catalog) is
+      -- not inventory. An item with no batches / zero batch quantity is
+      -- excluded even if its master record is active.
+      HAVING COALESCE(SUM(b.quantity_base), 0) > 0
       ORDER BY i.trade_name
       ''',
     ).get();

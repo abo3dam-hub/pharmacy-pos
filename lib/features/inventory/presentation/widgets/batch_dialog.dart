@@ -29,6 +29,7 @@ Future<BatchFormResult?> showBatchFormDialog(
   int unitsPerLarge = 1,
   String baseUnitName = '',
   String largeUnitName = '',
+  int initialCostMicros = 0,
 }) async {
   final result = await showDialog<BatchFormResult>(
     context: context,
@@ -38,6 +39,7 @@ Future<BatchFormResult?> showBatchFormDialog(
       unitsPerLarge: unitsPerLarge,
       baseUnitName: baseUnitName,
       largeUnitName: largeUnitName,
+      initialCostMicros: initialCostMicros,
     ),
   );
   return result;
@@ -50,6 +52,7 @@ class _BatchFormDialog extends StatefulWidget {
     this.unitsPerLarge = 1,
     this.baseUnitName = '',
     this.largeUnitName = '',
+    this.initialCostMicros = 0,
   });
 
   final String itemId;
@@ -57,6 +60,10 @@ class _BatchFormDialog extends StatefulWidget {
   final int unitsPerLarge;
   final String baseUnitName;
   final String largeUnitName;
+
+  /// Item's current cost (per base unit) — pre-fills the cost field so the
+  /// pharmacist doesn't re-enter a cost already set on the item.
+  final int initialCostMicros;
 
   @override
   State<_BatchFormDialog> createState() => _BatchFormDialogState();
@@ -82,6 +89,16 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
   void initState() {
     super.initState();
     _inPackages = widget.unitsPerLarge > 1;
+    // Pre-fill cost from the item's current cost so the pharmacist doesn't
+    // re-enter it. Displayed per package in package-entry mode, per base
+    // unit otherwise — converted via the single conversion point.
+    if (widget.initialCostMicros > 0) {
+      final displayMicros = _inPackages
+          ? baseUnitCostToPackageCost(
+              widget.initialCostMicros, widget.unitsPerLarge)
+          : widget.initialCostMicros;
+      _cost.text = Money.fromUnits(displayMicros).format(4);
+    }
   }
 
   @override

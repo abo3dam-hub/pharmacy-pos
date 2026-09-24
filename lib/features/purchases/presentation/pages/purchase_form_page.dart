@@ -113,6 +113,11 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
 
   bool get _isEdit => widget.invoiceId != null;
 
+  /// When true (default for new invoices), the invoice is received immediately
+  /// on save — goods are added to stock. When false, it's saved as a pending
+  /// order to be received later.
+  bool _receiveImmediately = true;
+
   String? get _actingUserId => ref.read(authControllerProvider).user?.id;
   String? get _actingRoleId => ref.read(authControllerProvider).actingRoleId;
   bool get _canCreateSuppliers => ref
@@ -147,7 +152,9 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
   }
 
   /// Pre-fills the first line from the batch-entry hand-off (item, quantity,
-  /// unit cost) and resolves the item's base unit for the line.
+  /// unit cost) and resolves the item's base unit for the line. Entry
+  /// defaults to commercial packages (never parts) — parts are a sales-only
+  /// concept for partial sales.
   Future<void> _applyPrefill() async {
     final prefill = widget.prefill;
     if (prefill == null) return;
@@ -167,9 +174,9 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
           unitCostMicros: prefill.unitCostMicros,
           unitsPerLarge: pkg.unitsPerLarge,
           largeUnitName: pkg.largeName,
-          entryInPackages:
-              pkg.unitsPerLarge > 1 &&
-              prefill.quantityBase % pkg.unitsPerLarge == 0,
+          // Purchases are entered per commercial package; the part/base
+          // unit is only for partial sales in the POS window.
+          entryInPackages: pkg.unitsPerLarge > 1,
         ),
       );
     });
@@ -463,11 +470,17 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
             actingUserId: _actingUserId,
             actingRoleId: _actingRoleId,
           )
-        : await controller.create(
-            draft,
-            actingUserId: _actingUserId,
-            actingRoleId: _actingRoleId,
-          );
+        : _receiveImmediately
+            ? await controller.createAndReceive(
+                draft,
+                actingUserId: _actingUserId,
+                actingRoleId: _actingRoleId,
+              )
+            : await controller.create(
+                draft,
+                actingUserId: _actingUserId,
+                actingRoleId: _actingRoleId,
+              );
     if (!mounted) return;
     setState(() => _saving = false);
     if (outcome != null) {
@@ -616,6 +629,33 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                     const SizedBox(height: AppSpacing.l),
                     _totalsSection(l10n, typography),
                     const SizedBox(height: AppSpacing.l),
+                    if (!_isEdit)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.m),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: SegmentedButton<bool>(
+                                segments: [
+                                  ButtonSegment(
+                                    value: true,
+                                    label: Text(l10n.purchaseReceiveNow),
+                                    icon: const Icon(Icons.inventory_2_outlined),
+                                  ),
+                                  ButtonSegment(
+                                    value: false,
+                                    label: Text(l10n.purchaseSavePending),
+                                    icon: const Icon(Icons.schedule_outlined),
+                                  ),
+                                ],
+                                selected: {_receiveImmediately},
+                                onSelectionChanged: (s) => setState(
+                                    () => _receiveImmediately = s.first),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     Align(
                       alignment: AlignmentDirectional.centerEnd,
                       child: FilledButton.icon(

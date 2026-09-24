@@ -8,7 +8,6 @@ import '../../../../core/di/providers.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/widgets/app_data_table.dart';
 import '../../../../core/widgets/app_rtl_icons.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/search_field.dart';
@@ -47,6 +46,13 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
   PageResult<PosInvoiceView>? _result;
   bool _loading = false;
   Object? _error;
+
+  /// Invoices expanded inline to show their lines (items + prices) without
+  /// opening the detail page — lets the pharmacist browse chronologically and
+  /// identify an invoice for returns without knowing its number.
+  final Set<String> _expandedIds = {};
+  final Map<String, PosInvoiceView> _detailCache = {};
+  final Set<String> _loadingDetails = {};
 
   @override
   void initState() {
@@ -168,6 +174,30 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
     // Mutation-then-refresh: returns/voids inside the detail invalidate this
     // list, so reload the current page on return (§18.4 state invalidation).
     if (mounted) await _load();
+  }
+
+  Future<void> _toggleExpand(String invoiceId) async {
+    if (_expandedIds.contains(invoiceId)) {
+      setState(() => _expandedIds.remove(invoiceId));
+      return;
+    }
+    setState(() {
+      _expandedIds.add(invoiceId);
+      _loadingDetails.add(invoiceId);
+    });
+    try {
+      final detail = _detailCache[invoiceId] ??
+          await ref.read(salesRepositoryProvider).invoiceViewById(invoiceId);
+      if (!mounted) return;
+      if (detail != null) _detailCache[invoiceId] = detail;
+      setState(() => _loadingDetails.remove(invoiceId));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadingDetails.remove(invoiceId);
+        _expandedIds.remove(invoiceId);
+      });
+    }
   }
 
   @override
@@ -302,40 +332,149 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
 
   Widget _buildTable() {
     final invoices = _result?.items ?? const <PosInvoiceView>[];
-    return AppDataTable(
-      emptyMessage: _l10n.salesHistoryEmpty,
-      columns: [
-        DataColumn(label: Text(_l10n.salesHistoryColNumber)),
-        DataColumn(label: Text(_l10n.salesHistoryColCustomer)),
-        DataColumn(label: Text(_l10n.salesHistoryColCashier)),
-        DataColumn(label: Text(_l10n.salesHistoryColDate)),
-        DataColumn(label: Text(_l10n.salesHistoryColStatus)),
-        DataColumn(label: Text(_l10n.salesHistoryColPayment)),
-        DataColumn(label: Text(_l10n.salesHistoryColTotal)),
-      ],
-      rows: [
-        for (final v in invoices)
-          DataRow(
-            onSelectChanged: (_) => _openDetail(v.id),
-            cells: [
-              DataCell(Text(v.invoiceNumber)),
-              DataCell(
-                Text(
-                  v.customerName.isEmpty ? '—' : v.customerName,
-                  overflow: TextOverflow.ellipsis,
-                ),
+    if (invoices.isEmpty) {
+      return Center(child: Text(_l10n.salesHistoryEmpty));
+    }
+    // Expandable invoice list: each invoice shows its lines (items + prices)
+    // inline when expanded, so the pharmacist can browse chronologically and
+    // identify an invoice for returns without knowing its number.
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.m,
+        vertical: AppSpacing.s,
+      ),
+      itemCount: invoices.length,
+      itemBuilder: (context, index) => _invoiceCard(invoices[index]),
+    );
+  }
+
+  Widget _invoiceCard(PosInvoiceView v) {
+    final expanded = _expandedIds.contains(v.id);
+    final detail = _detailCache[v.id];
+    final loadingDetail = _loadingDetails.contains(v.id);
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppSpacing.s),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () => _toggleExpand(v.id),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.m),
+              child: Row(
+                children: [
+                  Icon(
+                    expanded ? Icons.expand_less : Icons.expand_more,
+                  ),
+                  const SizedBox(width: AppSpacing.s),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          v.invoiceNumber,
+                          style: context.appTypography.invoiceNumber,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          '${v.customerName.isEmpty ? '—' : v.customerName}'
+                          ' · ${v.userName} · ${_fmtDate(v.createdAt)}',
+                          style: context.appTypography.bodySecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        Money.fromUnits(v.totalMicros).format(),
+                        style: context.appTypography.numericStrong,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        _statusLabel(v.saleStatus),
+                        style: context.appTypography.labelSmall,
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.open_in_new),
+                    tooltip: _l10n.salesHistoryOpenDetail,
+                    onPressed: () => _openDetail(v.id),
+                  ),
+                ],
               ),
-              DataCell(Text(v.userName)),
-              DataCell(Text(_fmtDate(v.createdAt))),
-              DataCell(Text(_statusLabel(v.saleStatus))),
-              DataCell(Text(_paymentLabel(v.paymentMethod))),
-              DataCell(
-                Text(
-                  Money.fromUnits(v.totalMicros).format(),
-                  style: context.appTypography.numericStrong,
-                ),
+            ),
+          ),
+          if (expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.m,
+                0,
+                AppSpacing.m,
+                AppSpacing.m,
               ),
-            ],
+              child: loadingDetail
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(AppSpacing.m),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : _invoiceLines(detail?.lines ?? v.lines),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _invoiceLines(List<PosInvoiceLineView> lines) {
+    if (lines.isEmpty) {
+      return Text(
+        _l10n.salesHistoryNoLines,
+        style: context.appTypography.labelSmall,
+      );
+    }
+    return Column(
+      children: [
+        const Divider(height: 1),
+        for (final line in lines)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    line.itemName,
+                    style: context.appTypography.body,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    line.sellUnitQuantity != null
+                        ? '${line.sellUnitQuantity} ${line.unitTypeName}'
+                        : '${line.quantityBaseSigned}',
+                    style: context.appTypography.labelSmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    Money.fromUnits(line.unitPriceMicros).format(),
+                    style: context.appTypography.labelSmall,
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    Money.fromUnits(line.lineTotalMicros).format(),
+                    style: context.appTypography.numericStrong,
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+              ],
+            ),
           ),
       ],
     );
@@ -354,53 +493,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
         vertical: AppSpacing.s,
       ),
       children: [
-        for (final v in invoices)
-          Card(
-            margin: const EdgeInsets.only(bottom: AppSpacing.m),
-            child: InkWell(
-              onTap: () => _openDetail(v.id),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.m),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                v.invoiceNumber,
-                                style: typography.invoiceNumber,
-                              ),
-                              const SizedBox(height: AppSpacing.xs),
-                              Text(
-                                '${v.customerName.isEmpty ? '—' : v.customerName}'
-                                ' · ${v.userName} · ${_fmtDate(v.createdAt)}',
-                                style: typography.bodySecondary,
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          _statusLabel(v.saleStatus),
-                          style: typography.label,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.s),
-                    Text(
-                      '${_l10n.salesHistoryColTotal}: '
-                      '${Money.fromUnits(v.totalMicros).format()}'
-                      ' · ${_paymentLabel(v.paymentMethod)}',
-                      style: typography.label,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+        for (final v in invoices) _invoiceCard(v),
       ],
     );
   }

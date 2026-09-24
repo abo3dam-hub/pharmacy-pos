@@ -88,6 +88,7 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
       unitsPerLarge: units?.unitsPerLarge ?? 1,
       baseUnitName: baseName,
       largeUnitName: largeName,
+      initialCostMicros: _item?.costMicros ?? 0,
     );
     if (result == null || !mounted) return;
     final failure = await ref
