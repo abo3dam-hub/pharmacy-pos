@@ -616,7 +616,7 @@ void _registerPhase4(AppDatabase db) {
       getIt<CreatePurchaseUseCase>(),
       getIt<UpdatePendingPurchaseUseCase>(),
       getIt<PurchaseReturnUseCase>(),
-      getIt<PurchasesRepository>(),
+      purchasesRepository: getIt<PurchasesRepository>(),
     ),
   );
 }

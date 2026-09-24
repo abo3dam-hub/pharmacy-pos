@@ -1388,5 +1388,18 @@
   "shortcutsGuideHoldBill": "Hold the current bill temporarily",
   "shortcutsGuideCheckout": "Go to checkout and complete the bill",
   "shortcutsGuideAlternatives": "Open smart alternatives for the selected item",
-  "shortcutsGuideEnter": "In search: finish barcode scan or add the single result"
+  "shortcutsGuideEnter": "In search: finish barcode scan or add the single result",
+  "purchaseReceiveNow": "Receive now",
+  "purchaseSavePending": "Save as pending order",
+  "productDetailTitle": "Product details",
+  "productDetailNotFound": "Product not found",
+  "productDetailTradeName": "Trade name",
+  "productDetailTradeNameEn": "English name",
+  "productDetailScientific": "Scientific name",
+  "productDetailBarcode": "Barcode",
+  "productDetailSellPrice": "Sell price",
+  "productDetailCost": "Cost price",
+  "productDetailStock": "Stock",
+  "salesHistoryOpenDetail": "Open details",
+  "salesHistoryNoLines": "No lines in this invoice"
 }

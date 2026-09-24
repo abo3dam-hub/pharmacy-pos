@@ -1388,5 +1388,18 @@
   "shortcutsGuideHoldBill": "تعليق الفاتورة الحالية مؤقتاً",
   "shortcutsGuideCheckout": "الانتقال إلى الدفع وإتمام الفاتورة",
   "shortcutsGuideAlternatives": "فتح نافذة البدائل الذكية للصنف المحدد",
-  "shortcutsGuideEnter": "في البحث: إنهاء قراءة الباركود أو إضافة النتيجة الوحيدة"
+  "shortcutsGuideEnter": "في البحث: إنهاء قراءة الباركود أو إضافة النتيجة الوحيدة",
+  "purchaseReceiveNow": "استلام فوري",
+  "purchaseSavePending": "حفظ كطلبية معلقة",
+  "productDetailTitle": "بيانات المنتج",
+  "productDetailNotFound": "المنتج غير موجود",
+  "productDetailTradeName": "الاسم التجاري",
+  "productDetailTradeNameEn": "الاسم الإنجليزي",
+  "productDetailScientific": "الاسم العلمي",
+  "productDetailBarcode": "الباركود",
+  "productDetailSellPrice": "سعر البيع",
+  "productDetailCost": "سعر التكلفة",
+  "productDetailStock": "المخزون",
+  "salesHistoryOpenDetail": "فتح التفاصيل",
+  "salesHistoryNoLines": "لا توجد مواد في هذه الفاتورة"
 }

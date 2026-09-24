@@ -68,8 +68,10 @@ class PurchasesViewState {
 /// return run through the [PurchasesFeature] on form/detail pages.
 class PurchasesController extends StateNotifier<PurchasesViewState> {
   PurchasesController(this._list, this._receive, this._cancel, this._create,
-      this._update, this._return, this._repo)
-      : super(const PurchasesViewState());
+      this._update, this._return,
+      {PurchasesRepository? purchasesRepository})
+      : _repo = purchasesRepository,
+        super(const PurchasesViewState());
 
   final ListPurchasesUseCase _list;
   final ReceivePurchaseUseCase _receive;
@@ -77,7 +79,7 @@ class PurchasesController extends StateNotifier<PurchasesViewState> {
   final CreatePurchaseUseCase _create;
   final UpdatePendingPurchaseUseCase _update;
   final PurchaseReturnUseCase _return;
-  final PurchasesRepository _repo;
+  final PurchasesRepository? _repo;
 
   Future<Failure?> load({
     String search = '',
@@ -141,10 +143,14 @@ class PurchasesController extends StateNotifier<PurchasesViewState> {
     String? actingUserId,
     String? actingRoleId,
   }) async {
+    final repo = _repo;
+    if (repo == null) {
+      return const Failure.validation('purchases repository not provided');
+    }
     try {
       final invoice = await _create(draft,
           actingUserId: actingUserId, actingRoleId: actingRoleId);
-      final detail = await _repo.detail(invoice.id);
+      final detail = await repo.detail(invoice.id);
       final stamp = DateTime.now().millisecondsSinceEpoch.toString();
       final inputs = [
         for (var i = 0; i < detail.lines.length; i++)
