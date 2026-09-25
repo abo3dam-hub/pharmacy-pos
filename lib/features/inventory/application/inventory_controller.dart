@@ -157,21 +157,32 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     String? actingRoleId,
   }) async {
     final generation = ++_loadGeneration;
+    final request = PageRequest(
+      page: page,
+      search: search,
+      // Preserve the viewport-adaptive page size across searches,
+      // filters and page turns; the list UI sets it when the
+      // available height changes.
+      pageSize: pageSize ?? state.request.pageSize,
+    );
+    // Publish the in-flight request immediately, not just on commit.
+    // The list UI compares its viewport-adaptive page size against
+    // request.pageSize on every build; publishing only on commit caused an
+    // infinite load -> rebuild -> load loop on slow devices (2026-09-25):
+    // each load() set `loading` (triggering a rebuild) while
+    // request.pageSize still held the old value, so the UI scheduled
+    // another load that superseded the in-flight one — no load ever
+    // committed, the spinner never cleared, and abandoned DB queries
+    // piled up (CPU/RAM spike, device heat, forced app kill).
     state = state.copyWith(
         status: InventoryStatus.loading,
         error: () => null,
+        request: request,
         onlyActive: onlyActive ?? state.onlyActive,
         inStockOnly: inStockOnly ?? state.inStockOnly);
     try {
       final result = await _listItems.call(
-        PageRequest(
-          page: page,
-          search: search,
-          // Preserve the viewport-adaptive page size across searches,
-          // filters and page turns; the list UI sets it when the
-          // available height changes.
-          pageSize: pageSize ?? state.request.pageSize,
-        ),
+        request,
         inStockOnly: inStockOnly ?? state.inStockOnly,
         actingRoleId: actingRoleId,
       );

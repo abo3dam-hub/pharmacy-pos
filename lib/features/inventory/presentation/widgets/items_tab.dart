@@ -460,9 +460,11 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
   static const double _cardEstimateHeight = 152;
 
   /// Fits a page of data to the viewport: computes how many fixed-height
-  /// rows (or estimated cards) fit in [availableHeight] and reloads page 1
-  /// when the count differs — so the list fills the screen instead of
-  /// scrolling internally, and the pager always stays visible.
+  /// rows (or estimated cards) fit in [availableHeight] — never fewer than
+  /// the conventional page size (25) — and reloads page 1 when the count
+  /// differs, so short viewports still get a full page (the table/cards
+  /// scroll internally past the visible rows) and tall viewports get more
+  /// rows per page turn. The pager always stays visible.
   void _syncPageSize(double availableHeight, bool isCompact) {
     final state = ref.read(inventoryControllerProvider);
     final int pageSize;
