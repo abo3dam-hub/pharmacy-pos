@@ -143,6 +143,11 @@ class InventoryController extends StateNotifier<InventoryViewState> {
   /// Aborts the in-flight Excel import at the next progress checkpoint.
   void cancelImport() => _importCancelled = true;
 
+  /// Monotonic load generation: every keystroke/filter change supersedes
+  /// in-flight loads so a slow earlier query can never overwrite fresher
+  /// results (search-as-you-type fires [load] per keystroke).
+  int _loadGeneration = 0;
+
   Future<Failure?> load({
     String search = '',
     int page = 1,
@@ -151,6 +156,7 @@ class InventoryController extends StateNotifier<InventoryViewState> {
     bool? inStockOnly,
     String? actingRoleId,
   }) async {
+    final generation = ++_loadGeneration;
     state = state.copyWith(
         status: InventoryStatus.loading,
         error: () => null,
@@ -169,6 +175,13 @@ class InventoryController extends StateNotifier<InventoryViewState> {
         inStockOnly: inStockOnly ?? state.inStockOnly,
         actingRoleId: actingRoleId,
       );
+      // Superseded by a newer load: drop the stale page, report nothing —
+      // but never leave a mutation's busy flag stuck (the mutation already
+      // succeeded; only its list refresh was skipped).
+      if (generation != _loadGeneration) {
+        state = state.copyWith(busy: false);
+        return null;
+      }
       state = state.copyWith(
         status: InventoryStatus.ready,
         items: result.items,
@@ -182,9 +195,11 @@ class InventoryController extends StateNotifier<InventoryViewState> {
       );
       return null;
     } on AppException catch (e) {
+      if (generation != _loadGeneration) return null;
       state = state.copyWith(status: InventoryStatus.error, error: () => e.failure);
       return e.failure;
     } on Exception {
+      if (generation != _loadGeneration) return null;
       state = state.copyWith(status: InventoryStatus.error);
       return const DatabaseFailure('حدث خطأ غير متوقع أثناء الحفظ');
     }

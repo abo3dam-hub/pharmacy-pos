@@ -53,7 +53,12 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
 
   // ── Search / scan ─────────────────────────────────────────────────────
 
+  /// Monotonic search generation: every new keystroke supersedes in-flight
+  /// queries so a slow earlier query can never overwrite fresher results.
+  int _searchGeneration = 0;
+
   Future<void> search(String query) async {
+    final generation = ++_searchGeneration;
     final q = query.trim();
     state = state.copyWith(
       searchQuery: q,
@@ -67,8 +72,12 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
               PageRequest(page: 1, pageSize: _pageSize, search: q),
               inStockOnly: true,
             );
+      // A newer keystroke started while we were awaiting: drop these stale
+      // results instead of flashing them over the fresher query.
+      if (generation != _searchGeneration) return;
       state = state.copyWith(searchResults: results, loading: false);
     } on AppException catch (e) {
+      if (generation != _searchGeneration) return;
       state = state.copyWith(
         loading: false,
         errorMessage: e.failure.message,

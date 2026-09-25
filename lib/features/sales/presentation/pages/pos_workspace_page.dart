@@ -274,8 +274,10 @@ class _PosWorkspacePageState extends ConsumerState<PosWorkspacePage>
       context: context,
       builder: (_) => AlternativesDialog(
         requestedItemId: picked.id,
+        // The dialog dismisses itself (see AlternativesDialog) — callers
+        // must not pop it; a page-context pop() would hit the go_router
+        // shell navigator instead of the dialog's root navigator.
         onPick: (alt) {
-          Navigator.of(context).pop();
           _addAlternative(notifier, alt.item);
         },
       ),
@@ -561,7 +563,11 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
       widget.barcodeBuffer.reset();
     }
     _lastText = value;
-    _debounce = Timer(const Duration(milliseconds: 650), () {
+    // Short debounce: results should start appearing from the first letter.
+    // Scanner bursts arrive much faster than this and terminate with Enter
+    // (handled by _onSubmitted), so intermediate searches during a scan are
+    // superseded before they can paint.
+    _debounce = Timer(const Duration(milliseconds: 150), () {
       if (!mounted) return;
       ref
           .read(posWorkspaceControllerProvider(widget.tabIndex).notifier)

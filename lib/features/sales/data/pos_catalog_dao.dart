@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../core/data_grid/page_request.dart';
+import '../../../core/search/item_search_text.dart';
 import '../../../core/util/smart_search.dart';
 import '../../../data/daos/smart_search_dao.dart';
 import '../../sales/domain/entities/pos_catalog_item.dart';
@@ -27,8 +28,19 @@ class PosCatalogDao {
     final filter = <Expression<bool>>[];
 
     if (q.isNotEmpty) {
-      final like = SmartSearch.likePattern(q);
-      final textMatches = <Expression<bool>>[
+      // §search-perf: the normalized concatenation is precomputed at every
+      // write (items.search_text), so the search is a single LIKE on a plain
+      // column — no per-row SQL replace() chain on every keystroke (that was
+      // ~1.5M function evaluations per search over a 22k-row catalog). Rows
+      // with NULL search_text (predating the v14 backfill) fall back to the
+      // legacy per-column expression.
+      final normalized = ItemSearchText.normalizeQuery(q);
+      final escaped = normalized
+          .replaceAll(r'\', r'\\')
+          .replaceAll('%', r'\%')
+          .replaceAll('_', r'\_');
+      final like = '%$escaped%';
+      final legacyMatches = <Expression<bool>>[
         SmartSearch.normalizeExpr(_db.items.tradeName).like(like),
         SmartSearch.normalizeExpr(_db.items.tradeNameEn).like(like),
         SmartSearch.normalizeExpr(_db.items.scientificName).like(like),
@@ -36,6 +48,10 @@ class PosCatalogDao {
         SmartSearch.normalizeExpr(_db.items.equivalentDrug).like(like),
         SmartSearch.normalizeExpr(_db.items.primaryBarcode).like(like),
         SmartSearch.normalizeExpr(_db.items.secondaryBarcode).like(like),
+      ].reduce((a, b) => a | b);
+      final textMatches = <Expression<bool>>[
+        _db.items.searchText.like(like),
+        _db.items.searchText.isNull() & legacyMatches,
       ];
       final related = await SmartSearchDao(_db).matchingItemIds(q);
       if (related.isNotEmpty) {

@@ -14,14 +14,21 @@ import 'product_detail_dialog.dart';
 /// Used by the POS workspace (an alternative can be picked straight into the
 /// cart via [onPick]) and by the inventory items grid / product tree
 /// (browse-only: [onPick] is null). Every row is tappable: in the POS it
-/// picks the alternative into the cart; in browse mode it opens the item in
-/// the caller's own item window via [onOpenItem] (the inventory edit dialog
-/// when opened from the stock view / product tree), falling back to the
-/// read-only [ProductDetailDialog] when no opener is supplied.
+/// dismisses the dialog and picks the alternative into the cart; in browse
+/// mode it first dismisses itself and then asks the caller to open the
+/// item's own window via [onOpenItem] (the inventory edit dialog when opened
+/// from the stock view / product tree), falling back to the read-only
+/// [ProductDetailDialog] when no opener is supplied.
 /// The requested item is loaded by id so callers only need the id, not a
 /// hydrated catalog item — the candidate search always spans the whole
 /// product master (stock view and product tree alike), in-stock ranked
 /// first, out-of-stock still listed.
+///
+/// Navigation contract: the dialog always dismisses itself with its own
+/// build context. Callers must NOT call Navigator.pop to close it — the app
+/// runs under a go_router ShellRoute (nested navigator) while showDialog
+/// pushes onto the root navigator, so a caller-side pop() targets the wrong
+/// navigator and corrupts the route stack.
 class AlternativesDialog extends ConsumerWidget {
   const AlternativesDialog({
     super.key,
@@ -196,20 +203,27 @@ class AlternativesDialog extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    // POS: tap picks into the cart. Browse mode (stock view /
-                    // product tree): tap opens the item in the caller's own
-                    // item window (inventory edit dialog); without an opener
-                    // it falls back to the read-only detail dialog.
-                    onTap: onPick != null
-                        ? () => onPick!(alt)
-                        : () {
-                            final opener = onOpenItem;
-                            if (opener != null) {
-                              opener(alt.item.id);
-                            } else {
-                              showProductDetailDialog(context, alt.item.id);
-                            }
-                          },
+                    // The dialog dismisses ITSELF with its own context in both
+                    // modes: callers must NOT pop it. The app runs under a
+                    // go_router ShellRoute (nested navigator) while showDialog
+                    // pushes onto the root navigator — a caller-side
+                    // Navigator.of(pageContext).pop() misses the dialog and
+                    // instead pops the page off the shell navigator,
+                    // corrupting the router (black screen + freeze).
+                    onTap: () {
+                      if (onPick != null) {
+                        Navigator.of(context).pop();
+                        onPick!(alt);
+                        return;
+                      }
+                      final opener = onOpenItem;
+                      if (opener != null) {
+                        Navigator.of(context).pop();
+                        opener(alt.item.id);
+                      } else {
+                        showProductDetailDialog(context, alt.item.id);
+                      }
+                    },
                   ),
                 );
               },

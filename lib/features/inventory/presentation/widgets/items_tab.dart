@@ -867,12 +867,11 @@ if (_canDelete)
     );
   }
 
-  /// Opens the tapped alternative in the inventory item window: closes the
-  /// alternatives dialog, then opens the item's edit dialog (or the
-  /// read-only detail for viewers without edit permission).
+  /// Opens the tapped alternative in the inventory item window: the
+  /// alternatives dialog dismisses itself (see AlternativesDialog), then this
+  /// opens the item's edit dialog (or the read-only detail for viewers
+  /// without edit permission).
   Future<void> _openItemFromAlternatives(String itemId) async {
-    // Close the alternatives dialog first.
-    Navigator.of(context).pop();
     if (_canEdit) {
       // Prefer the already-loaded view from the current page.
       final state = ref.read(inventoryControllerProvider);
