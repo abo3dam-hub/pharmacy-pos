@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/units/package_cost.dart';
+import '../../../../core/widgets/compact_form.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/repositories/inventory_repository.dart';
 
@@ -207,7 +209,12 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
     return AlertDialog(
       title: Text(l10n.batchesAddTitle),
       content: SizedBox(
-        width: 480,
+        // Viewport-aware width: 480px on desktop, shrinks to the phone
+        // screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(480, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -215,17 +222,9 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextFormField(
-                  controller: _batchNumber,
-                  decoration: InputDecoration(labelText: l10n.batchNo),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? l10n.batchesAddTitle
-                      : null,
-                ),
-                const SizedBox(height: AppSpacing.m),
                 if (hasPackage && widget.largeUnitName.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.m),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.s),
                     child: SegmentedButton<bool>(
                       segments: [
                         ButtonSegment(
@@ -244,77 +243,78 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
                           setState(() => _inPackages = s.first),
                     ),
                   ),
-                TextFormField(
-                  controller: _quantity,
-                  decoration: InputDecoration(
-                    labelText: quantityLabel,
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: AppSpacing.m),
-                TextFormField(
-                  controller: _cost,
-                  decoration: InputDecoration(
-                    labelText: costLabel,
-                  ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                ),
-                const SizedBox(height: AppSpacing.m),
-                TextFormField(
-                  controller: _bonus,
-                  decoration: InputDecoration(
-                    // Bonus stays in base units regardless of the package
-                    // toggle (see _submit); name the unit explicitly while in
-                    // package mode so there is no ambiguity.
-                    labelText: (_inPackages && hasPackage)
-                        ? (widget.baseUnitName.isNotEmpty
-                            ? '${l10n.batchBonusQty} (${widget.baseUnitName})'
-                            : l10n.batchBonusQty)
-                        : l10n.batchBonusQty,
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: AppSpacing.m),
-                Row(
+                FormGrid(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _dateField(
-                            l10n.expiryDate,
-                            _expiry,
-                            enabled: widget.hasExpiry,
-                            onTap: () => _pickDate(
-                                (d) => setState(() => _expiry = d)),
-                          ),
-                          if (_expiryError != null)
-                            Padding(
-                              padding:
-                                  const EdgeInsets.only(top: AppSpacing.xs),
-                              child: Text(
-                                _expiryError!,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                  fontSize: 12,
-                                ),
+                    TextFormField(
+                      controller: _batchNumber,
+                      decoration: InputDecoration(labelText: l10n.batchNo),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? l10n.batchesAddTitle
+                          : null,
+                    ),
+                    TextFormField(
+                      controller: _quantity,
+                      decoration: InputDecoration(
+                        labelText: quantityLabel,
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    TextFormField(
+                      controller: _cost,
+                      decoration: InputDecoration(
+                        labelText: costLabel,
+                      ),
+                      keyboardType:
+                          TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    TextFormField(
+                      controller: _bonus,
+                      decoration: InputDecoration(
+                        // Bonus stays in base units regardless of the package
+                        // toggle (see _submit); name the unit explicitly while in
+                        // package mode so there is no ambiguity.
+                        labelText: (_inPackages && hasPackage)
+                            ? (widget.baseUnitName.isNotEmpty
+                                ? '${l10n.batchBonusQty} (${widget.baseUnitName})'
+                                : l10n.batchBonusQty)
+                            : l10n.batchBonusQty,
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _dateField(
+                          l10n.expiryDate,
+                          _expiry,
+                          enabled: widget.hasExpiry,
+                          onTap: () =>
+                              _pickDate((d) => setState(() => _expiry = d)),
+                        ),
+                        if (_expiryError != null)
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(top: AppSpacing.xs),
+                            child: Text(
+                              _expiryError!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                                fontSize: 12,
                               ),
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
-                    const SizedBox(width: AppSpacing.m),
-                    Expanded(
-                      child: _dateField(
-                        l10n.batchReceivedDate,
-                        _received,
-                        onTap: () =>
-                            _pickDate((d) => setState(() => _received = d)),
-                      ),
+                    _dateField(
+                      l10n.batchReceivedDate,
+                      _received,
+                      onTap: () =>
+                          _pickDate((d) => setState(() => _received = d)),
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.m),
+                const SizedBox(height: AppSpacing.s),
                 TextFormField(
                   controller: _notes,
                   decoration: InputDecoration(labelText: l10n.batchNotes),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
@@ -21,7 +22,12 @@ class ProductDetailDialog extends ConsumerWidget {
     return AlertDialog(
       title: Text(l10n.productDetailTitle),
       content: SizedBox(
-        width: 480,
+        // Viewport-aware width: 480px on desktop, shrinks to the phone
+        // screen so rows never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(480, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: FutureBuilder(
           future: ref.read(inventoryRepositoryProvider).findItem(itemId),
           builder: (context, snapshot) {
@@ -78,11 +84,15 @@ class ProductDetailDialog extends ConsumerWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 140,
+          // Flexible label column (2:3 ratio) instead of a fixed 140px so
+          // the row fits narrow phone screens too.
+          Expanded(
+            flex: 2,
             child: Text(label),
           ),
+          const SizedBox(width: AppSpacing.s),
           Expanded(
+            flex: 3,
             child: Text(
               value,
               style: strong

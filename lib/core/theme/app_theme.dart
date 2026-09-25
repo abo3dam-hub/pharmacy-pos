@@ -82,8 +82,8 @@ abstract final class AppTheme {
         filled: true,
         fillColor: isDark ? AppColors.darkSurfaceVariant : AppColors.surfaceVariant,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.l,
-          vertical: AppSpacing.m,
+          horizontal: AppSpacing.s,
+          vertical: AppSpacing.s,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),

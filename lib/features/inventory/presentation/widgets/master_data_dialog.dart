@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/widgets/compact_form.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../domain/repositories/inventory_repository.dart';
@@ -125,7 +127,12 @@ class _MasterDataFormDialogState extends State<_MasterDataFormDialog> {
     return AlertDialog(
       title: Text(widget.title),
       content: SizedBox(
-        width: 440,
+        // Viewport-aware width: 440px on desktop, shrinks to the phone
+        // screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(440, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -133,55 +140,56 @@ class _MasterDataFormDialogState extends State<_MasterDataFormDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextFormField(
-                  controller: _name,
-                  decoration: InputDecoration(
-                    labelText: widget.kind == MasterDataKind.manufacturer
-                        ? l10n.manufacturerName
-                        : widget.kind == MasterDataKind.unit
-                            ? l10n.unitName
-                            : widget.kind == MasterDataKind.activeIngredient
-                                ? l10n.activeIngredientName
-                                : widget.kind == MasterDataKind.indication
-                                    ? l10n.indicationName
-                                    : l10n.categoryName,
-                  ),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? l10n.inventoryRequiredName
-                      : null,
+                FormGrid(
+                  children: [
+                    TextFormField(
+                      controller: _name,
+                      decoration: InputDecoration(
+                        labelText: widget.kind == MasterDataKind.manufacturer
+                            ? l10n.manufacturerName
+                            : widget.kind == MasterDataKind.unit
+                                ? l10n.unitName
+                                : widget.kind == MasterDataKind.activeIngredient
+                                    ? l10n.activeIngredientName
+                                    : widget.kind == MasterDataKind.indication
+                                        ? l10n.indicationName
+                                        : l10n.categoryName,
+                      ),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? l10n.inventoryRequiredName
+                          : null,
+                    ),
+                    TextFormField(
+                      controller: _nameEn,
+                      decoration: InputDecoration(
+                        labelText: l10n.masterDataNameEn,
+                      ),
+                    ),
+                    if (showAbbreviation)
+                      TextFormField(
+                        controller: _abbreviation,
+                        decoration:
+                            InputDecoration(labelText: l10n.unitAbbreviation),
+                      ),
+                    if (showManufacturerFields) ...[
+                      TextFormField(
+                        controller: _country,
+                        decoration:
+                            InputDecoration(labelText: l10n.manufacturerCountry),
+                      ),
+                      TextFormField(
+                        controller: _phone,
+                        decoration: InputDecoration(labelText: l10n.userPhone),
+                      ),
+                      TextFormField(
+                        controller: _website,
+                        decoration:
+                            InputDecoration(labelText: l10n.manufacturerWebsite),
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.m),
-                TextFormField(
-                  controller: _nameEn,
-                  decoration: InputDecoration(
-                    labelText: l10n.masterDataNameEn,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.m),
-                if (showAbbreviation) ...[
-                  TextFormField(
-                    controller: _abbreviation,
-                    decoration: InputDecoration(labelText: l10n.unitAbbreviation),
-                  ),
-                  const SizedBox(height: AppSpacing.m),
-                ],
-                if (showManufacturerFields) ...[
-                  TextFormField(
-                    controller: _country,
-                    decoration: InputDecoration(labelText: l10n.manufacturerCountry),
-                  ),
-                  const SizedBox(height: AppSpacing.m),
-                  TextFormField(
-                    controller: _phone,
-                    decoration: InputDecoration(labelText: l10n.userPhone),
-                  ),
-                  const SizedBox(height: AppSpacing.m),
-                  TextFormField(
-                    controller: _website,
-                    decoration: InputDecoration(labelText: l10n.manufacturerWebsite),
-                  ),
-                  const SizedBox(height: AppSpacing.m),
-                ],
+                const SizedBox(height: AppSpacing.s),
                 TextFormField(
                   controller: _description,
                   decoration: InputDecoration(labelText: l10n.userNotes),

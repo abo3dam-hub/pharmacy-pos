@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/compact_form.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../domain/repositories/supplier_repository.dart';
@@ -142,7 +144,12 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
     return AlertDialog(
       title: Text(widget.title, style: typography.sectionTitle),
       content: SizedBox(
-        width: 560,
+        // Viewport-aware width: 560px on desktop, shrinks to the phone
+        // screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(560, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
@@ -155,71 +162,31 @@ class _SupplierFormDialogState extends State<_SupplierFormDialog> {
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? l10n.supplierNameRequired
                         : null),
-                const SizedBox(height: AppSpacing.m),
-                Row(
+                const SizedBox(height: AppSpacing.s),
+                // Paired fields collapse to a single column on narrow
+                // screens instead of squeezing side by side.
+                FormGrid(
                   children: [
-                    Expanded(
-                      child: _textField('code', l10n.supplierCode),
-                    ),
-                    const SizedBox(width: AppSpacing.m),
-                    Expanded(
-                      child: _textField('phone', l10n.supplierPhone),
-                    ),
+                    _textField('code', l10n.supplierCode),
+                    _textField('phone', l10n.supplierPhone),
+                    _textField('secondaryPhone', l10n.supplierSecondaryPhone),
+                    _textField('email', l10n.supplierEmail),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.m),
-                Row(
-                  children: [
-                    Expanded(
-                      child:
-                          _textField('secondaryPhone', l10n.supplierSecondaryPhone),
-                    ),
-                    const SizedBox(width: AppSpacing.m),
-                    Expanded(
-                      child: _textField('email', l10n.supplierEmail),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.m),
+                const SizedBox(height: AppSpacing.s),
                 _textField('address', l10n.supplierAddress),
-                const SizedBox(height: AppSpacing.m),
-                Row(
+                const SizedBox(height: AppSpacing.s),
+                FormGrid(
                   children: [
-                    Expanded(
-                      child: _textField('contactPerson', l10n.supplierContactPerson),
-                    ),
-                    const SizedBox(width: AppSpacing.m),
-                    Expanded(
-                      child: _textField('taxVatNumber', l10n.supplierTaxVatNumber),
-                    ),
+                    _textField('contactPerson', l10n.supplierContactPerson),
+                    _textField('taxVatNumber', l10n.supplierTaxVatNumber),
+                    _textField('licenseRegistration',
+                        l10n.supplierLicenseRegistration),
+                    _amountField('openingBalance', l10n.supplierOpeningBalance),
+                    _amountField('creditLimit', l10n.supplierCreditLimit),
+                    _textField('notes', l10n.supplierNotes),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.m),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _textField('licenseRegistration',
-                          l10n.supplierLicenseRegistration),
-                    ),
-                    const SizedBox(width: AppSpacing.m),
-                    Expanded(
-                      child: _amountField('openingBalance', l10n.supplierOpeningBalance),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.m),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _amountField('creditLimit', l10n.supplierCreditLimit),
-                    ),
-                    const SizedBox(width: AppSpacing.m),
-                    Expanded(
-                      child: _textField('notes', l10n.supplierNotes),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.m),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(l10n.userStatusActive, style: typography.body),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter/services.dart';
 
 import '../../../../core/money/money.dart';
@@ -117,7 +118,12 @@ class _AccountFormDialogState extends State<_AccountFormDialog> {
       content: Form(
         key: _formKey,
         child: SizedBox(
-          width: 420,
+          // Viewport-aware width: 420px on desktop, shrinks to the
+          // phone screen so fields never overflow horizontally.
+          width: math.max(
+            280,
+            math.min(420, MediaQuery.sizeOf(context).width - 64),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

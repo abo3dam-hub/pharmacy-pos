@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -131,7 +132,12 @@ class _ReturnDialogState extends State<_ReturnDialog> {
     return AlertDialog(
       title: Text(l10n.purchaseReturnTitle, style: typography.sectionTitle),
       content: SizedBox(
-        width: 520,
+        // Viewport-aware width: 520px on desktop, shrinks to the
+        // phone screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(520, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
@@ -159,7 +160,12 @@ class _CustomerFormDialogState extends State<_CustomerFormDialog> {
     return AlertDialog(
       title: Text(widget.title, style: typography.sectionTitle),
       content: SizedBox(
-        width: 560,
+        // Viewport-aware width: 560px on desktop, shrinks to the
+        // phone screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(560, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,

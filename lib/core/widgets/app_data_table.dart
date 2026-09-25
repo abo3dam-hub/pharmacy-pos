@@ -83,6 +83,11 @@ class _AppDataTableState extends State<AppDataTable> {
             columns: widget.columns,
             rows: widget.rows,
             headingRowHeight: AppLayoutTokens.tableHeaderHeight,
+            // Tight column spacing so tables fit the screen width without
+            // horizontal scrolling (explicit user requirement); the
+            // Flutter default of 56px wastes most of the row.
+            columnSpacing: 20,
+            horizontalMargin: 12,
             dataRowMaxHeight:
                 widget.dataRowHeight ?? AppLayoutTokens.tableRowHeight,
             dataRowMinHeight:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -34,7 +35,12 @@ class _AuditDetailDialog extends StatelessWidget {
         style: context.appTypography.sectionTitle,
       ),
       content: SizedBox(
-        width: 480,
+        // Viewport-aware width: 480px on desktop, shrinks to the
+        // phone screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(480, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

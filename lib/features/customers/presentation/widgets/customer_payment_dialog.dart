@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
@@ -156,7 +157,12 @@ class _CustomerPaymentDialogState
     return AlertDialog(
       title: Text(title, style: typography.sectionTitle),
       content: SizedBox(
-        width: 480,
+        // Viewport-aware width: 480px on desktop, shrinks to the
+        // phone screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(480, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,

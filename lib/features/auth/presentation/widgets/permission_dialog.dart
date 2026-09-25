@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -56,7 +57,12 @@ class _PermissionDialogState extends State<_PermissionDialog> {
     return AlertDialog(
       title: Text(widget.title, style: context.appTypography.sectionTitle),
       content: SizedBox(
-        width: 460,
+        // Viewport-aware width: 460px on desktop, shrinks to the
+        // phone screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(460, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
@@ -88,7 +89,12 @@ class AlternativesDialog extends ConsumerWidget {
         },
       ),
       content: SizedBox(
-        width: 460,
+        // Viewport-aware width: 520px on desktop, shrinks to the phone
+        // screen so rows never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(520, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: FutureBuilder<({PosCatalogItem item, List<SmartAlternative> alternatives})>(
           future: _load(ref),
           builder: (context, snapshot) {
@@ -103,7 +109,16 @@ class AlternativesDialog extends ConsumerWidget {
             if (list.isEmpty) {
               return Center(child: Text(l10n.posAlternativesEmpty));
             }
-            return ListView.separated(
+            // Bounded height: the list scrolls internally so the close
+            // action stays visible even with many alternatives.
+            return ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: math.max(
+                  240,
+                  MediaQuery.sizeOf(context).height * 0.6,
+                ),
+              ),
+              child: ListView.separated(
               shrinkWrap: true,
               itemCount: list.length,
               separatorBuilder: (_, _) => const Divider(height: 1),
@@ -198,6 +213,7 @@ class AlternativesDialog extends ConsumerWidget {
                   ),
                 );
               },
+              ),
             );
           },
         ),

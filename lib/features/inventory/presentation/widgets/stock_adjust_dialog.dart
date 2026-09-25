@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/widgets/compact_form.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../domain/repositories/inventory_repository.dart';
@@ -111,7 +113,12 @@ class _StockAdjustDialogState extends State<_StockAdjustDialog> {
     return AlertDialog(
       title: Text(l10n.adjustStockTitle),
       content: SizedBox(
-        width: 460,
+        // Viewport-aware width: 460px on desktop, shrinks to the phone
+        // screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(460, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -134,38 +141,41 @@ class _StockAdjustDialogState extends State<_StockAdjustDialog> {
                   onSelectionChanged: (s) =>
                       setState(() => _increase = s.first),
                 ),
-                const SizedBox(height: AppSpacing.m),
-                TextFormField(
-                  controller: _delta,
-                  decoration: InputDecoration(labelText: l10n.quantity),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: AppSpacing.m),
-                TextFormField(
-                  controller: _cost,
-                  decoration: InputDecoration(labelText: l10n.batchUnitCost),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                ),
-                if (widget.batches.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.m),
-                  DropdownButtonFormField<String>(
-                    initialValue: _batchId,
-                    isExpanded: true,
-                    decoration: InputDecoration(labelText: l10n.batchNo),
-                    items: [
-                      for (final b in widget.batches)
-                        DropdownMenuItem(
-                          value: b.id,
-                          child: Text(b.batchNumber),
-                        ),
-                    ],
-                    onChanged: (v) => setState(() => _batchId = v),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.m),
-                TextFormField(
-                  controller: _note,
-                  decoration: InputDecoration(labelText: l10n.adjustNote),
+                const SizedBox(height: AppSpacing.s),
+                FormGrid(
+                  children: [
+                    TextFormField(
+                      controller: _delta,
+                      decoration: InputDecoration(labelText: l10n.quantity),
+                      keyboardType: TextInputType.number,
+                    ),
+                    TextFormField(
+                      controller: _cost,
+                      decoration:
+                          InputDecoration(labelText: l10n.batchUnitCost),
+                      keyboardType:
+                          TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    if (widget.batches.isNotEmpty)
+                      DropdownButtonFormField<String>(
+                        initialValue: _batchId,
+                        isExpanded: true,
+                        decoration:
+                            InputDecoration(labelText: l10n.batchNo),
+                        items: [
+                          for (final b in widget.batches)
+                            DropdownMenuItem(
+                              value: b.id,
+                              child: Text(b.batchNumber),
+                            ),
+                        ],
+                        onChanged: (v) => setState(() => _batchId = v),
+                      ),
+                    TextFormField(
+                      controller: _note,
+                      decoration: InputDecoration(labelText: l10n.adjustNote),
+                    ),
+                  ],
                 ),
               ],
             ),

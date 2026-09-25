@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../../../../core/money/money.dart';
 import '../../../../core/scanning/scan_barcode_button.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/widgets/compact_form.dart';
 import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/searchable_dropdown_field.dart';
 import '../../../../core/widgets/searchable_multi_select_field.dart';
@@ -614,27 +616,42 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   /// sees only what a new item needs 90% of the time; one tap reveals the
   /// full master-data form. No feature is removed.
   Widget _modeToggle(AppLocalizations l10n) => Padding(
-    padding: const EdgeInsets.only(bottom: AppSpacing.m),
+    padding: const EdgeInsets.only(bottom: AppSpacing.s),
     child: Row(
       children: [
         const Icon(Icons.bolt_outlined, size: 18),
         const SizedBox(width: AppSpacing.s),
-        SegmentedButton<bool>(
-          segments: [
-            ButtonSegment(
-              value: true,
-              label: Text(l10n.itemQuickEntry),
-              icon: const Icon(Icons.flash_on_outlined, size: 16),
-            ),
-            ButtonSegment(
-              value: false,
-              label: Text(l10n.itemDetailedEntry),
-              icon: const Icon(Icons.tune_outlined, size: 16),
-            ),
-          ],
-          selected: {_quickMode},
-          onSelectionChanged: (s) => setState(() => _quickMode = s.first),
-          style: const ButtonStyle(visualDensity: VisualDensity.compact),
+        // Expanded so the toggle never overflows narrow screens; the
+        // segment icons are dropped when space is tight.
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 340;
+              return SegmentedButton<bool>(
+                segments: [
+                  ButtonSegment(
+                    value: true,
+                    label: Text(l10n.itemQuickEntry),
+                    icon: compact
+                        ? null
+                        : const Icon(Icons.flash_on_outlined, size: 16),
+                  ),
+                  ButtonSegment(
+                    value: false,
+                    label: Text(l10n.itemDetailedEntry),
+                    icon: compact
+                        ? null
+                        : const Icon(Icons.tune_outlined, size: 16),
+                  ),
+                ],
+                selected: {_quickMode},
+                onSelectionChanged: (s) =>
+                    setState(() => _quickMode = s.first),
+                style:
+                    const ButtonStyle(visualDensity: VisualDensity.compact),
+              );
+            },
+          ),
         ),
       ],
     ),
@@ -645,32 +662,25 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   /// the detailed tabs ([_basicTab], [_ingredientsTab], [_pricingTab],
   /// [_notesTab]). Nothing is removed — only hidden until needed.
   List<Widget> _quickSections(AppLocalizations l10n) => [
-    _section('${l10n.itemBarcodePrimary} / ${l10n.itemTradeName}'),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
+    CompactSection('${l10n.itemBarcodePrimary} / ${l10n.itemTradeName}'),
+    FormGrid(
       children: [
         _text(
           _c('primaryBarcode'),
           l10n.itemBarcodePrimary,
-          220,
           suffixIcon: _scanButton('primaryBarcode'),
         ),
         _text(
           _c('secondaryBarcode'),
           l10n.itemSecondaryBarcode,
-          220,
           suffixIcon: _scanButton('secondaryBarcode'),
         ),
-        _text(_c('tradeName'), l10n.itemTradeName, 220, required: true),
-        _text(_c('tradeNameEn'), l10n.itemTradeNameEn, 220),
+        _text(_c('tradeName'), l10n.itemTradeName, required: true),
+        _text(_c('tradeNameEn'), l10n.itemTradeNameEn),
       ],
     ),
-    _section(l10n.itemClassificationSection),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
-      crossAxisAlignment: WrapCrossAlignment.start,
+    CompactSection(l10n.itemClassificationSection),
+    FormGrid(
       children: [
         _masterDropdown(
           value: _categoryId,
@@ -679,7 +689,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           nameOf: (c) => c.name,
           onChanged: (v) => setState(() => _categoryId = v),
           kind: MasterDataKind.category,
-          width: 200,
         ),
         _masterDropdown(
           value: _manufacturerId,
@@ -688,21 +697,17 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           nameOf: (m) => m.name,
           onChanged: (v) => setState(() => _manufacturerId = v),
           kind: MasterDataKind.manufacturer,
-          width: 200,
         ),
-        _text(_c('pharmaForm'), l10n.itemPharmaForm, 200),
+        _text(_c('pharmaForm'), l10n.itemPharmaForm),
       ],
     ),
-    _section(l10n.itemPricePartsSection),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
+    CompactSection(l10n.itemPricePartsSection),
+    FormGrid(
       children: [
         _unitDropdown(
           value: _largeUnitId,
           label: l10n.itemPackagingUnit,
           onChanged: (v) => setState(() => _largeUnitId = v),
-          width: 220,
         ),
         _unitDropdown(
           value: _partUnitId,
@@ -711,31 +716,24 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
             _partUnitId = v;
             if (v != null) _largeUnitId ??= v;
           }),
-          width: 200,
         ),
-        SizedBox(
-          width: 160,
-          child: TextFormField(
-            controller: _c('unitsPerLarge', hint: '1'),
-            decoration: InputDecoration(
-              labelText: l10n.itemUnitsPerLarge,
-              isDense: true,
-            ),
-            keyboardType: TextInputType.number,
-            onChanged: (v) {
-              setState(() {
-                _partsCount = v.trim();
-                _recomputePartPrice();
-              });
-            },
+        TextFormField(
+          controller: _c('unitsPerLarge', hint: '1'),
+          decoration: InputDecoration(
+            labelText: l10n.itemUnitsPerLarge,
+            isDense: true,
           ),
+          keyboardType: TextInputType.number,
+          onChanged: (v) {
+            setState(() {
+              _partsCount = v.trim();
+              _recomputePartPrice();
+            });
+          },
         ),
       ],
     ),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    FormGrid(
       children: [
         _switch(
           'partialSaleEnabled',
@@ -757,13 +755,11 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           _text(
             _c('partialSaleMarkupBasisPoints'),
             l10n.partialSaleMarkupPercent,
-            180,
             onChanged: (_) => _recomputePartPrice(),
           ),
           _text(
             _c('partialSalePartPrice'),
             l10n.partialSalePartPrice,
-            180,
             onChanged: (v) {
               if (v.trim().isNotEmpty) {
                 _partPriceManual = true;
@@ -778,29 +774,23 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         ],
       ],
     ),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
+    FormGrid(
       children: [
         _text(
           _c('cost'),
           _costLabel(l10n),
-          160,
           onChanged: (_) => _recomputePartPrice(),
         ),
         _text(
           _c('selling'),
           l10n.itemPrice,
-          150,
           onChanged: (_) => _recomputePartPrice(),
         ),
       ],
     ),
 
-    _section(l10n.itemHasExpiry),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.s,
+    CompactSection(l10n.itemHasExpiry),
+    FormGrid(
       children: [
         _switch(
           'hasExpiry',
@@ -816,32 +806,25 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   /// mode; the quick mode above is just a subset of this.
   /// Tab 1/4 — fits without scrolling (see [_buildFullForm]).
   List<Widget> _basicTab(AppLocalizations l10n) => [
-    _section('${l10n.itemBarcodePrimary} / ${l10n.itemTradeName}'),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
+    CompactSection('${l10n.itemBarcodePrimary} / ${l10n.itemTradeName}'),
+    FormGrid(
       children: [
         _text(
           _c('primaryBarcode'),
           l10n.itemBarcodePrimary,
-          220,
           suffixIcon: _scanButton('primaryBarcode'),
         ),
         _text(
           _c('secondaryBarcode'),
           l10n.itemSecondaryBarcode,
-          220,
           suffixIcon: _scanButton('secondaryBarcode'),
         ),
-        _text(_c('tradeName'), l10n.itemTradeName, 220, required: true),
-        _text(_c('tradeNameEn'), l10n.itemTradeNameEn, 220),
+        _text(_c('tradeName'), l10n.itemTradeName, required: true),
+        _text(_c('tradeNameEn'), l10n.itemTradeNameEn),
       ],
     ),
-    _section(l10n.itemClassificationSection),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
-      crossAxisAlignment: WrapCrossAlignment.start,
+    CompactSection(l10n.itemClassificationSection),
+    FormGrid(
       children: [
         _masterDropdown(
           value: _categoryId,
@@ -850,7 +833,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           nameOf: (c) => c.name,
           onChanged: (v) => setState(() => _categoryId = v),
           kind: MasterDataKind.category,
-          width: 200,
         ),
         _masterDropdown(
           value: _manufacturerId,
@@ -859,27 +841,22 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           nameOf: (m) => m.name,
           onChanged: (v) => setState(() => _manufacturerId = v),
           kind: MasterDataKind.manufacturer,
-          width: 200,
         ),
       ],
     ),
-    _section(l10n.itemScientificName),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
+    CompactSection(l10n.itemScientificName),
+    FormGrid(
       children: [
-        _text(_c('scientificName'), l10n.itemScientificName, 250),
-        _text(_c('equivalentDrug'), l10n.itemEquivalentDrug, 250),
+        _text(_c('scientificName'), l10n.itemScientificName),
+        _text(_c('equivalentDrug'), l10n.itemEquivalentDrug),
       ],
     ),
-    _section(l10n.itemPharmaForm),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
+    CompactSection(l10n.itemPharmaForm),
+    FormGrid(
       children: [
-        _text(_c('dose'), l10n.itemDose, 140),
-        _text(_c('sizeVolume'), l10n.itemSizeVolume, 140),
-        _text(_c('shelfLocation'), l10n.itemShelfLocation, 140),
+        _text(_c('dose'), l10n.itemDose),
+        _text(_c('sizeVolume'), l10n.itemSizeVolume),
+        _text(_c('shelfLocation'), l10n.itemShelfLocation),
       ],
     ),
   ];
@@ -888,7 +865,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
   List<Widget> _ingredientsTab(AppLocalizations l10n) => [
     // Searchable multi-select dropdown: long master lists no longer render
     // every option as chips inside the dialog.
-    _section('${l10n.itemIndications} (${_selectedIndicationIds.length})'),
+    CompactSection('${l10n.itemIndications} (${_selectedIndicationIds.length})'),
     SearchableMultiSelectField<IndicationRow>(
       selectedIds: _selectedIndicationIds,
       items: _indications,
@@ -908,9 +885,8 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
             },
       addNewLabel: l10n.itemAddNew,
       searchHint: l10n.itemIndications,
-      width: 380,
     ),
-    _section(
+    CompactSection(
         '${l10n.itemActiveIngredients} (${_selectedActiveIngredientIds.length})'),
     SearchableMultiSelectField<ActiveIngredientRow>(
       selectedIds: _selectedActiveIngredientIds,
@@ -938,7 +914,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
             },
       addNewLabel: l10n.itemAddNew,
       searchHint: l10n.itemActiveIngredientsSearch,
-      width: 380,
     ),
     const SizedBox(height: AppSpacing.xs),
     if (_selectedActiveIngredientIds.isEmpty)
@@ -953,7 +928,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       Padding(
         padding: const EdgeInsets.only(bottom: AppSpacing.xs),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               icon: const Icon(Icons.remove_circle_outline, size: 18),
@@ -964,17 +938,17 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
                 _strengthControllers.remove(id)?.dispose();
               }),
             ),
-            SizedBox(
-              width: 220,
+            Expanded(
+              flex: 3,
               child: Text(
                 _ingredientName(id),
                 overflow: TextOverflow.ellipsis,
                 style: context.appTypography.label,
               ),
             ),
-            const SizedBox(width: AppSpacing.m),
-            SizedBox(
-              width: 180,
+            const SizedBox(width: AppSpacing.s),
+            Expanded(
+              flex: 2,
               child: TextFormField(
                 controller: _strengthController(
                   id,
@@ -989,7 +963,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           ],
         ),
       ),
-    _section('${l10n.itemSuppliers} (${_selectedSupplierIds.length})'),
+    CompactSection('${l10n.itemSuppliers} (${_selectedSupplierIds.length})'),
     SearchableMultiSelectField<SupplierRow>(
       selectedIds: _selectedSupplierIds,
       items: _suppliers,
@@ -1010,22 +984,18 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
             },
       addNewLabel: l10n.itemAddNew,
       searchHint: l10n.itemSuppliers,
-      width: 380,
     ),
   ];
 
   /// Tab 3/4.
   List<Widget> _pricingTab(AppLocalizations l10n) => [
-    _section(l10n.itemPricePartsSection),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
+    CompactSection(l10n.itemPricePartsSection),
+    FormGrid(
       children: [
         _unitDropdown(
           value: _largeUnitId,
           label: l10n.itemPackagingUnit,
           onChanged: (v) => setState(() => _largeUnitId = v),
-          width: 220,
         ),
         _unitDropdown(
           value: _partUnitId,
@@ -1034,31 +1004,24 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
             _partUnitId = v;
             if (v != null) _largeUnitId ??= v;
           }),
-          width: 200,
         ),
-        SizedBox(
-          width: 160,
-          child: TextFormField(
-            controller: _c('unitsPerLarge', hint: '1'),
-            decoration: InputDecoration(
-              labelText: l10n.itemUnitsPerLarge,
-              isDense: true,
-            ),
-            keyboardType: TextInputType.number,
-            onChanged: (v) {
-              setState(() {
-                _partsCount = v.trim();
-                _recomputePartPrice();
-              });
-            },
+        TextFormField(
+          controller: _c('unitsPerLarge', hint: '1'),
+          decoration: InputDecoration(
+            labelText: l10n.itemUnitsPerLarge,
+            isDense: true,
           ),
+          keyboardType: TextInputType.number,
+          onChanged: (v) {
+            setState(() {
+              _partsCount = v.trim();
+              _recomputePartPrice();
+            });
+          },
         ),
       ],
     ),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    FormGrid(
       children: [
         _switch(
           'partialSaleEnabled',
@@ -1080,13 +1043,11 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           _text(
             _c('partialSaleMarkupBasisPoints'),
             l10n.partialSaleMarkupPercent,
-            180,
             onChanged: (_) => _recomputePartPrice(),
           ),
           _text(
             _c('partialSalePartPrice'),
             l10n.partialSalePartPrice,
-            180,
             onChanged: (v) {
               if (v.trim().isNotEmpty) {
                 _partPriceManual = true;
@@ -1101,42 +1062,34 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         ],
       ],
     ),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
+    FormGrid(
       children: [
         _text(
           _c('cost'),
           _costLabel(l10n),
-          160,
           onChanged: (_) => _recomputePartPrice(),
         ),
-        _text(_c('discount'), l10n.itemPurchaseDiscount, 160),
+        _text(_c('discount'), l10n.itemPurchaseDiscount),
         _text(
           _c('selling'),
           l10n.itemPrice,
-          150,
           onChanged: (_) => _recomputePartPrice(),
         ),
-        _text(_c('wholesale'), l10n.itemWholesalePrice, 150),
-        _text(_c('halfWholesale'), l10n.itemHalfWholesalePrice, 150),
-        _text(_c('custom1'), l10n.itemCustomPrice1, 140),
-        _text(_c('custom2'), l10n.itemCustomPrice2, 140),
-        _text(_c('vat'), l10n.itemVatRate, 140),
+        _text(_c('wholesale'), l10n.itemWholesalePrice),
+        _text(_c('halfWholesale'), l10n.itemHalfWholesalePrice),
+        _text(_c('custom1'), l10n.itemCustomPrice1),
+        _text(_c('custom2'), l10n.itemCustomPrice2),
+        _text(_c('vat'), l10n.itemVatRate),
       ],
     ),
-    _section(l10n.itemStock),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
+    CompactSection(l10n.itemStock),
+    FormGrid(
       children: [
-        _text(_c('minStock'), l10n.itemMinimumStock, 180),
-        _text(_c('maxStock'), l10n.itemMaximumStock, 180),
+        _text(_c('minStock'), l10n.itemMinimumStock),
+        _text(_c('maxStock'), l10n.itemMaximumStock),
       ],
     ),
-    Wrap(
-      spacing: AppSpacing.l,
-      runSpacing: AppSpacing.s,
+    FormGrid(
       children: [
         _switch(
           'hasExpiry',
@@ -1168,14 +1121,12 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
 
   /// Tab 4/4.
   List<Widget> _notesTab(AppLocalizations l10n) => [
-    _section(l10n.itemUsageInstructions),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
+    CompactSection(l10n.itemUsageInstructions),
+    FormGrid(
       children: [
-        _text(_c('usageInstructions'), l10n.itemUsageInstructions, 300),
-        _text(_c('generalNotes'), l10n.itemGeneralNotes, 300),
-        _text(_c('licenseNumber'), l10n.itemLicenseNumber, 220),
+        _text(_c('usageInstructions'), l10n.itemUsageInstructions),
+        _text(_c('generalNotes'), l10n.itemGeneralNotes),
+        _text(_c('licenseNumber'), l10n.itemLicenseNumber),
       ],
     ),
   ];
@@ -1185,8 +1136,13 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
       title: Text(widget.title),
+      // Viewport-aware width: full 680px on desktop, shrinks to the
+      // phone screen so fields never overflow horizontally.
       content: SizedBox(
-        width: 680,
+        width: math.max(
+          280,
+          math.min(680, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: Form(
           key: _formKey,
           child: _quickMode ? _buildQuickForm(l10n) : _buildTabbedForm(l10n),
@@ -1247,11 +1203,17 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
               // Fixed (non-scrollable) tabs: all four are always visible
               // and tappable — no hidden tabs.
               TabBar(tabs: tabs),
-              // Fixed-height tab body: fits the viewport, actions stay
-              // reachable. Over-long tab content scrolls internally.
+              // Viewport-aware tab body: fills the available dialog height
+              // without pushing the actions off-screen. Over-long tab
+              // content scrolls internally.
               Flexible(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 520),
+                  constraints: BoxConstraints(
+                    maxHeight: math.max(
+                      240,
+                      MediaQuery.sizeOf(context).height - 340,
+                    ),
+                  ),
                   child: TabBarView(
                     children: [
                       for (final body in bodies)
@@ -1273,11 +1235,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     );
   }
 
-  Widget _section(String title) => Padding(
-    padding: const EdgeInsets.only(top: AppSpacing.l, bottom: AppSpacing.s),
-    child: Text(title, style: context.appTypography.sectionTitle),
-  );
-
   /// Cost label names the commercial (packaging) unit so the pharmacist knows
   /// the amount is entered per package, not per base unit.
   String _costLabel(AppLocalizations l10n) {
@@ -1297,28 +1254,24 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
 
   Widget _text(
     TextEditingController controller,
-    String label,
-    double width, {
+    String label, {
     bool required = false,
     ValueChanged<String>? onChanged,
     Widget? suffixIcon,
   }) {
-    return SizedBox(
-      width: width,
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: required ? '$label *' : label,
-          isDense: true,
-          suffixIcon: suffixIcon,
-        ),
-        validator: required
-            ? (v) => (v == null || v.trim().isEmpty)
-                  ? AppLocalizations.of(context).inventoryRequiredName
-                  : null
-            : null,
-        onChanged: onChanged,
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: required ? '$label *' : label,
+        isDense: true,
+        suffixIcon: suffixIcon,
       ),
+      validator: required
+          ? (v) => (v == null || v.trim().isEmpty)
+                ? AppLocalizations.of(context).inventoryRequiredName
+                : null
+          : null,
+      onChanged: onChanged,
     );
   }
 
@@ -1330,7 +1283,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     required String Function(T) nameOf,
     ValueChanged<String?>? onChanged,
     MasterDataKind? kind,
-    double width = 220,
   }) {
     String idOf(T item) => (item as dynamic).id as String;
     final field = SearchableDropdownField<T>(
@@ -1340,14 +1292,12 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       nameOf: nameOf,
       onChanged: onChanged,
       label: label,
-      width: width,
     );
     if (kind == null || widget.onCreateMasterData == null) return field;
     return Row(
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        field,
+        Expanded(child: field),
         _addButton(
           AppLocalizations.of(context).itemAddNew,
           () => _addMasterData(kind),
@@ -1362,7 +1312,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     required String? value,
     required String label,
     ValueChanged<String?>? onChanged,
-    double width = 200,
   }) {
     return _masterDropdown<UnitRow>(
       value: value,
@@ -1371,7 +1320,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       nameOf: (u) => u.name,
       onChanged: onChanged,
       kind: MasterDataKind.unit,
-      width: width,
     );
   }
 
@@ -1397,10 +1345,9 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     ValueChanged<bool> onChanged,
   ) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         Switch(value: value, onChanged: onChanged),
-        Text(label, style: context.appTypography.label),
+        Expanded(child: Text(label, style: context.appTypography.label)),
       ],
     );
   }

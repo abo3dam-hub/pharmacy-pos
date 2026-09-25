@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:printing/printing.dart';
 
 import '../../../../core/money/money.dart';
@@ -219,7 +220,12 @@ class _ExpenseFormDialogState extends State<_ExpenseFormDialog> {
       title: Text(l10n.expensesAddTitle),
       content: SingleChildScrollView(
         child: SizedBox(
-          width: 480,
+          // Viewport-aware width: 480px on desktop, shrinks to the
+          // phone screen so fields never overflow horizontally.
+          width: math.max(
+            280,
+            math.min(480, MediaQuery.sizeOf(context).width - 64),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -396,7 +402,12 @@ class _ExpenseEditDialogState extends State<_ExpenseEditDialog> {
     return AlertDialog(
       title: Text(l10n.expenseEditDescription),
       content: SizedBox(
-        width: 440,
+        // Viewport-aware width: 440px on desktop, shrinks to the
+        // phone screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(440, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -471,7 +482,12 @@ class _ExpenseCancelDialogState extends State<_ExpenseCancelDialog> {
     return AlertDialog(
       title: Text(l10n.expenseCancelTitle),
       content: SizedBox(
-        width: 440,
+        // Viewport-aware width: 440px on desktop, shrinks to the
+        // phone screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(440, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -560,7 +576,12 @@ class _ExpenseCategoryDialogState extends State<_ExpenseCategoryDialog> {
           ? l10n.expenseCategoryEditTitle
           : l10n.expenseCategoryAddTitle),
       content: SizedBox(
-        width: 440,
+        // Viewport-aware width: 440px on desktop, shrinks to the
+        // phone screen so fields never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(440, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

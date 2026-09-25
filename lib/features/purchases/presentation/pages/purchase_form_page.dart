@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -751,8 +752,8 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
             const SizedBox(height: AppSpacing.m),
             Row(
               children: [
-                SizedBox(
-                  width: 220,
+                Expanded(
+                  flex: 2,
                   child: TextFormField(
                     controller: _paidAmount,
                     decoration: InputDecoration(
@@ -765,6 +766,7 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                 ),
                 const SizedBox(width: AppSpacing.m),
                 Expanded(
+                  flex: 3,
                   child: TextFormField(
                     controller: _notes,
                     decoration: InputDecoration(labelText: l10n.purchaseNotes),
@@ -1041,8 +1043,13 @@ class _ItemSearchDialogState extends ConsumerState<_ItemSearchDialog> {
     return AlertDialog(
       title: Text(l10n.purchaseItemSearchHint),
       content: SizedBox(
-        width: 480,
-        height: 420,
+        // Viewport-aware size: 480×420 on desktop, shrinks to the phone
+        // screen so the picker never overflows.
+        width: math.max(
+          280,
+          math.min(480, MediaQuery.sizeOf(context).width - 64),
+        ),
+        height: math.min(420, MediaQuery.sizeOf(context).height * 0.6),
         child: Column(
           children: [
             TextField(
@@ -1124,7 +1131,12 @@ class _BonusEditorDialogState extends ConsumerState<_BonusEditorDialog> {
     return AlertDialog(
       title: Text('${l10n.purchaseBonusButton} — ${widget.itemName}'),
       content: SizedBox(
-        width: 480,
+        // Viewport-aware width: 480px on desktop, shrinks to the phone
+        // screen so rows never overflow horizontally.
+        width: math.max(
+          280,
+          math.min(480, MediaQuery.sizeOf(context).width - 64),
+        ),
         child: _bonuses.isEmpty
             ? Text(
                 l10n.purchaseNoLines,
