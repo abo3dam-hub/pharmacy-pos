@@ -8,6 +8,7 @@ import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_data_table.dart';
+import '../../../../core/widgets/horizontal_scroll.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/models/enums.dart';
 import '../../application/reports_controller.dart';
@@ -283,8 +284,7 @@ class _InventoryReportTableState extends State<_InventoryReportTable> {
         ),
       );
     }
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    return HorizontalScroll(
       child: PaginatedDataTable(
       columns: [
         DataColumn(label: Text(l10n.reportInventoryItemCode)),

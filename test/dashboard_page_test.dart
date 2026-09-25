@@ -103,4 +103,40 @@ void main() {
       },
     );
   });
+
+  group('DashboardPage fit-to-screen', () {
+    Future<void> pumpAt(
+      WidgetTester tester,
+      ProviderContainer container,
+      Size size,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(harness(container));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('fits viewports without scrolling or overflow', (tester) async {
+      final h = await buildAuthHarness();
+      addTearDown(h.db.close);
+      addTearDown(h.container.dispose);
+      await h.container
+          .read(authControllerProvider.notifier)
+          .login('admin', 'Admin@123');
+
+      // Any RenderFlex overflow throws during pump — reaching these
+      // expectations proves the layout fits.
+      for (final size in const [
+        Size(1280, 900),
+        Size(1024, 640),
+        Size(800, 600),
+      ]) {
+        await pumpAt(tester, h.container, size);
+        // No scrollable root: everything is visible in the viewport.
+        expect(find.byType(Scrollable), findsNothing);
+        expect(find.text('نظرة عامة'), findsOneWidget);
+      }
+    });
+  });
 }

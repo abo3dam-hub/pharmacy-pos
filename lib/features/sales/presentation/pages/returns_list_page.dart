@@ -40,7 +40,7 @@ class _ReturnsListPageState extends ConsumerState<ReturnsListPage> {
     });
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool isRetry = false}) async {
     setState(() {
       _loading = true;
       _error = null;
@@ -55,6 +55,13 @@ class _ReturnsListPageState extends ConsumerState<ReturnsListPage> {
         _loading = false;
       });
     } catch (e) {
+      // The very first load can race app startup (database not open yet).
+      // Retry once automatically so the list appears without any tap.
+      if (!isRetry && mounted) {
+        await Future<void>.delayed(const Duration(milliseconds: 800));
+        if (mounted) await _load(isRetry: true);
+        return;
+      }
       if (!mounted) return;
       setState(() {
         _error = e;

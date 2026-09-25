@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_dimensions.dart';
 import '../theme/app_text_styles.dart';
+import 'horizontal_scroll.dart';
 
 /// Theme-styled `DataTable` wrapper (single row-density + typography source).
 ///
@@ -10,7 +11,12 @@ import '../theme/app_text_styles.dart';
 /// state (text provided by the caller, e.g. localized "no results").
 /// This is the *styling* foundation — the full §22 data-grid feature
 /// (column visibility/order, inline edit, bulk actions) lands in its phase.
-class AppDataTable extends StatelessWidget {
+///
+/// Both scroll axes use explicit controllers wired to always-visible
+/// scrollbars ([HorizontalScroll] + vertical [Scrollbar]): on desktop a
+/// controller-less scrollbar shows no thumb and horizontal scrolling is
+/// impossible with a mouse.
+class AppDataTable extends StatefulWidget {
   const AppDataTable({
     super.key,
     required this.columns,
@@ -33,31 +39,58 @@ class AppDataTable extends StatelessWidget {
   final double? dataRowHeight;
 
   @override
+  State<AppDataTable> createState() => _AppDataTableState();
+}
+
+class _AppDataTableState extends State<AppDataTable> {
+  late final ScrollController _verticalController;
+
+  @override
+  void initState() {
+    super.initState();
+    _verticalController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _verticalController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (rows.isEmpty && emptyMessage != null) {
+    if (widget.rows.isEmpty && widget.emptyMessage != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.xxl),
-          child: Text(emptyMessage!, style: context.appTypography.labelSmall),
+          child: Text(
+            widget.emptyMessage!,
+            style: context.appTypography.labelSmall,
+          ),
         ),
       );
     }
 
     return Scrollbar(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+      controller: _verticalController,
+      thumbVisibility: true,
+      notificationPredicate: (notification) =>
+          notification.metrics.axis == Axis.vertical,
+      child: HorizontalScroll(
         child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
+          controller: _verticalController,
           child: DataTable(
-            columns: columns,
-            rows: rows,
+            columns: widget.columns,
+            rows: widget.rows,
             headingRowHeight: AppLayoutTokens.tableHeaderHeight,
-            dataRowMaxHeight: dataRowHeight ?? AppLayoutTokens.tableRowHeight,
-            dataRowMinHeight: dataRowHeight ?? AppLayoutTokens.tableRowHeight,
-            sortColumnIndex: sortColumnIndex,
-            sortAscending: sortAscending,
-            showCheckboxColumn: showCheckboxColumn,
-            onSelectAll: showCheckboxColumn ? (value) {} : null,
+            dataRowMaxHeight:
+                widget.dataRowHeight ?? AppLayoutTokens.tableRowHeight,
+            dataRowMinHeight:
+                widget.dataRowHeight ?? AppLayoutTokens.tableRowHeight,
+            sortColumnIndex: widget.sortColumnIndex,
+            sortAscending: widget.sortAscending,
+            showCheckboxColumn: widget.showCheckboxColumn,
+            onSelectAll: widget.showCheckboxColumn ? (value) {} : null,
           ),
         ),
       ),

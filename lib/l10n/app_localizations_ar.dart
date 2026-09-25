@@ -81,6 +81,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get commonClose => 'إغلاق';
 
   @override
+  String get commonViewAll => 'عرض الكل';
+
+  @override
+  String get itemTabBasic => 'البيانات الأساسية';
+
+  @override
+  String get itemTabIngredients => 'المواد والجهات';
+
+  @override
+  String get itemTabPricing => 'التسعير والمخزون';
+
+  @override
+  String get itemTabNotes => 'ملاحظات';
+
+  @override
   String get commonBack => 'رجوع';
 
   @override

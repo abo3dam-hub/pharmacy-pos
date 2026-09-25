@@ -81,6 +81,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonClose => 'Close';
 
   @override
+  String get commonViewAll => 'View all';
+
+  @override
+  String get itemTabBasic => 'Basic data';
+
+  @override
+  String get itemTabIngredients => 'Ingredients & parties';
+
+  @override
+  String get itemTabPricing => 'Pricing & stock';
+
+  @override
+  String get itemTabNotes => 'Notes';
+
+  @override
   String get commonBack => 'Back';
 
   @override

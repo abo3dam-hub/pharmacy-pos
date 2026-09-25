@@ -12,19 +12,29 @@ import 'product_detail_dialog.dart';
 ///
 /// Used by the POS workspace (an alternative can be picked straight into the
 /// cart via [onPick]) and by the inventory items grid / product tree
-/// (browse-only: [onPick] is null, rows are not tappable). The requested item
-/// is loaded by id so callers only need the id, not a hydrated catalog item —
-/// the candidate search always spans the whole product master (stock view and
-/// product tree alike), in-stock ranked first, out-of-stock still listed.
+/// (browse-only: [onPick] is null). Every row is tappable: in the POS it
+/// picks the alternative into the cart; in browse mode it opens the item in
+/// the caller's own item window via [onOpenItem] (the inventory edit dialog
+/// when opened from the stock view / product tree), falling back to the
+/// read-only [ProductDetailDialog] when no opener is supplied.
+/// The requested item is loaded by id so callers only need the id, not a
+/// hydrated catalog item — the candidate search always spans the whole
+/// product master (stock view and product tree alike), in-stock ranked
+/// first, out-of-stock still listed.
 class AlternativesDialog extends ConsumerWidget {
   const AlternativesDialog({
     super.key,
     required this.requestedItemId,
     this.onPick,
+    this.onOpenItem,
   });
 
   final String requestedItemId;
   final ValueChanged<SmartAlternative>? onPick;
+
+  /// Browse-mode tap handler: opens the tapped alternative's item window in
+  /// the caller's context (inventory / product tree). Null in the POS.
+  final ValueChanged<String>? onOpenItem;
 
   Future<({PosCatalogItem item, List<SmartAlternative> alternatives})> _load(
     WidgetRef ref,
@@ -34,6 +44,36 @@ class AlternativesDialog extends ConsumerWidget {
     if (item == null) throw StateError('item not found');
     final alternatives = await repo.smartAlternatives(item);
     return (item: item, alternatives: alternatives);
+  }
+
+  /// Rich row tooltip: manufacturer + active ingredients (with strengths).
+  String _rowTooltip(AppLocalizations l10n, PosCatalogItem item) {
+    final lines = <String>[item.displayName];
+    final manufacturer = item.manufacturerName;
+    if (manufacturer != null && manufacturer.isNotEmpty) {
+      lines.add('${l10n.itemManufacturer}: $manufacturer');
+    }
+    final ingredients = _ingredientLabels(item);
+    if (ingredients.isNotEmpty) {
+      lines.add('${l10n.itemActiveIngredients}: ${ingredients.join('، ')}');
+    }
+    return lines.join('\n');
+  }
+
+  /// Active-ingredient labels, preferring the relational (name + strength)
+  /// data and falling back to the flat imported string.
+  List<String> _ingredientLabels(PosCatalogItem item) {
+    if (item.relationalIngredientNames.isNotEmpty) {
+      return [
+        for (final name in item.relationalIngredientNames)
+          item.relationalIngredientStrengths[name]?.isNotEmpty ?? false
+              ? '$name (${item.relationalIngredientStrengths[name]})'
+              : name,
+      ];
+    }
+    final flat = item.activeIngredient;
+    if (flat != null && flat.isNotEmpty) return [flat];
+    return const [];
   }
 
   @override
@@ -80,66 +120,82 @@ class AlternativesDialog extends ConsumerWidget {
                     '${l10n.posAlternativesMissing}: '
                     '${alt.missingIngredients.join('، ')}',
                 ];
-                return ListTile(
-                  dense: true,
-                  leading: TierBadge(tier: alt.tier),
-                  title: Text(alt.item.displayName),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${alt.item.scientificName}'
-                        '${(alt.item.manufacturerName?.isNotEmpty ?? false) ? ' · ${alt.item.manufacturerName}' : ''}'
-                        '${(alt.item.dose?.isNotEmpty ?? false) ? ' · ${alt.item.dose}' : ''}'
-                        '${(alt.item.pharmaForm?.isNotEmpty ?? false) ? ' · ${alt.item.pharmaForm}' : ''}',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          _MatchChip(percent: alt.matchPercent),
-                          _StockChip(inStock: alt.inStock),
-                          Text(
-                            '${l10n.posAvailableStock}: '
-                            '${alt.item.availableStockBase}',
-                            style: Theme.of(context).textTheme.labelSmall,
-                          ),
-                        ],
-                      ),
-                      if (diffBits.isNotEmpty)
+                return Tooltip(
+                  message: _rowTooltip(l10n, alt.item),
+                  child: ListTile(
+                    dense: true,
+                    leading: TierBadge(tier: alt.tier),
+                    title: Text(alt.item.displayName),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Text(
-                          diffBits.join(' · '),
+                          '${alt.item.scientificName}'
+                          '${(alt.item.manufacturerName?.isNotEmpty ?? false) ? ' · ${alt.item.manufacturerName}' : ''}'
+                          '${(alt.item.dose?.isNotEmpty ?? false) ? ' · ${alt.item.dose}' : ''}'
+                          '${(alt.item.pharmaForm?.isNotEmpty ?? false) ? ' · ${alt.item.pharmaForm}' : ''}',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
-                              ?.copyWith(fontStyle: FontStyle.italic),
                         ),
-                    ],
+                        const SizedBox(height: 2),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            _MatchChip(percent: alt.matchPercent),
+                            _StockChip(inStock: alt.inStock),
+                            Text(
+                              '${l10n.posAvailableStock}: '
+                              '${alt.item.availableStockBase}',
+                              style: Theme.of(context).textTheme.labelSmall,
+                            ),
+                          ],
+                        ),
+                        if (diffBits.isNotEmpty)
+                          Text(
+                            diffBits.join(' · '),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(fontStyle: FontStyle.italic),
+                          ),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          Money.fromUnits(
+                            alt.item.sellingPriceMicros,
+                          ).formatArabicDigits(),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.info_outline),
+                          tooltip: l10n.productDetailTitle,
+                          onPressed: () =>
+                              showProductDetailDialog(context, alt.item.id),
+                        ),
+                      ],
+                    ),
+                    // POS: tap picks into the cart. Browse mode (stock view /
+                    // product tree): tap opens the item in the caller's own
+                    // item window (inventory edit dialog); without an opener
+                    // it falls back to the read-only detail dialog.
+                    onTap: onPick != null
+                        ? () => onPick!(alt)
+                        : () {
+                            final opener = onOpenItem;
+                            if (opener != null) {
+                              opener(alt.item.id);
+                            } else {
+                              showProductDetailDialog(context, alt.item.id);
+                            }
+                          },
                   ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        Money.fromUnits(
-                          alt.item.sellingPriceMicros,
-                        ).formatArabicDigits(),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.info_outline),
-                        tooltip: l10n.productDetailTitle,
-                        onPressed: () =>
-                            showProductDetailDialog(context, alt.item.id),
-                      ),
-                    ],
-                  ),
-                  onTap: onPick == null ? null : () => onPick!(alt),
                 );
               },
             );

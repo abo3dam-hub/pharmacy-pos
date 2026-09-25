@@ -76,10 +76,11 @@ Future<void> _toggleMultiOption(
   await tester.pumpAndSettle();
   await tester.tap(find.widgetWithText(CheckboxListTile, option));
   await tester.pumpAndSettle();
-  // Clear the search and dismiss the dropdown.
+  // Clear the search and dismiss the dropdown by tapping the tab bar
+  // (the trade-name field used before now lives on another tab).
   await tester.enterText(searchField, '');
   await tester.pumpAndSettle();
-  await tester.tap(_comboByLabel('الاسم التجاري *'));
+  await tester.tap(find.byType(TabBar));
   await tester.pumpAndSettle();
 }
 
@@ -110,6 +111,16 @@ Future<void> _selectCombo(WidgetTester tester, String label, String item) async 
 Future<void> _tapSave(WidgetTester tester) async {
   await tester.tap(find.descendant(
       of: find.byType(AlertDialog).last, matching: find.text('حفظ')));
+  await tester.pumpAndSettle();
+}
+
+/// Taps a detailed-mode tab by its label (detailed mode is tabbed so the
+/// window fits the viewport without scrolling).
+Future<void> _tapTab(WidgetTester tester, String label) async {
+  await tester.tap(find.descendant(
+    of: find.byType(TabBar),
+    matching: find.text(label),
+  ));
   await tester.pumpAndSettle();
 }
 
@@ -281,19 +292,29 @@ void main() {
 
     await _openDetailedDialog(tester, onResult: (_) {});
 
-    // Phase 17 packaging/parts labels are used (no legacy unit naming).
+    // Detailed mode is tabbed so the window fits the viewport.
+    expect(find.text('البيانات الأساسية'), findsOneWidget);
+    expect(find.text('المواد والجهات'), findsOneWidget);
+    expect(find.text('التسعير والمخزون'), findsOneWidget);
+    expect(find.text('ملاحظات'), findsOneWidget);
+
+    // Tab 1 holds the classification section…
+    expect(find.text('التصنيف والمعلومات الدوائية'), findsOneWidget);
+
+    // …tab 3 holds the Phase 17 packaging/parts labels (no legacy unit
+    // naming), with the pricing section preceding the stock section…
+    await _tapTab(tester, 'التسعير والمخزون');
     expect(find.text('التعبئة التجارية'), findsOneWidget);
     expect(find.text('الأجزاء'), findsOneWidget);
     expect(find.text('عدد الأجزاء'), findsOneWidget);
 
     double y(String text) => tester.getTopLeft(find.text(text)).dy;
-
-    // Documented order: classification → parts/pricing → stock.
-    expect(y('التصنيف والمعلومات الدوائية'),
-        lessThan(y('التكلفة / السعر / الأجزاء')));
-    expect(y('الموردون'), lessThan(y('التكلفة / السعر / الأجزاء')));
     expect(y('التكلفة / السعر / الأجزاء'), lessThan(y('الرصيد')),
         reason: 'pricing section precedes the stock section');
+
+    // …and tab 2 holds the suppliers.
+    await _tapTab(tester, 'المواد والجهات');
+    expect(find.text('الموردون'), findsOneWidget);
   });
 
   testWidgets('supplier chips toggle a many-to-many selection in the draft',
@@ -311,8 +332,10 @@ void main() {
 
     await _enterTradeName(tester, 'منتج بموردين');
     await _selectCombo(tester, 'التصنيف', 'أدوية');
+    await _tapTab(tester, 'المواد والجهات');
     await _toggleMultiOption(tester, 'الموردون', 'مورد الأول');
     await _toggleMultiOption(tester, 'الموردون', 'مورد الثاني');
+    await _tapTab(tester, 'التسعير والمخزون');
     await _selectCombo(tester, 'الأجزاء', 'ظرف');
     await _tapSave(tester);
 
@@ -335,6 +358,7 @@ void main() {
         supplierIds: ['sup_a', 'sup_b'],
       ),
     );
+    await _tapTab(tester, 'المواد والجهات');
     await _toggleMultiOption(tester, 'الموردون', 'مورد الأول');
     await _tapSave(tester);
 
@@ -357,12 +381,10 @@ void main() {
           id: 'cat_new', name: draft.name, isActive: true, createdAt: 1, updatedAt: 1),
     );
 
-    // Inline "+" exists for category / manufacturer / packaging / parts units /
-    // active ingredient / indication / supplier.
-    // Category / manufacturer / packaging / parts-unit add buttons; the
-    // multi-selects (indication / ingredient / supplier) carry their own
-    // inline add-new row instead.
-    expect(find.byIcon(Icons.add_circle_outline), findsNWidgets(4));
+    // Inline "+" exists for category / manufacturer (tab 1) and for
+    // packaging / parts units (tab 3); the multi-selects (indication /
+    // ingredient / supplier) carry their own inline add-new row instead.
+    expect(find.byIcon(Icons.add_circle_outline), findsNWidgets(2));
     await tester.tap(find.byIcon(Icons.add_circle_outline).at(0));
     await tester.pumpAndSettle();
     expect(find.text('إضافة تصنيف جديد'), findsOneWidget);
@@ -373,6 +395,9 @@ void main() {
 
     // Back on the item form the created category is shown, then saved.
     await _enterTradeName(tester, 'منتج بتصنيف جديد');
+    await _tapTab(tester, 'التسعير والمخزون');
+    // Packaging / parts-unit "+" buttons live on this tab.
+    expect(find.byIcon(Icons.add_circle_outline), findsNWidgets(2));
     await _selectCombo(tester, 'الأجزاء', 'ظرف');
     await _tapSave(tester);
 
@@ -393,6 +418,8 @@ void main() {
 
     await _enterTradeName(tester, 'منتج بالعيار');
     await _selectCombo(tester, 'التصنيف', 'أدوية');
+    // The active-ingredient multi-select lives on the ingredients tab.
+    await _tapTab(tester, 'المواد والجهات');
     // The active-ingredient multi-select is searchable: type to filter, then
     // tap the checkbox row to add it with its strength.
     await tester.tap(_fieldByHint('ابحث عن مادة فعالة'));
@@ -401,10 +428,12 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(CheckboxListTile, 'باراسيتامول'));
     await tester.pumpAndSettle();
-    await tester.tap(_comboByLabel('الاسم التجاري *'));
+    // Dismiss the dropdown (trade-name field lives on another tab now).
+    await tester.tap(find.byType(TabBar));
     await tester.pumpAndSettle();
     await tester.enterText(_fieldByLabel('العيار'), '500 ملغ');
     await tester.pumpAndSettle();
+    await _tapTab(tester, 'التسعير والمخزون');
     await _selectCombo(tester, 'الأجزاء', 'ظرف');
     await _tapSave(tester);
 
@@ -512,9 +541,15 @@ void main() {
     await tester.tap(find.text('إدخال مفصّل'));
     await tester.pumpAndSettle();
 
+    // Detailed mode is tabbed: master-data sections live on their tabs.
+    expect(find.text('البيانات الأساسية'), findsOneWidget);
+    expect(find.text('المواد والجهات'), findsOneWidget);
+    await _tapTab(tester, 'المواد والجهات');
     expect(find.text('الموردون'), findsOneWidget);
+    await _tapTab(tester, 'البيانات الأساسية');
     // Section header + field share the label.
     expect(find.text('الاسم العلمي'), findsWidgets);
+    await _tapTab(tester, 'ملاحظات');
     expect(find.text('تعليمات الاستخدام'), findsWidgets);
     // Switching back hides them again — nothing is lost, only tucked away.
     await tester.tap(find.text('إدخال سريع'));

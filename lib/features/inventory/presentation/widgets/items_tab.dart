@@ -15,6 +15,7 @@ import '../../../../core/units/package_cost.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_data_table.dart';
+import '../../../../core/widgets/adaptive_page_size.dart';
 import '../../../settings/application/ui_preferences_service.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
 import '../../../../core/widgets/loading_overlay.dart';
@@ -24,6 +25,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../../suppliers/domain/repositories/supplier_repository.dart';
 import '../../../sales/presentation/widgets/alternatives_dialog.dart';
+import '../../../sales/presentation/widgets/product_detail_dialog.dart';
 import '../../application/inventory_controller.dart';
 import '../../application/master_data_controller.dart';
 import '../../domain/entities/inventory_item.dart';
@@ -442,7 +444,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
 
   void _toPage(int page) {
     final state = ref.read(inventoryControllerProvider);
-    final pageCount = (state.total / 30).ceil();
+    final pageCount = (state.total / state.request.pageSize).ceil();
     if (page < 1 || page > (pageCount == 0 ? 1 : pageCount)) return;
     ref
         .read(inventoryControllerProvider.notifier)
@@ -450,6 +452,48 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
             page: page,
             inStockOnly: state.inStockOnly,
             actingRoleId: _actingRoleId);
+  }
+
+  /// Estimated inventory card height on compact layouts (name + barcode +
+  /// stock/price line + actions). The card list keeps its own scroll as a
+  /// safety net if the estimate is off; the table path is exact.
+  static const double _cardEstimateHeight = 152;
+
+  /// Fits a page of data to the viewport: computes how many fixed-height
+  /// rows (or estimated cards) fit in [availableHeight] and reloads page 1
+  /// when the count differs — so the list fills the screen instead of
+  /// scrolling internally, and the pager always stays visible.
+  void _syncPageSize(double availableHeight, bool isCompact) {
+    final state = ref.read(inventoryControllerProvider);
+    final int pageSize;
+    if (isCompact) {
+      pageSize = rowsThatFit(
+        availableHeight: availableHeight,
+        rowHeight: _cardEstimateHeight,
+        headerHeight: AppSpacing.m,
+      );
+    } else {
+      pageSize = rowsThatFit(
+        availableHeight: availableHeight,
+        // DataTable header (~56) + fixed-height data rows.
+        headerHeight: 56,
+        rowHeight: listRowHeight(ref.read(displayDensityProvider)),
+      );
+    }
+    if (pageSize == state.request.pageSize) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final current = ref.read(inventoryControllerProvider);
+      if (pageSize == current.request.pageSize) return;
+      ref.read(inventoryControllerProvider.notifier).load(
+            search: current.search,
+            page: 1,
+            pageSize: pageSize,
+            onlyActive: current.onlyActive,
+            inStockOnly: current.inStockOnly,
+            actingRoleId: _actingRoleId,
+          );
+    });
   }
 
   void _openBatches(InventoryItemView view) =>
@@ -564,10 +608,19 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
           )
         : const SizedBox.shrink();
 
-    final content = AppResponsiveLayout(
-      desktop: _buildTable(l10n, state),
-      tablet: _buildTable(l10n, state),
-      compact: _buildCards(l10n, state, typography),
+    final content = LayoutBuilder(
+      builder: (context, constraints) {
+        // Both desktop and tablet render the fixed-height-row table; only
+        // the compact layout uses cards.
+        final isCompact =
+            AppBreakpoints.layoutFor(constraints.maxWidth) == AppLayout.compact;
+        _syncPageSize(constraints.maxHeight, isCompact);
+        return AppResponsiveLayout(
+          desktop: _buildTable(l10n, state),
+          tablet: _buildTable(l10n, state),
+          compact: _buildCards(l10n, state, typography),
+        );
+      },
     );
 
     final importProgress = state.importProgress;
@@ -610,7 +663,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
   }
 
   Widget _buildPager(AppLocalizations l10n, InventoryViewState state) {
-    final pageCount = (state.total / 30).ceil();
+    final pageCount = (state.total / state.request.pageSize).ceil();
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.xl,
@@ -805,8 +858,41 @@ if (_canDelete)
   Future<void> _showAlternatives(InventoryItemView row) {
     return showDialog<void>(
       context: context,
-      builder: (_) => AlternativesDialog(requestedItemId: row.item.id),
+      builder: (_) => AlternativesDialog(
+        requestedItemId: row.item.id,
+        // Tapping an alternative opens that item's own window in the
+        // inventory (the edit dialog), not a generic detail popup.
+        onOpenItem: (itemId) => _openItemFromAlternatives(itemId),
+      ),
     );
+  }
+
+  /// Opens the tapped alternative in the inventory item window: closes the
+  /// alternatives dialog, then opens the item's edit dialog (or the
+  /// read-only detail for viewers without edit permission).
+  Future<void> _openItemFromAlternatives(String itemId) async {
+    // Close the alternatives dialog first.
+    Navigator.of(context).pop();
+    if (_canEdit) {
+      // Prefer the already-loaded view from the current page.
+      final state = ref.read(inventoryControllerProvider);
+      var view = state.items
+          .where((v) => v.item.id == itemId)
+          .firstOrNull;
+      if (view == null) {
+        // The alternative may live on another page: load its row + units
+        // and build the view _editItem needs.
+        final repo = ref.read(inventoryRepositoryProvider);
+        final item = await repo.findItem(itemId);
+        if (item == null || !mounted) return;
+        final units = await repo.itemUnitsFor(itemId);
+        view = InventoryItemView(item: item, units: units);
+      }
+      if (!mounted) return;
+      await _editItem(view);
+    } else if (mounted) {
+      showProductDetailDialog(context, itemId);
+    }
   }
 
   Widget _actions(AppLocalizations l10n, InventoryItemView row) {

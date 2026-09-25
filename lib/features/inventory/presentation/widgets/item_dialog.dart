@@ -642,8 +642,8 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
 
   /// Essentials for the 90% case: identity, classification, units,
   /// partial-sale and the two prices that matter. Everything else lives in
-  /// [_fullSections] ("detailed" mode). Nothing is removed — only hidden
-  /// until needed.
+  /// the detailed tabs ([_basicTab], [_ingredientsTab], [_pricingTab],
+  /// [_notesTab]). Nothing is removed — only hidden until needed.
   List<Widget> _quickSections(AppLocalizations l10n) => [
     _section('${l10n.itemBarcodePrimary} / ${l10n.itemTradeName}'),
     Wrap(
@@ -814,7 +814,8 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
 
   /// Every field, in the documented Phase 17 order. Shown in "detailed"
   /// mode; the quick mode above is just a subset of this.
-  List<Widget> _fullSections(AppLocalizations l10n) => [
+  /// Tab 1/4 — fits without scrolling (see [_buildFullForm]).
+  List<Widget> _basicTab(AppLocalizations l10n) => [
     _section('${l10n.itemBarcodePrimary} / ${l10n.itemTradeName}'),
     Wrap(
       spacing: AppSpacing.m,
@@ -862,6 +863,29 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         ),
       ],
     ),
+    _section(l10n.itemScientificName),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _text(_c('scientificName'), l10n.itemScientificName, 250),
+        _text(_c('equivalentDrug'), l10n.itemEquivalentDrug, 250),
+      ],
+    ),
+    _section(l10n.itemPharmaForm),
+    Wrap(
+      spacing: AppSpacing.m,
+      runSpacing: AppSpacing.m,
+      children: [
+        _text(_c('dose'), l10n.itemDose, 140),
+        _text(_c('sizeVolume'), l10n.itemSizeVolume, 140),
+        _text(_c('shelfLocation'), l10n.itemShelfLocation, 140),
+      ],
+    ),
+  ];
+
+  /// Tab 2/4.
+  List<Widget> _ingredientsTab(AppLocalizations l10n) => [
     // Searchable multi-select dropdown: long master lists no longer render
     // every option as chips inside the dialog.
     _section('${l10n.itemIndications} (${_selectedIndicationIds.length})'),
@@ -885,15 +909,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       addNewLabel: l10n.itemAddNew,
       searchHint: l10n.itemIndications,
       width: 380,
-    ),
-    _section(l10n.itemScientificName),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
-      children: [
-        _text(_c('scientificName'), l10n.itemScientificName, 250),
-        _text(_c('equivalentDrug'), l10n.itemEquivalentDrug, 250),
-      ],
     ),
     _section(
         '${l10n.itemActiveIngredients} (${_selectedActiveIngredientIds.length})'),
@@ -997,16 +1012,10 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       searchHint: l10n.itemSuppliers,
       width: 380,
     ),
-    _section(l10n.itemPharmaForm),
-    Wrap(
-      spacing: AppSpacing.m,
-      runSpacing: AppSpacing.m,
-      children: [
-        _text(_c('dose'), l10n.itemDose, 140),
-        _text(_c('sizeVolume'), l10n.itemSizeVolume, 140),
-        _text(_c('shelfLocation'), l10n.itemShelfLocation, 140),
-      ],
-    ),
+  ];
+
+  /// Tab 3/4.
+  List<Widget> _pricingTab(AppLocalizations l10n) => [
     _section(l10n.itemPricePartsSection),
     Wrap(
       spacing: AppSpacing.m,
@@ -1125,7 +1134,6 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         _text(_c('maxStock'), l10n.itemMaximumStock, 180),
       ],
     ),
-    _section(''),
     Wrap(
       spacing: AppSpacing.l,
       runSpacing: AppSpacing.s,
@@ -1156,6 +1164,10 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         ),
       ],
     ),
+  ];
+
+  /// Tab 4/4.
+  List<Widget> _notesTab(AppLocalizations l10n) => [
     _section(l10n.itemUsageInstructions),
     Wrap(
       spacing: AppSpacing.m,
@@ -1177,19 +1189,7 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
         width: 680,
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _modeToggle(l10n),
-                if (_quickMode)
-                  ..._quickSections(l10n)
-                else
-                  ..._fullSections(l10n),
-              ],
-            ),
-          ),
+          child: _quickMode ? _buildQuickForm(l10n) : _buildTabbedForm(l10n),
         ),
       ),
       actions: [
@@ -1205,6 +1205,71 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           ),
         FilledButton(onPressed: _submit, child: Text(l10n.commonSave)),
       ],
+    );
+  }
+
+  /// Quick mode is short enough to fit as-is.
+  Widget _buildQuickForm(AppLocalizations l10n) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [_modeToggle(l10n), ..._quickSections(l10n)],
+      ),
+    );
+  }
+
+  /// Detailed mode as four tabs so the whole window fits the viewport —
+  /// no page-level scrolling; each tab's content is sized to fit.
+  /// The mode toggle stays pinned above the tabs.
+  Widget _buildTabbedForm(AppLocalizations l10n) {
+    final tabs = <Tab>[
+      Tab(text: l10n.itemTabBasic),
+      Tab(text: l10n.itemTabIngredients),
+      Tab(text: l10n.itemTabPricing),
+      Tab(text: l10n.itemTabNotes),
+    ];
+    final bodies = <List<Widget>>[
+      _basicTab(l10n),
+      _ingredientsTab(l10n),
+      _pricingTab(l10n),
+      _notesTab(l10n),
+    ];
+    return DefaultTabController(
+      length: tabs.length,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _modeToggle(l10n),
+              // Fixed (non-scrollable) tabs: all four are always visible
+              // and tappable — no hidden tabs.
+              TabBar(tabs: tabs),
+              // Fixed-height tab body: fits the viewport, actions stay
+              // reachable. Over-long tab content scrolls internally.
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 520),
+                  child: TabBarView(
+                    children: [
+                      for (final body in bodies)
+                        SingleChildScrollView(
+                          padding: const EdgeInsets.only(top: AppSpacing.s),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: body,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 

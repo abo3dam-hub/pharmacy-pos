@@ -242,6 +242,36 @@ abstract class AppLocalizations {
   /// **'إغلاق'**
   String get commonClose;
 
+  /// No description provided for @commonViewAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض الكل'**
+  String get commonViewAll;
+
+  /// No description provided for @itemTabBasic.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيانات الأساسية'**
+  String get itemTabBasic;
+
+  /// No description provided for @itemTabIngredients.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواد والجهات'**
+  String get itemTabIngredients;
+
+  /// No description provided for @itemTabPricing.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسعير والمخزون'**
+  String get itemTabPricing;
+
+  /// No description provided for @itemTabNotes.
+  ///
+  /// In ar, this message translates to:
+  /// **'ملاحظات'**
+  String get itemTabNotes;
+
   /// No description provided for @commonBack.
   ///
   /// In ar, this message translates to:

@@ -146,6 +146,7 @@ class InventoryController extends StateNotifier<InventoryViewState> {
   Future<Failure?> load({
     String search = '',
     int page = 1,
+    int? pageSize,
     bool? onlyActive,
     bool? inStockOnly,
     String? actingRoleId,
@@ -157,7 +158,14 @@ class InventoryController extends StateNotifier<InventoryViewState> {
         inStockOnly: inStockOnly ?? state.inStockOnly);
     try {
       final result = await _listItems.call(
-        PageRequest(page: page, search: search, pageSize: 30),
+        PageRequest(
+          page: page,
+          search: search,
+          // Preserve the viewport-adaptive page size across searches,
+          // filters and page turns; the list UI sets it when the
+          // available height changes.
+          pageSize: pageSize ?? state.request.pageSize,
+        ),
         inStockOnly: inStockOnly ?? state.inStockOnly,
         actingRoleId: actingRoleId,
       );
