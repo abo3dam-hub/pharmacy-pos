@@ -480,6 +480,33 @@ class AppLocalizationsAr extends AppLocalizations {
   String get itemSaveAndContinueBatch => 'حفظ و اضافة الى المخزون';
 
   @override
+  String get itemSectionBasicInfo => 'معلومات أساسية';
+
+  @override
+  String get itemSectionTechnical => 'التفاصيل الفنية';
+
+  @override
+  String get itemSectionPackaging => 'التعبئة والمبيعات';
+
+  @override
+  String get itemSectionPricing => 'التسعير';
+
+  @override
+  String get itemSectionAdvanced => 'المخزون والتسعير المتقدم';
+
+  @override
+  String get itemSectionClassifications => 'التصنيفات والاستطبابات';
+
+  @override
+  String get itemSectionAlternatives => 'البدائل';
+
+  @override
+  String get itemViewAlternatives => 'عرض البدائل';
+
+  @override
+  String get itemAlternativesAfterSave => 'تظهر البدائل بعد حفظ الصنف';
+
+  @override
   String get inventoryItemEditTitle => 'تعديل منتج';
 
   @override

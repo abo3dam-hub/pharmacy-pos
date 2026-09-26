@@ -11,16 +11,21 @@ import 'package:pharmacy_pos/features/suppliers/domain/repositories/supplier_rep
 import 'package:pharmacy_pos/l10n/app_localizations.dart';
 import 'package:pharmacy_pos/shared/database/app_database.dart';
 
-/// Phase 17 product-master UX regression tests:
+/// 2026-09-26 redesign regression tests for the single 3-column item window:
 ///   1. desktop rail is scrollable so late sections stay reachable,
 ///   2. the item form guides the user with targeted messages instead of the
 ///      generic save error when units are missing/invalid,
-///   3. التعبئة التجارية / الأجزاء / عدد الأجزاء labels and section order,
+///   3. all seven sections render at once — no tabs, no quick/detailed modes,
 ///   4. many-to-many supplier chips flow into the draft,
 ///   5. inline master-data creation auto-selects the created row,
 ///   6. active-ingredient strength fields flow into the draft,
 ///   7. partial-sale switch auto-fills the default 20% markup, validates parts,
-///      and persists the auto/manual سعر بيع الجزء model.
+///      and persists the auto/manual سعر بيع الجزء model,
+///   8. retired UI fields (usage instructions / notes / license) keep their
+///      stored data on save,
+///   9. edit mode pre-fills existing values; modified values persist,
+///  10. the alternatives section opens the existing alternatives view,
+///  11. the window is RTL with a fixed header and footer.
 Widget harness(Widget home) {
   return MaterialApp(
     theme: AppTheme.light(),
@@ -64,7 +69,8 @@ Finder _fieldByHint(String hintPart) => find.byWidgetPredicate(
         w is TextField && (w.decoration?.hintText ?? '').contains(hintPart));
 
 /// Toggles an option inside a SearchableMultiSelectField identified by its
-/// search hint text.
+/// search hint text. The dropdown renders inline; tapping the trade-name
+/// field (always visible on wide screens) dismisses it.
 Future<void> _toggleMultiOption(
     WidgetTester tester, String hintPart, String option) async {
   await tester.pumpAndSettle();
@@ -76,11 +82,9 @@ Future<void> _toggleMultiOption(
   await tester.pumpAndSettle();
   await tester.tap(find.widgetWithText(CheckboxListTile, option));
   await tester.pumpAndSettle();
-  // Clear the search and dismiss the dropdown by tapping the tab bar
-  // (the trade-name field used before now lives on another tab).
   await tester.enterText(searchField, '');
   await tester.pumpAndSettle();
-  await tester.tap(find.byType(TabBar));
+  await tester.tap(_comboByLabel('الاسم التجاري *'));
   await tester.pumpAndSettle();
 }
 
@@ -99,7 +103,7 @@ Future<void> _selectCombo(WidgetTester tester, String label, String item) async 
   await tester.pumpAndSettle();
   await tester.tap(field);
   await tester.pumpAndSettle();
-  // The opened list is rendered inline inside the dialog scroll view; bring
+  // The opened list is rendered inline inside the column scroll view; bring
   // the tile into view before tapping so the hit test cannot miss.
   final tile = find.text(item).last;
   await tester.ensureVisible(tile);
@@ -110,49 +114,16 @@ Future<void> _selectCombo(WidgetTester tester, String label, String item) async 
 
 Future<void> _tapSave(WidgetTester tester) async {
   await tester.tap(find.descendant(
-      of: find.byType(AlertDialog).last, matching: find.text('حفظ')));
+      of: find.byType(Dialog).last, matching: find.text('حفظ')));
   await tester.pumpAndSettle();
 }
 
-/// Taps a detailed-mode tab by its label (detailed mode is tabbed so the
-/// window fits the viewport without scrolling).
-Future<void> _tapTab(WidgetTester tester, String label) async {
+/// Taps the inline "+" of the master-data dropdown labelled [fieldLabel].
+Future<void> _tapInlineAdd(WidgetTester tester, String fieldLabel) async {
+  final field = _comboByLabel(fieldLabel);
+  final row = find.ancestor(of: field, matching: find.byType(Row)).first;
   await tester.tap(find.descendant(
-    of: find.byType(TabBar),
-    matching: find.text(label),
-  ));
-  await tester.pumpAndSettle();
-}
-
-/// Opens the item form dialog via a real button; [onResult] receives the
-/// returned draft on save.
-
-/// Opens the dialog and switches it to detailed mode, for tests that cover
-/// fields living outside the quick-entry subset.
-Future<void> _openDetailedDialog(
-  WidgetTester tester, {
-  required void Function(ItemFormResult? result) onResult,
-  ItemDraft? initial,
-  List<CategoryRow> categories = const [_category],
-  List<ManufacturerRow> manufacturers = const [_manufacturer],
-  List<UnitRow> units = const [_part, _box],
-  List<SupplierRow> suppliers = const [],
-  List<ActiveIngredientRow> activeIngredients = const [_ingredient],
-  Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
-      onCreateMasterData,
-}) async {
-  await _openDialog(
-    tester,
-    onResult: onResult,
-    initial: initial,
-    categories: categories,
-    manufacturers: manufacturers,
-    units: units,
-    suppliers: suppliers,
-    activeIngredients: activeIngredients,
-    onCreateMasterData: onCreateMasterData,
-  );
-  await tester.tap(find.text('إدخال مفصّل'));
+      of: row, matching: find.byIcon(Icons.add_circle_outline)));
   await tester.pumpAndSettle();
 }
 
@@ -160,52 +131,60 @@ Future<void> _openDialog(
   WidgetTester tester, {
   required void Function(ItemFormResult? result) onResult,
   ItemDraft? initial,
+  String? itemId,
+  Future<void> Function()? onViewAlternatives,
+  bool showContinueAction = false,
   List<CategoryRow> categories = const [_category],
   List<ManufacturerRow> manufacturers = const [_manufacturer],
-List<UnitRow> units = const [_part, _box],
-    List<SupplierRow> suppliers = const [],
-    List<ActiveIngredientRow> activeIngredients = const [_ingredient],
-    Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
-        onCreateMasterData,
+  List<UnitRow> units = const [_part, _box],
+  List<SupplierRow> suppliers = const [],
+  List<ActiveIngredientRow> activeIngredients = const [_ingredient],
+  List<IndicationRow> indications = const [],
+  Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
+      onCreateMasterData,
 }) async {
-    await tester.pumpWidget(harness(Scaffold(
-      body: Builder(
-        builder: (context) => Center(
-          child: ElevatedButton(
-            onPressed: () async {
-              final result = await showItemFormDialog(
-                context,
-                title: 'منتج جديد',
-                initial: initial,
-                categories: categories,
-                manufacturers: manufacturers,
-                units: units,
-                suppliers: suppliers,
-                activeIngredients: activeIngredients,
-                onCreateMasterData: onCreateMasterData,
-                onCreateSupplier: _factorySupplier,
-              );
-              onResult(result);
-            },
-            child: const Text('افتح النموذج'),
-          ),
+  await tester.pumpWidget(harness(Scaffold(
+    body: Builder(
+      builder: (context) => Center(
+        child: ElevatedButton(
+          onPressed: () async {
+            final result = await showItemFormDialog(
+              context,
+              title: 'منتج جديد',
+              initial: initial,
+              itemId: itemId,
+              categories: categories,
+              manufacturers: manufacturers,
+              units: units,
+              suppliers: suppliers,
+              activeIngredients: activeIngredients,
+              indications: indications,
+              onCreateMasterData: onCreateMasterData,
+              onCreateSupplier: _factorySupplier,
+              onViewAlternatives: onViewAlternatives,
+              showContinueAction: showContinueAction,
+            );
+            onResult(result);
+          },
+          child: const Text('افتح النموذج'),
         ),
       ),
-    )));
-    await tester.tap(find.text('افتح النموذج'));
-    await tester.pumpAndSettle();
-  }
+    ),
+  )));
+  await tester.tap(find.text('افتح النموذج'));
+  await tester.pumpAndSettle();
+}
 
-  Future<SupplierRow?> _factorySupplier(SupplierDraft draft) async =>
-      SupplierRow(
-          id: 'sup_new',
-          name: draft.name,
-          openingBalanceMicros: 0,
-          balanceMicros: 0,
-          creditLimitMicros: 0,
-          isActive: true,
-          createdAt: 1,
-          updatedAt: 1);
+Future<SupplierRow?> _factorySupplier(SupplierDraft draft) async =>
+    SupplierRow(
+        id: 'sup_new',
+        name: draft.name,
+        openingBalanceMicros: 0,
+        balanceMicros: 0,
+        creditLimitMicros: 0,
+        isActive: true,
+        createdAt: 1,
+        updatedAt: 1);
 
 void main() {
   testWidgets('desktop rail is scrollable; settings stays reachable',
@@ -268,7 +247,7 @@ void main() {
     await _tapSave(tester);
     expect(find.text('عدد الأجزاء يجب أن يكون أكبر من صفر'), findsOneWidget,
         reason: 'targeted guidance surfaces when a unit relation is built');
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(Dialog), findsOneWidget);
 
     // Valid values → the draft carries the unit relation.
     await tester.enterText(_fieldByLabel('عدد الأجزاء'), '10');
@@ -284,37 +263,43 @@ void main() {
     expect(relation.unitsPerLarge, 10);
   });
 
-  testWidgets('labels and section order match the Phase 17 product master',
+  testWidgets(
+      'single-window layout shows all seven sections; no tabs or entry modes',
       (tester) async {
-    tester.view.physicalSize = const Size(1100, 1500);
+    tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await _openDetailedDialog(tester, onResult: (_) {});
+    await _openDialog(tester, onResult: (_) {});
 
-    // Detailed mode is tabbed so the window fits the viewport.
-    expect(find.text('البيانات الأساسية'), findsOneWidget);
-    expect(find.text('المواد والجهات'), findsOneWidget);
-    expect(find.text('التسعير والمخزون'), findsOneWidget);
-    expect(find.text('ملاحظات'), findsOneWidget);
+    // All seven sections render at once in the 3-column window.
+    for (final section in [
+      'معلومات أساسية',
+      'التفاصيل الفنية',
+      'التعبئة والمبيعات',
+      'التسعير',
+      'المخزون والتسعير المتقدم',
+      'التصنيفات والاستطبابات',
+      'البدائل',
+    ]) {
+      expect(find.text(section), findsOneWidget,
+          reason: 'section "$section" must be visible without navigation');
+    }
 
-    // Tab 1 holds the classification section…
-    expect(find.text('التصنيف والمعلومات الدوائية'), findsOneWidget);
+    // The old quick/detailed modes and tabs are gone.
+    expect(find.byType(TabBar), findsNothing);
+    expect(find.text('إدخال سريع'), findsNothing);
+    expect(find.text('إدخال مفصّل'), findsNothing);
 
-    // …tab 3 holds the Phase 17 packaging/parts labels (no legacy unit
-    // naming), with the pricing section preceding the stock section…
-    await _tapTab(tester, 'التسعير والمخزون');
+    // Phase 17 packaging/parts labels (no legacy unit naming).
     expect(find.text('التعبئة التجارية'), findsOneWidget);
     expect(find.text('الأجزاء'), findsOneWidget);
     expect(find.text('عدد الأجزاء'), findsOneWidget);
 
-    double y(String text) => tester.getTopLeft(find.text(text)).dy;
-    expect(y('التكلفة / السعر / الأجزاء'), lessThan(y('الرصيد')),
-        reason: 'pricing section precedes the stock section');
-
-    // …and tab 2 holds the suppliers.
-    await _tapTab(tester, 'المواد والجهات');
-    expect(find.text('الموردون'), findsOneWidget);
+    // In create mode the alternatives section explains alternatives appear
+    // after saving — no invented editing UI.
+    expect(find.text('تظهر البدائل بعد حفظ الصنف'), findsOneWidget);
+    expect(find.text('عرض البدائل'), findsNothing);
   });
 
   testWidgets('supplier chips toggle a many-to-many selection in the draft',
@@ -324,7 +309,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     ItemFormResult? submitted;
-    await _openDetailedDialog(
+    await _openDialog(
       tester,
       onResult: (r) => submitted = r,
       suppliers: [_supplier('sup_a', 'مورد الأول'), _supplier('sup_b', 'مورد الثاني')],
@@ -332,10 +317,8 @@ void main() {
 
     await _enterTradeName(tester, 'منتج بموردين');
     await _selectCombo(tester, 'التصنيف', 'أدوية');
-    await _tapTab(tester, 'المواد والجهات');
     await _toggleMultiOption(tester, 'الموردون', 'مورد الأول');
     await _toggleMultiOption(tester, 'الموردون', 'مورد الثاني');
-    await _tapTab(tester, 'التسعير والمخزون');
     await _selectCombo(tester, 'الأجزاء', 'ظرف');
     await _tapSave(tester);
 
@@ -346,7 +329,7 @@ void main() {
     // Re-open in edit mode with both suppliers pre-selected; untoggling a
     // chip removes it on save.
     submitted = null;
-    await _openDetailedDialog(
+    await _openDialog(
       tester,
       onResult: (r) => submitted = r,
       suppliers: [_supplier('sup_a', 'مورد الأول'), _supplier('sup_b', 'مورد الثاني')],
@@ -358,7 +341,6 @@ void main() {
         supplierIds: ['sup_a', 'sup_b'],
       ),
     );
-    await _tapTab(tester, 'المواد والجهات');
     await _toggleMultiOption(tester, 'الموردون', 'مورد الأول');
     await _tapSave(tester);
 
@@ -374,18 +356,18 @@ void main() {
     addTearDown(tester.view.reset);
 
     ItemFormResult? submitted;
-    await _openDetailedDialog(
+    await _openDialog(
       tester,
       onResult: (r) => submitted = r,
       onCreateMasterData: (kind, draft) async => CategoryRow(
           id: 'cat_new', name: draft.name, isActive: true, createdAt: 1, updatedAt: 1),
     );
 
-    // Inline "+" exists for category / manufacturer (tab 1) and for
-    // packaging / parts units (tab 3); the multi-selects (indication /
-    // ingredient / supplier) carry their own inline add-new row instead.
-    expect(find.byIcon(Icons.add_circle_outline), findsNWidgets(2));
-    await tester.tap(find.byIcon(Icons.add_circle_outline).at(0));
+    // Inline "+" exists for category / manufacturer and for packaging /
+    // parts units; the multi-selects (indication / ingredient / supplier)
+    // carry their own inline add-new row instead.
+    expect(find.byIcon(Icons.add_circle_outline), findsNWidgets(4));
+    await _tapInlineAdd(tester, 'التصنيف');
     await tester.pumpAndSettle();
     expect(find.text('إضافة تصنيف جديد'), findsOneWidget);
 
@@ -395,9 +377,6 @@ void main() {
 
     // Back on the item form the created category is shown, then saved.
     await _enterTradeName(tester, 'منتج بتصنيف جديد');
-    await _tapTab(tester, 'التسعير والمخزون');
-    // Packaging / parts-unit "+" buttons live on this tab.
-    expect(find.byIcon(Icons.add_circle_outline), findsNWidgets(2));
     await _selectCombo(tester, 'الأجزاء', 'ظرف');
     await _tapSave(tester);
 
@@ -414,12 +393,10 @@ void main() {
     addTearDown(tester.view.reset);
 
     ItemFormResult? submitted;
-    await _openDetailedDialog(tester, onResult: (r) => submitted = r);
+    await _openDialog(tester, onResult: (r) => submitted = r);
 
     await _enterTradeName(tester, 'منتج بالعيار');
     await _selectCombo(tester, 'التصنيف', 'أدوية');
-    // The active-ingredient multi-select lives on the ingredients tab.
-    await _tapTab(tester, 'المواد والجهات');
     // The active-ingredient multi-select is searchable: type to filter, then
     // tap the checkbox row to add it with its strength.
     await tester.tap(_fieldByHint('ابحث عن مادة فعالة'));
@@ -428,12 +405,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(CheckboxListTile, 'باراسيتامول'));
     await tester.pumpAndSettle();
-    // Dismiss the dropdown (trade-name field lives on another tab now).
-    await tester.tap(find.byType(TabBar));
+    // Dismiss the inline dropdown by tapping the trade-name field.
+    await tester.tap(_comboByLabel('الاسم التجاري *'));
     await tester.pumpAndSettle();
     await tester.enterText(_fieldByLabel('العيار'), '500 ملغ');
     await tester.pumpAndSettle();
-    await _tapTab(tester, 'التسعير والمخزون');
     await _selectCombo(tester, 'الأجزاء', 'ظرف');
     await _tapSave(tester);
 
@@ -519,42 +495,197 @@ void main() {
         reason: 'a manual سعر بيع الجزء is persisted as the override');
   });
 
-  testWidgets('quick mode shows essentials; detailed reveals the rest',
+  testWidgets('retired UI fields keep their stored data on save',
       (tester) async {
-    tester.view.physicalSize = const Size(1100, 1500);
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    ItemFormResult? submitted;
+    await _openDialog(
+      tester,
+      onResult: (r) => submitted = r,
+      initial: const ItemDraft(
+        tradeName: 'منتج بملاحظات قديمة',
+        usageInstructions: 'بعد الأكل',
+        generalNotes: 'ملاحظة عامة',
+        licenseNumber: 'LIC-123',
+      ),
+    );
+
+    // The retired fields are intentionally not shown in this window…
+    expect(_fieldByLabel('تعليمات الاستخدام'), findsNothing);
+    expect(_fieldByLabel('رقم الترخيص'), findsNothing);
+
+    await _tapSave(tester);
+
+    // …but their stored values survive the save untouched.
+    expect(submitted, isNotNull);
+    final kept = submitted!;
+    expect(kept.draft.usageInstructions, 'بعد الأكل',
+        reason: 'removal from UI must not delete stored data');
+    expect(kept.draft.generalNotes, 'ملاحظة عامة');
+    expect(kept.draft.licenseNumber, 'LIC-123');
+  });
+
+  testWidgets('edit mode pre-fills existing values; modified values persist',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    ItemFormResult? submitted;
+    await _openDialog(
+      tester,
+      onResult: (r) => submitted = r,
+      initial: const ItemDraft(
+        tradeName: 'بنادول إكسترا',
+        tradeNameEn: 'Panadol Extra',
+        categoryId: 'cat1',
+        manufacturerId: 'manu1',
+        dose: '500mg',
+        primaryBarcode: '6214001000011',
+      ),
+    );
+
+    // Existing values appear in the form.
+    expect(
+        tester
+            .widget<TextField>(_comboByLabel('الاسم التجاري *'))
+            .controller!
+            .text,
+        'بنادول إكسترا');
+    expect(
+        tester
+            .widget<TextField>(_comboByLabel('الاسم التجاري (إنجليزي)'))
+            .controller!
+            .text,
+        'Panadol Extra');
+    expect(
+        tester.widget<TextField>(_comboByLabel('الجرعة')).controller!.text,
+        '500mg');
+
+    // Modify one value, keep the rest, save.
+    await tester.enterText(_comboByLabel('الاسم التجاري *'), 'بنادول معدل');
+    await _tapSave(tester);
+
+    expect(submitted, isNotNull);
+    final d = submitted!.draft;
+    expect(d.tradeName, 'بنادول معدل');
+    expect(d.tradeNameEn, 'Panadol Extra');
+    expect(d.categoryId, 'cat1');
+    expect(d.manufacturerId, 'manu1');
+    expect(d.dose, '500mg');
+    expect(d.primaryBarcode, '6214001000011');
+  });
+
+  testWidgets(
+      'alternatives section opens the existing alternatives view in edit mode',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    var opened = false;
+    await _openDialog(
+      tester,
+      onResult: (_) {},
+      itemId: 'item_1',
+      onViewAlternatives: () async {
+        opened = true;
+      },
+    );
+
+    await tester.tap(find.text('عرض البدائل'));
+    await tester.pumpAndSettle();
+    expect(opened, isTrue,
+        reason: 'the section delegates to the existing alternatives logic');
+  });
+
+  testWidgets('header and footer stay fixed outside any scrollable; RTL',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
     await _openDialog(tester, onResult: (_) {});
 
-    // Quick is the default: identity, classification, units, prices visible…
-    expect(find.text('إدخال سريع'), findsOneWidget);
-    expect(find.text('إدخال مفصّل'), findsOneWidget);
-    expect(find.text('التعبئة التجارية'), findsOneWidget);
-    expect(find.text('الأجزاء'), findsOneWidget);
-    expect(find.text('عدد الأجزاء'), findsOneWidget);
-    // …but master-data sections stay hidden until detailed mode.
-    expect(find.text('الموردون'), findsNothing);
-    expect(find.text('الاسم العلمي'), findsNothing);
-    expect(find.text('تعليمات الاستخدام'), findsNothing);
+    expect(Directionality.of(tester.element(find.byType(Dialog).first)),
+        TextDirection.rtl);
 
-    await tester.tap(find.text('إدخال مفصّل'));
+    // The title (header) and the save action (footer) must never sit inside
+    // a scrollable — they are pinned while only column content may scroll.
+    final save = find.widgetWithText(FilledButton, 'حفظ');
+    expect(save, findsOneWidget);
+    expect(find.ancestor(of: save, matching: find.byType(Scrollable)),
+        findsNothing,
+        reason: 'footer save must not scroll away');
+    final title = find.text('منتج جديد');
+    expect(find.ancestor(of: title, matching: find.byType(Scrollable)),
+        findsNothing,
+        reason: 'header title must not scroll away');
+    // All three footer actions exist.
+    expect(find.text('إلغاء'), findsOneWidget);
+  });
+
+  testWidgets('cancel discards the draft without saving', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    var called = false;
+    ItemFormResult? submitted;
+    await _openDialog(
+      tester,
+      onResult: (r) {
+        called = true;
+        submitted = r;
+      },
+    );
+
+    await _enterTradeName(tester, 'لن يحفظ');
+    await tester.tap(find.text('إلغاء'));
     await tester.pumpAndSettle();
 
-    // Detailed mode is tabbed: master-data sections live on their tabs.
-    expect(find.text('البيانات الأساسية'), findsOneWidget);
-    expect(find.text('المواد والجهات'), findsOneWidget);
-    await _tapTab(tester, 'المواد والجهات');
-    expect(find.text('الموردون'), findsOneWidget);
-    await _tapTab(tester, 'البيانات الأساسية');
-    // Section header + field share the label.
-    expect(find.text('الاسم العلمي'), findsWidgets);
-    await _tapTab(tester, 'ملاحظات');
-    expect(find.text('تعليمات الاستخدام'), findsWidgets);
-    // Switching back hides them again — nothing is lost, only tucked away.
-    await tester.tap(find.text('إدخال سريع'));
+    expect(called, isTrue, reason: 'cancel pops the dialog with null');
+    expect(submitted, isNull, reason: 'cancel returns null');
+    expect(find.byType(Dialog), findsNothing);
+  });
+
+  testWidgets('save-and-add-to-inventory action flows through', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    ItemFormResult? submitted;
+    await _openDialog(
+      tester,
+      onResult: (r) => submitted = r,
+      showContinueAction: true,
+    );
+
+    await _enterTradeName(tester, 'منتج للمخزون');
+    await tester.tap(find.text('حفظ و اضافة الى المخزون'));
     await tester.pumpAndSettle();
-    expect(find.text('الموردون'), findsNothing);
-    expect(find.text('التعبئة التجارية'), findsOneWidget);
+
+    expect(submitted, isNotNull);
+    expect(submitted!.action, ItemFormAction.saveContinue);
+    expect(submitted!.draft.tradeName, 'منتج للمخزون');
+  });
+
+  testWidgets('empty trade name is rejected with a targeted message',
+      (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    ItemFormResult? submitted;
+    await _openDialog(tester, onResult: (r) => submitted = r);
+
+    await _tapSave(tester);
+    expect(submitted, isNull, reason: 'invalid form must not submit');
+    expect(find.text('الاسم مطلوب'), findsOneWidget);
+    expect(find.byType(Dialog), findsOneWidget,
+        reason: 'the dialog stays open on validation failure');
   });
 }

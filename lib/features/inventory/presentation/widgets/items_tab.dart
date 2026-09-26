@@ -207,6 +207,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       context,
       title: l10n.inventoryItemEditTitle,
       initial: initial,
+      itemId: view.item.id,
       categories: master.categories,
       manufacturers: master.manufacturers,
       units: master.units,
@@ -215,6 +216,7 @@ class _ItemsTabState extends ConsumerState<ItemsTab> {
       indications: master.indications,
       onCreateMasterData: _createMasterData,
       onCreateSupplier: _createSupplier,
+      onViewAlternatives: () => _showAlternatives(view),
       defaultPartialSaleMarkupBasisPoints: defaultMarkup,
       showContinueAction: true,
     );

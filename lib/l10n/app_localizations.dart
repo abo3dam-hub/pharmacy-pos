@@ -1028,6 +1028,60 @@ abstract class AppLocalizations {
   /// **'حفظ و اضافة الى المخزون'**
   String get itemSaveAndContinueBatch;
 
+  /// No description provided for @itemSectionBasicInfo.
+  ///
+  /// In ar, this message translates to:
+  /// **'معلومات أساسية'**
+  String get itemSectionBasicInfo;
+
+  /// No description provided for @itemSectionTechnical.
+  ///
+  /// In ar, this message translates to:
+  /// **'التفاصيل الفنية'**
+  String get itemSectionTechnical;
+
+  /// No description provided for @itemSectionPackaging.
+  ///
+  /// In ar, this message translates to:
+  /// **'التعبئة والمبيعات'**
+  String get itemSectionPackaging;
+
+  /// No description provided for @itemSectionPricing.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسعير'**
+  String get itemSectionPricing;
+
+  /// No description provided for @itemSectionAdvanced.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون والتسعير المتقدم'**
+  String get itemSectionAdvanced;
+
+  /// No description provided for @itemSectionClassifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'التصنيفات والاستطبابات'**
+  String get itemSectionClassifications;
+
+  /// No description provided for @itemSectionAlternatives.
+  ///
+  /// In ar, this message translates to:
+  /// **'البدائل'**
+  String get itemSectionAlternatives;
+
+  /// No description provided for @itemViewAlternatives.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض البدائل'**
+  String get itemViewAlternatives;
+
+  /// No description provided for @itemAlternativesAfterSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'تظهر البدائل بعد حفظ الصنف'**
+  String get itemAlternativesAfterSave;
+
   /// No description provided for @inventoryItemEditTitle.
   ///
   /// In ar, this message translates to:

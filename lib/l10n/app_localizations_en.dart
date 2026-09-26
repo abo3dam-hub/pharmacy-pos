@@ -480,6 +480,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemSaveAndContinueBatch => 'Save and add to inventory';
 
   @override
+  String get itemSectionBasicInfo => 'Basic information';
+
+  @override
+  String get itemSectionTechnical => 'Technical details';
+
+  @override
+  String get itemSectionPackaging => 'Packaging & sales';
+
+  @override
+  String get itemSectionPricing => 'Pricing';
+
+  @override
+  String get itemSectionAdvanced => 'Inventory & advanced pricing';
+
+  @override
+  String get itemSectionClassifications => 'Classifications & indications';
+
+  @override
+  String get itemSectionAlternatives => 'Alternatives';
+
+  @override
+  String get itemViewAlternatives => 'View alternatives';
+
+  @override
+  String get itemAlternativesAfterSave =>
+      'Alternatives appear after saving the item';
+
+  @override
   String get inventoryItemEditTitle => 'Edit item';
 
   @override

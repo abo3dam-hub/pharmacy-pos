@@ -31,8 +31,9 @@ Finder _fieldByLabel(String labelPart) => find.byWidgetPredicate(
         w is TextField && (w.decoration?.labelText ?? '').contains(labelPart));
 
 Future<void> _tapInDialog(WidgetTester tester, String label) async {
+  // Both AlertDialog and the redesigned item window render a Dialog.
   await tester.tap(find.descendant(
-      of: find.byType(AlertDialog).last, matching: find.text(label)));
+      of: find.byType(Dialog).last, matching: find.text(label)));
   await tester.pumpAndSettle();
 }
 

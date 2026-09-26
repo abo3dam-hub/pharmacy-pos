@@ -36,6 +36,13 @@ class ItemFormResult {
 /// creates are performed via [onCreateMasterData] / [onCreateSupplier] so the
 /// dialog stays widget-testable while the caller owns persisting and audit.
 ///
+/// Layout (2026-09-26 redesign): one large 3-column RTL work window —
+/// basic info + technical details | packaging & sales + inventory & advanced
+/// pricing | classifications + active ingredients + alternatives — with a
+/// fixed header, a fixed footer (cancel / save&add-to-inventory / save) and
+/// no scrolling of the main window (long inner lists scroll independently).
+/// On narrow screens the three column groups switch via a segmented control.
+///
 /// Phase 17 product-master design lock:
 ///   • التعبئة التجارية / الأجزاء / عدد الأجزاء replace the old unit-relation
 ///     labels; the sellable part is expressed through the parts unit only (the
@@ -44,10 +51,17 @@ class ItemFormResult {
 ///     explicit pharmacist override ([ItemDraft.partialSalePriceMicros]);
 ///     manual mode persists until "استعادة الحساب التلقائي" is tapped.
 ///   • Active ingredients carry an optional العيار (strength) each.
+///   • Usage instructions / general notes / license number are intentionally
+///     not shown in this window; their stored values are preserved untouched
+///     on save (removal from UI ≠ deletion from the database).
 Future<ItemFormResult?> showItemFormDialog(
   BuildContext context, {
   required String title,
   ItemDraft? initial,
+
+  /// Database id of the item being edited, or null when creating. Only used
+  /// to offer the "view alternatives" action; never changes save behavior.
+  String? itemId,
   required List<CategoryRow> categories,
   required List<ManufacturerRow> manufacturers,
   required List<UnitRow> units,
@@ -57,6 +71,12 @@ Future<ItemFormResult?> showItemFormDialog(
   Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
   onCreateMasterData,
   Future<SupplierRow?> Function(SupplierDraft draft)? onCreateSupplier,
+
+  /// Opens the existing alternatives view for the item being edited. The
+  /// dialog only shows the alternatives section when both [itemId] and this
+  /// callback are provided; the alternatives search/matching itself is
+  /// untouched.
+  Future<void> Function()? onViewAlternatives,
   int defaultPartialSaleMarkupBasisPoints = 2000,
   bool showContinueAction = false,
 }) async {
@@ -65,6 +85,7 @@ Future<ItemFormResult?> showItemFormDialog(
     builder: (_) => _ItemFormDialog(
       title: title,
       initial: initial,
+      itemId: itemId,
       categories: categories,
       manufacturers: manufacturers,
       units: units,
@@ -73,6 +94,7 @@ Future<ItemFormResult?> showItemFormDialog(
       indications: indications,
       onCreateMasterData: onCreateMasterData,
       onCreateSupplier: onCreateSupplier,
+      onViewAlternatives: onViewAlternatives,
       defaultPartialSaleMarkupBasisPoints: defaultPartialSaleMarkupBasisPoints,
       showContinueAction: showContinueAction,
     ),
@@ -84,6 +106,7 @@ class _ItemFormDialog extends StatefulWidget {
   const _ItemFormDialog({
     required this.title,
     this.initial,
+    this.itemId,
     required this.categories,
     required this.manufacturers,
     required this.units,
@@ -92,12 +115,14 @@ class _ItemFormDialog extends StatefulWidget {
     this.indications = const [],
     this.onCreateMasterData,
     this.onCreateSupplier,
+    this.onViewAlternatives,
     this.defaultPartialSaleMarkupBasisPoints = 2000,
     this.showContinueAction = false,
   });
 
   final String title;
   final ItemDraft? initial;
+  final String? itemId;
   final List<CategoryRow> categories;
   final List<ManufacturerRow> manufacturers;
   final List<UnitRow> units;
@@ -107,6 +132,7 @@ class _ItemFormDialog extends StatefulWidget {
   final Future<Object?> Function(MasterDataKind kind, MasterDataDraft draft)?
   onCreateMasterData;
   final Future<SupplierRow?> Function(SupplierDraft draft)? onCreateSupplier;
+  final Future<void> Function()? onViewAlternatives;
   final int defaultPartialSaleMarkupBasisPoints;
 
   /// Whether to show the "حفظ و اضافة الى المخزون" (save-and-continue to the
@@ -610,187 +636,411 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     });
   }
 
-  bool _quickMode = true;
+  // ----- 2026-09-26 redesign: single 3-column work window -----
+  //
+  // One large RTL window: right = basic info + technical details,
+  // middle = packaging & sales + inventory & advanced pricing,
+  // left = classifications + active ingredients + alternatives.
+  // Fixed header, fixed footer, no scrolling of the main window — each
+  // column scrolls internally only if the viewport is too short.
+  // Narrow screens switch the three column groups via a segmented control.
 
-  /// Quick / detailed entry toggle. Quick is the default: the pharmacist
-  /// sees only what a new item needs 90% of the time; one tap reveals the
-  /// full master-data form. No feature is removed.
-  Widget _modeToggle(AppLocalizations l10n) => Padding(
-    padding: const EdgeInsets.only(bottom: AppSpacing.s),
-    child: Row(
-      children: [
-        const Icon(Icons.bolt_outlined, size: 18),
-        const SizedBox(width: AppSpacing.s),
-        // Expanded so the toggle never overflows narrow screens; the
-        // segment icons are dropped when space is tight.
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 340;
-              return SegmentedButton<bool>(
-                segments: [
-                  ButtonSegment(
-                    value: true,
-                    label: Text(l10n.itemQuickEntry),
-                    icon: compact
-                        ? null
-                        : const Icon(Icons.flash_on_outlined, size: 16),
-                  ),
-                  ButtonSegment(
-                    value: false,
-                    label: Text(l10n.itemDetailedEntry),
-                    icon: compact
-                        ? null
-                        : const Icon(Icons.tune_outlined, size: 16),
-                  ),
-                ],
-                selected: {_quickMode},
-                onSelectionChanged: (s) =>
-                    setState(() => _quickMode = s.first),
-                style:
-                    const ButtonStyle(visualDensity: VisualDensity.compact),
-              );
-            },
-          ),
-        ),
-      ],
-    ),
-  );
+  /// Narrow-screen section index (0 = basic, 1 = packaging, 2 =
+  /// classifications). Unused on wide screens.
+  int _narrowSection = 0;
 
-  /// Essentials for the 90% case: identity, classification, units,
-  /// partial-sale and the two prices that matter. Everything else lives in
-  /// the detailed tabs ([_basicTab], [_ingredientsTab], [_pricingTab],
-  /// [_notesTab]). Nothing is removed — only hidden until needed.
-  List<Widget> _quickSections(AppLocalizations l10n) => [
-    CompactSection('${l10n.itemBarcodePrimary} / ${l10n.itemTradeName}'),
-    FormGrid(
-      children: [
-        _text(
-          _c('primaryBarcode'),
-          l10n.itemBarcodePrimary,
-          suffixIcon: _scanButton('primaryBarcode'),
+  /// Three columns need roughly 320px each; below this the groups switch
+  /// via a segmented control instead of squeezing unreadably.
+  static const double _threeColumnMinWidth = 960;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final wide = size.width >= _threeColumnMinWidth;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Dialog(
+      insetPadding: EdgeInsets.all(wide ? AppSpacing.xl : AppSpacing.s),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: wide ? 1380 : 560,
+          maxHeight: math.max(480, size.height - (wide ? 48 : 24)),
         ),
-        _text(
-          _c('secondaryBarcode'),
-          l10n.itemSecondaryBarcode,
-          suffixIcon: _scanButton('secondaryBarcode'),
-        ),
-        _text(_c('tradeName'), l10n.itemTradeName, required: true),
-        _text(_c('tradeNameEn'), l10n.itemTradeNameEn),
-      ],
-    ),
-    CompactSection(l10n.itemClassificationSection),
-    FormGrid(
-      children: [
-        _masterDropdown(
-          value: _categoryId,
-          label: l10n.itemCategory,
-          items: _categories,
-          nameOf: (c) => c.name,
-          onChanged: (v) => setState(() => _categoryId = v),
-          kind: MasterDataKind.category,
-        ),
-        _masterDropdown(
-          value: _manufacturerId,
-          label: l10n.itemManufacturer,
-          items: _manufacturers,
-          nameOf: (m) => m.name,
-          onChanged: (v) => setState(() => _manufacturerId = v),
-          kind: MasterDataKind.manufacturer,
-        ),
-        _text(_c('pharmaForm'), l10n.itemPharmaForm),
-      ],
-    ),
-    CompactSection(l10n.itemPricePartsSection),
-    FormGrid(
-      children: [
-        _unitDropdown(
-          value: _largeUnitId,
-          label: l10n.itemPackagingUnit,
-          onChanged: (v) => setState(() => _largeUnitId = v),
-        ),
-        _unitDropdown(
-          value: _partUnitId,
-          label: l10n.itemBaseUnit,
-          onChanged: (v) => setState(() {
-            _partUnitId = v;
-            if (v != null) _largeUnitId ??= v;
-          }),
-        ),
-        TextFormField(
-          controller: _c('unitsPerLarge', hint: '1'),
-          decoration: InputDecoration(
-            labelText: l10n.itemUnitsPerLarge,
-            isDense: true,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              _header(l10n, colorScheme),
+              Expanded(
+                child: wide ? _threeColumns(l10n) : _narrowBody(l10n),
+              ),
+              _footer(l10n, colorScheme),
+            ],
           ),
-          keyboardType: TextInputType.number,
-          onChanged: (v) {
-            setState(() {
-              _partsCount = v.trim();
-              _recomputePartPrice();
-            });
-          },
         ),
-      ],
-    ),
-    FormGrid(
-      children: [
-        _switch(
-          'partialSaleEnabled',
-          l10n.partialSaleEnabled,
-          _partialSaleEnabled,
-          (v) => setState(() {
-            _partialSaleEnabled = v;
-            if (v) {
-              if (_c('partialSaleMarkupBasisPoints').text.isEmpty) {
-                _c('partialSaleMarkupBasisPoints').text = _defaultMarkupPercent;
-              }
-              if (_c('partialSalePartPrice').text.isEmpty) {
-                _recomputePartPrice();
-              }
-            }
-          }),
-        ),
-        if (_partialSaleEnabled) ...[
-          _text(
-            _c('partialSaleMarkupBasisPoints'),
-            l10n.partialSaleMarkupPercent,
-            onChanged: (_) => _recomputePartPrice(),
+      ),
+    );
+  }
+
+  /// Fixed header: window title + close button. Never scrolls away.
+  Widget _header(AppLocalizations l10n, ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.l,
+        vertical: AppSpacing.s,
+      ),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              widget.title,
+              style: context.appTypography.pageTitle,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          _text(
-            _c('partialSalePartPrice'),
-            l10n.partialSalePartPrice,
-            onChanged: (v) {
-              if (v.trim().isNotEmpty) {
-                _partPriceManual = true;
-              }
-            },
-          ),
-          TextButton.icon(
-            onPressed: _restoreAutoPartPrice,
-            icon: const Icon(Icons.auto_fix_high, size: 18),
-            label: Text(l10n.partialSaleRestoreAuto),
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: l10n.commonClose,
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ],
-      ],
-    ),
-    FormGrid(
-      children: [
-        _text(
-          _c('cost'),
-          _costLabel(l10n),
-          onChanged: (_) => _recomputePartPrice(),
-        ),
-        _text(
-          _c('selling'),
-          l10n.itemPrice,
-          onChanged: (_) => _recomputePartPrice(),
-        ),
-      ],
-    ),
+      ),
+    );
+  }
 
-    CompactSection(l10n.itemHasExpiry),
+  /// Fixed footer: cancel | save-and-add-to-inventory | save. Never scrolls
+  /// away; every action keeps its current behavior. On narrow screens the
+  /// actions stack in two compact rows so the long labels never overflow.
+  Widget _footer(AppLocalizations l10n, ColorScheme colorScheme) {
+    final wide = MediaQuery.sizeOf(context).width >= _threeColumnMinWidth;
+    final cancel = TextButton(
+      onPressed: () => Navigator.of(context).pop(),
+      child: Text(l10n.commonCancel),
+    );
+    final save = FilledButton(
+      onPressed: () => _submit(),
+      child: Text(l10n.commonSave),
+    );
+    final Widget saveContinue = FilledButton.tonalIcon(
+      onPressed: () => _submit(ItemFormAction.saveContinue),
+      icon: const Icon(Icons.add_card_outlined),
+      label: Text(l10n.itemSaveAndContinueBatch),
+    );
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.l,
+        vertical: AppSpacing.s,
+      ),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+      ),
+      child: wide
+          ? Row(
+              children: [
+                cancel,
+                const Spacer(),
+                if (widget.showContinueAction) ...[
+                  saveContinue,
+                  const SizedBox(width: AppSpacing.s),
+                ],
+                save,
+              ],
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    if (widget.showContinueAction) ...[
+                      Expanded(child: saveContinue),
+                      const SizedBox(width: AppSpacing.s),
+                    ],
+                    save,
+                  ],
+                ),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: cancel,
+                ),
+              ],
+            ),
+    );
+  }
+
+  /// Desktop layout: three equal columns. In RTL the first Row child renders
+  /// on the right, so the order below is right → middle → left.
+  Widget _threeColumns(AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.m),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: _columnCard(_rightColumn(l10n))),
+          const SizedBox(width: AppSpacing.m),
+          Expanded(child: _columnCard(_middleColumn(l10n))),
+          const SizedBox(width: AppSpacing.m),
+          Expanded(child: _columnCard(_leftColumn(l10n))),
+        ],
+      ),
+    );
+  }
+
+  /// Narrow screens: one column group at a time, switched explicitly — every
+  /// field stays reachable while header and footer never move.
+  Widget _narrowBody(AppLocalizations l10n) {
+    final sections = <Widget>[
+      _columnCard(_rightColumn(l10n)),
+      _columnCard(_middleColumn(l10n)),
+      _columnCard(_leftColumn(l10n)),
+    ];
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.s),
+      child: Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<int>(
+              segments: [
+                ButtonSegment(
+                  value: 0,
+                  label: Text(l10n.itemSectionBasicInfo),
+                ),
+                ButtonSegment(
+                  value: 1,
+                  label: Text(l10n.itemSectionPackaging),
+                ),
+                ButtonSegment(
+                  value: 2,
+                  label: Text(l10n.itemSectionClassifications),
+                ),
+              ],
+              selected: {_narrowSection},
+              onSelectionChanged: (s) =>
+                  setState(() => _narrowSection = s.first),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s),
+          Expanded(child: sections[_narrowSection]),
+        ],
+      ),
+    );
+  }
+
+  /// A column's card: subtle surface holding its sections. Scrolls internally
+  /// only when the viewport is too short for the content — at desktop sizes
+  /// everything fits and no scrolling occurs.
+  Widget _columnCard(List<Widget> sections) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.m),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: sections,
+        ),
+      ),
+    );
+  }
+
+  /// Right column — basic info + technical details (single-column field
+  /// stack, like the reference design's right panel).
+  List<Widget> _rightColumn(AppLocalizations l10n) => [
+    CompactSection(l10n.itemSectionBasicInfo),
+    _text(_c('tradeName'), l10n.itemTradeName, required: true),
+    const SizedBox(height: AppSpacing.s),
+    _text(_c('tradeNameEn'), l10n.itemTradeNameEn),
+    const SizedBox(height: AppSpacing.s),
+    _text(
+      _c('primaryBarcode'),
+      l10n.itemBarcodePrimary,
+      suffixIcon: _scanButton('primaryBarcode'),
+    ),
+    const SizedBox(height: AppSpacing.s),
+    _text(
+      _c('secondaryBarcode'),
+      l10n.itemSecondaryBarcode,
+      suffixIcon: _scanButton('secondaryBarcode'),
+    ),
+    CompactSection(l10n.itemSectionTechnical),
+    _text(_c('scientificName'), l10n.itemScientificName),
+    const SizedBox(height: AppSpacing.s),
+    _text(_c('equivalentDrug'), l10n.itemEquivalentDrug),
+    const SizedBox(height: AppSpacing.s),
+    _text(_c('pharmaForm'), l10n.itemPharmaForm),
+    const SizedBox(height: AppSpacing.s),
+    _text(_c('dose'), l10n.itemDose),
+    const SizedBox(height: AppSpacing.s),
+    _masterDropdown(
+      value: _manufacturerId,
+      label: l10n.itemManufacturer,
+      items: _manufacturers,
+      nameOf: (m) => m.name,
+      onChanged: (v) => setState(() => _manufacturerId = v),
+      kind: MasterDataKind.manufacturer,
+    ),
+    const SizedBox(height: AppSpacing.s),
+    Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: _text(_c('sizeVolume'), l10n.itemSizeVolume)),
+        const SizedBox(width: AppSpacing.s),
+        Expanded(child: _text(_c('shelfLocation'), l10n.itemShelfLocation)),
+      ],
+    ),
+  ];
+
+  /// Middle column — packaging & sales, pricing, inventory & advanced
+  /// pricing. Denser multi-field rows, like the reference design.
+  List<Widget> _middleColumn(AppLocalizations l10n) => [
+    CompactSection(l10n.itemSectionPackaging),
+    _unitDropdown(
+      value: _largeUnitId,
+      label: l10n.itemPackagingUnit,
+      onChanged: (v) => setState(() => _largeUnitId = v),
+    ),
+    const SizedBox(height: AppSpacing.s),
+    Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _unitDropdown(
+            value: _partUnitId,
+            label: l10n.itemBaseUnit,
+            onChanged: (v) => setState(() {
+              _partUnitId = v;
+              if (v != null) _largeUnitId ??= v;
+            }),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.s),
+        Expanded(
+          child: TextFormField(
+            controller: _c('unitsPerLarge', hint: '1'),
+            decoration: InputDecoration(
+              labelText: l10n.itemUnitsPerLarge,
+              isDense: true,
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (v) {
+              setState(() {
+                _partsCount = v.trim();
+                _recomputePartPrice();
+              });
+            },
+          ),
+        ),
+      ],
+    ),
+    const SizedBox(height: AppSpacing.xs),
+    _switch(
+      'partialSaleEnabled',
+      l10n.partialSaleEnabled,
+      _partialSaleEnabled,
+      (v) => setState(() {
+        _partialSaleEnabled = v;
+        if (v) {
+          if (_c('partialSaleMarkupBasisPoints').text.isEmpty) {
+            _c('partialSaleMarkupBasisPoints').text = _defaultMarkupPercent;
+          }
+          if (_c('partialSalePartPrice').text.isEmpty) {
+            _recomputePartPrice();
+          }
+        }
+      }),
+    ),
+    if (_partialSaleEnabled) ...[
+      const SizedBox(height: AppSpacing.xs),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: _text(
+              _c('partialSaleMarkupBasisPoints'),
+              l10n.partialSaleMarkupPercent,
+              onChanged: (_) => _recomputePartPrice(),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.s),
+          Expanded(
+            child: _text(
+              _c('partialSalePartPrice'),
+              l10n.partialSalePartPrice,
+              onChanged: (v) {
+                if (v.trim().isNotEmpty) {
+                  _partPriceManual = true;
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: TextButton.icon(
+          onPressed: _restoreAutoPartPrice,
+          icon: const Icon(Icons.auto_fix_high, size: 18),
+          label: Text(l10n.partialSaleRestoreAuto),
+        ),
+      ),
+    ],
+    CompactSection(l10n.itemSectionPricing),
+    Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _text(
+            _c('cost'),
+            _costLabel(l10n),
+            onChanged: (_) => _recomputePartPrice(),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.s),
+        Expanded(
+          child: _text(
+            _c('selling'),
+            l10n.itemPrice,
+            onChanged: (_) => _recomputePartPrice(),
+          ),
+        ),
+      ],
+    ),
+    CompactSection(l10n.itemSectionAdvanced),
     FormGrid(
+      minColumnWidth: 120,
+      children: [
+        _text(_c('discount'), l10n.itemPurchaseDiscount),
+        _text(_c('custom1'), l10n.itemCustomPrice1),
+        _text(_c('custom2'), l10n.itemCustomPrice2),
+      ],
+    ),
+    const SizedBox(height: AppSpacing.s),
+    FormGrid(
+      minColumnWidth: 120,
+      children: [
+        _text(_c('vat'), l10n.itemVatRate),
+        _text(_c('wholesale'), l10n.itemWholesalePrice),
+        _text(_c('halfWholesale'), l10n.itemHalfWholesalePrice),
+      ],
+    ),
+    const SizedBox(height: AppSpacing.s),
+    Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: _text(_c('minStock'), l10n.itemMinimumStock)),
+        const SizedBox(width: AppSpacing.s),
+        Expanded(child: _text(_c('maxStock'), l10n.itemMaximumStock)),
+      ],
+    ),
+    const SizedBox(height: AppSpacing.xs),
+    FormGrid(
+      minColumnWidth: 150,
       children: [
         _switch(
           'hasExpiry',
@@ -798,73 +1048,62 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           _hasExpiry,
           (v) => setState(() => _hasExpiry = v),
         ),
+        _switch(
+          'isControlled',
+          l10n.itemIsControlled,
+          _isControlled,
+          (v) => setState(() => _isControlled = v),
+        ),
+        _switch(
+          'lockAutoPrice',
+          l10n.itemLockPriceAutoUpdate,
+          _lockAutoPrice,
+          (v) => setState(() => _lockAutoPrice = v),
+        ),
+        _switch(
+          'requiresPrescription',
+          l10n.itemRequiresPrescription,
+          _requiresPrescription,
+          (v) => setState(() => _requiresPrescription = v),
+        ),
       ],
+    ),
+    CompactSection('${l10n.itemSuppliers} (${_selectedSupplierIds.length})'),
+    SearchableMultiSelectField<SupplierRow>(
+      selectedIds: _selectedSupplierIds,
+      items: _suppliers,
+      idOf: (sup) => sup.id,
+      nameOf: (sup) => sup.name,
+      onChanged: (next) => setState(() {
+        _selectedSupplierIds
+          ..clear()
+          ..addAll(next);
+      }),
+      // _addSupplier auto-selects the created row itself, so the
+      // multi-select only needs the dialog opened.
+      onAddNew: widget.onCreateSupplier == null
+          ? null
+          : (_) async {
+              await _addSupplier();
+              return null;
+            },
+      addNewLabel: l10n.itemAddNew,
+      searchHint: l10n.itemSuppliers,
     ),
   ];
 
-  /// Every field, in the documented Phase 17 order. Shown in "detailed"
-  /// mode; the quick mode above is just a subset of this.
-  /// Tab 1/4 — fits without scrolling (see [_buildFullForm]).
-  List<Widget> _basicTab(AppLocalizations l10n) => [
-    CompactSection('${l10n.itemBarcodePrimary} / ${l10n.itemTradeName}'),
-    FormGrid(
-      children: [
-        _text(
-          _c('primaryBarcode'),
-          l10n.itemBarcodePrimary,
-          suffixIcon: _scanButton('primaryBarcode'),
-        ),
-        _text(
-          _c('secondaryBarcode'),
-          l10n.itemSecondaryBarcode,
-          suffixIcon: _scanButton('secondaryBarcode'),
-        ),
-        _text(_c('tradeName'), l10n.itemTradeName, required: true),
-        _text(_c('tradeNameEn'), l10n.itemTradeNameEn),
-      ],
+  /// Left column — classifications & indications, active ingredients with
+  /// strengths, alternatives.
+  List<Widget> _leftColumn(AppLocalizations l10n) => [
+    CompactSection(l10n.itemSectionClassifications),
+    _masterDropdown(
+      value: _categoryId,
+      label: l10n.itemCategory,
+      items: _categories,
+      nameOf: (c) => c.name,
+      onChanged: (v) => setState(() => _categoryId = v),
+      kind: MasterDataKind.category,
     ),
-    CompactSection(l10n.itemClassificationSection),
-    FormGrid(
-      children: [
-        _masterDropdown(
-          value: _categoryId,
-          label: l10n.itemCategory,
-          items: _categories,
-          nameOf: (c) => c.name,
-          onChanged: (v) => setState(() => _categoryId = v),
-          kind: MasterDataKind.category,
-        ),
-        _masterDropdown(
-          value: _manufacturerId,
-          label: l10n.itemManufacturer,
-          items: _manufacturers,
-          nameOf: (m) => m.name,
-          onChanged: (v) => setState(() => _manufacturerId = v),
-          kind: MasterDataKind.manufacturer,
-        ),
-      ],
-    ),
-    CompactSection(l10n.itemScientificName),
-    FormGrid(
-      children: [
-        _text(_c('scientificName'), l10n.itemScientificName),
-        _text(_c('equivalentDrug'), l10n.itemEquivalentDrug),
-      ],
-    ),
-    CompactSection(l10n.itemPharmaForm),
-    FormGrid(
-      children: [
-        _text(_c('dose'), l10n.itemDose),
-        _text(_c('sizeVolume'), l10n.itemSizeVolume),
-        _text(_c('shelfLocation'), l10n.itemShelfLocation),
-      ],
-    ),
-  ];
-
-  /// Tab 2/4.
-  List<Widget> _ingredientsTab(AppLocalizations l10n) => [
-    // Searchable multi-select dropdown: long master lists no longer render
-    // every option as chips inside the dialog.
     CompactSection('${l10n.itemIndications} (${_selectedIndicationIds.length})'),
     SearchableMultiSelectField<IndicationRow>(
       selectedIds: _selectedIndicationIds,
@@ -879,15 +1118,18 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       onAddNew: widget.onCreateMasterData == null
           ? null
           : (name) async {
-              final created =
-                  await _addMasterDataWithName(MasterDataKind.indication, name);
+              final created = await _addMasterDataWithName(
+                MasterDataKind.indication,
+                name,
+              );
               return created as IndicationRow?;
             },
       addNewLabel: l10n.itemAddNew,
       searchHint: l10n.itemIndications,
     ),
     CompactSection(
-        '${l10n.itemActiveIngredients} (${_selectedActiveIngredientIds.length})'),
+      '${l10n.itemActiveIngredients} (${_selectedActiveIngredientIds.length})',
+    ),
     SearchableMultiSelectField<ActiveIngredientRow>(
       selectedIds: _selectedActiveIngredientIds,
       items: _activeIngredients,
@@ -963,280 +1205,31 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
           ],
         ),
       ),
-    CompactSection('${l10n.itemSuppliers} (${_selectedSupplierIds.length})'),
-    SearchableMultiSelectField<SupplierRow>(
-      selectedIds: _selectedSupplierIds,
-      items: _suppliers,
-      idOf: (sup) => sup.id,
-      nameOf: (sup) => sup.name,
-      onChanged: (next) => setState(() {
-        _selectedSupplierIds
-          ..clear()
-          ..addAll(next);
-      }),
-      // _addSupplier auto-selects the created row itself, so the
-      // multi-select only needs the dialog opened.
-      onAddNew: widget.onCreateSupplier == null
-          ? null
-          : (_) async {
-              await _addSupplier();
-              return null;
-            },
-      addNewLabel: l10n.itemAddNew,
-      searchHint: l10n.itemSuppliers,
-    ),
+    CompactSection(l10n.itemSectionAlternatives),
+    ..._alternativesSection(l10n),
   ];
 
-  /// Tab 3/4.
-  List<Widget> _pricingTab(AppLocalizations l10n) => [
-    CompactSection(l10n.itemPricePartsSection),
-    FormGrid(
-      children: [
-        _unitDropdown(
-          value: _largeUnitId,
-          label: l10n.itemPackagingUnit,
-          onChanged: (v) => setState(() => _largeUnitId = v),
+  /// Alternatives section: in edit mode offers the existing alternatives
+  /// view (search/matching untouched); when creating, alternatives only
+  /// exist after the item is saved.
+  List<Widget> _alternativesSection(AppLocalizations l10n) {
+    if (widget.itemId != null && widget.onViewAlternatives != null) {
+      return [
+        OutlinedButton.icon(
+          onPressed: () => widget.onViewAlternatives!(),
+          icon: const Icon(Icons.swap_horiz_outlined),
+          label: Text(l10n.itemViewAlternatives),
         ),
-        _unitDropdown(
-          value: _partUnitId,
-          label: l10n.itemBaseUnit,
-          onChanged: (v) => setState(() {
-            _partUnitId = v;
-            if (v != null) _largeUnitId ??= v;
-          }),
-        ),
-        TextFormField(
-          controller: _c('unitsPerLarge', hint: '1'),
-          decoration: InputDecoration(
-            labelText: l10n.itemUnitsPerLarge,
-            isDense: true,
-          ),
-          keyboardType: TextInputType.number,
-          onChanged: (v) {
-            setState(() {
-              _partsCount = v.trim();
-              _recomputePartPrice();
-            });
-          },
-        ),
-      ],
-    ),
-    FormGrid(
-      children: [
-        _switch(
-          'partialSaleEnabled',
-          l10n.partialSaleEnabled,
-          _partialSaleEnabled,
-          (v) => setState(() {
-            _partialSaleEnabled = v;
-            if (v) {
-              if (_c('partialSaleMarkupBasisPoints').text.isEmpty) {
-                _c('partialSaleMarkupBasisPoints').text = _defaultMarkupPercent;
-              }
-              if (_c('partialSalePartPrice').text.isEmpty) {
-                _recomputePartPrice();
-              }
-            }
-          }),
-        ),
-        if (_partialSaleEnabled) ...[
-          _text(
-            _c('partialSaleMarkupBasisPoints'),
-            l10n.partialSaleMarkupPercent,
-            onChanged: (_) => _recomputePartPrice(),
-          ),
-          _text(
-            _c('partialSalePartPrice'),
-            l10n.partialSalePartPrice,
-            onChanged: (v) {
-              if (v.trim().isNotEmpty) {
-                _partPriceManual = true;
-              }
-            },
-          ),
-          TextButton.icon(
-            onPressed: _restoreAutoPartPrice,
-            icon: const Icon(Icons.auto_fix_high, size: 18),
-            label: Text(l10n.partialSaleRestoreAuto),
-          ),
-        ],
-      ],
-    ),
-    FormGrid(
-      children: [
-        _text(
-          _c('cost'),
-          _costLabel(l10n),
-          onChanged: (_) => _recomputePartPrice(),
-        ),
-        _text(_c('discount'), l10n.itemPurchaseDiscount),
-        _text(
-          _c('selling'),
-          l10n.itemPrice,
-          onChanged: (_) => _recomputePartPrice(),
-        ),
-        _text(_c('wholesale'), l10n.itemWholesalePrice),
-        _text(_c('halfWholesale'), l10n.itemHalfWholesalePrice),
-        _text(_c('custom1'), l10n.itemCustomPrice1),
-        _text(_c('custom2'), l10n.itemCustomPrice2),
-        _text(_c('vat'), l10n.itemVatRate),
-      ],
-    ),
-    CompactSection(l10n.itemStock),
-    FormGrid(
-      children: [
-        _text(_c('minStock'), l10n.itemMinimumStock),
-        _text(_c('maxStock'), l10n.itemMaximumStock),
-      ],
-    ),
-    FormGrid(
-      children: [
-        _switch(
-          'hasExpiry',
-          l10n.itemHasExpiry,
-          _hasExpiry,
-          (v) => setState(() => _hasExpiry = v),
-        ),
-        _switch(
-          'isControlled',
-          l10n.itemIsControlled,
-          _isControlled,
-          (v) => setState(() => _isControlled = v),
-        ),
-        _switch(
-          'lockAutoPrice',
-          l10n.itemLockPriceAutoUpdate,
-          _lockAutoPrice,
-          (v) => setState(() => _lockAutoPrice = v),
-        ),
-        _switch(
-          'requiresPrescription',
-          l10n.itemRequiresPrescription,
-          _requiresPrescription,
-          (v) => setState(() => _requiresPrescription = v),
-        ),
-      ],
-    ),
-  ];
-
-  /// Tab 4/4.
-  List<Widget> _notesTab(AppLocalizations l10n) => [
-    CompactSection(l10n.itemUsageInstructions),
-    FormGrid(
-      children: [
-        _text(_c('usageInstructions'), l10n.itemUsageInstructions),
-        _text(_c('generalNotes'), l10n.itemGeneralNotes),
-        _text(_c('licenseNumber'), l10n.itemLicenseNumber),
-      ],
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return AlertDialog(
-      title: Text(widget.title),
-      // Viewport-aware width: full 680px on desktop, shrinks to the
-      // phone screen so fields never overflow horizontally.
-      content: SizedBox(
-        width: math.max(
-          280,
-          math.min(680, MediaQuery.sizeOf(context).width - 64),
-        ),
-        child: Form(
-          key: _formKey,
-          child: _quickMode ? _buildQuickForm(l10n) : _buildTabbedForm(l10n),
-        ),
+      ];
+    }
+    return [
+      Text(
+        l10n.itemAlternativesAfterSave,
+        style: context.appTypography.labelSmall,
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.commonCancel),
-        ),
-        if (widget.showContinueAction)
-          FilledButton.tonalIcon(
-            onPressed: () => _submit(ItemFormAction.saveContinue),
-            icon: const Icon(Icons.add_card_outlined),
-            label: Text(l10n.itemSaveAndContinueBatch),
-          ),
-        FilledButton(onPressed: _submit, child: Text(l10n.commonSave)),
-      ],
-    );
-  }
-
-  /// Quick mode is short enough to fit as-is.
-  Widget _buildQuickForm(AppLocalizations l10n) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [_modeToggle(l10n), ..._quickSections(l10n)],
-      ),
-    );
-  }
-
-  /// Detailed mode as four tabs so the whole window fits the viewport —
-  /// no page-level scrolling; each tab's content is sized to fit.
-  /// The mode toggle stays pinned above the tabs.
-  Widget _buildTabbedForm(AppLocalizations l10n) {
-    final tabs = <Tab>[
-      Tab(text: l10n.itemTabBasic),
-      Tab(text: l10n.itemTabIngredients),
-      Tab(text: l10n.itemTabPricing),
-      Tab(text: l10n.itemTabNotes),
     ];
-    final bodies = <List<Widget>>[
-      _basicTab(l10n),
-      _ingredientsTab(l10n),
-      _pricingTab(l10n),
-      _notesTab(l10n),
-    ];
-    return DefaultTabController(
-      length: tabs.length,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _modeToggle(l10n),
-              // Fixed (non-scrollable) tabs: all four are always visible
-              // and tappable — no hidden tabs.
-              TabBar(tabs: tabs),
-              // Viewport-aware tab body: fills the available dialog height
-              // without pushing the actions off-screen. Over-long tab
-              // content scrolls internally.
-              Flexible(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: math.max(
-                      240,
-                      MediaQuery.sizeOf(context).height - 340,
-                    ),
-                  ),
-                  child: TabBarView(
-                    children: [
-                      for (final body in bodies)
-                        SingleChildScrollView(
-                          padding: const EdgeInsets.only(top: AppSpacing.s),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: body,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
   }
 
-  /// Cost label names the commercial (packaging) unit so the pharmacist knows
-  /// the amount is entered per package, not per base unit.
   String _costLabel(AppLocalizations l10n) {
     final largeId = _largeUnitId;
     if (largeId == null) return l10n.itemCost;
