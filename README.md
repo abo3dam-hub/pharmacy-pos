@@ -4,10 +4,12 @@ A professional **Arabic-first, offline-first Pharmacy Management & Point-of-Sale
 (POS)** application built with Flutter. Primary production platform is
 **Windows Desktop**; Android is supported for development/testing.
 
-- **Version:** `1.0.0+1` (release tag `v1.0.0`)
+- **Version:** `1.1.0+1` (pubspec; `versionCode` on CI builds comes from
+  the CI run number — see Android section below)
 - **License / distribution:** self-contained portable Windows build
 - **Full release notes:** [`CHANGELOG.md`](./CHANGELOG.md)
 - **Architecture & database specification:** [`PROJECT-ARCHITECTURE-PLAN.md`](./PROJECT-ARCHITECTURE-PLAN.md)
+- **Current project state:** [`PROJECT_STATUS.md`](./PROJECT_STATUS.md)
 
 ## Features
 
@@ -49,9 +51,31 @@ flutter build windows --release
 ```
 
 The repository's GitHub Actions workflow (`.github/workflows/ci.yml`) runs
-analyze + tests on Linux for every push/PR and produces the Windows release
-build on `v*` tags (`build-windows` job), uploading the artifact
-`pharmacy-pos-windows`.
+`analyze-test`, `perf-file-db`, `build-windows`, and `build-android` on every
+push to `main`, every PR, and every `v*` tag. A newer push cancels the stale
+run (`concurrency: cancel-in-progress`). Flutter is pinned to `3.44.2` in all
+jobs.
+
+### Android release build (arm64-only)
+
+```sh
+flutter build apk --release --target-platform android-arm64
+# Output: build/app/outputs/flutter-apk/app-release.apk (~45-50MB)
+```
+
+- **arm64 only** (per Ali's decision, 2026-10-04): the 32-bit armv7 slice is
+  dropped; arm64 covers virtually all Android devices in use.
+- **Signing:** the release build signs with the Gradle debug keystore, but CI
+  restores a **stable** keystore (generated once, stored as the
+  `ANDROID_KEYSTORE_B64` repo secret) before building — every CI APK carries
+  the same certificate.
+- **versionCode:** CI passes `--build-number=${{ github.run_number }}`, so it
+  strictly increases with every build.
+- **Installs as an update:** newer APKs install over older ones, no
+  uninstall needed. Exception: the *first* stable-key build still requires
+  one manual uninstall if the phone currently has an APK signed with an older
+  random CI key.
+- `applicationId`: `com.pharmacy.pharmacy_pos`.
 
 ## Distribution model
 

@@ -42,7 +42,7 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   a labeled "sell as part" button and a box/part toggle chip on cart lines.
   Ali's scenario: box cost 11,000 ÷ 3 parts → one part sells at 5,600 with
   COGS ≈ 3,666.6667, never 11,000. See
-  `COST-BASIS-FIX-REPORT-2026-09-24.pdf` and PROJECT_STATUS §3f.
+  `docs/archive/COST-BASIS-FIX-REPORT-2026-09-24.pdf` and PROJECT_STATUS §3f.
 
 ## [Unreleased]
 
@@ -79,7 +79,7 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   `name:strength` relational pairs, manufacturer/indication auto-creation,
   pharma-form inference, and unit relations (part/box) only where the catalog
   declares more than one part per package so the importer derives per-part
-  cost correctly. Report: `CATALOG-IMPORT-REPORT-2026-09-24.md`. Sale prices
+  cost correctly. Report: `docs/archive/CATALOG-IMPORT-REPORT-2026-09-24.md`. Sale prices
   are intentionally left blank (the catalog carries none).
 
 ### Changed
@@ -104,7 +104,7 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   counters), purchase-invoice rows, and the POS cart totals. Short,
   subtle animations; pricing, COGS, and accounting behaviour unchanged.
 - Verification: `flutter analyze` clean, **649 tests pass**. See
-  `UX-SIMPLIFICATION-REPORT-2026-09-24.pdf` and PROJECT_STATUS §3g.
+  `docs/archive/UX-SIMPLIFICATION-REPORT-2026-09-24.pdf` and PROJECT_STATUS §3g.
 
 ---
 
@@ -112,7 +112,7 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 
 Complete rework of the product (item) management experience plus the
 schema/migration, regression-test, and error-mapping work to support it.
-See `PRODUCT-MANAGEMENT-UX-FIX-REPORT.md` for the itemized 21-section report.
+See `docs/archive/PRODUCT-MANAGEMENT-UX-FIX-REPORT.md` for the itemized 21-section report.
 
 ### New in this release
 
@@ -365,5 +365,5 @@ published the final release tag.
 ### Full phase history
 
 The authoritative background for every earlier phase is in the repository's
-`PHASE*n*-COMPLETION-REPORT.md` and `PROJECT-ARCHITECTURE-PLAN.md`,
-culminating in `PHASE16-COMPLETION-REPORT.md`.
+`docs/archive/PHASE*-COMPLETION-REPORT.md` and `PROJECT-ARCHITECTURE-PLAN.md`,
+culminating in `docs/archive/PHASE16-COMPLETION-REPORT.md`.
