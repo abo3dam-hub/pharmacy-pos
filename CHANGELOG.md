@@ -21,6 +21,12 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 
 ## [Unreleased]
 
+### Changed
+- **Android builds are now arm64-only** (2026-10-04) — CI builds the release
+  APK with `--target-platform android-arm64`, cutting the download roughly in
+  half (~95MB → ~45-50MB). arm64 covers virtually all Android devices in use
+  today; the 32-bit armv7 build is dropped.
+
 ### Added
 - **Dashboard visual refresh** (2026-10-04) — colorful but calm dashboard:
   auto-playing hero carousel (4 live-data slides: today's sales, stock
