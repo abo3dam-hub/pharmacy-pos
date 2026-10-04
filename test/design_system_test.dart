@@ -215,6 +215,28 @@ void main() {
       expect(find.byType(NavigationDrawer), findsOneWidget);
     });
 
+    testWidgets('tapping a drawer destination closes the drawer', (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(harness(const AppShell()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.menu));
+      await tester.pumpAndSettle();
+      expect(find.byType(NavigationDrawer), findsOneWidget);
+
+      // Inventory is AppSection.values[2]; the drawer must dismiss itself
+      // (it is a modal route — NavigationDrawer does not auto-close).
+      await tester.tap(find.byType(NavigationDrawerDestination).at(2));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NavigationDrawer), findsNothing);
+      // ...and the section actually changed (AppBar + placeholder title).
+      expect(find.text('المخزون'), findsWidgets);
+    });
+
     testWidgets('desktop width uses the persistent rail', (tester) async {
       tester.view.physicalSize = const Size(1280, 800);
       tester.view.devicePixelRatio = 1.0;

@@ -7,15 +7,23 @@ on:
   pull_request:
     branches: [main]
 
+# A newer push cancels the stale run on the same branch — no more queueing
+# two full runs when a fix follows minutes after a push.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.44.2'
+          cache: true
 
       - name: Install system SQLite (tests load libsqlite3.so.0)
         run: sudo apt-get update && sudo apt-get install -y libsqlite3-0
@@ -28,12 +36,14 @@ jobs:
   perf-file-db:
     needs: analyze-test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.44.2'
+          cache: true
 
       - name: Install system SQLite (tests load libsqlite3.so.0)
         run: sudo apt-get update && sudo apt-get install -y libsqlite3-0
@@ -47,16 +57,46 @@ jobs:
   build-android:
     needs: analyze-test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
       - uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: '3.44.2'
+          cache: true
+
+      # The release build signs with the Gradle debug keystore. Runners are
+      # ephemeral, so without this step every CI run generates a fresh key
+      # and Android refuses the APK as an update (signatures do not match ->
+      # forced uninstall). This keystore was generated once and stored as the
+      # ANDROID_KEYSTORE_B64 repo secret; every build reuses it.
+      - name: Restore stable debug keystore
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_B64" ]; then
+            mkdir -p ~/.android
+            printf '%s' "$ANDROID_KEYSTORE_B64" | base64 --decode > ~/.android/debug.keystore
+            echo "Stable keystore restored."
+          else
+            echo "No keystore secret (e.g. fork PR) - using ephemeral debug key."
+          fi
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'pubspec.lock') }}
+          restore-keys: gradle-${{ runner.os }}-
 
       - run: flutter pub get
       - run: flutter gen-l10n
-      - run: flutter build apk --release --target-platform android-arm64
+      # --build-number: versionCode must strictly increase or Android rejects
+      # the APK as an update; github.run_number only ever increases per repo.
+      - run: flutter build apk --release --target-platform android-arm64 --build-number=${{ github.run_number }}
 
       - uses: actions/upload-artifact@v4
         with:
@@ -66,11 +106,13 @@ jobs:
   build-windows:
     needs: analyze-test
     runs-on: windows-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.44.2'
+          cache: true
       - run: flutter pub get
       - run: flutter gen-l10n
       - run: flutter build windows --release

@@ -9,6 +9,31 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 ## [Unreleased]
 
 ### Fixed
+- **Android navigation drawer auto-closes** (2026-10-04) — on compact/Android
+  widths, tapping a drawer destination now dismisses the drawer before
+  navigating (`lib/core/widgets/app_shell.dart`); previously the drawer stayed
+  open on top of the new page. Regression test added to
+  `test/design_system_test.dart` ("tapping a drawer destination closes the
+  drawer").
+- **All list pages load on entry — startup race fixed at the root**
+  (2026-10-04) — the database executor opens lazily and the very first query
+  could fire before it was ready, leaving lists (sales history, purchases,
+  inventory, …) empty until the user manually reloaded (e.g. touching search).
+  `main()` now warms up the database (`lib/core/database_warmup.dart`,
+  bounded retry, never blocks startup) before the first frame — one fix for
+  every list page, present and future. New tests:
+  `test/database_warmup_test.dart`.
+- **APK now installs as an update — no more uninstall-first** (2026-10-04) —
+  two independent blockers fixed: (1) every CI run generated a fresh debug
+  keystore on its ephemeral runner → signature mismatch
+  (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`); a stable keystore is generated
+  once, stored as the `ANDROID_KEYSTORE_B64` repo secret, and restored by CI
+  before the build; (2) `versionCode` was frozen at 1 for every APK ever
+  shipped → CI now passes `--build-number=${{ github.run_number }}` so it
+  strictly increases. Note: one final manual uninstall is unavoidable when
+  moving from the old randomly-signed APK to the first stable-key build;
+  every build after that updates in place. `applicationId` unchanged
+  (`com.pharmacy.pharmacy_pos`).
 - **Package-vs-base-unit cost basis** (2026-09-24) — costs are entered per
   commercial package but stored per base unit (the COGS basis). New single
   conversion point `lib/core/units/package_cost.dart` (half-up), applied in
@@ -22,6 +47,15 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 ## [Unreleased]
 
 ### Changed
+- **CI speed-ups, no safety reduction** (2026-10-04) — Gradle cache for
+  `build-android` (~1–3 min off the 6-min release build),
+  `concurrency: cancel-in-progress` (a newer push cancels the stale run
+  instead of queueing behind it), pub cache via `subosito/flutter-action`,
+  Flutter pinned to `3.44.2` in all four jobs (was `stable` in three,
+  `3.44.2` in one), and `timeout-minutes` guards on every job. Deliberately
+  NOT done: test sharding and skipping old tests — the full suite (~740
+  tests) takes ~2.4 min on CI and is the regression safety net. Realistic
+  critical path now ~7–8 min (was ~11.3).
 - **Android builds are now arm64-only** (2026-10-04) — CI builds the release
   APK with `--target-platform android-arm64`, cutting the download roughly in
   half (~95MB → ~45-50MB). arm64 covers virtually all Android devices in use

@@ -3,10 +3,12 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/config/app_config.dart';
+import 'core/database_warmup.dart';
 import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
+import 'shared/database/app_database.dart';
 
 /// Application entrypoint (§3, §33, §34).
 ///
@@ -16,8 +18,14 @@ import 'l10n/app_localizations.dart';
 /// Navigation is GoRouter driven (§36) with an authentication-aware redirect;
 /// unauthenticated users land on the login page, everything else renders
 /// inside the shell.
-void main() {
+void main() async {
+  // Binding first: the database warm-up below touches platform channels
+  // (path resolution) before runApp().
+  WidgetsFlutterBinding.ensureInitialized();
   setupDependencies();
+  // Open the database before the first frame so no list page can race app
+  // startup and render empty until the user manually reloads.
+  await warmUpDatabase(getIt<AppDatabase>());
   runApp(const ProviderScope(child: PharmacyApp()));
 }
 

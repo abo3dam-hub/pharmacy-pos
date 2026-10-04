@@ -16,9 +16,11 @@ Current date: 2026-09-13 · Branch: `main` · Remote: `abo3dam-hub/pharmacy-pos`
 | Framework | Flutter (stable), Arabic-first RTL UI |
 | Persistence | SQLite via Drift (code-gen `app_database.g.dart`) |
 | L10n | `flutter gen-l10n` — `app_ar.arb` / `app_en.arb` |
-| Tests | 87 test files · **640 tests pass** · `flutter analyze` clean |
+| Tests | 106 test files · **741 tests pass** · `flutter analyze` clean |
 | CI | GitHub Actions: `analyze-test`, `perf-file-db`, `build-windows`, `build-android` |
-| Last CI | Run `34665548031` (commit `a7243c6`) — **all 4 jobs success**; `ba5d1c6` pushed, CI re-running |
+| Last CI | 2026-10-04: Ali's four fixes pushed (drawer auto-close, DB warm-up for
+list auto-load, stable APK signing key + monotonic versionCode, CI speed-ups;
+see `ALI-FOUR-FIXES-REPORT-2026-10-04.md`) — CI re-running |
 
 Local env used by this workflow:
 

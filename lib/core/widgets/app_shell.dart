@@ -133,7 +133,12 @@ class AppDrawer extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return NavigationDrawer(
       selectedIndex: AppSection.values.indexOf(selected),
-      onDestinationSelected: (i) => onSelect(AppSection.values[i]),
+      onDestinationSelected: (i) {
+        // The drawer is a modal route: dismiss it before navigating,
+        // otherwise it stays open on top of the new page (Android).
+        Navigator.of(context).pop();
+        onSelect(AppSection.values[i]);
+      },
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
