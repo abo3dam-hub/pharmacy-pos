@@ -836,6 +836,24 @@ abstract class AppLocalizations {
   /// **'إعادة المحاولة'**
   String get dashboardRetry;
 
+  /// No description provided for @dashboardCarouselStockAlerts.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات المخزون'**
+  String get dashboardCarouselStockAlerts;
+
+  /// No description provided for @dashboardCarouselNewSaleCta.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ عملية بيع'**
+  String get dashboardCarouselNewSaleCta;
+
+  /// No description provided for @dashboardTapToOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط للفتح'**
+  String get dashboardTapToOpen;
+
   /// No description provided for @inventoryLowStock.
   ///
   /// In ar, this message translates to:

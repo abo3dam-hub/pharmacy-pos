@@ -22,6 +22,16 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 ## [Unreleased]
 
 ### Added
+- **Dashboard visual refresh** (2026-10-04) — colorful but calm dashboard:
+  auto-playing hero carousel (4 live-data slides: today's sales, stock
+  alerts, near-expiry, new sale) with dots indicator; the six KPI cards use
+  a curated pastel palette (`lib/core/theme/dashboard_palette.dart`,
+  dark-mode aware) and every card/slide/alert header is tappable, navigating
+  to its related page (sales history, reports, inventory, POS). The layout
+  stays responsive with no vertical scrolling (adaptive carousel height,
+  6/3/2-column KPI reflow, compact one-row income strip). New ARB keys with
+  exact AR/EN parity. Report:
+  `DASHBOARD-VISUAL-REFRESH-REPORT-2026-10-04.md`.
 - **Drug catalog conversion tool** (2026-09-24) — `tool/convert_zena_catalog.py`
   converts the Zena drug catalog CSV (22,292 items) into the app's Excel
   import format (`products` sheet, Arabic headers): barcode cleanup

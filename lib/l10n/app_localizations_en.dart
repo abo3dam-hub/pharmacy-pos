@@ -384,6 +384,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardRetry => 'Try again';
 
   @override
+  String get dashboardCarouselStockAlerts => 'Stock alerts';
+
+  @override
+  String get dashboardCarouselNewSaleCta => 'Start a sale';
+
+  @override
+  String get dashboardTapToOpen => 'Tap to open';
+
+  @override
   String get inventoryLowStock => 'Low stock';
 
   @override

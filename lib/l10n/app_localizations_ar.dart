@@ -384,6 +384,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get dashboardRetry => 'إعادة المحاولة';
 
   @override
+  String get dashboardCarouselStockAlerts => 'تنبيهات المخزون';
+
+  @override
+  String get dashboardCarouselNewSaleCta => 'ابدأ عملية بيع';
+
+  @override
+  String get dashboardTapToOpen => 'اضغط للفتح';
+
+  @override
   String get inventoryLowStock => 'منخفض المخزون';
 
   @override

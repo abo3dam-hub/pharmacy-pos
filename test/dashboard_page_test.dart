@@ -19,7 +19,7 @@ void main() {
         locale: const Locale(AppConfig.defaultLocale),
         supportedLocales: AppLocalizations.supportedLocales,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: const Scaffold(body: DashboardPage()),
+        home: const Scaffold(body: DashboardPage(carouselAutoPlay: false)),
       ),
     );
   }
@@ -133,8 +133,18 @@ void main() {
         Size(800, 600),
       ]) {
         await pumpAt(tester, h.container, size);
-        // No scrollable root: everything is visible in the viewport.
-        expect(find.byType(Scrollable), findsNothing);
+        // The dashboard never scrolls vertically: the only scrollable
+        // allowed is the horizontal hero carousel (fully visible, bounded
+        // height — swiping it never hides content).
+        final scrollables =
+            tester.widgetList<Scrollable>(find.byType(Scrollable));
+        for (final s in scrollables) {
+          expect(
+            s.axisDirection,
+            isNot(anyOf(AxisDirection.down, AxisDirection.up)),
+            reason: 'dashboard must not scroll vertically',
+          );
+        }
         expect(find.text('نظرة عامة'), findsOneWidget);
       }
     });

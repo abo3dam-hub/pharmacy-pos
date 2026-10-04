@@ -9,20 +9,30 @@ import '../../../core/money/money.dart';
 import '../../../core/motion/app_motion.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/dashboard_palette.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/dashboard_controller.dart';
 import '../domain/entities/dashboard_snapshot.dart';
+import 'dashboard_carousel.dart';
 
 /// Real-data dashboard (§16): today's sales summary, inventory pulse and
 /// activity feeds straight from the database.
 ///
 /// Fit-to-screen contract: the dashboard never scrolls. It is a fixed
-/// viewport layout — a compact KPI strip, an optional financial strip, and
-/// a 2×2 grid of alert/activity cards. Each card shows only as many rows as
-/// fit (adaptive, capped at 4) plus a "view all" link into the full list, so
-/// every action stays reachable on any window size.
+/// viewport layout — a hero carousel, a compact KPI strip, an optional
+/// financial strip, and a 2×2 grid of alert/activity cards. Each card shows
+/// only as many rows as fit (adaptive, capped at 4) plus a "view all" link
+/// into the full list, so every action stays reachable on any window size.
+///
+/// Visual refresh (2026-10-04, Ali): the KPI cards and the hero carousel
+/// use a curated pastel palette ([DashboardTint]) — alive but calm — and
+/// every card/slide is tappable, navigating to its related page.
 class DashboardPage extends ConsumerStatefulWidget {
-  const DashboardPage({super.key});
+  const DashboardPage({super.key, this.carouselAutoPlay = true});
+
+  /// False in widget tests so `pumpAndSettle()` keeps working — the
+  /// carousel's periodic auto-play timer would otherwise never settle.
+  final bool carouselAutoPlay;
 
   @override
   ConsumerState<DashboardPage> createState() => _DashboardPageState();
@@ -79,38 +89,99 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         target: snapshot.todayTotalMicros.toDouble(),
         format: (v) => Money.fromUnits(v.round()).format(),
         icon: Icons.attach_money,
+        tint: DashboardTint.teal,
+        route: salesHistoryPath(),
       ),
       _KpiCard(
         label: l10n.dashboardTodayOrders,
         target: snapshot.todayInvoiceCount.toDouble(),
         format: (v) => '${v.round()}',
         icon: Icons.receipt_long,
+        tint: DashboardTint.indigo,
+        route: salesHistoryPath(),
       ),
       _KpiCard(
         label: l10n.dashboardProfitToday,
         target: snapshot.todayProfitMicros.toDouble(),
         format: (v) => Money.fromUnits(v.round()).format(),
         icon: Icons.trending_up,
+        tint: DashboardTint.green,
+        route: AppSection.reports.path,
       ),
       _KpiCard(
         label: l10n.dashboardUnitsSold,
         target: snapshot.todayUnitsSold.toDouble(),
         format: (v) => '${v.round()}',
         icon: Icons.inventory_2,
+        tint: DashboardTint.amber,
+        route: salesHistoryPath(),
       ),
       _KpiCard(
         label: l10n.dashboardActiveItems,
         target: snapshot.activeItems.toDouble(),
         format: (v) => '${v.round()}',
         icon: Icons.inventory,
+        tint: DashboardTint.violet,
+        route: AppSection.inventory.path,
       ),
       _KpiCard(
         label: l10n.dashboardStockValue,
         target: snapshot.stockValueMicros.toDouble(),
         format: (v) => Money.fromUnits(v.round()).format(),
         icon: Icons.payments,
+        tint: DashboardTint.rose,
+        route: AppSection.inventory.path,
       ),
     ];
+
+    final slides = <DashboardSlide>[
+      DashboardSlide(
+        icon: Icons.attach_money,
+        label: l10n.dashboardDailySales,
+        value: Money.fromUnits(snapshot.todayTotalMicros).format(),
+        hint: l10n.dashboardTapToOpen,
+        tint: DashboardTint.teal,
+        route: salesHistoryPath(),
+      ),
+      DashboardSlide(
+        icon: Icons.warning_amber,
+        label: l10n.dashboardCarouselStockAlerts,
+        value: '${snapshot.lowStockItems.length}',
+        hint: l10n.dashboardTapToOpen,
+        tint: DashboardTint.amber,
+        route: AppSection.inventory.path,
+      ),
+      DashboardSlide(
+        icon: Icons.update,
+        label: l10n.dashboardNearExpiry,
+        value: '${snapshot.nearExpiryBatches.length}',
+        hint: l10n.dashboardTapToOpen,
+        tint: DashboardTint.rose,
+        route: AppSection.inventory.path,
+      ),
+      DashboardSlide(
+        icon: Icons.point_of_sale,
+        label: l10n.saleNewSale,
+        value: l10n.dashboardCarouselNewSaleCta,
+        hint: l10n.dashboardTapToOpen,
+        tint: DashboardTint.indigo,
+        route: AppSection.sale.path,
+      ),
+    ];
+
+    // Responsive layout budget: the carousel shrinks on short viewports and
+    // the KPI strip reflows into 6/3/2 columns so the alert grid below
+    // always keeps a usable height — the no-vertical-scroll contract holds
+    // from 800×600 up to wide desktop and down to phones.
+    final screenW = MediaQuery.sizeOf(context).width;
+    final screenH = MediaQuery.sizeOf(context).height;
+    final carouselHeight = screenH < 700 ? 104.0 : 148.0;
+    final kpiColumns = screenW >= 1100
+        ? 6
+        : screenW >= 750
+            ? 3
+            : 2;
+    final kpiRows = (cards.length / kpiColumns).ceil();
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.l),
@@ -118,20 +189,41 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Entrance(
+            child: DashboardCarousel(
+              slides: slides,
+              height: carouselHeight,
+              autoPlay: widget.carouselAutoPlay,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.m),
+          Entrance(
+            delay: AppMotion.stagger,
             child: Text(
               l10n.dashboardKpis,
               style: context.appTypography.sectionTitle,
             ),
           ),
           const SizedBox(height: AppSpacing.s),
-          Wrap(
-            spacing: AppSpacing.m,
-            runSpacing: AppSpacing.m,
-            children: [
-              for (var i = 0; i < cards.length; i++)
-                Entrance(delay: AppMotion.stagger * i, child: cards[i]),
-            ],
-          ),
+          for (var r = 0; r < kpiRows; r++) ...[
+            if (r > 0) const SizedBox(height: AppSpacing.m),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var c = 0; c < kpiColumns; c++)
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.only(
+                        end: c == kpiColumns - 1 ? 0 : AppSpacing.m,
+                      ),
+                      child: Entrance(
+                        delay: AppMotion.stagger * (r * kpiColumns + c + 1),
+                        child: cards[r * kpiColumns + c],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
           if (financialsVisible) ...[
             const SizedBox(height: AppSpacing.m),
             Entrance(
@@ -293,78 +385,97 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   static String _qty(int base) => Money.fromUnits(base).format();
 }
 
-/// Compact KPI card — fixed compact height so the strip never pushes the
-/// grid off-screen.
+/// Colorful, tappable KPI card — fixed compact height so the strip never
+/// pushes the grid off-screen. Tapping navigates to the card's related page.
 class _KpiCard extends StatelessWidget {
   const _KpiCard({
     required this.label,
     required this.target,
     required this.format,
     required this.icon,
+    required this.tint,
+    required this.route,
   });
 
   final String label;
   final double target;
   final String Function(double value) format;
   final IconData icon;
+  final DashboardTint tint;
+  final String route;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final typography = context.appTypography;
-    final primary = theme.colorScheme.primary;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Container(
-        width: 190,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.m,
-          vertical: AppSpacing.s,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [primary, primary.withValues(alpha: 0.72)],
+    final accent = tint.accent(context);
+    return Material(
+      color: tint.background(context),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: () => context.go(route),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.m,
+            vertical: AppSpacing.s,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: tint.outline(context)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [accent, accent.withValues(alpha: 0.72)],
+                  ),
+                ),
+                child: Icon(icon, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: AppSpacing.s),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: typography.bodySecondary,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    CountUp(
+                      target: target,
+                      format: format,
+                      style: typography.sectionTitle,
+                    ),
+                  ],
                 ),
               ),
-              child: Icon(icon, color: Colors.white, size: 22),
-            ),
-            const SizedBox(width: AppSpacing.s),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    style: typography.bodySecondary,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  CountUp(
-                    target: target,
-                    format: format,
-                    style: typography.sectionTitle,
-                  ),
-                ],
+              Icon(
+                Icons.arrow_forward,
+                size: 18,
+                color: accent.withValues(alpha: 0.55),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Compact one-row financial summary strip (replaces the tall card so the
-/// dashboard fits without scrolling).
+/// Compact one-row financial summary strip.
+///
+/// Fixed short height (~one text row): the title plus the five metrics share
+/// a single horizontal row with ellipsis, so the strip never wraps into
+/// several rows and never steals vertical space from the alert grid below.
 class _FinancialStrip extends StatelessWidget {
   const _FinancialStrip({required this.financials});
 
@@ -409,33 +520,40 @@ class _FinancialStrip extends StatelessWidget {
           horizontal: AppSpacing.l,
           vertical: AppSpacing.s,
         ),
-        child: Wrap(
-          spacing: AppSpacing.xl,
-          runSpacing: AppSpacing.xs,
-          crossAxisAlignment: WrapCrossAlignment.center,
+        child: Row(
           children: [
             Text(
               l10n.dashboardFinancialSummary,
-              style: typography.sectionTitle,
+              style: typography.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
+            const SizedBox(width: AppSpacing.m),
             for (final (label, value, emphasized) in metrics)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(label, style: typography.bodySecondary),
-                  const SizedBox(width: AppSpacing.s),
-                  Text(
-                    value,
-                    style: (emphasized
-                            ? typography.sectionTitle
-                            : typography.body)
-                        .copyWith(
-                          color: emphasized
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface,
-                        ),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: typography.labelSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      value,
+                      style: (emphasized ? typography.label : typography.body)
+                          .copyWith(
+                            color: emphasized
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurface,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
           ],
         ),
@@ -464,9 +582,11 @@ class _AlertCard extends StatelessWidget {
 
   static const _maxRows = 4;
   static const _rowHeight = 48.0;
-  // Fixed chrome heights (header row + spacing + view-all button).
-  static const _headerHeight = 28.0;
-  static const _buttonHeight = 36.0;
+  // Fixed chrome heights (header row + spacing + view-all button), measured
+  // against the real widgets: sectionTitle text renders 29px tall and the
+  // compact TextButton renders 40px — the constants keep a 1px margin.
+  static const _headerHeight = 30.0;
+  static const _buttonHeight = 40.0;
 
   @override
   Widget build(BuildContext context) {
@@ -483,6 +603,12 @@ class _AlertCard extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final maxH = constraints.maxHeight;
+            // Extremely short viewport (e.g. a short phone in landscape):
+            // the header itself cannot fit — render nothing rather than
+            // overflowing. The card stays in the grid and the layout holds.
+            if (maxH < _headerHeight + AppSpacing.s) {
+              return const SizedBox.shrink();
+            }
             final chrome = _headerHeight + AppSpacing.s + _buttonHeight;
             final fits = ((maxH - chrome) / _rowHeight).floor().clamp(0, _maxRows);
             // Show the button only if header + button fit; rows are bonus.
@@ -494,19 +620,28 @@ class _AlertCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.max,
               children: [
-                Row(
-                  children: [
-                    Icon(icon, color: theme.colorScheme.primary, size: 20),
-                    const SizedBox(width: AppSpacing.s),
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: typography.sectionTitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  onTap: () => context.go(viewAllRoute),
+                  child: Row(
+                    children: [
+                      Icon(icon, color: theme.colorScheme.primary, size: 20),
+                      const SizedBox(width: AppSpacing.s),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: typography.sectionTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 18,
+                        color: theme.colorScheme.primary.withValues(alpha: 0.55),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.s),
                 if (showRows) ...children.take(fits),
@@ -514,13 +649,16 @@ class _AlertCard extends StatelessWidget {
                 if (showButton)
                   Align(
                     alignment: AlignmentDirectional.centerEnd,
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      onPressed: () => context.go(viewAllRoute),
-                      child: Text(
-                        '${l10n.commonViewAll} ($totalCount)',
+                    child: SizedBox(
+                      height: _buttonHeight,
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () => context.go(viewAllRoute),
+                        child: Text(
+                          '${l10n.commonViewAll} ($totalCount)',
+                        ),
                       ),
                     ),
                   ),
