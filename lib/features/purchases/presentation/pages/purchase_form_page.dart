@@ -212,20 +212,23 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
           .read(getPurchaseDetailUseCaseProvider)
           .call(widget.invoiceId!, actingRoleId: _actingRoleId);
       if (!mounted) return;
-      _invoiceNumber.text = detail.invoice.invoiceNumber;
-      _invoiceDate = DateTime.fromMillisecondsSinceEpoch(
+      // Build everything in locals first, then publish via a single setState.
+      // Assigning state fields across awaits without setState only worked
+      // because of the trailing setState below — any early return added
+      // above it would reintroduce a stale-UI bug (audit 2026-10-05, Ali).
+      final invoiceNumberText = detail.invoice.invoiceNumber;
+      final invoiceDate = DateTime.fromMillisecondsSinceEpoch(
         detail.invoice.invoiceDate,
       );
-      if (detail.invoice.expectedDate != null) {
-        _expectedDate = DateTime.fromMillisecondsSinceEpoch(
-          detail.invoice.expectedDate!,
-        );
-      }
-      if (detail.invoice.paidMicros > 0) {
-        _paidAmount.text = Money.fromUnits(detail.invoice.paidMicros).format(4);
-      }
-      if (detail.invoice.notes != null) _notes.text = detail.invoice.notes!;
-      _supplierId = detail.invoice.supplierId;
+      final DateTime? expectedDate = detail.invoice.expectedDate != null
+          ? DateTime.fromMillisecondsSinceEpoch(detail.invoice.expectedDate!)
+          : null;
+      final paidText = detail.invoice.paidMicros > 0
+          ? Money.fromUnits(detail.invoice.paidMicros).format(4)
+          : '';
+      final notesText = detail.invoice.notes ?? '';
+      final supplierId = detail.invoice.supplierId;
+      final loadedLines = <_PurchLine>[];
       for (final v in detail.lines) {
         final pkg = await _packageInfo(v.line.itemId);
         // Show package entry when the stored base quantity divides evenly
@@ -233,7 +236,7 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
         final evenPack =
             pkg.unitsPerLarge > 1 &&
             v.line.quantityBase % pkg.unitsPerLarge == 0;
-        _lines.add(
+        loadedLines.add(
           _PurchLine(
             itemId: v.line.itemId,
             itemName: v.itemName,
@@ -261,7 +264,19 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
           ),
         );
       }
-      setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() {
+        _invoiceNumber.text = invoiceNumberText;
+        _invoiceDate = invoiceDate;
+        _expectedDate = expectedDate;
+        _paidAmount.text = paidText;
+        _notes.text = notesText;
+        _supplierId = supplierId;
+        _lines
+          ..clear()
+          ..addAll(loadedLines);
+        _loading = false;
+      });
     } on AppException catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);

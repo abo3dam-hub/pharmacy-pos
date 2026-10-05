@@ -55,24 +55,30 @@ class _PriceHistoryPageState extends ConsumerState<PriceHistoryPage> {
             return note.contains(q.toLowerCase());
           }).toList();
 
-    // Resolve names (best effort, cached per load).
+    // Resolve names (best effort, cached per load) into locals first, then
+    // publish everything via a single setState — assigning state fields
+    // across awaits without setState is fragile (audit 2026-10-05, Ali).
+    var userNames = _userNames;
+    var itemNames = _itemNames;
     final userIds = {for (final r in filtered) r.userId};
     final itemIds = {for (final r in filtered) r.entityId};
     if (userIds.isNotEmpty) {
       final users = await (db.select(db.users)
             ..where((u) => u.id.isIn(userIds)))
           .get();
-      _userNames = {for (final u in users) u.id: u.fullName};
+      userNames = {for (final u in users) u.id: u.fullName};
     }
     if (itemIds.isNotEmpty) {
       final items = await (db.select(db.items)
             ..where((i) => i.id.isIn(itemIds)))
           .get();
-      _itemNames = {for (final i in items) i.id: i.tradeName};
+      itemNames = {for (final i in items) i.id: i.tradeName};
     }
 
     if (!mounted) return;
     setState(() {
+      _userNames = userNames;
+      _itemNames = itemNames;
       _rows = filtered;
       _loading = false;
     });

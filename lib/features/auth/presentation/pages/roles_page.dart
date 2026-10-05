@@ -179,6 +179,11 @@ class _RoleCard extends ConsumerWidget {
             actingRoleId: auth.actingRoleId,
           );
       if (failure == null && context.mounted) {
+        // The edited role may be the current session's own role: refresh the
+        // auth session so permission-gated UI updates without re-login
+        // (stale-UI audit 2026-10-05, Ali).
+        await ref.read(authControllerProvider.notifier).reloadCurrentUser();
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text(l10n.rolesPermissionsSaved)));

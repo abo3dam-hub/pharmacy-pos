@@ -9,6 +9,32 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 ## [Unreleased]
 
 ### Fixed
+- **Stale-UI audit — comprehensive pass** (2026-10-05, requested by Ali
+  after the void-icon bug):
+  * **Void icon never appeared (real bug):** `_load()` in the invoice detail
+    page assigned `_invoice` after `await` without `setState` — the body
+    rebuilt via FutureBuilder but the AppBar never did, so the delete icon
+    was never drawn even for eligible invoices. Now wrapped in `setState`;
+    covered by new widget regression test
+    `test/invoice_detail_void_icon_test.dart` (verified to fail without the
+    fix).
+  * **Stale expanded-row details in sales history:** `_detailCache` was never
+    invalidated — re-expanding an invoice after returning from its detail
+    page showed pre-return data. The cache entry is now dropped on return
+    from the detail page.
+  * **Stale session permissions (A1):** `reloadCurrentUser()` existed but
+    was dead code — editing role permissions or a user's role kept the old
+    permission set until re-login. Roles and users pages now refresh the
+    auth session after a successful save.
+  * **Fragile load patterns hardened (B1–B3):** purchase edit form, price
+    history, and receipt-template card assigned state fields across awaits
+    without `setState`, surviving only via a trailing setState. All three
+    now build locals first and publish via a single setState; the receipt
+    card also loads from `initState` instead of `build()`.
+  * Audit covered all 73 state classes, all AppBar actions, dialog→list
+    refresh flows, navigation patterns, and permission-gated UI. Remaining
+    note for discussion: permission-gated controls hide entirely rather
+    than showing disabled-with-reason.
 - **Ali's Windows test round — 4 issues** (2026-10-05):
   * Return dialog now works in the line's sell unit (box/strip): a part-sale
     line previously hit `returnable ~/ unitsPerLarge == 0` and silently did

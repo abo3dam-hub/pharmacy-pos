@@ -105,6 +105,11 @@ class _UsersPageState extends ConsumerState<UsersPage> {
           actingRoleId: _actingRoleId,
         );
     if (failure == null && mounted) {
+      // The edited user may be the current session's own account (e.g. role
+      // changed): refresh the auth session so permission-gated UI updates
+      // without re-login (stale-UI audit 2026-10-05, Ali).
+      await ref.read(authControllerProvider.notifier).reloadCurrentUser();
+      if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.userUpdatedMessage)));

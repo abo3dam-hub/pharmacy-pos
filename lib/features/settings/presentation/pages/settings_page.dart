@@ -422,11 +422,27 @@ class _ReceiptTemplateCardState
     super.dispose();
   }
 
-  Future<void> _load(UiPreferencesService service) async {
-    _name.text = await service.receiptPharmacyName() ?? '';
-    _promo.text = await service.receiptPromoLine() ?? '';
-    _fontSize = await service.receiptFontSize();
-    if (mounted) setState(() => _loaded = true);
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    // Load into locals first, then publish via a single setState — assigning
+    // state fields across awaits without setState is fragile (audit
+    // 2026-10-05, Ali). Loading starts in initState, never from build().
+    final service = ref.read(uiPreferencesServiceProvider);
+    final name = await service.receiptPharmacyName() ?? '';
+    final promo = await service.receiptPromoLine() ?? '';
+    final fontSize = await service.receiptFontSize();
+    if (!mounted) return;
+    setState(() {
+      _name.text = name;
+      _promo.text = promo;
+      _fontSize = fontSize;
+      _loaded = true;
+    });
   }
 
   @override
@@ -435,7 +451,6 @@ class _ReceiptTemplateCardState
     final typography = Theme.of(context).textTheme;
     final service = ref.watch(uiPreferencesServiceProvider);
     if (!_loaded) {
-      _load(service);
       return const Center(child: CircularProgressIndicator());
     }
     return Column(

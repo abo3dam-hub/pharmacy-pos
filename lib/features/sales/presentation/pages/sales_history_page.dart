@@ -174,6 +174,9 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
     await context.push(saleInvoiceDetailPath(invoiceId));
     // Mutation-then-refresh: returns/voids inside the detail invalidate this
     // list, so reload the current page on return (§18.4 state invalidation).
+    // The expanded-row detail cache must also drop this invoice, otherwise
+    // re-expanding it would show the pre-return state (2026-10-05, Ali).
+    _detailCache.remove(invoiceId);
     if (mounted) await _load();
   }
 

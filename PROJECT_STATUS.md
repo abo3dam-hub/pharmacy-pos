@@ -47,6 +47,12 @@ Local dev env (this machine):
 
 ## 2. Recent changes (newest first; detail in CHANGELOG)
 
+- **2026-10-05 — Stale-UI comprehensive audit (Ali's request):** fixed the
+  real void-icon bug (`_invoice` assigned without `setState` — AppBar never
+  rebuilt) + regression test; sales-history expanded-row cache invalidation;
+  auth session permission refresh after role/user edits (was dead code);
+  hardened fragile load patterns in purchase form, price history, receipt
+  card. Full sweep: 73 state classes, all AppBars, dialog→list flows.
 - **2026-10-05 — Android signing fixed for real + backup storage permission**:
   (1) proven via certificate fingerprints that both post-Oct-4 APKs were
   signed with *different* freshly-generated keys — AGP 9.1.0 ignores a merely
