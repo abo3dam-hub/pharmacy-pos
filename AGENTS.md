@@ -55,3 +55,12 @@ change:**
   repo secret; `versionCode` = `github.run_number` (must strictly increase).
 - Full suite must stay green: `flutter analyze` clean, `flutter test` all
   passing — never reduce test coverage to save CI time.
+- The whole-package guardrail test
+  (`test/whole_package_display_guardrail_test.dart`) uses **line-based**
+  allowlist entries for `purchase_form_page.dart` and `pos_workspace_page.dart`.
+  Any edit to those files can shift the allowlisted lines and fail CI even when
+  the code is correct — after touching them, run
+  `flutter test test/whole_package_display_guardrail_test.dart` locally and
+  fix the entry numbers before pushing (2026-10-05: missed entry broke CI #132).
+- Never claim "CI green" in a commit message without checking the actual run —
+  verify on GitHub Actions before declaring it (2026-10-05).
