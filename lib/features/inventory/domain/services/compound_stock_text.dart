@@ -1,4 +1,5 @@
 import '../../../../core/quantity/quantity.dart';
+import '../../../../core/units/package_cost.dart';
 
 /// Phase 17 business-term inventory display ("9 علب / 2 ظرف").
 ///
@@ -22,7 +23,9 @@ String compoundStockText({
   final part = partUnitName ?? '';
 
   if (partCount == null || partCount <= 0 || large.isEmpty) {
-    return '$baseUnits';
+    // No part configuration: show whole packages plus remainder parts
+    // (28/2), never the raw base-unit number (2026-10-05).
+    return formatMixedQuantity(baseUnits, unitsPerLarge ?? 1);
   }
 
   final boxes = quantity.boxes;

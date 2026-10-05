@@ -1841,6 +1841,20 @@ class AppLocalizationsAr extends AppLocalizations {
   String get posReturnButton => 'إرجاع';
 
   @override
+  String get posReturnAllButton => 'إرجاع الكل';
+
+  @override
+  String get posReturnAllTitle => 'إرجاع كامل الفاتورة';
+
+  @override
+  String posReturnAllConfirm(int count) {
+    return 'سيتم إرجاع $count من البنود بالكامل. متابعة؟';
+  }
+
+  @override
+  String get posReturnAllReason => 'إرجاع كامل';
+
+  @override
   String get posReturnReason => 'سبب المرتجع';
 
   @override

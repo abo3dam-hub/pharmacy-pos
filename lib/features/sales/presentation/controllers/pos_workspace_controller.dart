@@ -33,6 +33,10 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
   final PosCartTotalsBuilder _totalsBuilder;
   final PaymentCalculator _paymentCalculator;
 
+  /// Re-entrancy guard: a second checkout started while one is in flight
+  /// would record a duplicate invoice (2026-10-05, Ali).
+  bool _checkoutInProgress = false;
+
   static const _pageSize = 40;
 
   /// Read-only snapshot for external (presentation-layer) reads; using `state`
@@ -399,6 +403,7 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
     required String actingUserId,
     required Set<String> permissions,
   }) async {
+    if (_checkoutInProgress) return null;
     if (!permissions.contains(Perm.sell)) {
       state = state.copyWith(errorMessage: 'غير مصرح لك بالبيع');
       return null;
@@ -412,6 +417,7 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
       state = state.copyWith(errorMessage: 'البيع الآجل يتطلب تحديد عميل');
       return null;
     }
+    _checkoutInProgress = true;
     try {
       final totals = _totalsBuilder.totals(state.cart);
       final payment = _paymentCalculator.calculate(
@@ -476,6 +482,8 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
         errorMessage: 'فشل إتمام البيع: $e',
       );
       return null;
+    } finally {
+      _checkoutInProgress = false;
     }
   }
 

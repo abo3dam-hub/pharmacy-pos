@@ -42,3 +42,23 @@ String formatBaseQuantity(int quantityBase, int unitsPerLarge) {
   }
   return '$quantityBase';
 }
+
+/// Formats a STOCK quantity as whole packages plus remainder parts.
+///
+/// Unlike [formatBaseQuantity] (which falls back to the raw base-unit number
+/// when the quantity isn't a whole number of packages), this always keeps
+/// the whole package as the basis: 86 base units of a 3-per-box item becomes
+/// `28/2` (28 boxes + 2 parts). Used for stock balances and movement logs,
+/// where remainders are real — a part sale leaves a non-whole balance, and
+/// showing the raw base number (86) breaks the whole-package rule
+/// (2026-10-05, Ali's 6th report on parts).
+///
+/// A non-positive [unitsPerLarge] is treated as 1 (package == base unit).
+String formatMixedQuantity(int quantityBase, int unitsPerLarge) {
+  final upl = unitsPerLarge <= 0 ? 1 : unitsPerLarge;
+  if (upl <= 1) return '$quantityBase';
+  final packages = quantityBase ~/ upl;
+  final remainder = quantityBase % upl;
+  if (remainder == 0) return '$packages';
+  return '$packages/$remainder';
+}

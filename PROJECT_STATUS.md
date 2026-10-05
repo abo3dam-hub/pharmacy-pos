@@ -59,6 +59,15 @@ Local dev env (this machine):
   all, so writing a backup to a shared folder failed with "unexpected
   error". New deps: `permission_handler`, `device_info_plus`; helper
   `lib/core/permissions/storage_permission.dart`.
+- **2026-10-05 — Ali's Windows test round (4 issues)**: (1) return dialog is
+  sell-unit aware (box/strip) — the packages-only version silently did nothing
+  for part-sale lines; (2) return action column moved first (always visible,
+  no scroll) + new "إرجاع الكل" button for full-invoice returns in one
+  confirmed step; (3) stock balances/movement log show mixed `packages/parts`
+  (`28/2`) via new `formatMixedQuantity` — applied to movement delta/balance,
+  batch quantities, and the `compoundStockText` no-part-config fallback;
+  (4) double-tap on pay created two invoices — `_submitting` flag + spinner on
+  the sheet and `_checkoutInProgress` guard in the controller.
 - **2026-10-05 — whole-package rule, radical pass** (Ali's 4th report — parts
   still leaked in POS search stock hints, the return dialog, and dashboard
   cards that also ignored posted returns): fixed all remaining display leaks

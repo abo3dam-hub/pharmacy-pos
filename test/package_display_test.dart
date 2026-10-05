@@ -41,4 +41,23 @@ void main() {
       expect(baseUnitCostToPackageCost(60000000, 1), 60000000);
     });
   });
+
+  group('formatMixedQuantity', () {
+    test('whole packages show as a plain count', () {
+      expect(formatMixedQuantity(150, 3), '50');
+      expect(formatMixedQuantity(90, 3), '30');
+      expect(formatMixedQuantity(0, 3), '0');
+    });
+
+    test("Ali's scenario: 86 base of a 3-per-box item shows 28/2", () {
+      expect(formatMixedQuantity(86, 3), '28/2');
+      expect(formatMixedQuantity(83, 3), '27/2');
+      expect(formatMixedQuantity(85, 3), '28/1');
+    });
+
+    test('unitsPerLarge <= 1 shows raw quantity', () {
+      expect(formatMixedQuantity(86, 1), '86');
+      expect(formatMixedQuantity(86, 0), '86');
+    });
+  });
 }

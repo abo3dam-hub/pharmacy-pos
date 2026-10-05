@@ -9,6 +9,22 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 ## [Unreleased]
 
 ### Fixed
+- **Ali's Windows test round — 4 issues** (2026-10-05):
+  * Return dialog now works in the line's sell unit (box/strip): a part-sale
+    line previously hit `returnable ~/ unitsPerLarge == 0` and silently did
+    nothing — a regression from the packages-only change. The dialog names
+    the unit (e.g. "الكمية المرتجعة (شريط)").
+  * Return action column moved to the first (rightmost in RTL) position in
+    the invoice lines table — always visible without horizontal scrolling;
+    plus a new visible "إرجاع الكل" button that returns every remaining line
+    in one confirmed operation (full-invoice returns).
+  * Stock balances/movement log show mixed packages (`28/2`) via new
+    `formatMixedQuantity` — never raw base units after a part sale. Applied
+    to the movement log delta + balance, batch quantities, and the
+    `compoundStockText` fallback for items without part configuration.
+  * Double-tap on "pay" recorded two invoices: added a `_submitting` guard
+    with loading indicator on the payment sheet and a `_checkoutInProgress`
+    re-entrancy guard in `PosWorkspaceController.checkout`.
 - **Whole-package rule: radical pass + returns reflected everywhere**
   (2026-10-05, reported by Ali — 4th report on parts leaking into the UI).
   Root causes found and fixed:

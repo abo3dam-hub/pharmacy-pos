@@ -79,11 +79,12 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
     showFailureSnack(context, failure);
   }
 
-  /// Signed movement delta, shown per commercial package when it divides
-  /// evenly (e.g. a sale of 2 boxes shows -2, not -6 base units).
+  /// Signed movement delta, shown as whole packages plus remainder parts
+  /// (e.g. a sale of 2 boxes shows -2, a part sale shows -0/1, never raw
+  /// base units).
   String _fmtDelta(int signedBase) {
     final sign = signedBase < 0 ? '-' : '+';
-    return '$sign${formatBaseQuantity(signedBase.abs(), _unitsPerLarge)}';
+    return '$sign${formatMixedQuantity(signedBase.abs(), _unitsPerLarge)}';
   }
 
   /// Human batch number for a movement's batch id (movements store the id).
@@ -309,9 +310,9 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
                   DataRow(cells: [
                     DataCell(Text(b.batchNumber)),
                     DataCell(Text(
-                        formatBaseQuantity(b.originalQuantityBase, _unitsPerLarge))),
+                        formatMixedQuantity(b.originalQuantityBase, _unitsPerLarge))),
                     DataCell(Text(
-                        formatBaseQuantity(b.quantityBase, _unitsPerLarge))),
+                        formatMixedQuantity(b.quantityBase, _unitsPerLarge))),
                     DataCell(Text(Money.fromUnits(baseUnitCostToPackageCost(
                             b.unitCostMicros, _unitsPerLarge))
                         .format())),
@@ -363,7 +364,7 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
                     DataCell(Text(_fmtDate(m.createdAt))),
                     DataCell(Text(_fmtDelta(m.quantityBaseSigned))),
                     DataCell(Text(_batchNumber(state.batches, m.batchId))),
-                    DataCell(Text(formatBaseQuantity(
+                    DataCell(Text(formatMixedQuantity(
                         m.quantityBaseAfter, _unitsPerLarge))),
                   ]),
               ],

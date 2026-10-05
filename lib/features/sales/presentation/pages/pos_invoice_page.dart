@@ -83,14 +83,16 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
     final l10n = AppLocalizations.of(context);
     final userId = ref.read(authControllerProvider).user?.id;
     if (userId == null) return;
-    // The whole-package rule: the user thinks and types in commercial
-    // packages, never base units. Convert the returnable base quantity to
-    // packages for display/input, then back to base units for the command.
-    final upl = line.unitsPerLarge <= 0 ? 1 : line.unitsPerLarge;
-    final returnablePackages = line.returnableBase ~/ upl;
-    if (returnablePackages <= 0) return;
+    // The user thinks and types in the line's SELL UNIT (box / strip), never
+    // base units. A part-sale line (e.g. 1 strip of a 30-base box) must be
+    // returnable in strips — the previous packages-only version silently did
+    // nothing for such lines (2026-10-05, Ali).
+    final sellUnitBase =
+        line.unitBaseQuantity > 0 ? line.unitBaseQuantity : 1;
+    final returnableUnits = line.returnableBase ~/ sellUnitBase;
+    if (returnableUnits <= 0) return;
     final qtyController =
-        TextEditingController(text: '$returnablePackages');
+        TextEditingController(text: '$returnableUnits');
     final reasonController = TextEditingController();
     final requested = await showDialog<({int qty, String? reason})>(
       context: context,
@@ -104,7 +106,10 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
               autofocus: true,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
-                labelText: l10n.posReturnableQuantity,
+                // Name the sell unit so the cashier knows what they're
+                // counting (box / strip / …).
+                labelText:
+                    '${l10n.posReturnableQuantity} (${line.unitTypeName})',
               ),
             ),
             const SizedBox(height: AppSpacing.m),
@@ -122,7 +127,7 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
           FilledButton(
             onPressed: () {
               final qty = int.tryParse(qtyController.text.trim()) ?? 0;
-              if (qty <= 0 || qty > returnablePackages) {
+              if (qty <= 0 || qty > returnableUnits) {
                 ScaffoldMessenger.of(ctx)
                   ..hideCurrentSnackBar()
                   ..showSnackBar(
@@ -155,12 +160,64 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
             PosReturnCommand(
               returnNumber: returnNumber,
               originalInvoiceItemId: line.id,
-              // Dialog input is in packages; the domain works in base units.
-              quantityBase: requested.qty * upl,
+              // Dialog input is in sell units; the domain works in base units.
+              quantityBase: requested.qty * sellUnitBase,
               userId: userId,
               reason: requested.reason,
             ),
           );
+      _showMessage(l10n.posReturnSuccess);
+      await _reload();
+    } on AppException catch (e) {
+      _showMessage(e.failure.message);
+    } finally {
+      if (mounted) setState(() => _mutating = false);
+    }
+  }
+
+  /// Returns every still-returnable line in full (each in its own sell unit).
+  /// One shared return document number for the whole operation.
+  Future<void> _returnAll(List<PosInvoiceLineView> lines) async {
+    final l10n = AppLocalizations.of(context);
+    final userId = ref.read(authControllerProvider).user?.id;
+    if (userId == null) return;
+    final returnable =
+        lines.where((l) => l.returnableBase > 0).toList();
+    if (returnable.isEmpty) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.posReturnAllTitle),
+        content: Text(l10n.posReturnAllConfirm(returnable.length)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.posReturnButton),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _mutating = true);
+    try {
+      final repo = ref.read(salesRepositoryProvider);
+      final returnNumber = await repo.nextReturnNumber();
+      for (final line in returnable) {
+        await repo.returnSaleLine(
+          PosReturnCommand(
+            returnNumber: returnNumber,
+            originalInvoiceItemId: line.id,
+            quantityBase: line.returnableBase,
+            userId: userId,
+            reason: l10n.posReturnAllReason,
+          ),
+        );
+      }
       _showMessage(l10n.posReturnSuccess);
       await _reload();
     } on AppException catch (e) {
@@ -269,6 +326,7 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
             invoice: invoice,
             canReturn: canReturn,
             onReturnLine: _returnLine,
+            onReturnAll: () => _returnAll(invoice.lines),
           );
         },
       ),
@@ -281,11 +339,13 @@ class _InvoiceBody extends StatelessWidget {
     required this.invoice,
     required this.canReturn,
     required this.onReturnLine,
+    required this.onReturnAll,
   });
 
   final PosInvoiceView invoice;
   final bool canReturn;
   final void Function(PosInvoiceLineView line) onReturnLine;
+  final VoidCallback onReturnAll;
 
   @override
   Widget build(BuildContext context) {
@@ -300,6 +360,19 @@ class _InvoiceBody extends StatelessWidget {
             children: [
               _Header(invoice: invoice),
               const SizedBox(height: AppSpacing.m),
+              if (canReturn &&
+                  invoice.lines.any((l) => l.returnableBase > 0))
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: FilledButton.tonalIcon(
+                    onPressed: onReturnAll,
+                    icon: const Icon(Icons.undo_outlined),
+                    label: Text(l10n.posReturnAllButton),
+                  ),
+                ),
+              if (canReturn &&
+                  invoice.lines.any((l) => l.returnableBase > 0))
+                const SizedBox(height: AppSpacing.s),
               Card(
                 elevation: 0,
                 child: Padding(
@@ -310,18 +383,32 @@ class _InvoiceBody extends StatelessWidget {
                       headingRowHeight: AppLayoutTokens.tableHeaderHeight,
                       dataRowMinHeight: AppLayoutTokens.tableRowHeight,
                       columns: [
+                        // The return action is the FIRST column so it is
+                        // always visible without horizontal scrolling
+                        // (2026-10-05: Ali couldn't find it — in RTL the
+                        // first column renders rightmost).
+                        if (canReturn) DataColumn(label: Text('')),
                         DataColumn(label: Text(l10n.posLineItem)),
                         DataColumn(label: Text(l10n.posLineQty)),
                         DataColumn(label: Text(l10n.posSaleModeLabel)),
                         DataColumn(label: Text(l10n.posLineUnitPrice)),
                         DataColumn(label: Text(l10n.posLineDiscount)),
                         DataColumn(label: Text(l10n.posLineTotal)),
-                        if (canReturn) DataColumn(label: Text('')),
                       ],
                       rows: [
                         for (final line in invoice.lines)
                           DataRow(
                             cells: [
+                              if (canReturn)
+                                DataCell(
+                                  line.returnableBase > 0
+                                      ? IconButton(
+                                          tooltip: l10n.posReturnButton,
+                                          icon: const Icon(Icons.undo_outlined),
+                                          onPressed: () => onReturnLine(line),
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
                               DataCell(Text(line.itemName)),
                               DataCell(
                                 Text(
@@ -359,17 +446,6 @@ class _InvoiceBody extends StatelessWidget {
                                   style: context.appTypography.numericStrong,
                                 ),
                               ),
-                              if (canReturn) ...[
-                                DataCell(
-                                  line.returnableBase > 0
-                                      ? IconButton(
-                                          tooltip: l10n.posReturnButton,
-                                          icon: const Icon(Icons.undo_outlined),
-                                          onPressed: () => onReturnLine(line),
-                                        )
-                                      : const SizedBox.shrink(),
-                                ),
-                              ],
                             ],
                           ),
                       ],

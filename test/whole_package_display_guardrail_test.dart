@@ -7,7 +7,8 @@
 /// bare base-unit quantity.
 ///
 /// Allowed:
-///  * `formatBaseQuantity(qty, unitsPerLarge)` — the single display gateway;
+///  * `formatBaseQuantity(qty, unitsPerLarge)` / `formatMixedQuantity(qty,
+///    unitsPerLarge)` — the display gateways;
 ///  * explicit package conversion (`~/ unitsPerLarge`);
 ///  * entries in [_allowlisted] with a documented justification.
 library;
@@ -64,8 +65,9 @@ void main() {
       for (var i = 0; i < lines.length; i++) {
         final line = lines[i];
         if (!_bareBaseQty.hasMatch(line)) continue;
-        // The single sanctioned display gateway.
+        // The sanctioned display gateways.
         if (line.contains('formatBaseQuantity(')) continue;
+        if (line.contains('formatMixedQuantity(')) continue;
         // Explicit package conversion, e.g. '${q ~/ upl}'.
         if (line.contains('~/')) continue;
         final key = '${file.path}:${i + 1}';

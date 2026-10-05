@@ -1845,6 +1845,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get posReturnButton => 'Return';
 
   @override
+  String get posReturnAllButton => 'Return all';
+
+  @override
+  String get posReturnAllTitle => 'Return the whole invoice';
+
+  @override
+  String posReturnAllConfirm(int count) {
+    return 'All $count lines will be fully returned. Continue?';
+  }
+
+  @override
+  String get posReturnAllReason => 'Full return';
+
+  @override
   String get posReturnReason => 'Return Reason';
 
   @override

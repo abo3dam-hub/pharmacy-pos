@@ -3661,6 +3661,30 @@ abstract class AppLocalizations {
   /// **'إرجاع'**
   String get posReturnButton;
 
+  /// No description provided for @posReturnAllButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرجاع الكل'**
+  String get posReturnAllButton;
+
+  /// No description provided for @posReturnAllTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرجاع كامل الفاتورة'**
+  String get posReturnAllTitle;
+
+  /// No description provided for @posReturnAllConfirm.
+  ///
+  /// In ar, this message translates to:
+  /// **'سيتم إرجاع {count} من البنود بالكامل. متابعة؟'**
+  String posReturnAllConfirm(int count);
+
+  /// No description provided for @posReturnAllReason.
+  ///
+  /// In ar, this message translates to:
+  /// **'إرجاع كامل'**
+  String get posReturnAllReason;
+
   /// No description provided for @posReturnReason.
   ///
   /// In ar, this message translates to:

@@ -1283,6 +1283,10 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
   final TextEditingController _card = TextEditingController();
   PosPaymentMethod _method = PosPaymentMethod.cash;
   String? _error;
+  // Double-tap guard: the first tap starts the async checkout; without this
+  // a second tap fires a second checkout and records TWO invoices for one
+  // sale (2026-10-05, Ali).
+  bool _submitting = false;
   AppLocalizations get l10n => AppLocalizations.of(context);
 
   @override
@@ -1480,8 +1484,14 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
           ],
           const SizedBox(height: AppSpacing.l),
           FilledButton.icon(
-            onPressed: canSubmit ? _submit : null,
-            icon: const Icon(Icons.check_circle_outline),
+            onPressed: canSubmit && !_submitting ? _submit : null,
+            icon: _submitting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.check_circle_outline),
             label: Text(l10n.posPayButton),
           ),
         ],
@@ -1490,21 +1500,27 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
   }
 
   Future<void> _submit() async {
+    if (_submitting) return;
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
     final notifier = ref.read(
       posWorkspaceControllerProvider(widget.state.tabIndex).notifier,
     );
-    setState(() {
-      _error = null;
-    });
-    final success = await _completeCheckout(notifier);
-    if (!mounted) return;
-    if (success) {
-      Navigator.of(context).pop(true);
-    } else {
-      setState(
-        () => _error =
-            notifier.currentState.errorMessage ?? l10n.posInvalidPayment,
-      );
+    try {
+      final success = await _completeCheckout(notifier);
+      if (!mounted) return;
+      if (success) {
+        Navigator.of(context).pop(true);
+      } else {
+        setState(
+          () => _error =
+              notifier.currentState.errorMessage ?? l10n.posInvalidPayment,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 

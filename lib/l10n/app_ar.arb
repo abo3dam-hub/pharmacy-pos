@@ -720,6 +720,15 @@
   "posNoInvoices": "لا توجد فواتير مطابقة",
   "posReturnableQuantity": "الكمية المرتجعة",
   "posReturnButton": "إرجاع",
+  "posReturnAllButton": "إرجاع الكل",
+  "posReturnAllTitle": "إرجاع كامل الفاتورة",
+  "posReturnAllConfirm": "سيتم إرجاع {count} من البنود بالكامل. متابعة؟",
+  "@posReturnAllConfirm": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "posReturnAllReason": "إرجاع كامل",
   "posReturnReason": "سبب المرتجع",
   "posReturnSuccess": "تم استلام المرتجع بنجاح",
   "posOverReturnBlocked": "لا يمكن إرجاع أكثر من الكمية الأصلية",

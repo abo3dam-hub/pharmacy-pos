@@ -720,6 +720,15 @@
   "posNoInvoices": "No matching invoices",
   "posReturnableQuantity": "Returnable Quantity",
   "posReturnButton": "Return",
+  "posReturnAllButton": "Return all",
+  "posReturnAllTitle": "Return the whole invoice",
+  "posReturnAllConfirm": "All {count} lines will be fully returned. Continue?",
+  "@posReturnAllConfirm": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "posReturnAllReason": "Full return",
   "posReturnReason": "Return Reason",
   "posReturnSuccess": "Return processed successfully",
   "posOverReturnBlocked": "Cannot return more than original quantity",
