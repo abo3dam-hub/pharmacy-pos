@@ -1,7 +1,7 @@
 # Pharmacy POS — Project Status (living document)
 
 **Last updated:** 2026-10-05 · **Branch:** `main` · **Remote:** `abo3dam-hub/pharmacy-pos`
-**HEAD:** `a129f1f` — "Ali's four fixes: drawer auto-close, list auto-load race, stable APK signing, CI speed-ups"
+**HEAD:** `5883dad` — "CI fix: guardrail allowlist pos_workspace_page.dart 794 -> 795 (run #132)"
 
 > This is the **single current-state document**. Any future agent starts here.
 > Updated with every change (per Ali, 2026-10-04). Dated deep-dive reports are
@@ -29,7 +29,7 @@
 | L10n | `flutter gen-l10n` — `app_ar.arb` / `app_en.arb`, exact AR/EN parity |
 | Tests | **110 files · 752 tests pass** · `flutter analyze` clean |
 | CI | GitHub Actions: `analyze-test`, `perf-file-db`, `build-windows`, `build-android` (~7–8 min critical path) |
-| Last CI | Run `37209412343` (commit `a129f1f`) — in progress at time of writing |
+| Last CI | Run #133 (commit `5883dad`) — **all 4 jobs green** 2026-10-05 (run #132 failed: guardrail allowlist line drift, fixed) |
 | Windows | Portable build via `build-windows` job (`pharmacy-pos-windows` artifact) |
 | Android | **arm64-only** APK (`pharmacy-pos-android` artifact, ~45–50MB) |
 | Android signing | Stable debug keystore, generated once 2026-10-04, stored as `ANDROID_KEYSTORE_B64` repo secret, restored by CI before build |
