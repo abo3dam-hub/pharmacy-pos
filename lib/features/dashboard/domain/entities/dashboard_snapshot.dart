@@ -71,6 +71,7 @@ class LowStockItem {
     required this.barcode,
     required this.currentStockBase,
     required this.minimumStockBase,
+    this.unitsPerLarge = 1,
   });
 
   final String itemId;
@@ -78,6 +79,10 @@ class LowStockItem {
   final String? barcode;
   final int currentStockBase;
   final int minimumStockBase;
+
+  /// Base units per commercial package — display stocks via
+  /// `formatBaseQuantity` (full-package basis).
+  final int unitsPerLarge;
 }
 
 /// Batch expiring within the near-expiry window (90 days) with stock on hand.
@@ -89,6 +94,7 @@ class NearExpiryBatch {
     required this.batchNumber,
     required this.expiryDate,
     required this.quantityBase,
+    this.unitsPerLarge = 1,
   });
 
   final String itemId;
@@ -97,6 +103,10 @@ class NearExpiryBatch {
   final String? batchNumber;
   final int expiryDate;
   final int quantityBase;
+
+  /// Base units per commercial package — display [quantityBase] via
+  /// `formatBaseQuantity` (full-package basis).
+  final int unitsPerLarge;
 }
 
 /// Most recent invoice (sale or purchase) for the activity feed.

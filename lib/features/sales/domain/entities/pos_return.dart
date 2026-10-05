@@ -39,6 +39,7 @@ class PosReturnLineView {
     required this.quantityBase,
     required this.amountMicros,
     this.reason,
+    this.unitsPerLarge = 1,
   });
 
   final String id;
@@ -46,4 +47,8 @@ class PosReturnLineView {
   final int quantityBase;
   final int amountMicros;
   final String? reason;
+
+  /// Base units per commercial package — display [quantityBase] via
+  /// `formatBaseQuantity` (full-package basis).
+  final int unitsPerLarge;
 }

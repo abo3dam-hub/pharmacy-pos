@@ -11,6 +11,7 @@ class ReorderSuggestion {
     required this.daysOfCover,
     required this.suggestedQtyBase,
     required this.urgency,
+    this.unitsPerLarge = 1,
   });
 
   final String itemId;
@@ -30,6 +31,10 @@ class ReorderSuggestion {
   final int suggestedQtyBase;
 
   final ReorderUrgency urgency;
+
+  /// Base units per commercial package — display quantities via
+  /// `formatBaseQuantity` (full-package basis).
+  final int unitsPerLarge;
 }
 
 /// How urgently the item needs reordering.

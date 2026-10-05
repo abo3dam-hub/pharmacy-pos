@@ -7,6 +7,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/app_data_table.dart';
 import '../../../../core/widgets/horizontal_scroll.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -89,16 +90,19 @@ class _InventoryReportTabState extends ConsumerState<InventoryReportTab> {
           [
             ReportCell.text(i.barcode ?? ''),
             ReportCell.text(i.name),
-            ReportCell.integer(i.currentStockBase),
-            ReportCell.integer(i.minimumStockBase),
-            ReportCell.integer(i.maximumStockBase),
+            ReportCell.text(
+                formatBaseQuantity(i.currentStockBase, i.unitsPerLarge)),
+            ReportCell.text(
+                formatBaseQuantity(i.minimumStockBase, i.unitsPerLarge)),
+            ReportCell.text(
+                formatBaseQuantity(i.maximumStockBase, i.unitsPerLarge)),
             ReportCell.money(i.unitCostMicros),
             ReportCell.money(i.stockValueMicros),
           ],
       ],
       totals: [
         ReportTotalRow(l10n.reportInventoryTotalStock,
-            ReportCell.integer(report.totalStockBase)),
+            ReportCell.integer(report.totalStockPackages)),
         ReportTotalRow(
             l10n.reportInventoryValue, ReportCell.money(report.stockValueMicros)),
         ReportTotalRow(
@@ -169,7 +173,7 @@ class _InventoryReportTabState extends ConsumerState<InventoryReportTab> {
                   children: [
                     Text(
                       '${l10n.reportInventoryCount}: ${report.itemCount} · '
-                      '${l10n.reportInventoryTotalStock}: ${report.totalStockBase}',
+                      '${l10n.reportInventoryTotalStock}: ${report.totalStockPackages}',
                       style: typography.label,
                     ),
                     Text(
@@ -324,9 +328,9 @@ class _InventoryReportDataSource extends DataTableSource {
     return DataRow(cells: [
       DataCell(Text(i.barcode ?? '')),
       DataCell(Text(i.name)),
-      DataCell(Text('${i.currentStockBase}')),
-      DataCell(Text('${i.minimumStockBase}')),
-      DataCell(Text('${i.maximumStockBase}')),
+      DataCell(Text(formatBaseQuantity(i.currentStockBase, i.unitsPerLarge))),
+      DataCell(Text(formatBaseQuantity(i.minimumStockBase, i.unitsPerLarge))),
+      DataCell(Text(formatBaseQuantity(i.maximumStockBase, i.unitsPerLarge))),
       DataCell(Text(Money.fromUnits(i.unitCostMicros).format())),
       DataCell(Text(
         Money.fromUnits(i.stockValueMicros).format(),

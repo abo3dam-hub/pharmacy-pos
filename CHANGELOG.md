@@ -9,6 +9,18 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 ## [Unreleased]
 
 ### Fixed
+- **Whole-package rule enforced across every remaining view** (2026-10-05,
+  reaffirmed by Ali: all user-facing quantities and costs are in whole
+  commercial packages, never parts) — a full audit found and fixed the last
+  spots still showing base units: dashboard (low-stock and near-expiry cards),
+  expiry-alerts page, reorder-suggestions page (stock, daily rate, suggested
+  qty), purchase invoice detail (line quantity + unit cost), prescription
+  detail lines, return detail dialog lines, inventory report (rows, totals,
+  and print/PDF export), POS product-detail dialog (stock + cost), the
+  alternatives dialog (available stock), and the item dialog's min/max stock
+  fields (now entered and seeded per package). Each view now carries
+  `unitsPerLarge` and renders via `formatBaseQuantity` /
+  `baseUnitCostToPackageCost`; storage stays per base unit (COGS basis).
 - **Chained batch→purchase flow no longer double-posts stock** (2026-10-05,
   reported by Ali) — the batch dialog's "save and add invoice" now hands the
   batch details (number, expiry, bonus) to the purchase invoice instead of
@@ -32,8 +44,6 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 - **Sales history: quick return shortcut** (2026-10-05, requested by Ali) —
   every invoice card now has a "ترجيع" button that opens the invoice detail
   where per-line returns are posted.
-
-### Fixed
 - **Android navigation drawer auto-closes** (2026-10-04) — on compact/Android
   widths, tapping a drawer destination now dismisses the drawer before
   navigating (`lib/core/widgets/app_shell.dart`); previously the drawer stayed

@@ -173,6 +173,7 @@ class DashboardDao {
               ..orderBy([(i) => OrderingTerm.asc(i.currentStockBase)])
               ..limit(limit))
             .get();
+    final units = await _unitsFor({for (final row in rows) row.id});
     return [
       for (final row in rows)
         LowStockItem(
@@ -181,8 +182,18 @@ class DashboardDao {
           barcode: row.primaryBarcode,
           currentStockBase: row.currentStockBase,
           minimumStockBase: row.minimumStockBase,
+          unitsPerLarge: units[row.id] ?? 1,
         ),
     ];
+  }
+
+  /// Base units per commercial package for [ids] (1 when undefined).
+  Future<Map<String, int>> _unitsFor(Set<String> ids) async {
+    if (ids.isEmpty) return const {};
+    final unitRows = await (_db.select(_db.itemUnits)
+          ..where((u) => u.itemId.isIn(ids)))
+        .get();
+    return {for (final u in unitRows) u.itemId: u.unitsPerLarge};
   }
 
   Future<List<NearExpiryBatch>> _nearExpiry({
@@ -204,6 +215,9 @@ class DashboardDao {
               ..orderBy([OrderingTerm.asc(batches.expiryDate)])
               ..limit(limit))
             .get();
+    final itemUnits = await _unitsFor(
+      {for (final r in rows) r.readTable(items).id},
+    );
     return [
       for (final r in rows)
         NearExpiryBatch(
@@ -216,6 +230,7 @@ class DashboardDao {
           batchNumber: r.readTable(batches).batchNumber,
           expiryDate: r.readTable(batches).expiryDate!,
           quantityBase: r.readTable(batches).quantityBase,
+          unitsPerLarge: itemUnits[r.readTable(items).id] ?? 1,
         ),
     ];
   }

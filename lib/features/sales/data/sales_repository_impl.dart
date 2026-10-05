@@ -322,12 +322,19 @@ class SalesRepositoryImpl implements SalesRepository {
       _db.returnItems,
     )..where((ri) => ri.returnId.equals(returnId))).get();
     final itemNames = <String, String>{};
+    final unitsPerLarge = <String, int>{};
     if (itemRows.isNotEmpty) {
       final items = await (_db.select(
         _db.items,
       )..where((i) => i.id.isIn({for (final r in itemRows) r.itemId}))).get();
       for (final i in items) {
         itemNames[i.id] = i.tradeName;
+      }
+      final unitRows = await (_db.select(
+        _db.itemUnits,
+      )..where((u) => u.itemId.isIn({for (final r in itemRows) r.itemId}))).get();
+      for (final u in unitRows) {
+        unitsPerLarge[u.itemId] = u.unitsPerLarge;
       }
     }
 
@@ -353,6 +360,7 @@ class SalesRepositoryImpl implements SalesRepository {
             quantityBase: r.quantityBaseSigned,
             amountMicros: r.amountMicros,
             reason: r.reason,
+            unitsPerLarge: unitsPerLarge[r.itemId] ?? 1,
           ),
       ],
     );

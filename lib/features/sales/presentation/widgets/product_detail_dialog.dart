@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../l10n/app_localizations.dart';
 
 /// Read-only product detail window opened from the smart-alternatives list.
@@ -29,12 +30,18 @@ class ProductDetailDialog extends ConsumerWidget {
           math.min(480, MediaQuery.sizeOf(context).width - 64),
         ),
         child: FutureBuilder(
-          future: ref.read(inventoryRepositoryProvider).findItem(itemId),
+          future: () async {
+            final repo = ref.read(inventoryRepositoryProvider);
+            final item = await repo.findItem(itemId);
+            final units = await repo.itemUnitsFor(itemId);
+            return (item, units?.unitsPerLarge ?? 1);
+          }(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
-            final item = snapshot.data;
+            final item = snapshot.data!.$1;
+            final unitsPerLarge = snapshot.data!.$2;
             if (item == null) {
               return Center(child: Text(l10n.productDetailNotFound));
             }
@@ -57,11 +64,14 @@ class ProductDetailDialog extends ConsumerWidget {
                   ),
                   _row(
                     l10n.productDetailCost,
-                    Money.fromUnits(item.costMicros).format(),
+                    Money.fromUnits(baseUnitCostToPackageCost(
+                            item.costMicros, unitsPerLarge))
+                        .format(),
                   ),
                   _row(
                     l10n.productDetailStock,
-                    '${item.currentStockBase}',
+                    formatBaseQuantity(
+                        item.currentStockBase, unitsPerLarge),
                   ),
                 ],
               ),

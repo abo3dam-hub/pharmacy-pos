@@ -10,6 +10,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/app_data_table.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
 import '../../../../core/widgets/loading_overlay.dart';
@@ -277,8 +278,11 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                   for (final l in detail.lines)
                     DataRow(cells: [
                       DataCell(Text(l.itemName)),
-                      DataCell(Text('${l.line.quantityBase}')),
-                      DataCell(Text(Money.fromUnits(l.line.unitCostMicros).format())),
+                      DataCell(Text(
+                          formatBaseQuantity(l.line.quantityBase, l.unitsPerLarge))),
+                      DataCell(Text(Money.fromUnits(baseUnitCostToPackageCost(
+                              l.line.unitCostMicros, l.unitsPerLarge))
+                          .format())),
                       DataCell(Text(_percent(l.line.discountBasisPoints))),
                       DataCell(Text(
                         l.line.bonusQuantityBase > 0

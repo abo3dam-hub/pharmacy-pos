@@ -77,6 +77,9 @@ class _FakeInventoryRepository implements InventoryRepository {
   Future<ItemRow?> findItem(String id) async => id == item.id ? item : null;
 
   @override
+  Future<ItemUnitRow?> itemUnitsFor(String itemId) async => null;
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

@@ -8,6 +8,7 @@ import '../../../../core/di/providers.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/search_field.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/pos_invoice.dart';
@@ -634,7 +635,7 @@ class _ReturnDetailDialog extends StatelessWidget {
                     dense: true,
                     title: Text(line.itemName),
                     subtitle: Text(
-                      '${l10n.salesReturnsQuantity}: ${line.quantityBase}'
+                      '${l10n.salesReturnsQuantity}: ${formatBaseQuantity(line.quantityBase, line.unitsPerLarge)}'
                       '${(line.reason?.isNotEmpty ?? false) ? ' · ${line.reason}' : ''}',
                     ),
                     trailing: Text(

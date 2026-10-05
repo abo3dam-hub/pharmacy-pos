@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/reorder_suggestion.dart';
 import '../../domain/services/reorder_suggestions_service.dart';
@@ -162,7 +163,7 @@ class _SuggestionCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${l10n.currentStock}: ${suggestion.currentStockBase}',
+                  '${l10n.currentStock}: ${formatBaseQuantity(suggestion.currentStockBase, suggestion.unitsPerLarge)}',
                   style: theme.textTheme.bodySmall,
                 ),
                 Text(
@@ -177,11 +178,11 @@ class _SuggestionCard extends StatelessWidget {
               children: [
                 Text(
                   '${l10n.avgDailySales}: '
-                  '${suggestion.avgDailySalesBase.toStringAsFixed(1)}',
+                  '${(suggestion.avgDailySalesBase / (suggestion.unitsPerLarge <= 0 ? 1 : suggestion.unitsPerLarge)).toStringAsFixed(1)}',
                   style: theme.textTheme.bodySmall,
                 ),
                 Text(
-                  '${l10n.suggestedQty}: ${suggestion.suggestedQtyBase}',
+                  '${l10n.suggestedQty}: ${formatBaseQuantity(suggestion.suggestedQtyBase, suggestion.unitsPerLarge)}',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: color,

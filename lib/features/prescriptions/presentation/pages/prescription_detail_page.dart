@@ -8,6 +8,7 @@ import '../../../../core/errors/failure_messages.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../data/daos/prescription_dao.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -264,7 +265,7 @@ class _PrescriptionDetailPageState
                         ),
                         Expanded(
                           child: Text(
-                            '${it.quantityBase} × '
+                            '${formatBaseQuantity(it.quantityBase, it.unitsPerLarge)} × '
                             '${Money.fromUnits(it.unitPriceMicros).format()}',
                             style: typography.bodySecondary,
                           ),

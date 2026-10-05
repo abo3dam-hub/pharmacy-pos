@@ -393,6 +393,13 @@ class InventoryReport {
 
   int get itemCount => items.length;
   int get totalStockBase => items.fold(0, (s, i) => s + i.currentStockBase);
+
+  /// Total stock expressed in commercial packages (per-item floor division;
+  /// a mixed-catalog total is a KPI, not an exact count).
+  int get totalStockPackages => items.fold(
+      0,
+      (s, i) =>
+          s + i.currentStockBase ~/ (i.unitsPerLarge <= 0 ? 1 : i.unitsPerLarge));
   int get stockValueMicros =>
       items.fold(0, (s, i) => s + i.stockValueMicros);
   int get lowStockCount => items.where((i) => i.isLowStock).length;

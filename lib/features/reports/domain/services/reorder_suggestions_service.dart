@@ -71,6 +71,16 @@ class ReorderSuggestionsService {
         .get();
     final itemById = {for (final i in items) i.id: i};
 
+    final unitsPerLarge = <String, int>{};
+    if (itemById.isNotEmpty) {
+      final unitRows = await (_db.select(_db.itemUnits)
+            ..where((u) => u.itemId.isIn(itemById.keys)))
+          .get();
+      for (final u in unitRows) {
+        unitsPerLarge[u.itemId] = u.unitsPerLarge;
+      }
+    }
+
     final out = <ReorderSuggestion>[];
     for (final entry in itemById.entries) {
       final item = entry.value;
@@ -107,6 +117,7 @@ class ReorderSuggestionsService {
         daysOfCover: daysOfCover,
         suggestedQtyBase: suggested < 0 ? 0 : suggested,
         urgency: urgency,
+        unitsPerLarge: unitsPerLarge[item.id] ?? 1,
       ));
     }
 

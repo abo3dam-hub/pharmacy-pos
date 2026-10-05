@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/expiry_alert.dart';
 import '../../domain/services/expiry_alerts_service.dart';
@@ -166,7 +167,7 @@ class _AlertCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${l10n.currentStock}: ${alert.quantityBase}',
+                  '${l10n.currentStock}: ${formatBaseQuantity(alert.quantityBase, alert.unitsPerLarge)}',
                   style: theme.textTheme.bodySmall,
                 ),
                 Text(

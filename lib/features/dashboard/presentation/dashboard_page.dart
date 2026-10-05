@@ -10,6 +10,7 @@ import '../../../core/motion/app_motion.dart';
 import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/dashboard_palette.dart';
+import '../../../core/units/package_cost.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/dashboard_controller.dart';
 import '../domain/entities/dashboard_snapshot.dart';
@@ -255,8 +256,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                       _AlertRow(
                                         primary: row.name,
                                         secondary:
-                                            '${Money.fromUnits(row.currentStockBase).format()} / '
-                                            '${Money.fromUnits(row.minimumStockBase).format()}',
+                                            '${formatBaseQuantity(row.currentStockBase, row.unitsPerLarge)} / '
+                                            '${formatBaseQuantity(row.minimumStockBase, row.unitsPerLarge)}',
                                         icon: Icons.arrow_downward,
                                         iconColor: Theme.of(
                                           context,
@@ -286,7 +287,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                       _AlertRow(
                                         primary: b.itemName,
                                         secondary:
-                                            '${_date(b.expiryDate)} · ${_qty(b.quantityBase)}',
+                                            '${_date(b.expiryDate)} · ${formatBaseQuantity(b.quantityBase, b.unitsPerLarge)}',
                                         icon: Icons.event,
                                         iconColor: Theme.of(
                                           context,
@@ -381,8 +382,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     String two(int n) => n.toString().padLeft(2, '0');
     return '${two(d.hour)}:${two(d.minute)}';
   }
-
-  static String _qty(int base) => Money.fromUnits(base).format();
 }
 
 /// Colorful, tappable KPI card — fixed compact height so the strip never

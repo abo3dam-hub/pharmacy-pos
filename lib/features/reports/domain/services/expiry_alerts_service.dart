@@ -32,6 +32,7 @@ class ExpiryAlertsService {
           ..orderBy([drift.OrderingTerm.asc(batches.expiryDate)]))
         .get();
     final out = <ExpiryAlert>[];
+    final unitsPerLarge = await _unitsFor({for (final r in rows) r.readTable(items).id});
     for (final r in rows) {
       final item = r.readTable(items);
       final batch = r.readTable(batches);
@@ -51,8 +52,18 @@ class ExpiryAlertsService {
         quantityBase: batch.quantityBase,
         daysRemaining: daysRemaining,
         severity: severity,
+        unitsPerLarge: unitsPerLarge[item.id] ?? 1,
       ));
     }
     return out;
+  }
+
+  /// Base units per commercial package for [ids] (1 when undefined).
+  Future<Map<String, int>> _unitsFor(Set<String> ids) async {
+    if (ids.isEmpty) return const {};
+    final unitRows = await (_db.select(_db.itemUnits)
+          ..where((u) => u.itemId.isIn(ids)))
+        .get();
+    return {for (final u in unitRows) u.itemId: u.unitsPerLarge};
   }
 }

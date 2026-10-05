@@ -16,10 +16,18 @@ class PurchaseInvoiceView {
 
 /// One purchase line + the item's trade name (for forms and detail views).
 class PurchaseLineView {
-  const PurchaseLineView({required this.line, required this.itemName});
+  const PurchaseLineView({
+    required this.line,
+    required this.itemName,
+    this.unitsPerLarge = 1,
+  });
 
   final PurchaseInvoiceItemRow line;
   final String itemName;
+
+  /// Base units per commercial package — display [line]'s quantity/cost via
+  /// `formatBaseQuantity` / `baseUnitCostToPackageCost` (full-package basis).
+  final int unitsPerLarge;
 }
 
 /// One bonus row + bonus item name (NULL item = bonus on the purchased item).
@@ -133,10 +141,16 @@ class PurchaseDao {
           ..where((l) => l.invoiceId.equals(invoiceId))
           ..orderBy([(l) => OrderingTerm.asc(l.createdAt)]))
         .get();
-    final itemNames = await _itemNames({for (final r in rows) r.itemId});
+    final ids = {for (final r in rows) r.itemId};
+    final itemNames = await _itemNames(ids);
+    final unitsPerLarge = await _unitsPerLarge(ids);
     return [
       for (final r in rows)
-        PurchaseLineView(line: r, itemName: itemNames[r.itemId] ?? ''),
+        PurchaseLineView(
+          line: r,
+          itemName: itemNames[r.itemId] ?? '',
+          unitsPerLarge: unitsPerLarge[r.itemId] ?? 1,
+        ),
     ];
   }
 
@@ -199,6 +213,15 @@ class PurchaseDao {
     if (ids.isEmpty) return const {};
     final rows = await (_db.select(_db.items)..where((i) => i.id.isIn(ids))).get();
     return {for (final r in rows) r.id: bilingualName(r.tradeName, r.tradeNameEn ?? '')};
+  }
+
+  /// Base units per commercial package for [ids] (1 when undefined).
+  Future<Map<String, int>> _unitsPerLarge(Set<String> ids) async {
+    if (ids.isEmpty) return const {};
+    final rows = await (_db.select(_db.itemUnits)
+          ..where((u) => u.itemId.isIn(ids)))
+        .get();
+    return {for (final r in rows) r.itemId: r.unitsPerLarge};
   }
 
   static String newInvoiceId() => newId('piv');

@@ -254,8 +254,11 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     seed('custom1', Money.fromUnits(_initial.customPrice1Micros).format());
     seed('custom2', Money.fromUnits(_initial.customPrice2Micros).format());
     seed('vat', _pct(_initial.vatRateBasisPoints));
-    seed('minStock', '${_initial.minimumStockBase}');
-    seed('maxStock', '${_initial.maximumStockBase}');
+    final seedUnitsPerLarge = _initial.units?.unitsPerLarge ?? 1;
+    seed('minStock',
+        formatBaseQuantity(_initial.minimumStockBase, seedUnitsPerLarge));
+    seed('maxStock',
+        formatBaseQuantity(_initial.maximumStockBase, seedUnitsPerLarge));
     seed(
       'partialSaleMarkupBasisPoints',
       _initial.partialSaleMarkupBasisPoints != null
@@ -459,8 +462,10 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
       customPrice1Micros: custom1,
       customPrice2Micros: custom2,
       vatRateBasisPoints: vat,
-      minimumStockBase: minStock,
-      maximumStockBase: maxStock,
+      // Min/max stock are entered per commercial package (the pharmacist's
+      // unit); storage is per base unit, so scale here.
+      minimumStockBase: minStock * (unitsPerLarge <= 0 ? 1 : unitsPerLarge),
+      maximumStockBase: maxStock * (unitsPerLarge <= 0 ? 1 : unitsPerLarge),
       usageInstructions: _emptyToNull(_c('usageInstructions').text),
       generalNotes: _emptyToNull(_c('generalNotes').text),
       licenseNumber: _emptyToNull(_c('licenseNumber').text),

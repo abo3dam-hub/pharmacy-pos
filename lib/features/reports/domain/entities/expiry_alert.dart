@@ -8,6 +8,7 @@ class ExpiryAlert {
     required this.quantityBase,
     required this.daysRemaining,
     required this.severity,
+    this.unitsPerLarge = 1,
   });
 
   final String itemId;
@@ -17,6 +18,10 @@ class ExpiryAlert {
 
   /// Quantity still on hand in base units.
   final int quantityBase;
+
+  /// Base units per commercial package — display [quantityBase] via
+  /// `formatBaseQuantity` (full-package basis).
+  final int unitsPerLarge;
 
   /// Negative when already expired.
   final int daysRemaining;

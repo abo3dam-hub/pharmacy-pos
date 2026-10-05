@@ -47,6 +47,16 @@ Local dev env (this machine):
 
 ## 2. Recent changes (newest first; detail in CHANGELOG)
 
+- **2026-10-05 — whole-package rule audit** (Ali reaffirmed: every
+  user-facing quantity/cost is in whole commercial packages, never parts):
+  the last base-unit displays were found and fixed — dashboard low-stock and
+  near-expiry cards, expiry alerts, reorder suggestions (stock/rate/suggested
+  qty), purchase detail lines (qty + cost), prescription lines, return dialog
+  lines, inventory report rows/totals/print-export, POS product dialog
+  (stock + cost), alternatives dialog, and item-dialog min/max stock fields
+  (now entered per package). Each view carries `unitsPerLarge` and renders
+  via `formatBaseQuantity` / `baseUnitCostToPackageCost`; storage stays per
+  base unit (COGS basis). `flutter analyze` clean, 751/751 tests pass.
 - **2026-10-05 — Ali's device-feedback round**: (1) chained batch→purchase
   flow no longer double-posts stock — the purchase receive is the single
   posting event and reuses the user's batch number/expiry

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../core/money/money.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/pos_catalog_item.dart';
 import '../../domain/entities/smart_alternative.dart';
@@ -170,7 +171,7 @@ class AlternativesDialog extends ConsumerWidget {
                             _StockChip(inStock: alt.inStock),
                             Text(
                               '${l10n.posAvailableStock}: '
-                              '${alt.item.availableStockBase}',
+                              '${formatBaseQuantity(alt.item.availableStockBase, alt.item.unitsPerLarge)}',
                               style: Theme.of(context).textTheme.labelSmall,
                             ),
                           ],

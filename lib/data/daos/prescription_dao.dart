@@ -30,6 +30,7 @@ class PrescriptionItemView {
     required this.notes,
     required this.isDispensed,
     required this.unitPriceMicros,
+    this.unitsPerLarge = 1,
   });
 
   final String id;
@@ -45,6 +46,10 @@ class PrescriptionItemView {
 
   /// Item master selling price per base unit (money micro-units, §8).
   final int unitPriceMicros;
+
+  /// Base units per commercial package — display [quantityBase] via
+  /// `formatBaseQuantity` (full-package basis).
+  final int unitsPerLarge;
 
   int get lineTotalMicros => quantityBase * unitPriceMicros;
 }
@@ -151,7 +156,7 @@ class PrescriptionDao {
           ..orderBy([(pi) => OrderingTerm.asc(pi.createdAt)]))
         .get();
     final itemIds = {for (final it in itemRows) it.itemId};
-    final (itemNames, unitPrices) = await _itemMeta(itemIds);
+    final (itemNames, unitPrices, unitsPerLarge) = await _itemMeta(itemIds);
     return PrescriptionDetail(
       prescription: header,
       customerName: customerName,
@@ -169,22 +174,29 @@ class PrescriptionDao {
             notes: it.notes,
             isDispensed: it.isDispensed,
             unitPriceMicros: unitPrices[it.itemId] ?? 0,
+            unitsPerLarge: unitsPerLarge[it.itemId] ?? 1,
           ),
       ],
     );
   }
 
-  /// Cheap IN lookup for item trade names + master selling price (bounded).
-  Future<(Map<String, String>, Map<String, int>)> _itemMeta(Set<String> ids) async {
-    if (ids.isEmpty) return (<String, String>{}, <String, int>{});
+  /// Cheap IN lookup for item trade names + master selling price +
+  /// base-units-per-package (bounded).
+  Future<(Map<String, String>, Map<String, int>, Map<String, int>)> _itemMeta(
+      Set<String> ids) async {
+    if (ids.isEmpty) return (<String, String>{}, <String, int>{}, <String, int>{});
     final rows = await (_db.select(_db.items)..where((i) => i.id.isIn(ids))).get();
+    final unitRows = await (_db.select(_db.itemUnits)
+          ..where((u) => u.itemId.isIn(ids)))
+        .get();
     final names = <String, String>{};
     final prices = <String, int>{};
     for (final r in rows) {
       names[r.id] = bilingualName(r.tradeName, r.tradeNameEn ?? '');
       prices[r.id] = r.sellingPriceMicros;
     }
-    return (names, prices);
+    final units = {for (final u in unitRows) u.itemId: u.unitsPerLarge};
+    return (names, prices, units);
   }
 
   /// Inserts the prescription header and all its items in one atomic
