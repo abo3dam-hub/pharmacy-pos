@@ -34,6 +34,13 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   API 30+, runtime dialog below) with a clear Arabic explanation instead of a
   generic error when declined. New `permission_handler` + `device_info_plus`
   dependencies; new `lib/core/permissions/storage_permission.dart` helper.
+- **Windows build fix** (2026-10-05) — `permission_handler_windows` 0.2.2
+  still includes `<experimental/coroutine>`, which MSVC 14.51+ (VS 2026 on
+  the windows-latest CI runners) rejects with hard error STL1011/C2338.
+  Added Microsoft's documented interim opt-out
+  (`_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS`) in
+  `windows/CMakeLists.txt`, inherited by all plugin targets. All four CI
+  jobs green again.
 - **Whole-package rule enforced across every remaining view** (2026-10-05,
   reaffirmed by Ali: all user-facing quantities and costs are in whole
   commercial packages, never parts) — a full audit found and fixed the last
