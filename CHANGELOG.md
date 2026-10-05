@@ -9,6 +9,21 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 ## [Unreleased]
 
 ### Fixed
+- **CI green again + permission-gated UI shows disabled with reason**
+  (2026-10-05, Ali):
+  * Fixed 2 test failures that broke CI runs #130/#131: (1) the
+    whole-package display guardrail's line-based allowlist broke when the
+    purchase-form refactor shifted lines — allowlist updated; (2) the
+    double-pay `_submitting` spinner kept animating behind the receipt
+    dialog (it awaited the dialog), timing out `pumpAndSettle` — the
+    spinner now stops right after checkout, before the receipt shows.
+  * New `PermissionGate` widget (`lib/core/widgets/permission_gate.dart`):
+    permission-restricted controls now render **disabled with a tooltip
+    naming the missing permission** instead of hiding entirely (Ali's
+    request). State still gates visibility (e.g. void stays hidden for
+    returned invoices). Applied to the invoice detail page (void icon,
+    return-all button, per-line return) and the POS return sheet's void
+    button; new `permissionRequired` l10n key (AR/EN).
 - **Stale-UI audit — comprehensive pass** (2026-10-05, requested by Ali
   after the void-icon bug):
   * **Void icon never appeared (real bug):** `_load()` in the invoice detail

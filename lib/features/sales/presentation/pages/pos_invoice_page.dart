@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/permission_codes.dart';
+import '../../../../core/widgets/permission_gate.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/money/money.dart';
@@ -70,9 +71,6 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
         );
     }
   }
-
-  bool _has(String code) =>
-      ref.read(authControllerProvider).permissions.contains(code);
 
   void _showMessage(String message) {
     if (!mounted) return;
@@ -292,7 +290,6 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final invoice = _invoice;
-    final canReturn = _has(Perm.salesReturnCreate) || _has(Perm.returnProducts);
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.posInvoiceTitle),
@@ -306,11 +303,15 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
                   },
             icon: const Icon(Icons.print_outlined),
           ),
-          if (invoice != null && invoice.isVoidable && _has(Perm.salesVoid))
-            IconButton(
-              tooltip: l10n.posVoidInvoice,
-              onPressed: _mutating ? null : _voidInvoice,
-              icon: const Icon(Icons.delete_outline),
+          if (invoice != null && invoice.isVoidable)
+            PermissionGate.single(
+              permission: Perm.salesVoid,
+              builder: (context, granted, reason) => IconButton(
+                tooltip: granted ? l10n.posVoidInvoice : reason,
+                onPressed:
+                    granted && !_mutating ? _voidInvoice : null,
+                icon: const Icon(Icons.delete_outline),
+              ),
             ),
         ],
       ),
@@ -326,7 +327,6 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
           }
           return _InvoiceBody(
             invoice: invoice,
-            canReturn: canReturn,
             onReturnLine: _returnLine,
             onReturnAll: () => _returnAll(invoice.lines),
           );
@@ -339,13 +339,11 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
 class _InvoiceBody extends StatelessWidget {
   const _InvoiceBody({
     required this.invoice,
-    required this.canReturn,
     required this.onReturnLine,
     required this.onReturnAll,
   });
 
   final PosInvoiceView invoice;
-  final bool canReturn;
   final void Function(PosInvoiceLineView line) onReturnLine;
   final VoidCallback onReturnAll;
 
@@ -362,18 +360,29 @@ class _InvoiceBody extends StatelessWidget {
             children: [
               _Header(invoice: invoice),
               const SizedBox(height: AppSpacing.m),
-              if (canReturn &&
-                  invoice.lines.any((l) => l.returnableBase > 0))
+              // State gates visibility (only when something is returnable);
+              // permission gates the enabled state (disabled with reason).
+              if (invoice.lines.any((l) => l.returnableBase > 0))
                 Align(
                   alignment: AlignmentDirectional.centerStart,
-                  child: FilledButton.tonalIcon(
-                    onPressed: onReturnAll,
-                    icon: const Icon(Icons.undo_outlined),
-                    label: Text(l10n.posReturnAllButton),
+                  child: PermissionGate(
+                    permissions: const [
+                      Perm.salesReturnCreate,
+                      Perm.returnProducts,
+                    ],
+                    builder: (context, granted, reason) {
+                      final button = FilledButton.tonalIcon(
+                        onPressed: granted ? onReturnAll : null,
+                        icon: const Icon(Icons.undo_outlined),
+                        label: Text(l10n.posReturnAllButton),
+                      );
+                      return granted
+                          ? button
+                          : Tooltip(message: reason, child: button);
+                    },
                   ),
                 ),
-              if (canReturn &&
-                  invoice.lines.any((l) => l.returnableBase > 0))
+              if (invoice.lines.any((l) => l.returnableBase > 0))
                 const SizedBox(height: AppSpacing.s),
               Card(
                 elevation: 0,
@@ -388,8 +397,12 @@ class _InvoiceBody extends StatelessWidget {
                         // The return action is the FIRST column so it is
                         // always visible without horizontal scrolling
                         // (2026-10-05: Ali couldn't find it — in RTL the
-                        // first column renders rightmost).
-                        if (canReturn) DataColumn(label: Text('')),
+                        // first column renders rightmost). Shown whenever a
+                        // line is returnable (state); the icon itself is
+                        // permission-gated (disabled with reason).
+                        if (invoice.lines
+                            .any((l) => l.returnableBase > 0))
+                          DataColumn(label: Text('')),
                         DataColumn(label: Text(l10n.posLineItem)),
                         DataColumn(label: Text(l10n.posLineQty)),
                         DataColumn(label: Text(l10n.posSaleModeLabel)),
@@ -401,13 +414,27 @@ class _InvoiceBody extends StatelessWidget {
                         for (final line in invoice.lines)
                           DataRow(
                             cells: [
-                              if (canReturn)
+                              if (invoice.lines
+                                  .any((l) => l.returnableBase > 0))
                                 DataCell(
                                   line.returnableBase > 0
-                                      ? IconButton(
-                                          tooltip: l10n.posReturnButton,
-                                          icon: const Icon(Icons.undo_outlined),
-                                          onPressed: () => onReturnLine(line),
+                                      ? PermissionGate(
+                                          permissions: const [
+                                            Perm.salesReturnCreate,
+                                            Perm.returnProducts,
+                                          ],
+                                          builder: (context, granted,
+                                                  reason) =>
+                                              IconButton(
+                                            tooltip: granted
+                                                ? l10n.posReturnButton
+                                                : reason,
+                                            icon: const Icon(
+                                                Icons.undo_outlined),
+                                            onPressed: granted
+                                                ? () => onReturnLine(line)
+                                                : null,
+                                          ),
                                         )
                                       : const SizedBox.shrink(),
                                 ),

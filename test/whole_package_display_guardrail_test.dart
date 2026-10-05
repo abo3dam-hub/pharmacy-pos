@@ -22,11 +22,11 @@ import 'package:flutter_test/flutter_test.dart';
 const Map<String, String> _allowlisted = {
   // Purchase form: deliberate base-unit ENTRY mode (segmented toggle labeled
   // with the unit name). Defaults to package mode when unitsPerLarge > 1.
-  'lib/features/purchases/presentation/pages/purchase_form_page.dart:554':
+  'lib/features/purchases/presentation/pages/purchase_form_page.dart:569':
       'base-unit entry mode fallback of _displayQty (explicit user toggle)',
   // Purchase form: bonus quantity INPUT field. Bonus entry stays in base
   // units by design (2026-09-24 decision); this is an editor, not a display.
-  'lib/features/purchases/presentation/pages/purchase_form_page.dart:1228':
+  'lib/features/purchases/presentation/pages/purchase_form_page.dart:1243':
       'bonus quantity input field (editor, not display)',
   // POS search row: part-sale CONFIGURATION label ("شريط 10×3 = 30").
   // Describes the item's packaging structure, not a transacted quantity.

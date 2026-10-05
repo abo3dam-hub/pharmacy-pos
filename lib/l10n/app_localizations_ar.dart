@@ -2045,6 +2045,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get posVoidInvoice => 'إلغاء الفاتورة';
 
   @override
+  String permissionRequired(Object name) {
+    return 'يتطلب صلاحية: $name';
+  }
+
+  @override
   String get posInvoiceVoided => 'تم إلغاء الفاتورة';
 
   @override

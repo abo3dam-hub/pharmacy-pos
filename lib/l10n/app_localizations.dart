@@ -4057,6 +4057,12 @@ abstract class AppLocalizations {
   /// **'إلغاء الفاتورة'**
   String get posVoidInvoice;
 
+  /// No description provided for @permissionRequired.
+  ///
+  /// In ar, this message translates to:
+  /// **'يتطلب صلاحية: {name}'**
+  String permissionRequired(Object name);
+
   /// No description provided for @posInvoiceVoided.
   ///
   /// In ar, this message translates to:

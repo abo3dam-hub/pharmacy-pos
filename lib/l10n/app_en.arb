@@ -791,6 +791,7 @@
   "posChooseActiveRx": "Choose active prescription",
   "posReturnSelectInvoiceHint": "Choose an invoice from the list and set the quantities to return",
   "posVoidInvoice": "Void invoice",
+  "permissionRequired": "Requires permission: {name}",
   "posInvoiceVoided": "Invoice voided",
   "posVoidInvoiceFailed": "Could not void invoice",
   "posVoidInvoiceConfirm": "The invoice will be voided and its stock restored. Continue?",

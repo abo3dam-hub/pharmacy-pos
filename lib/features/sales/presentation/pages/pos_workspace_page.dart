@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_sections.dart';
 import '../../../../core/constants/permission_codes.dart';
+import '../../../../core/widgets/permission_gate.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/money/money.dart';
@@ -1509,37 +1510,41 @@ class _PaymentSheetBodyState extends ConsumerState<_PaymentSheetBody> {
       posWorkspaceControllerProvider(widget.state.tabIndex).notifier,
     );
     try {
-      final success = await _completeCheckout(notifier);
+      final outcome = await _runCheckout(notifier);
       if (!mounted) return;
-      if (success) {
-        Navigator.of(context).pop(true);
-      } else {
+      if (outcome == null) {
         setState(
           () => _error =
               notifier.currentState.errorMessage ?? l10n.posInvalidPayment,
         );
+        return;
       }
+      // Checkout is done — stop the spinner BEFORE showing the receipt.
+      // (Previously _submitting stayed true while the receipt dialog was
+      // open, leaving an infinite animation behind it.)
+      setState(() => _submitting = false);
+      await showDialog<void>(
+        context: context,
+        builder: (_) => _ReceiptDialog(invoice: outcome.invoice),
+      );
+      notifier.dismissLastSale();
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
 
-  Future<bool> _completeCheckout(PosWorkspaceController notifier) async {
+  /// Runs the checkout transaction only (no dialogs). Returns null when the
+  /// user is gone or the checkout failed (error message on the controller).
+  Future<PosSaleOutcome?> _runCheckout(
+      PosWorkspaceController notifier) async {
     final userId = ref.read(authControllerProvider).user?.id;
-    if (userId == null) return false;
-    final outcome = await notifier.checkout(
+    if (userId == null) return null;
+    return notifier.checkout(
       actingUserId: userId,
       permissions: ref.read(authControllerProvider).permissions,
     );
-    if (outcome == null) return false;
-    if (mounted) {
-      await showDialog<void>(
-        context: context,
-        builder: (_) => _ReceiptDialog(invoice: outcome.invoice),
-      );
-    }
-    notifier.dismissLastSale();
-    return true;
   }
 }
 
@@ -2168,16 +2173,20 @@ class _ReturnDetailsState extends ConsumerState<_ReturnDetails> {
             icon: const Icon(Icons.swap_horiz),
             label: Text(l10n.posReturnButton),
           ),
-          if (invoice.isVoidable &&
-              ref
-                  .read(authControllerProvider)
-                  .permissions
-                  .contains(Perm.salesVoid)) ...[
+          if (invoice.isVoidable) ...[
             const SizedBox(height: AppSpacing.s),
-            OutlinedButton.icon(
-              onPressed: () => _submitVoid(invoice),
-              icon: const Icon(Icons.cancel_outlined),
-              label: Text(l10n.posVoidInvoice),
+            PermissionGate.single(
+              permission: Perm.salesVoid,
+              builder: (context, granted, reason) {
+                final button = OutlinedButton.icon(
+                  onPressed: granted ? () => _submitVoid(invoice) : null,
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: Text(l10n.posVoidInvoice),
+                );
+                return granted
+                    ? button
+                    : Tooltip(message: reason, child: button);
+              },
             ),
           ],
         ],

@@ -791,6 +791,7 @@
   "posChooseActiveRx": "اختر الوصفة النشطة",
   "posReturnSelectInvoiceHint": "اختر فاتورة من القائمة وحدد الكميات المرتجعة",
   "posVoidInvoice": "إلغاء الفاتورة",
+  "permissionRequired": "يتطلب صلاحية: {name}",
   "posInvoiceVoided": "تم إلغاء الفاتورة",
   "posVoidInvoiceFailed": "تعذر إلغاء الفاتورة",
   "posVoidInvoiceConfirm": "سيتم إلغاء الفاتورة وإرجاع الكميات للمخزون. هل أنت متأكد؟",

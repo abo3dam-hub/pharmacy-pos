@@ -2051,6 +2051,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get posVoidInvoice => 'Void invoice';
 
   @override
+  String permissionRequired(Object name) {
+    return 'Requires permission: $name';
+  }
+
+  @override
   String get posInvoiceVoided => 'Invoice voided';
 
   @override
