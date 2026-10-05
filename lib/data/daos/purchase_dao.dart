@@ -32,13 +32,21 @@ class PurchaseLineView {
 
 /// One bonus row + bonus item name (NULL item = bonus on the purchased item).
 class PurchaseBonusView {
-  const PurchaseBonusView({required this.bonus, required this.itemName});
+  const PurchaseBonusView({
+    required this.bonus,
+    required this.itemName,
+    this.unitsPerLarge = 1,
+  });
 
   final PurchaseBonusRow bonus;
 
   /// Trade name of the bonus item, or null when the bonus applies to the line's
   /// own purchased item.
   final String? itemName;
+
+  /// Base units per commercial package of the bonus item (1 when unknown) —
+  /// bonus quantities are stored in base units but displayed in packages.
+  final int unitsPerLarge;
 }
 
 /// Full purchase detail: header, supplier, lines and bonus rows.
@@ -165,11 +173,13 @@ class PurchaseDao {
         .get();
     final itemIds = {for (final r in rows) if (r.itemId != null) r.itemId!};
     final itemNames = await _itemNames(itemIds);
+    final units = await _unitsPerLarge(itemIds);
     return [
       for (final r in rows)
         PurchaseBonusView(
           bonus: r,
           itemName: r.itemId != null ? itemNames[r.itemId] : null,
+          unitsPerLarge: r.itemId != null ? units[r.itemId] ?? 1 : 1,
         ),
     ];
   }

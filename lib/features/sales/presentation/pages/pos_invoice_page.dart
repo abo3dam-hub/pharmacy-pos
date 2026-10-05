@@ -9,6 +9,7 @@ import '../../../../core/pdf/pdf_arabic.dart';
 import '../../../../core/pdf/pdf_documents.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/models/enums.dart';
 import '../../domain/entities/pos_invoice.dart';
@@ -82,9 +83,14 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
     final l10n = AppLocalizations.of(context);
     final userId = ref.read(authControllerProvider).user?.id;
     if (userId == null) return;
-    final returnable = line.returnableBase;
-    if (returnable <= 0) return;
-    final qtyController = TextEditingController(text: '$returnable');
+    // The whole-package rule: the user thinks and types in commercial
+    // packages, never base units. Convert the returnable base quantity to
+    // packages for display/input, then back to base units for the command.
+    final upl = line.unitsPerLarge <= 0 ? 1 : line.unitsPerLarge;
+    final returnablePackages = line.returnableBase ~/ upl;
+    if (returnablePackages <= 0) return;
+    final qtyController =
+        TextEditingController(text: '$returnablePackages');
     final reasonController = TextEditingController();
     final requested = await showDialog<({int qty, String? reason})>(
       context: context,
@@ -116,7 +122,7 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
           FilledButton(
             onPressed: () {
               final qty = int.tryParse(qtyController.text.trim()) ?? 0;
-              if (qty <= 0 || qty > returnable) {
+              if (qty <= 0 || qty > returnablePackages) {
                 ScaffoldMessenger.of(ctx)
                   ..hideCurrentSnackBar()
                   ..showSnackBar(
@@ -149,7 +155,8 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
             PosReturnCommand(
               returnNumber: returnNumber,
               originalInvoiceItemId: line.id,
-              quantityBase: requested.qty,
+              // Dialog input is in packages; the domain works in base units.
+              quantityBase: requested.qty * upl,
               userId: userId,
               reason: requested.reason,
             ),
@@ -320,7 +327,10 @@ class _InvoiceBody extends StatelessWidget {
                                 Text(
                                   line.sellUnitQuantity != null
                                       ? '${line.sellUnitQuantity} ${line.unitTypeName}'
-                                      : '${line.quantityBaseSigned}',
+                                      : formatBaseQuantity(
+                                          line.quantityBaseSigned,
+                                          line.unitsPerLarge,
+                                        ),
                                 ),
                               ),
                               DataCell(Text(_saleModeLabel(l10n, line))),

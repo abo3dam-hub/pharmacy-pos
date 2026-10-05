@@ -2978,9 +2978,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get reportMovementCount => 'عدد الحركات';
 
   @override
-  String get reportMovementQty => 'الكمية';
-
-  @override
   String get reportMovementTotal => 'المبلغ';
 
   @override

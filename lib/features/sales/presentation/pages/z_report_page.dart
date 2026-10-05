@@ -167,7 +167,7 @@ class _ReportBody extends StatelessWidget {
                 title: l10n.zReportSalesSummary,
                 rows: [
                   _Row(l10n.zReportInvoicesCount, '${report.invoiceCount}'),
-                  _Row(l10n.zReportUnitsSold, '${report.unitsSold}'),
+                  _Row(l10n.zReportUnitsSold, '${report.unitsSoldPackages}'),
                   _Row(l10n.commonSubtotal, _m(report.subtotalMicros)),
                   if (report.discountMicros != 0)
                     _Row(l10n.commonDiscount,

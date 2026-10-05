@@ -59,6 +59,19 @@ Local dev env (this machine):
   all, so writing a backup to a shared folder failed with "unexpected
   error". New deps: `permission_handler`, `device_info_plus`; helper
   `lib/core/permissions/storage_permission.dart`.
+- **2026-10-05 — whole-package rule, radical pass** (Ali's 4th report — parts
+  still leaked in POS search stock hints, the return dialog, and dashboard
+  cards that also ignored posted returns): fixed all remaining display leaks
+  (POS search rows, return dialog in/out in packages, invoice/history/receipt
+  fallbacks, POS return note, purchase bonuses, Z-Report page/PDF, sales
+  report) and made the dashboard return-aware — `todayTotalMicros` = ledger
+  net revenue, `todayProfitMicros` = ledger gross profit, `todayUnitsSold` =
+  net whole packages via new `ZReportDao.netPackagesSold` (sale returns
+  subtracted). Removed the movements-summary quantity column (cross-item sums
+  can't be packages). Added CI guardrail
+  `test/whole_package_display_guardrail_test.dart` that fails the build on
+  any raw `*Base` quantity interpolated in presentation code.
+  `flutter analyze` clean, 754/754 tests pass.
 - **2026-10-05 — whole-package rule audit** (Ali reaffirmed: every
   user-facing quantity/cost is in whole commercial packages, never parts):
   the last base-unit displays were found and fixed — dashboard low-stock and

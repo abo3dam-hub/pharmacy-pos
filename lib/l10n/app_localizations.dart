@@ -5905,12 +5905,6 @@ abstract class AppLocalizations {
   /// **'عدد الحركات'**
   String get reportMovementCount;
 
-  /// No description provided for @reportMovementQty.
-  ///
-  /// In ar, this message translates to:
-  /// **'الكمية'**
-  String get reportMovementQty;
-
   /// No description provided for @reportMovementTotal.
   ///
   /// In ar, this message translates to:

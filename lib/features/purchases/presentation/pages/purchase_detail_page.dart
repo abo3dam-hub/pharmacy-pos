@@ -286,7 +286,7 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                       DataCell(Text(_percent(l.line.discountBasisPoints))),
                       DataCell(Text(
                         l.line.bonusQuantityBase > 0
-                            ? '+${l.line.bonusQuantityBase}'
+                            ? '+${formatBaseQuantity(l.line.bonusQuantityBase, l.unitsPerLarge)}'
                             : '',
                       )),
                       DataCell(Text(Money.fromUnits(l.line.lineTotalMicros).format())),
@@ -313,7 +313,8 @@ class _PurchaseDetailPageState extends ConsumerState<PurchaseDetailPage> {
                     DataRow(cells: [
                       DataCell(Text(b.itemName ?? '')),
                       DataCell(Text(_bonusLabel(l10n, b.bonus.bonusType))),
-                      DataCell(Text('${b.bonus.bonusQuantityBase}')),
+                      DataCell(Text(
+                          formatBaseQuantity(b.bonus.bonusQuantityBase, b.unitsPerLarge))),
                     ]),
                 ],
               ),

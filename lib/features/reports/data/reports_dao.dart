@@ -274,9 +274,10 @@ name: bilingualName(row.read<String>('name'),
         iv.card_micros AS card,
         iv.credit_micros AS credit,
         iv.profit_micros AS profit,
-        COALESCE(SUM(CASE WHEN ii.quantity_base_signed > 0 THEN ii.quantity_base_signed ELSE 0 END), 0) AS units
+        COALESCE(SUM(CAST(CASE WHEN ii.quantity_base_signed > 0 THEN ii.quantity_base_signed ELSE 0 END / COALESCE(u.upl, 1) AS INTEGER)), 0) AS units
       FROM sales_invoices iv
       LEFT JOIN sales_invoice_items ii ON ii.invoice_id = iv.id
+      LEFT JOIN (SELECT item_id, MAX(units_per_large) AS upl FROM item_units GROUP BY item_id) u ON u.item_id = ii.item_id
       WHERE $filter
       GROUP BY iv.id
       ''',

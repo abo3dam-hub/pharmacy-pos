@@ -20,6 +20,7 @@ class ZReport {
     required this.cardMicros,
     required this.creditMicros,
     required this.unitsSold,
+    required this.unitsSoldPackages,
     required this.voidCount,
     required this.voidTotalMicros,
     required this.returnsCount,
@@ -46,7 +47,13 @@ class ZReport {
   final int cashMicros;
   final int cardMicros;
   final int creditMicros;
+
+  /// Gross base units sold (legacy; kept for backward compatibility).
   final int unitsSold;
+
+  /// Gross whole commercial packages sold — the display figure for
+  /// "units sold" (the whole-package rule: never show base units).
+  final int unitsSoldPackages;
 
   final int voidCount;
   final int voidTotalMicros;

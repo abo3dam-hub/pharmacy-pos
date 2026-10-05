@@ -364,7 +364,7 @@ class ZReportPdfService {
         children: [
           _docs.heading(font, 'ملخص المبيعات', size: 11),
           _docs.fieldRow(font, 'عدد الفواتير', '${report.invoiceCount}'),
-          _docs.fieldRow(font, 'الوحدات المباعة', '${report.unitsSold}'),
+          _docs.fieldRow(font, 'الوحدات المباعة', '${report.unitsSoldPackages}'),
           _docs.fieldRow(
               font, 'المجموع قبل الخصم', PdfDocuments.money(report.subtotalMicros)),
           _docs.fieldRow(font, 'الخصم', PdfDocuments.money(report.discountMicros)),

@@ -77,8 +77,16 @@ class DashboardController extends StateNotifier<DashboardViewState> {
         fromMillis: from.millisecondsSinceEpoch,
         toMillis: now.millisecondsSinceEpoch,
         todayInvoiceCount: today.invoiceCount,
-        todayUnitsSold: today.unitsSold,
-        todayTotalMicros: today.totalMicros,
+        // Net of returns, in whole commercial packages — the dashboard cards
+        // must reflect posted returns (2026-10-05), so they read the
+        // accounting-correct figures, not the gross invoice sums.
+        todayUnitsSold: await _zReportDao.netPackagesSold(
+          fromMillis: from.millisecondsSinceEpoch,
+          toMillis: now.millisecondsSinceEpoch,
+          userId: userId,
+        ),
+        todayTotalMicros: statement.netRevenueMicros,
+        todayProfitMicros: statement.grossProfitMicros,
         todayPaidMicros: today.paidMicros,
         financials: financials,
       );

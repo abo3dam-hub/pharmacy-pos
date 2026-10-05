@@ -2989,9 +2989,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reportMovementCount => 'Movements';
 
   @override
-  String get reportMovementQty => 'Quantity';
-
-  @override
   String get reportMovementTotal => 'Total';
 
   @override

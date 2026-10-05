@@ -231,8 +231,10 @@ class _InventoryReportTabState extends ConsumerState<InventoryReportTab> {
                             DataColumn(
                                 numeric: true,
                                 label: Text(l10n.reportMovementCount)),
-                            DataColumn(
-                                numeric: true, label: Text(l10n.reportMovementQty)),
+                            // No quantity column: movements are aggregated
+                            // across items with different package sizes, so a
+                            // summed base-unit figure can never be expressed
+                            // in whole packages (whole-package rule).
                             DataColumn(
                                 numeric: true, label: Text(l10n.reportMovementTotal)),
                           ],
@@ -241,7 +243,6 @@ class _InventoryReportTabState extends ConsumerState<InventoryReportTab> {
                               DataRow(cells: [
                                 DataCell(Text(_movementLabel(m.movementType))),
                                 DataCell(Text('${m.movementCount}')),
-                                DataCell(Text('${m.quantityBaseSigned}')),
                                 DataCell(Text(Money.fromUnits(m.totalMicros).format())),
                               ]),
                           ],

@@ -180,6 +180,7 @@ void main() {
           cardMicros: 1000000,
           creditMicros: 1100000,
           unitsSold: 7,
+          unitsSoldPackages: 7,
           voidCount: 1,
           voidTotalMicros: 50000,
           returnsCount: 1,

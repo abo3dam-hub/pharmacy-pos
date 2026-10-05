@@ -8,6 +8,7 @@ import '../../../../core/di/providers.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/app_rtl_icons.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../core/widgets/search_field.dart';
@@ -469,7 +470,8 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                   child: Text(
                     line.sellUnitQuantity != null
                         ? '${line.sellUnitQuantity} ${line.unitTypeName}'
-                        : '${line.quantityBaseSigned}',
+                        : formatBaseQuantity(
+                            line.quantityBaseSigned, line.unitsPerLarge),
                     style: context.appTypography.labelSmall,
                     textAlign: TextAlign.center,
                   ),

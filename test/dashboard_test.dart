@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pharmacy_pos/domain/services/financial_posting_service.dart';
 import 'package:pharmacy_pos/features/dashboard/application/dashboard_controller.dart';
 import 'package:pharmacy_pos/features/dashboard/data/dashboard_dao.dart';
 import 'package:pharmacy_pos/features/reports/data/reports_dao.dart';
@@ -23,6 +24,36 @@ void main() {
   });
 
   tearDown(() async => db.close());
+
+  Future<void> postSaleJournal({
+    required String refId,
+    required int totalMicros,
+    required int cogsMicros,
+    required int atMillis,
+  }) {
+    // The dashboard summary cards read the ledger (income statement), so the
+    // test must post the sale's journal exactly like SaleService does.
+    return FinancialPostingService().postJournalEntry(
+      db,
+      refType: JournalReferenceType.sale,
+      refId: refId,
+      entryDate: atMillis,
+      description: 'بيع اختبار',
+      lines: [
+        JournalLineDraft(
+            accountCode: SystemAccountCode.cash, debitMicros: totalMicros),
+        JournalLineDraft(
+            accountCode: SystemAccountCode.salesRevenue,
+            creditMicros: totalMicros),
+        JournalLineDraft(
+            accountCode: SystemAccountCode.costOfGoodsSold,
+            debitMicros: cogsMicros),
+        JournalLineDraft(
+            accountCode: SystemAccountCode.inventory, creditMicros: cogsMicros),
+      ],
+      createdBy: 'user_cashier',
+    );
+  }
 
   Future<void> insertSale({
     required String number,
@@ -73,6 +104,12 @@ void main() {
           ),
           mode: InsertMode.insertOrIgnore,
         );
+    await postSaleJournal(
+      refId: 'sale_$number',
+      totalMicros: totalMicros,
+      cogsMicros: totalMicros - profitMicros,
+      atMillis: atMillis,
+    );
   }
 
   test('controller loads a real snapshot with today totals', () async {
@@ -92,6 +129,106 @@ void main() {
     expect(snapshot.todayProfitMicros, 20000);
     expect(snapshot.activeItems, 1);
   });
+
+  test(
+    'dashboard cards are net of returns and count whole packages '
+    '(Ali 2026-10-05: 2 boxes of a 3-part item, 1 box returned)',
+    () async {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await awaitCategory(db);
+      final itemId = await insertItem(db, barcode: '6291041500999');
+      // The item's commercial package holds 3 base units.
+      await db.into(db.itemUnits).insert(
+            ItemUnitsCompanion.insert(
+              id: 'iu_test_1',
+              itemId: itemId,
+              baseUnitId: 'u_base',
+              largeUnitId: 'u_large',
+              unitsPerLarge: const Value(3),
+            ),
+          );
+      // Sale: 2 packages = 6 base units, 47000 revenue, 36000 COGS.
+      await insertSale(
+        number: 'S-2',
+        totalMicros: 47000,
+        profitMicros: 11000,
+        atMillis: now,
+      );
+      await db.into(db.salesInvoiceItems).insert(
+            SalesInvoiceItemsCompanion.insert(
+              id: 'sii_test_1',
+              invoiceId: 'sale_S-2',
+              itemId: itemId,
+              batchId: 'bat_test_1',
+              unitTypeId: 'u_large',
+              quantityBaseSigned: 6,
+              unitPriceMicros: 23500,
+              lineTotalMicros: const Value(47000),
+              createdAt: now,
+            ),
+          );
+      // Return: 1 package = 3 base units.
+      await db.into(db.returns).insert(
+            ReturnsCompanion.insert(
+              id: 'ret_test_1',
+              returnNumber: 'RT-TEST-1',
+              type: ReturnType.sale_return,
+              originalInvoiceId: 'sale_S-2',
+              originalInvoiceType: 'sale',
+              userId: 'user_cashier',
+              totalMicros: const Value(23500),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await db.into(db.returnItems).insert(
+            ReturnItemsCompanion.insert(
+              id: 'ri_test_1',
+              returnId: 'ret_test_1',
+              originalInvoiceItemId: 'sii_test_1',
+              itemId: itemId,
+              batchId: 'bat_test_1',
+              quantityBaseSigned: 3,
+              unitCostMicros: 18000,
+              amountMicros: 23500,
+              createdAt: now,
+            ),
+          );
+      // The return's ledger postings (like ReturnService writes them).
+      await FinancialPostingService().postJournalEntry(
+        db,
+        refType: JournalReferenceType.return_invoice,
+        refId: 'ret_test_1',
+        entryDate: now,
+        description: 'مرتجع اختبار',
+        lines: [
+          JournalLineDraft(
+              accountCode: SystemAccountCode.salesReturns,
+              debitMicros: 23500),
+          JournalLineDraft(
+              accountCode: SystemAccountCode.cash, creditMicros: 23500),
+          JournalLineDraft(
+              accountCode: SystemAccountCode.inventory, debitMicros: 18000),
+          JournalLineDraft(
+              accountCode: SystemAccountCode.costOfGoodsSold,
+              creditMicros: 18000),
+        ],
+        createdBy: 'user_cashier',
+      );
+
+      final failure = await controller.load();
+
+      expect(failure, isNull);
+      final snapshot = controller.state.snapshot!;
+      // Net revenue 47000 − 23500, net profit (47000−23500) − (36000−18000).
+      expect(snapshot.todayTotalMicros, 23500);
+      expect(snapshot.todayProfitMicros, 5500);
+      // Net packages: 2 sold − 1 returned (never base units: not 6, not 3).
+      expect(snapshot.todayUnitsSold, 1);
+      // The invoice itself still exists (returns don't delete invoices).
+      expect(snapshot.todayInvoiceCount, 1);
+    },
+  );
 
   test(
     'low-stock and out-of-stock counters are derived from policy bounds',

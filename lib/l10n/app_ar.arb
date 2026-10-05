@@ -1116,7 +1116,6 @@
   "reportInventoryMovement": "حركة المخزون",
   "reportMovementType": "النوع",
   "reportMovementCount": "عدد الحركات",
-  "reportMovementQty": "الكمية",
   "reportMovementTotal": "المبلغ",
   "reportLostSalesCount": "عدد الطلبات",
   "reportLostSalesQty": "الكمية المطلوبة",

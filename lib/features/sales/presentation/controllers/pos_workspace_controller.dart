@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/data_grid/page_request.dart';
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/util/ids.dart';
 import '../../domain/entities/pos_cart.dart';
 import '../../domain/entities/pos_catalog_item.dart';
@@ -580,7 +581,8 @@ class PosWorkspaceController extends StateNotifier<PosWorkspaceState> {
       ));
       state = state.copyWith(
         returnedLinesNote:
-            'تم إرجاع ${outcome.restoredQuantityBase} وحدة وإعادتها للدفعة الأصلية',
+            // Whole-package rule: the note counts packages, not base units.
+            'تم إرجاع ${formatBaseQuantity(outcome.restoredQuantityBase, line.unitsPerLarge)} وحدة وإعادتها للدفعة الأصلية',
         clearError: true,
       );
       // Refresh the return panel results so over-return is impossible.

@@ -9,6 +9,30 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 ## [Unreleased]
 
 ### Fixed
+- **Whole-package rule: radical pass + returns reflected everywhere**
+  (2026-10-05, reported by Ali — 4th report on parts leaking into the UI).
+  Root causes found and fixed:
+  * POS search rows showed stock in base units (`متاح: 150` for 50 boxes);
+    now `formatBaseQuantity`.
+  * The invoice return dialog showed/accepted base units (`6` for 2 boxes);
+    now it shows and accepts packages and converts to base units only for
+    the domain command.
+  * Dashboard cards ignored posted returns and counted base units:
+    `todayTotalMicros` is now ledger net revenue, `todayProfitMicros` ledger
+    gross profit (both net of sale returns), and `todayUnitsSold` is net
+    whole packages sold (new `ZReportDao.netPackagesSold`, sale returns
+    subtracted, divided by `units_per_large`).
+  * Z-Report page/PDF and the sales report showed units in base units; both
+    now show whole packages (`unitsSoldPackages` / package-converted SQL).
+  * Purchase detail bonuses shown in base units; now packages.
+  * Invoice-detail, sales-history and receipt fallbacks now use
+    `formatBaseQuantity`; the POS return success note counts packages.
+  * Removed the quantity column from the inventory movements summary: it
+    aggregates across items with different package sizes, so it can never be
+    expressed in whole packages.
+  * New CI guardrail `test/whole_package_display_guardrail_test.dart` fails
+    the build if any presentation file interpolates a raw `*Base` quantity
+    without `formatBaseQuantity` — parts can no longer leak silently again.
 - **Android signing is now truly stable — explicit signing config**
   (2026-10-05, reported by Ali) — both post-Oct-4 APKs carried *different*
   signatures even though the "stable keystore" restore step ran fine both

@@ -18,6 +18,7 @@ import '../../../../core/shortcuts/pos_shortcuts.dart';
 import '../../../../core/shortcuts/shortcut_manager.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/responsive_layout.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/entities/pos_cart.dart';
@@ -841,7 +842,8 @@ class _ProductList extends StatelessWidget {
                   Text(
                     isOut
                         ? l10n.posOutOfStock
-                        : '${l10n.posAvailableStock}: $available',
+                        : '${l10n.posAvailableStock}: '
+                            '${formatBaseQuantity(available, item.unitsPerLarge)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: isOut ? Theme.of(context).colorScheme.error : null,
                     ),
@@ -1583,7 +1585,7 @@ class _ReceiptDialog extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           '${line.itemName} ×'
-                          '${line.sellUnitQuantity != null ? ' ${line.sellUnitQuantity} ${line.unitTypeName}' : ' ${line.quantityBaseSigned}'}',
+                          '${line.sellUnitQuantity != null ? ' ${line.sellUnitQuantity} ${line.unitTypeName}' : ' ${formatBaseQuantity(line.quantityBaseSigned, line.unitsPerLarge)}'}',
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

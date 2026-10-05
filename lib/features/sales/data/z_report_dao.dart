@@ -77,6 +77,11 @@ class ZReportDao {
       cardMicros: sold['card']!,
       creditMicros: sold['credit']!,
       unitsSold: await _unitsSold(fromMillis, toMillis, userId),
+      unitsSoldPackages: await grossPackagesSold(
+        fromMillis: fromMillis,
+        toMillis: toMillis,
+        userId: userId,
+      ),
       voidCount: voided['count']!,
       voidTotalMicros: voided['total']!,
       returnsCount: returnsCount,
@@ -143,6 +148,98 @@ class ZReportDao {
     final row = await q.getSingle();
     return row.read(t.amountMicros.sum()) ?? 0;
   }
+
+  /// Whole commercial packages sold, net of sale returns, in the window.
+  ///
+  /// The dashboard "units sold" card must show what the pharmacist counts
+  /// (packages), not base units — and it must go down when a return is
+  /// posted (2026-10-05: Ali's screenshot showed "6" for 2 sold boxes of a
+  /// 3-part item, unchanged after returning one box).
+  ///
+  /// Both legs divide base quantities by the item's `units_per_large`
+  /// (integer division: only complete packages count; items without a unit
+  /// row count 1:1). The unit subquery uses MAX + GROUP BY so a (theoretical)
+  /// second unit row for an item can never double-count a line.
+  Future<int> netPackagesSold({
+    required int fromMillis,
+    required int toMillis,
+    String? userId,
+  }) async {
+    final sold = await grossPackagesSold(
+      fromMillis: fromMillis,
+      toMillis: toMillis,
+      userId: userId,
+    );
+    final returned = await _packagesReturned(
+      fromMillis: fromMillis,
+      toMillis: toMillis,
+      userId: userId,
+    );
+    return sold - returned;
+  }
+
+  /// Whole commercial packages sold in the window (gross, before returns).
+  ///
+  /// Used by the Z-Report page/PDF, which lists returns on their own lines —
+  /// the gross figure plus the separate returns lines is the standard
+  /// end-of-day format.
+  Future<int> grossPackagesSold({
+    required int fromMillis,
+    required int toMillis,
+    String? userId,
+  }) async {
+    final sold = await _db
+        .customSelect(
+          'SELECT COALESCE(SUM(CAST(ii.quantity_base_signed / '
+          'COALESCE(u.upl, 1) AS INTEGER)), 0) AS pkgs '
+          'FROM sales_invoice_items ii '
+          'JOIN sales_invoices iv ON ii.invoice_id = iv.id '
+          'LEFT JOIN $_unitCte u ON u.item_id = ii.item_id '
+          'WHERE iv.created_at >= ? AND iv.created_at < ? '
+          'AND iv.sale_status != ? AND iv.voided_at IS NULL '
+          'AND ii.quantity_base_signed > 0'
+          '${userId != null ? ' AND iv.user_id = ?' : ''}',
+          variables: [
+            Variable<int>(fromMillis),
+            Variable<int>(toMillis),
+            const Variable<String>('draft'),
+            if (userId != null) Variable<String>(userId),
+          ],
+        )
+        .getSingle();
+    return sold.read<int>('pkgs');
+  }
+
+  /// Whole commercial packages returned (sale returns, not voided).
+  Future<int> _packagesReturned({
+    required int fromMillis,
+    required int toMillis,
+    String? userId,
+  }) async {
+    final returned = await _db
+        .customSelect(
+          'SELECT COALESCE(SUM(CAST(ri.quantity_base_signed / '
+          'COALESCE(u.upl, 1) AS INTEGER)), 0) AS pkgs '
+          'FROM return_items ri '
+          'JOIN returns r ON ri.return_id = r.id '
+          'LEFT JOIN $_unitCte u ON u.item_id = ri.item_id '
+          'WHERE r.created_at >= ? AND r.created_at < ? '
+          "AND r.is_voided = 0 AND r.type = 'sale_return' "
+          'AND ri.quantity_base_signed > 0'
+          '${userId != null ? ' AND r.user_id = ?' : ''}',
+          variables: [
+            Variable<int>(fromMillis),
+            Variable<int>(toMillis),
+            if (userId != null) Variable<String>(userId),
+          ],
+        )
+        .getSingle();
+    return returned.read<int>('pkgs');
+  }
+
+  static const _unitCte =
+      '(SELECT item_id, MAX(units_per_large) AS upl FROM item_units '
+      'GROUP BY item_id)';
 
   /// Base units sold across the collected invoices. Uses raw SQL for the
   /// invoice ↔ line join so the sum runs in the same snapshot as the rest of

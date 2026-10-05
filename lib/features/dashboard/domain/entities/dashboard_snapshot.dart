@@ -27,9 +27,15 @@ class DashboardSnapshot {
 
   final int generatedMillis;
   final int todayInvoiceCount;
+
+  /// Whole commercial packages sold today, NET of posted sale returns.
   final int todayUnitsSold;
+
+  /// Net sales revenue today (gross sales − sale returns, from the ledger).
   final int todayTotalMicros;
   final int todayPaidMicros;
+
+  /// Gross profit today, NET of posted sale returns (from the ledger).
   final int todayProfitMicros;
   final DashboardFinancials financials;
   final int activeItems;

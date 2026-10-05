@@ -24,6 +24,7 @@ class DashboardDao {
     required int todayInvoiceCount,
     required int todayUnitsSold,
     required int todayTotalMicros,
+    required int todayProfitMicros,
     required int todayPaidMicros,
     required DashboardFinancials financials,
     int lowStockLimit = 8,
@@ -43,10 +44,6 @@ class DashboardDao {
     );
     final recentSales = await _recentSales(limit: recentLimit);
     final recentPurchases = await _recentPurchases(limit: recentLimit);
-    final todayProfitMicros = await _todayProfit(
-      fromMillis: fromMillis,
-      toMillis: toMillis,
-    );
 
     return DashboardSnapshot(
       generatedMillis: nowMillis,
@@ -68,22 +65,6 @@ class DashboardDao {
       recentSales: recentSales,
       recentPurchases: recentPurchases,
     );
-  }
-
-  Future<int> _todayProfit({
-    required int fromMillis,
-    required int toMillis,
-  }) async {
-    final invoices = _db.salesInvoices;
-    final row =
-        await (_db.selectOnly(invoices)
-              ..addColumns([invoices.profitMicros.sum()])
-              ..where(invoices.createdAt.isBiggerOrEqualValue(fromMillis))
-              ..where(invoices.createdAt.isSmallerOrEqualValue(toMillis))
-              ..where(invoices.saleStatus.equals(SaleStatus.draft.name).not())
-              ..where(invoices.voidedAt.isNull()))
-            .getSingle();
-    return (row.read(invoices.profitMicros.sum()) ?? 0);
   }
 
   Future<int> _countActiveItems() async {
