@@ -3690,7 +3690,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get storagePermissionRationale =>
-      'يحتاج التطبيق إلى صلاحية الوصول إلى الملفات لحفظ النسخ الاحتياطية في مجلد من اختيارك واستعادتها لاحقاً. بدون هذه الصلاحية سيفشل إنشاء النسخة والاستعادة.';
+      'يحتاج التطبيق إلى صلاحية «الوصول إلى جميع الملفات» لحفظ النسخ الاحتياطية في مجلد من اختيارك واستعادتها لاحقاً. في الشاشة التالية فعّل خيار «السماح بالوصول إلى جميع الملفات» لتطبيق pharmacy_pos.';
 
   @override
   String get storagePermissionOpenSettings => 'فتح الإعدادات';

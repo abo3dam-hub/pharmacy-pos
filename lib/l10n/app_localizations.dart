@@ -7258,7 +7258,7 @@ abstract class AppLocalizations {
   /// No description provided for @storagePermissionRationale.
   ///
   /// In ar, this message translates to:
-  /// **'يحتاج التطبيق إلى صلاحية الوصول إلى الملفات لحفظ النسخ الاحتياطية في مجلد من اختيارك واستعادتها لاحقاً. بدون هذه الصلاحية سيفشل إنشاء النسخة والاستعادة.'**
+  /// **'يحتاج التطبيق إلى صلاحية «الوصول إلى جميع الملفات» لحفظ النسخ الاحتياطية في مجلد من اختيارك واستعادتها لاحقاً. في الشاشة التالية فعّل خيار «السماح بالوصول إلى جميع الملفات» لتطبيق pharmacy_pos.'**
   String get storagePermissionRationale;
 
   /// No description provided for @storagePermissionOpenSettings.

@@ -34,6 +34,12 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   API 30+, runtime dialog below) with a clear Arabic explanation instead of a
   generic error when declined. New `permission_handler` + `device_info_plus`
   dependencies; new `lib/core/permissions/storage_permission.dart` helper.
+  Follow-up (same day, from Ali's screenshots): the first version opened the
+  generic app-info settings page, where the "All files access" toggle does
+  not exist — it lives on a separate special-access page. Now
+  `Permission.manageExternalStorage.request()` opens that exact page
+  directly, and the rationale dialog tells the user precisely which toggle
+  to enable.
 - **Windows build fix** (2026-10-05) — `permission_handler_windows` 0.2.2
   still includes `<experimental/coroutine>`, which MSVC 14.51+ (VS 2026 on
   the windows-latest CI runners) rejects with hard error STL1011/C2338.

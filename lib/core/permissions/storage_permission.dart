@@ -52,9 +52,12 @@ Future<bool> ensureStoragePermission(BuildContext context) async {
   if (proceed != true || !context.mounted) return false;
 
   if (sdk >= 30) {
-    // "All files access" has no runtime dialog; the user toggles it in
-    // Settings. Re-check when they come back.
-    await openAppSettings();
+    // "All files access" has no runtime dialog. request() opens the exact
+    // system page for it ("Special app access > All files access"), unlike
+    // openAppSettings() which lands on the generic app-info page where the
+    // toggle does not exist (2026-10-05: Ali's screenshots proved the user
+    // could not find the permission there).
+    await Permission.manageExternalStorage.request();
   } else {
     await Permission.storage.request();
   }

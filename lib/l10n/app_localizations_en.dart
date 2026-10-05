@@ -3706,7 +3706,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storagePermissionRationale =>
-      'The app needs file access permission to save backups to a folder of your choice and restore them later. Without it, backup and restore will fail.';
+      'The app needs “All files access” permission to save backups to a folder of your choice and restore them later. On the next screen, enable “Allow all files access” for pharmacy_pos.';
 
   @override
   String get storagePermissionOpenSettings => 'Open settings';

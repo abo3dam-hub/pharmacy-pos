@@ -1421,7 +1421,7 @@
   "salesHistoryOpenDetail": "Open details",
   "salesHistoryNoLines": "No lines in this invoice",
   "storagePermissionTitle": "File access permission",
-  "storagePermissionRationale": "The app needs file access permission to save backups to a folder of your choice and restore them later. Without it, backup and restore will fail.",
+  "storagePermissionRationale": "The app needs “All files access” permission to save backups to a folder of your choice and restore them later. On the next screen, enable “Allow all files access” for pharmacy_pos.",
   "storagePermissionOpenSettings": "Open settings",
   "storagePermissionDenied": "File access permission was denied — backup and restore will not work without it"
 }
