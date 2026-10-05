@@ -53,6 +53,13 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 add_subdirectory("runner")
 
 
+# permission_handler_windows 0.2.2 still includes <experimental/coroutine>;
+# MSVC 14.51+ (VS 2026, current windows-latest CI runners) turns that into a
+# hard error (STL1011 / C2338). This is Microsoft's documented interim
+# opt-out, inherited by every plugin target below. Remove it once the plugin
+# migrates to the C++20 <coroutine> header.
+add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
 include(flutter/generated_plugins.cmake)
