@@ -4,8 +4,15 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+    # Docs-only changes (any *.md) skip CI — no need to rebuild/retest for
+    # a CHANGELOG or status-doc line. A commit touching both code and docs
+    # still triggers a full run.
+    paths-ignore:
+      - '**.md'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**.md'
 
 # A newer push cancels the stale run on the same branch — no more queueing
 # two full runs when a fix follows minutes after a push.
