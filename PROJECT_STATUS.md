@@ -27,7 +27,7 @@
 | Framework | Flutter 3.44.2 (pinned in CI), Arabic-first RTL UI |
 | Persistence | SQLite via Drift, **schema version 14** (code-gen `app_database.g.dart`) |
 | L10n | `flutter gen-l10n` — `app_ar.arb` / `app_en.arb`, exact AR/EN parity |
-| Tests | **106 files · 741 tests pass** · `flutter analyze` clean |
+| Tests | **109 files · 751 tests pass** · `flutter analyze` clean |
 | CI | GitHub Actions: `analyze-test`, `perf-file-db`, `build-windows`, `build-android` (~7–8 min critical path) |
 | Last CI | Run `37209412343` (commit `a129f1f`) — in progress at time of writing |
 | Windows | Portable build via `build-windows` job (`pharmacy-pos-windows` artifact) |
