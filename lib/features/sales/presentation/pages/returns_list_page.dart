@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_sections.dart';
 import '../../../../core/data_grid/page_request.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/money/money.dart';
@@ -8,12 +10,15 @@ import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/search_field.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../domain/entities/pos_invoice.dart';
 import '../../domain/entities/pos_return.dart';
 
-/// Clear, easy returns list inside sales — every recorded return document
-/// (number, date, original invoice, customer, total, reason, status) in one
-/// place. Tapping a row opens the return detail; the list reloads on return
-/// so voided/posted state is always fresh (mutation-then-refresh, no timers).
+/// Returns workspace inside sales, with two tabs:
+///  • invoices — every sales invoice, auto-loaded in chronological order;
+///    tapping one opens its detail where per-line returns are posted;
+///  • returns — every recorded return document in one place.
+/// Both lists load automatically on entry (no search tap needed); the lists
+/// reload after mutations so voided/posted state is always fresh.
 class ReturnsListPage extends ConsumerStatefulWidget {
   const ReturnsListPage({super.key});
 
@@ -21,9 +26,20 @@ class ReturnsListPage extends ConsumerStatefulWidget {
   ConsumerState<ReturnsListPage> createState() => _ReturnsListPageState();
 }
 
-class _ReturnsListPageState extends ConsumerState<ReturnsListPage> {
+class _ReturnsListPageState extends ConsumerState<ReturnsListPage>
+    with SingleTickerProviderStateMixin {
   static const int _pageSize = 30;
 
+  late final TabController _tabs;
+
+  // --- Invoices tab state ---
+  int _invPage = 1;
+  String _invQuery = '';
+  PageResult<PosInvoiceView>? _invResult;
+  bool _invLoading = false;
+  Object? _invError;
+
+  // --- Returns tab state ---
   int _page = 1;
   String _query = '';
   PageResult<PosReturnView>? _result;
@@ -35,9 +51,61 @@ class _ReturnsListPageState extends ConsumerState<ReturnsListPage> {
   @override
   void initState() {
     super.initState();
+    _tabs = TabController(length: 2, vsync: this);
     Future.microtask(() async {
+      if (mounted) await _loadInvoices();
       if (mounted) await _load();
     });
+  }
+
+  @override
+  void dispose() {
+    _tabs.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadInvoices({bool isRetry = false}) async {
+    setState(() {
+      _invLoading = true;
+      _invError = null;
+    });
+    try {
+      final result = await ref.read(salesRepositoryProvider).searchSaleInvoices(
+            PageRequest(
+                page: _invPage, pageSize: _pageSize, search: _invQuery.trim()),
+          );
+      if (!mounted) return;
+      setState(() {
+        _invResult = result;
+        _invLoading = false;
+      });
+    } catch (e) {
+      // Same startup race as the returns list: retry once automatically.
+      if (!isRetry && mounted) {
+        await Future<void>.delayed(const Duration(milliseconds: 800));
+        if (mounted) await _loadInvoices(isRetry: true);
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        _invError = e;
+        _invLoading = false;
+      });
+    }
+  }
+
+  void _resetInvoicesAndReload() {
+    _invPage = 1;
+    _loadInvoices();
+  }
+
+  Future<void> _openInvoice(String invoiceId) async {
+    await context.push(saleInvoiceDetailPath(invoiceId));
+    // A return may have been posted from the detail — refresh both lists.
+    if (mounted) {
+      await _loadInvoices();
+      await _load();
+    }
   }
 
   Future<void> _load({bool isRetry = false}) async {
@@ -95,6 +163,127 @@ class _ReturnsListPageState extends ConsumerState<ReturnsListPage> {
   @override
   Widget build(BuildContext context) {
     final typography = context.appTypography;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xl,
+            AppSpacing.l,
+            AppSpacing.xl,
+            0,
+          ),
+          child: TabBar(
+            controller: _tabs,
+            tabs: [
+              Tab(text: _l10n.salesHistoryTitle),
+              Tab(text: _l10n.salesReturnsTitle),
+            ],
+          ),
+        ),
+        Expanded(
+          child: TabBarView(
+            controller: _tabs,
+            children: [
+              _buildInvoicesTab(typography),
+              _buildReturnsTab(typography),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInvoicesTab(AppTypography typography) {
+    final invoices = _invResult?.items ?? const <PosInvoiceView>[];
+
+    final header = Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.m,
+        AppSpacing.xl,
+        AppSpacing.s,
+      ),
+      child: SizedBox(
+        width: 320,
+        child: SearchField(
+          hintText: _l10n.salesHistorySearchHint,
+          onChanged: (q) {
+            _invQuery = q.trim();
+            _resetInvoicesAndReload();
+          },
+        ),
+      ),
+    );
+
+    Widget body;
+    if (_invLoading && _invResult == null) {
+      body = const Center(child: CircularProgressIndicator());
+    } else if (_invError != null) {
+      body = Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('$_invError'),
+            const SizedBox(height: AppSpacing.m),
+            FilledButton(
+              onPressed: _loadInvoices,
+              child: Text(_l10n.commonRetry),
+            ),
+          ],
+        ),
+      );
+    } else if (invoices.isEmpty) {
+      body = Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.receipt_long_outlined, size: 48),
+            const SizedBox(height: AppSpacing.s),
+            Text(_l10n.salesHistoryEmpty),
+          ],
+        ),
+      );
+    } else {
+      body = ListView.separated(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.s,
+          AppSpacing.xl,
+          AppSpacing.xl,
+        ),
+        itemCount: invoices.length,
+        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.s),
+        itemBuilder: (context, index) {
+          final v = invoices[index];
+          return _InvoiceCard(
+            invoice: v,
+            dateLabel: _dateLabel(v.createdAt),
+            onTap: () => _openInvoice(v.id),
+          );
+        },
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        header,
+        Expanded(child: body),
+        if (_invResult != null && _invResult!.pageCount > 1)
+          _Pager(
+            page: _invPage,
+            pageCount: _invResult!.pageCount,
+            onPage: (p) {
+              setState(() => _invPage = p);
+              _loadInvoices();
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildReturnsTab(AppTypography typography) {
     final items = _result?.items ?? const <PosReturnView>[];
 
     final header = Padding(
@@ -189,6 +378,75 @@ class _ReturnsListPageState extends ConsumerState<ReturnsListPage> {
             },
           ),
       ],
+    );
+  }
+}
+
+class _InvoiceCard extends StatelessWidget {
+  const _InvoiceCard({
+    required this.invoice,
+    required this.dateLabel,
+    required this.onTap,
+  });
+
+  final PosInvoiceView invoice;
+  final String dateLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final typography = context.appTypography;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      color: colorScheme.surface,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.m),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.receipt_long_outlined),
+              ),
+              const SizedBox(width: AppSpacing.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      invoice.invoiceNumber,
+                      style: typography.sectionTitle,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${invoice.customerName.isEmpty ? '—' : invoice.customerName}'
+                      ' · $dateLabel',
+                      style: typography.bodySecondary,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.m),
+              Text(
+                Money.fromUnits(invoice.totalMicros).formatArabicDigits(),
+                style: typography.sectionTitle.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s),
+              const Icon(Icons.chevron_left),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

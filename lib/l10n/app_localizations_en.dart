@@ -3518,6 +3518,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Camera permission was denied. Enable it in the app settings and try again.';
 
   @override
+  String get salesReturnAction => 'Return';
+
+  @override
   String get salesReturnsTitle => 'Returns';
 
   @override

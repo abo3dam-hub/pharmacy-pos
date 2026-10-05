@@ -243,4 +243,41 @@ void main() {
     );
     expect(find.text(l10n.salesHistoryEmpty), findsOneWidget);
   });
+
+  testWidgets('every invoice card has a quick return shortcut', (tester) async {
+    final base = await buildAuthHarness();
+    addTearDown(() async {
+      base.container.dispose();
+      await base.db.close();
+    });
+    await base.container
+        .read(authControllerProvider.notifier)
+        .login('admin', 'Admin@123');
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final repo = _FakeSalesRepository([
+      _invoice(
+        id: 'i1',
+        number: 'SI-1001',
+        status: SaleStatus.completed,
+        payment: PaymentMethod.cash,
+      ),
+      _invoice(
+        id: 'i2',
+        number: 'SI-1002',
+        status: SaleStatus.completed,
+        payment: PaymentMethod.card,
+      ),
+    ]);
+    await tester.pumpWidget(harness(base.container, repo));
+    await tester.pumpAndSettle();
+
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(SalesHistoryPage)),
+    );
+    // One ترجيع shortcut per invoice row.
+    expect(find.text(l10n.salesReturnAction), findsNWidgets(2));
+  });
 }

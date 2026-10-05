@@ -37,6 +37,7 @@ const _cashierRole = 'role_cashier';
     CreatePurchaseUseCase(repo, perms),
     UpdatePendingPurchaseUseCase(repo, perms),
     PurchaseReturnUseCase(repo, perms),
+    purchasesRepository: repo,
   );
   return (db: db, repo: repo, controller: controller);
 }
@@ -204,6 +205,53 @@ void main() {
             ..where((a) => a.entityType.equals('purchase_invoice')))
           .get();
       expect(audits, hasLength(2));
+    });
+
+    test(
+        'createAndReceive with batch override keeps the user batch number '
+        '(chained batch-entry flow posts stock once)', () async {
+      final h = _harness(newDatabase());
+      final (itemId, supplierId, unitBox) = await _seedPurchaseContext(h.db);
+      // Enable expiry tracking so the override expiry is stored.
+      await (h.db.update(h.db.items)..where((i) => i.id.equals(itemId))).write(
+        const ItemsCompanion(hasExpiry: Value(true)),
+      );
+
+      // The chained flow (batch dialog → purchase) must NOT post stock in the
+      // batch step; the purchase receive is the single posting event, and it
+      // must reuse the user's batch number/expiry instead of AUTO-generating.
+      final failure = await h.controller.createAndReceive(
+        _draft('INV-010', supplierId, itemId, unitBox, quantityBase: 150),
+        actingUserId: 'user_admin',
+        actingRoleId: _adminRole,
+        batchOverrides: const {
+          0: ReceiveBatchOverride(
+            batchNumber: 'B-1',
+            expiryDate: 1893456000000,
+          ),
+        },
+      );
+      expect(failure, isNull);
+
+      // Exactly one batch, with the user's number and expiry.
+      // (150 paid + 2 bonus from the draft = 152.)
+      final batches = await h.db.select(h.db.batches).get();
+      expect(batches, hasLength(1));
+      expect(batches.single.batchNumber, 'B-1');
+      expect(batches.single.expiryDate, 1893456000000);
+      expect(batches.single.originalQuantityBase, 152);
+
+      // Exactly one purchase movement — no double posting.
+      final movements = await (h.db.select(h.db.stockMovements)
+            ..where((m) => m.refType.equals('purchase_line')))
+          .get();
+      expect(movements, hasLength(1));
+      expect(movements.single.quantityBaseSigned, 152);
+
+      final item = await (h.db.select(h.db.items)
+            ..where((i) => i.id.equals(itemId)))
+          .getSingle();
+      expect(item.currentStockBase, 152);
     });
 
     test('cancel pending invoice soft-deletes without touching stock',

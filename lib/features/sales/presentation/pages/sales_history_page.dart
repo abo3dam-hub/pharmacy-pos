@@ -413,6 +413,10 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                     tooltip: _l10n.salesHistoryOpenDetail,
                     onPressed: () => _openDetail(v.id),
                   ),
+                  TextButton(
+                    onPressed: () => _openDetail(v.id),
+                    child: Text(_l10n.salesReturnAction),
+                  ),
                 ],
               ),
             ),

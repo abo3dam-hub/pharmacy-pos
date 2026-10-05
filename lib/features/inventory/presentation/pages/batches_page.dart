@@ -9,6 +9,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/money/money.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/app_data_table.dart';
 import '../../../../core/widgets/confirm_dialog.dart';
 import '../../../../core/widgets/loading_overlay.dart';
@@ -41,13 +42,24 @@ class BatchesPage extends ConsumerStatefulWidget {
 class _BatchesPageState extends ConsumerState<BatchesPage> {
   ItemRow? _item;
 
+  /// Commercial-package size of the item (base units per package). Displayed
+  /// quantities/costs are shown per package when > 1 (what the pharmacist
+  /// typed); the database stays per base unit.
+  int _unitsPerLarge = 1;
+
   @override
   void initState() {
     super.initState();
     Future.microtask(() async {
-      final item =
-          await ref.read(inventoryRepositoryProvider).findItem(widget.itemId);
-      if (mounted) setState(() => _item = item);
+      final repo = ref.read(inventoryRepositoryProvider);
+      final item = await repo.findItem(widget.itemId);
+      final units = await repo.itemUnitsFor(widget.itemId);
+      if (mounted) {
+        setState(() {
+          _item = item;
+          _unitsPerLarge = units?.unitsPerLarge ?? 1;
+        });
+      }
       await ref
           .read(inventoryControllerProvider.notifier)
           .loadBatches(widget.itemId,
@@ -65,6 +77,22 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
 
   void _showFailure(Failure? failure) {
     showFailureSnack(context, failure);
+  }
+
+  /// Signed movement delta, shown per commercial package when it divides
+  /// evenly (e.g. a sale of 2 boxes shows -2, not -6 base units).
+  String _fmtDelta(int signedBase) {
+    final sign = signedBase < 0 ? '-' : '+';
+    return '$sign${formatBaseQuantity(signedBase.abs(), _unitsPerLarge)}';
+  }
+
+  /// Human batch number for a movement's batch id (movements store the id).
+  String _batchNumber(List<BatchRow> batches, String? batchId) {
+    if (batchId == null) return '-';
+    for (final b in batches) {
+      if (b.id == batchId) return b.batchNumber;
+    }
+    return '-';
   }
 
   Future<void> _addBatch() async {
@@ -91,26 +119,35 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
       initialCostMicros: _item?.costMicros ?? 0,
     );
     if (result == null || !mounted) return;
+    // Chained flow ("save and add invoice"): the batch is NOT posted here.
+    // The purchase invoice is the single stock-posting event — posting here
+    // too would double the stock (once as an adjustment, once as a purchase).
+    // The full batch details (number, expiry, bonus) travel with the prefill
+    // so the purchase receive reuses them instead of AUTO-generating.
+    if (result.action == BatchFormAction.saveAndAddPurchase) {
+      final canPurchase = ref
+          .read(authControllerProvider)
+          .permissions
+          .contains(Perm.purchasesCreate);
+      if (mounted && canPurchase) {
+        context.go('/purchases/new', extra: PurchasePrefill(
+          itemId: result.input.itemId,
+          batchNumber: result.input.batchNumber,
+          quantityBase: result.input.quantityBase,
+          unitCostMicros: result.input.unitCostMicros,
+          expiryDate: result.input.expiryDate,
+          bonusQtyBase: result.input.bonusQtyBase,
+        ));
+        return;
+      }
+      // No purchase permission: fall through to the plain save below so the
+      // batch is still recorded (once).
+    }
     final failure = await ref
         .read(inventoryControllerProvider.notifier)
         .addBatch(result.input,
             actingUserId: _actingUserId, actingRoleId: _actingRoleId);
     if (failure == null && mounted) {
-      if (result.action == BatchFormAction.saveAndAddPurchase) {
-        final canPurchase = ref
-            .read(authControllerProvider)
-            .permissions
-            .contains(Perm.purchasesCreate);
-        if (canPurchase) {
-          context.go('/purchases/new', extra: PurchasePrefill(
-            itemId: result.input.itemId,
-            batchNumber: result.input.batchNumber,
-            quantityBase: result.input.quantityBase,
-            unitCostMicros: result.input.unitCostMicros,
-          ));
-          return;
-        }
-      }
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.batchesAddedMessage)));
@@ -271,9 +308,13 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
                 for (final b in state.batches)
                   DataRow(cells: [
                     DataCell(Text(b.batchNumber)),
-                    DataCell(Text('${b.originalQuantityBase}')),
-                    DataCell(Text('${b.quantityBase}')),
-                    DataCell(Text(Money.fromUnits(b.unitCostMicros).format())),
+                    DataCell(Text(
+                        formatBaseQuantity(b.originalQuantityBase, _unitsPerLarge))),
+                    DataCell(Text(
+                        formatBaseQuantity(b.quantityBase, _unitsPerLarge))),
+                    DataCell(Text(Money.fromUnits(baseUnitCostToPackageCost(
+                            b.unitCostMicros, _unitsPerLarge))
+                        .format())),
                     DataCell(Text(_fmtDate(b.expiryDate))),
                     DataCell(Text(_fmtDate(b.receivedDate))),
                     DataCell(b.isVoided
@@ -320,10 +361,10 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
                   DataRow(cells: [
                     DataCell(Text(_movementLabel(m.movementType))),
                     DataCell(Text(_fmtDate(m.createdAt))),
-                    DataCell(Text(
-                        '${m.quantityBaseSigned >= 0 ? '+' : ''}${m.quantityBaseSigned}')),
-                    DataCell(Text(m.batchId ?? '-')),
-                    DataCell(Text('${m.quantityBaseAfter}')),
+                    DataCell(Text(_fmtDelta(m.quantityBaseSigned))),
+                    DataCell(Text(_batchNumber(state.batches, m.batchId))),
+                    DataCell(Text(formatBaseQuantity(
+                        m.quantityBaseAfter, _unitsPerLarge))),
                   ]),
               ],
             ),

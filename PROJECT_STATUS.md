@@ -1,6 +1,6 @@
 # Pharmacy POS — Project Status (living document)
 
-**Last updated:** 2026-10-04 · **Branch:** `main` · **Remote:** `abo3dam-hub/pharmacy-pos`
+**Last updated:** 2026-10-05 · **Branch:** `main` · **Remote:** `abo3dam-hub/pharmacy-pos`
 **HEAD:** `a129f1f` — "Ali's four fixes: drawer auto-close, list auto-load race, stable APK signing, CI speed-ups"
 
 > This is the **single current-state document**. Any future agent starts here.
@@ -47,6 +47,18 @@ Local dev env (this machine):
 
 ## 2. Recent changes (newest first; detail in CHANGELOG)
 
+- **2026-10-05 — Ali's device-feedback round**: (1) chained batch→purchase
+  flow no longer double-posts stock — the purchase receive is the single
+  posting event and reuses the user's batch number/expiry
+  (`batches_page.dart`, `purchase_form_page.dart` `PurchasePrefill` +
+  `ReceiveBatchOverride`, `purchases_controller.dart`); (2) batch ledger and
+  movement log display quantities/costs per commercial package for packaged
+  items (`formatBaseQuantity` in `lib/core/units/package_cost.dart`) and the
+  movement log shows human batch numbers instead of UUIDs; (3) returns page
+  gained an invoices tab (all sales invoices auto-loaded chronologically —
+  no search needed); (4) sales history invoice cards gained a "ترجيع" quick
+  return shortcut. Regression tests added (returns invoices tab, ترجيع
+  button, package display, `createAndReceive` batch override).
 - **2026-10-04 — Ali's four fixes** (`a129f1f`): (1) Android nav drawer
   auto-closes after tapping a destination (`app_shell.dart`); (2) all list
   pages load on entry — root fix for the startup race, `main()` now warms up

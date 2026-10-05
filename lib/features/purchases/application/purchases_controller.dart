@@ -10,6 +10,21 @@ import '../domain/usecases/purchases_use_cases.dart';
 
 enum PurchasesStatus { initial, loading, ready, error }
 
+/// Per-line batch override for [PurchasesController.createAndReceive].
+///
+/// Carries the user's batch details from the batch-entry chained flow
+/// (batch dialog → purchase invoice) so the receive reuses them instead of
+/// generating an AUTO batch number.
+class ReceiveBatchOverride {
+  const ReceiveBatchOverride({
+    required this.batchNumber,
+    this.expiryDate,
+  });
+
+  final String batchNumber;
+  final int? expiryDate;
+}
+
 /// Purchases page state: paginated invoice grid + filters.
 class PurchasesViewState {
   const PurchasesViewState({
@@ -138,10 +153,15 @@ class PurchasesController extends StateNotifier<PurchasesViewState> {
   /// Creates the invoice and immediately receives it (adds to stock) in one
   /// go — for the common case where goods are received at entry time.
   /// Batch numbers are auto-generated; expiry dates are left empty.
+  /// [batchOverrides] carries user batch details from the batch-entry chained
+  /// flow, keyed by draft-line index (draft lines and persisted lines share
+  /// creation order). Overridden lines keep the user's batch number/expiry
+  /// instead of an AUTO one; other lines are unaffected.
   Future<Failure?> createAndReceive(
     PurchaseDraft draft, {
     String? actingUserId,
     String? actingRoleId,
+    Map<int, ReceiveBatchOverride>? batchOverrides,
   }) async {
     final repo = _repo;
     if (repo == null) {
@@ -154,10 +174,17 @@ class PurchasesController extends StateNotifier<PurchasesViewState> {
       final stamp = DateTime.now().millisecondsSinceEpoch.toString();
       final inputs = [
         for (var i = 0; i < detail.lines.length; i++)
-          ReceiveLineInput(
-            lineId: detail.lines[i].line.id,
-            batchNumber: 'AUTO-$stamp-${i + 1}',
-          ),
+          if (batchOverrides?[i] case final override?)
+            ReceiveLineInput(
+              lineId: detail.lines[i].line.id,
+              batchNumber: override.batchNumber,
+              expiryDate: override.expiryDate,
+            )
+          else
+            ReceiveLineInput(
+              lineId: detail.lines[i].line.id,
+              batchNumber: 'AUTO-$stamp-${i + 1}',
+            ),
       ];
       await _receive(invoice.id,
           inputs: inputs,

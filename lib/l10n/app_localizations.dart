@@ -6889,6 +6889,12 @@ abstract class AppLocalizations {
   /// **'تم رفض إذن الكاميرا. فعّله من إعدادات التطبيق ثم حاول مجدداً.'**
   String get cameraPermissionDenied;
 
+  /// No description provided for @salesReturnAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترجيع'**
+  String get salesReturnAction;
+
   /// No description provided for @salesReturnsTitle.
   ///
   /// In ar, this message translates to:

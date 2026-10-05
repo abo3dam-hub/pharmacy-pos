@@ -19,6 +19,7 @@ import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/database/app_database.dart';
 import '../../../../shared/models/enums.dart';
+import '../../application/purchases_controller.dart';
 import '../../../../features/inventory/domain/entities/inventory_item.dart';
 import '../../domain/repositories/purchases_repository.dart';
 import '../../../../core/widgets/app_rtl_icons.dart';
@@ -32,12 +33,20 @@ class PurchasePrefill {
     required this.quantityBase,
     required this.unitCostMicros,
     this.batchNumber,
+    this.expiryDate,
+    this.bonusQtyBase = 0,
   });
 
   final String itemId;
   final int quantityBase;
   final int unitCostMicros;
   final String? batchNumber;
+
+  /// Batch expiry from the batch-entry chained flow (millis since epoch).
+  final int? expiryDate;
+
+  /// Free bonus quantity (base units) from the batch-entry chained flow.
+  final int bonusQtyBase;
 }
 
 /// Purchase invoice form — create (`/purchases/new`) or edit a pending invoice
@@ -95,6 +104,12 @@ class _PurchLine {
   int unitsPerLarge;
   String largeUnitName;
   bool entryInPackages;
+
+  /// Batch details carried from the batch-entry chained flow (batch dialog →
+  /// purchase). Used at receive time instead of an AUTO batch number, so the
+  /// user's batch number / expiry survive the hand-off.
+  String? prefillBatchNumber;
+  int? prefillExpiryDate;
 }
 
 class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
@@ -178,7 +193,15 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
           // Purchases are entered per commercial package; the part/base
           // unit is only for partial sales in the POS window.
           entryInPackages: pkg.unitsPerLarge > 1,
-        ),
+        )
+          // Batch details from the chained flow survive into the receive.
+          ..prefillBatchNumber = prefill.batchNumber
+          ..prefillExpiryDate = prefill.expiryDate
+          // Bonus from the batch dialog becomes a same-item purchase bonus.
+          ..bonuses.addAll([
+            if (prefill.bonusQtyBase > 0)
+              _BonusDraft(PurchaseBonusType.bonus_1, prefill.bonusQtyBase, null),
+          ]),
       );
     });
   }
@@ -464,6 +487,16 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
       ],
     );
     final controller = ref.read(purchasesControllerProvider.notifier);
+    // Batch overrides from the chained batch-entry flow, keyed by draft-line
+    // index (draft lines and persisted lines share creation order).
+    final batchOverrides = <int, ReceiveBatchOverride>{
+      for (var i = 0; i < _lines.length; i++)
+        if (_lines[i].prefillBatchNumber != null)
+          i: ReceiveBatchOverride(
+            batchNumber: _lines[i].prefillBatchNumber!,
+            expiryDate: _lines[i].prefillExpiryDate,
+          ),
+    };
     final Failure? outcome = _isEdit
         ? await controller.updatePending(
             widget.invoiceId!,
@@ -476,6 +509,7 @@ class _PurchaseFormPageState extends ConsumerState<PurchaseFormPage> {
                 draft,
                 actingUserId: _actingUserId,
                 actingRoleId: _actingRoleId,
+                batchOverrides: batchOverrides.isEmpty ? null : batchOverrides,
               )
             : await controller.create(
                 draft,

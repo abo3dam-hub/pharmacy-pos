@@ -9,6 +9,31 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 ## [Unreleased]
 
 ### Fixed
+- **Chained batch→purchase flow no longer double-posts stock** (2026-10-05,
+  reported by Ali) — the batch dialog's "save and add invoice" now hands the
+  batch details (number, expiry, bonus) to the purchase invoice instead of
+  posting stock itself; the purchase receive is the single stock-posting
+  event. Previously the same quantity was added twice (once as a stock
+  adjustment, once as a purchase). The user's batch number/expiry are now
+  reused at receive time instead of an AUTO number.
+- **Batch ledger shows commercial-package quantities and costs** (2026-10-05,
+  reported by Ali) — for items with packaging, the batches table and the stock
+  movement log now display quantities per package (e.g. 50 boxes, sale of 2)
+  and the unit cost per package (e.g. 180.00) instead of base units
+  (150, 6, 60.00). Storage stays per base unit (COGS basis); only the display
+  changed. New `formatBaseQuantity` helper in `lib/core/units/package_cost.dart`.
+- **Movement log shows the human batch number** (2026-10-05) — the batch
+  column previously showed the internal UUID; it now resolves to the batch
+  number.
+- **Returns page: invoices tab** (2026-10-05, requested by Ali) — the returns
+  workspace now has two tabs: invoices (every sales invoice, auto-loaded in
+  chronological order on entry — pick one to return from, no search needed)
+  and the recorded returns list.
+- **Sales history: quick return shortcut** (2026-10-05, requested by Ali) —
+  every invoice card now has a "ترجيع" button that opens the invoice detail
+  where per-line returns are posted.
+
+### Fixed
 - **Android navigation drawer auto-closes** (2026-10-04) — on compact/Android
   widths, tapping a drawer destination now dismisses the drawer before
   navigating (`lib/core/widgets/app_shell.dart`); previously the drawer stayed

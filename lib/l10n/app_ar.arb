@@ -1360,6 +1360,7 @@
   "scanBarcodeTitle": "مسح الباركود",
   "scanBarcodeHint": "وجّه الكاميرا نحو الباركود",
   "cameraPermissionDenied": "تم رفض إذن الكاميرا. فعّله من إعدادات التطبيق ثم حاول مجدداً.",
+  "salesReturnAction": "ترجيع",
   "salesReturnsTitle": "المرتجعات",
   "salesReturnsSearchHint": "بحث برقم المرتجع أو العميل أو السبب…",
   "salesReturnsEmpty": "لا توجد مرتجعات مسجلة",

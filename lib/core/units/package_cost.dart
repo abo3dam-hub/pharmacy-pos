@@ -27,3 +27,18 @@ int packageCostToBaseUnitCost(int packageCostMicros, int unitsPerLarge) =>
 /// Converts a per-base-unit amount to a per-commercial-package amount.
 int baseUnitCostToPackageCost(int baseUnitCostMicros, int unitsPerLarge) =>
     baseUnitCostMicros * (unitsPerLarge <= 0 ? 1 : unitsPerLarge);
+
+/// Formats a base-unit quantity for display in commercial packages.
+///
+/// The pharmacist thinks in packages (the box); the database stores base
+/// units. When the item has a real package ([unitsPerLarge] > 1) and the
+/// quantity divides evenly, shows the package count; otherwise falls back to
+/// the raw base-unit number (e.g. a partial sale of 1 part of a 3-part box).
+/// A non-positive [unitsPerLarge] is treated as 1 (package == base unit).
+String formatBaseQuantity(int quantityBase, int unitsPerLarge) {
+  final upl = unitsPerLarge <= 0 ? 1 : unitsPerLarge;
+  if (upl > 1 && quantityBase % upl == 0) {
+    return '${quantityBase ~/ upl}';
+  }
+  return '$quantityBase';
+}

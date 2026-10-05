@@ -128,6 +128,51 @@ PosReturnView _ret({
   );
 }
 
+PosInvoiceView _inv({required String id, required String number}) {
+  final now = DateTime.now().millisecondsSinceEpoch;
+  return PosInvoiceView(
+    id: id,
+    invoiceNumber: number,
+    invoiceType: InvoiceType.sale,
+    saleStatus: SaleStatus.completed,
+    paymentMethod: PaymentMethod.cash,
+    customerId: null,
+    customerName: 'زبون',
+    userId: 'u1',
+    userName: 'admin',
+    subtotalMicros: 100000000,
+    discountTotalMicros: 0,
+    vatTotalMicros: 0,
+    totalMicros: 100000000,
+    totalCostMicros: 60000000,
+    profitMicros: 40000000,
+    paidMicros: 100000000,
+    changeMicros: 0,
+    cashMicros: 100000000,
+    cardMicros: 0,
+    creditMicros: 0,
+    createdAt: now,
+    lines: const [],
+  );
+}
+
+class _FakeSalesRepositoryWithInvoices extends _FakeSalesRepository {
+  _FakeSalesRepositoryWithInvoices(this.invoices) : super(const []);
+
+  final List<PosInvoiceView> invoices;
+
+  @override
+  Future<PageResult<PosInvoiceView>> searchSaleInvoices(
+    PageRequest request, {
+    SaleStatus? status,
+    PaymentMethod? paymentMethod,
+    String? userId,
+    int? fromMillis,
+    int? toMillis,
+  }) async =>
+      PageResult(items: invoices, total: invoices.length, request: request);
+}
+
 void main() {
   Widget harness(ProviderContainer container, SalesRepository repo) {
     return UncontrolledProviderScope(
@@ -168,10 +213,39 @@ void main() {
     // No interaction at all: no taps, no text entry.
     await tester.pumpAndSettle();
 
+    // Invoices tab is the default; switch to the returns tab.
+    await tester.tap(find.text('المرتجعات'));
+    await tester.pumpAndSettle();
+
     expect(find.text('RT-0001'), findsOneWidget);
     expect(find.text('RT-0002'), findsOneWidget);
     expect(find.textContaining('SI-1001'), findsOneWidget);
     expect(find.textContaining('SI-1002'), findsOneWidget);
+  });
+
+  testWidgets('invoices tab auto-loads all invoices on entry', (tester) async {
+    final base = await buildAuthHarness();
+    addTearDown(() async {
+      base.container.dispose();
+      await base.db.close();
+    });
+    await base.container
+        .read(authControllerProvider.notifier)
+        .login('admin', 'Admin@123');
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final repo = _FakeSalesRepositoryWithInvoices([
+      _inv(id: 'i1', number: 'SI-1001'),
+      _inv(id: 'i2', number: 'SI-1002'),
+    ]);
+    await tester.pumpWidget(harness(base.container, repo));
+    // Invoices tab is the default tab: no taps, no text entry.
+    await tester.pumpAndSettle();
+
+    expect(find.text('SI-1001'), findsOneWidget);
+    expect(find.text('SI-1002'), findsOneWidget);
   });
 
   testWidgets('search still filters after auto-load', (tester) async {
@@ -195,12 +269,14 @@ void main() {
     await tester.pumpWidget(harness(base.container, repo));
     await tester.pumpAndSettle();
 
-    // Auto-load fires with an empty search.
+    // Switch to the returns tab; auto-load fires with an empty search.
+    await tester.tap(find.text('المرتجعات'));
+    await tester.pumpAndSettle();
     expect(lastSearch, '');
     expect(find.text('RT-0001'), findsOneWidget);
 
     // Typing filters on top of the loaded list.
-    await tester.enterText(find.byType(TextField), 'RT-0001');
+    await tester.enterText(find.byType(TextField).first, 'RT-0001');
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
     expect(lastSearch, 'RT-0001');

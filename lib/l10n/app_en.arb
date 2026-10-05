@@ -1360,6 +1360,7 @@
   "scanBarcodeTitle": "Scan barcode",
   "scanBarcodeHint": "Point the camera at the barcode",
   "cameraPermissionDenied": "Camera permission was denied. Enable it in the app settings and try again.",
+  "salesReturnAction": "Return",
   "salesReturnsTitle": "Returns",
   "salesReturnsSearchHint": "Search by return number, customer, or reason…",
   "salesReturnsEmpty": "No returns recorded",

@@ -3504,6 +3504,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'تم رفض إذن الكاميرا. فعّله من إعدادات التطبيق ثم حاول مجدداً.';
 
   @override
+  String get salesReturnAction => 'ترجيع';
+
+  @override
   String get salesReturnsTitle => 'المرتجعات';
 
   @override
