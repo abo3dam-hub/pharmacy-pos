@@ -9,6 +9,11 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 ## [Unreleased]
 
 ### Fixed
+- **CI #132 fix — guardrail allowlist line drift** (2026-10-05): the previous
+  commit's POS pay-sheet edit shifted the allowlisted packaging-structure
+  label in `pos_workspace_page.dart` from line 794 to 795; the allowlist entry
+  was not updated, so the whole-package display guardrail failed CI run #132
+  (758 passed, 1 failed). Entry corrected to `:795`; guardrail green again.
 - **CI green again + permission-gated UI shows disabled with reason**
   (2026-10-05, Ali):
   * Fixed 2 test failures that broke CI runs #130/#131: (1) the
