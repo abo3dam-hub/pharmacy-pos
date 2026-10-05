@@ -42,7 +42,9 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
     final value = await ref
         .read(salesRepositoryProvider)
         .invoiceViewById(widget.invoiceId);
-    if (mounted) _invoice = value;
+    // setState is required: the AppBar actions (print/void) read _invoice,
+    // and without a rebuild the void icon never appears (2026-10-05, Ali).
+    if (mounted) setState(() => _invoice = value);
     return value;
   }
 
