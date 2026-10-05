@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/permission_codes.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/permissions/storage_permission.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/widgets/loading_overlay.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -39,6 +40,8 @@ class _DataManagementPageState extends ConsumerState<DataManagementPage> {
   bool get _canExport => _permissions.contains(Perm.exportData);
 
   Future<void> _pickBackupFolder() async {
+    if (!await ensureStoragePermission(context)) return;
+    if (!mounted) return;
     final dir = await FilePicker.getDirectoryPath(
       dialogTitle: l10n.dataManagementChooseDestinationFolder,
     );
@@ -46,6 +49,8 @@ class _DataManagementPageState extends ConsumerState<DataManagementPage> {
   }
 
   Future<void> _pickExportFolder() async {
+    if (!await ensureStoragePermission(context)) return;
+    if (!mounted) return;
     final dir = await FilePicker.getDirectoryPath(
       dialogTitle: l10n.dataManagementExportDestination,
     );
@@ -53,6 +58,8 @@ class _DataManagementPageState extends ConsumerState<DataManagementPage> {
   }
 
   Future<void> _pickArchive() async {
+    if (!await ensureStoragePermission(context)) return;
+    if (!mounted) return;
     final result = await FilePicker.pickFile(
       dialogTitle: l10n.dataManagementChooseArchive,
       type: FileType.custom,
@@ -96,6 +103,8 @@ class _DataManagementPageState extends ConsumerState<DataManagementPage> {
       _showNotPermitted();
       return;
     }
+    if (!await ensureStoragePermission(context)) return;
+    if (!mounted) return;
     final failure = await ref.read(dataManagementControllerProvider.notifier)
         .createBackup(
           actingRoleId: _actingRoleId,
@@ -118,6 +127,8 @@ class _DataManagementPageState extends ConsumerState<DataManagementPage> {
 
   Future<void> _doRestore() async {
     if (!_canRestore || _archivePath == null) return;
+    if (!await ensureStoragePermission(context)) return;
+    if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -184,6 +195,8 @@ class _DataManagementPageState extends ConsumerState<DataManagementPage> {
       _showNotPermitted();
       return;
     }
+    if (!await ensureStoragePermission(context)) return;
+    if (!mounted) return;
     final failure = await ref.read(dataManagementControllerProvider.notifier)
         .exportData(
           actingRoleId: _actingRoleId,

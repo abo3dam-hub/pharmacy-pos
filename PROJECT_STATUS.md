@@ -27,7 +27,7 @@
 | Framework | Flutter 3.44.2 (pinned in CI), Arabic-first RTL UI |
 | Persistence | SQLite via Drift, **schema version 14** (code-gen `app_database.g.dart`) |
 | L10n | `flutter gen-l10n` — `app_ar.arb` / `app_en.arb`, exact AR/EN parity |
-| Tests | **109 files · 751 tests pass** · `flutter analyze` clean |
+| Tests | **110 files · 752 tests pass** · `flutter analyze` clean |
 | CI | GitHub Actions: `analyze-test`, `perf-file-db`, `build-windows`, `build-android` (~7–8 min critical path) |
 | Last CI | Run `37209412343` (commit `a129f1f`) — in progress at time of writing |
 | Windows | Portable build via `build-windows` job (`pharmacy-pos-windows` artifact) |
@@ -47,6 +47,18 @@ Local dev env (this machine):
 
 ## 2. Recent changes (newest first; detail in CHANGELOG)
 
+- **2026-10-05 — Android signing fixed for real + backup storage permission**:
+  (1) proven via certificate fingerprints that both post-Oct-4 APKs were
+  signed with *different* freshly-generated keys — AGP 9.1.0 ignores a merely
+  placed `~/.android/debug.keystore`; fix is an explicit `ciStable`
+  signingConfigs in `android/app/build.gradle.kts`, fail-hard restore step,
+  and a CI fingerprint check (`tool/check_apk_signature.py`); one final
+  uninstall needed, then in-place updates. (2) backup/restore/export on
+  Android now request file access (`MANAGE_EXTERNAL_STORAGE` on API 30+,
+  classic permission below) — previously no storage permission existed at
+  all, so writing a backup to a shared folder failed with "unexpected
+  error". New deps: `permission_handler`, `device_info_plus`; helper
+  `lib/core/permissions/storage_permission.dart`.
 - **2026-10-05 — whole-package rule audit** (Ali reaffirmed: every
   user-facing quantity/cost is in whole commercial packages, never parts):
   the last base-unit displays were found and fixed — dashboard low-stock and

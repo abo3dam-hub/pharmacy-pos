@@ -3700,4 +3700,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get salesHistoryNoLines => 'No lines in this invoice';
+
+  @override
+  String get storagePermissionTitle => 'File access permission';
+
+  @override
+  String get storagePermissionRationale =>
+      'The app needs file access permission to save backups to a folder of your choice and restore them later. Without it, backup and restore will fail.';
+
+  @override
+  String get storagePermissionOpenSettings => 'Open settings';
+
+  @override
+  String get storagePermissionDenied =>
+      'File access permission was denied — backup and restore will not work without it';
 }

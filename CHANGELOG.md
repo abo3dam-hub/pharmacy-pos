@@ -9,6 +9,31 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 ## [Unreleased]
 
 ### Fixed
+- **Android signing is now truly stable — explicit signing config**
+  (2026-10-05, reported by Ali) — both post-Oct-4 APKs carried *different*
+  signatures even though the "stable keystore" restore step ran fine both
+  times. Root cause, proven by extracting the signer certificates from both
+  APKs (different SHA-256 fingerprints, both generated fresh at build time):
+  newer AGP (9.1.0) silently ignores a merely placed
+  `~/.android/debug.keystore` and generates a fresh key per build, so *every*
+  update required an uninstall. Fix: `android/app/build.gradle.kts` now
+  declares an explicit `ciStable` signing config naming the restored keystore
+  file (falls back to default debug signing on local dev machines); the CI
+  restore step now *fails the job* instead of silently falling back to an
+  ephemeral key; and a new `tool/check_apk_signature.py` step verifies the
+  built APK's signer certificate matches the keystore (fails the build
+  otherwise). Note: one final uninstall is still needed once, to move off the
+  randomly-signed builds — afterwards updates install in place.
+- **Backup/restore on Android: storage permission** (2026-10-05, reported by
+  Ali) — creating a backup into a user-chosen shared folder (e.g. Download)
+  failed with "unexpected error": the manifest declared no storage
+  permissions at all, and Android 11+ scoped storage blocks raw file I/O in
+  shared folders. Added `READ/WRITE_EXTERNAL_STORAGE` (capped) and
+  `MANAGE_EXTERNAL_STORAGE` to the manifest, and the data-management page now
+  requests file access before backup/restore/export (system Settings flow on
+  API 30+, runtime dialog below) with a clear Arabic explanation instead of a
+  generic error when declined. New `permission_handler` + `device_info_plus`
+  dependencies; new `lib/core/permissions/storage_permission.dart` helper.
 - **Whole-package rule enforced across every remaining view** (2026-10-05,
   reaffirmed by Ali: all user-facing quantities and costs are in whole
   commercial packages, never parts) — a full audit found and fixed the last

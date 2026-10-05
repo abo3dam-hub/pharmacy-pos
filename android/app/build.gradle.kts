@@ -29,11 +29,34 @@ android {
         versionName = flutter.versionName
     }
 
+    // Stable CI signing key. CI restores the ANDROID_KEYSTORE_B64 secret to
+    // this exact path before the build; naming the file explicitly is what
+    // forces AGP to use it (a merely placed ~/.android/debug.keystore is
+    // silently ignored by newer AGP, which then generates a fresh key per
+    // build and breaks in-place updates — 2026-10-05).
+    val stableKeystoreFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
+    signingConfigs {
+        create("ciStable") {
+            storeFile = stableKeystoreFile
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // CI restores a stable keystore to ~/.android/debug.keystore from
+            // the ANDROID_KEYSTORE_B64 secret (see .github/workflows/ci.yml).
+            // The config must name the file explicitly: newer AGP silently
+            // ignores a merely placed ~/.android/debug.keystore and generates
+            // a fresh key per build, which makes every APK uninstall the
+            // previous one (2026-10-05). Falls back to the default debug
+            // signing when the file is absent (local dev machines).
+            signingConfig = if (stableKeystoreFile.exists())
+                signingConfigs.getByName("ciStable")
+            else
+                signingConfigs.getByName("debug")
         }
     }
 }

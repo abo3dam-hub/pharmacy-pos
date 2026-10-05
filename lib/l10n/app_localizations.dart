@@ -7248,6 +7248,30 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'لا توجد مواد في هذه الفاتورة'**
   String get salesHistoryNoLines;
+
+  /// No description provided for @storagePermissionTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'صلاحية الوصول إلى الملفات'**
+  String get storagePermissionTitle;
+
+  /// No description provided for @storagePermissionRationale.
+  ///
+  /// In ar, this message translates to:
+  /// **'يحتاج التطبيق إلى صلاحية الوصول إلى الملفات لحفظ النسخ الاحتياطية في مجلد من اختيارك واستعادتها لاحقاً. بدون هذه الصلاحية سيفشل إنشاء النسخة والاستعادة.'**
+  String get storagePermissionRationale;
+
+  /// No description provided for @storagePermissionOpenSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'فتح الإعدادات'**
+  String get storagePermissionOpenSettings;
+
+  /// No description provided for @storagePermissionDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم رفض صلاحية الوصول إلى الملفات — لن يعمل النسخ الاحتياطي والاستعادة بدونها'**
+  String get storagePermissionDenied;
 }
 
 class _AppLocalizationsDelegate

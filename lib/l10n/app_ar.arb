@@ -1419,5 +1419,9 @@
   "productDetailCost": "سعر التكلفة",
   "productDetailStock": "المخزون",
   "salesHistoryOpenDetail": "فتح التفاصيل",
-  "salesHistoryNoLines": "لا توجد مواد في هذه الفاتورة"
+  "salesHistoryNoLines": "لا توجد مواد في هذه الفاتورة",
+  "storagePermissionTitle": "صلاحية الوصول إلى الملفات",
+  "storagePermissionRationale": "يحتاج التطبيق إلى صلاحية الوصول إلى الملفات لحفظ النسخ الاحتياطية في مجلد من اختيارك واستعادتها لاحقاً. بدون هذه الصلاحية سيفشل إنشاء النسخة والاستعادة.",
+  "storagePermissionOpenSettings": "فتح الإعدادات",
+  "storagePermissionDenied": "تم رفض صلاحية الوصول إلى الملفات — لن يعمل النسخ الاحتياطي والاستعادة بدونها"
 }

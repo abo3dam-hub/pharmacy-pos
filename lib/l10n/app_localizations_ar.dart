@@ -3684,4 +3684,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get salesHistoryNoLines => 'لا توجد مواد في هذه الفاتورة';
+
+  @override
+  String get storagePermissionTitle => 'صلاحية الوصول إلى الملفات';
+
+  @override
+  String get storagePermissionRationale =>
+      'يحتاج التطبيق إلى صلاحية الوصول إلى الملفات لحفظ النسخ الاحتياطية في مجلد من اختيارك واستعادتها لاحقاً. بدون هذه الصلاحية سيفشل إنشاء النسخة والاستعادة.';
+
+  @override
+  String get storagePermissionOpenSettings => 'فتح الإعدادات';
+
+  @override
+  String get storagePermissionDenied =>
+      'تم رفض صلاحية الوصول إلى الملفات — لن يعمل النسخ الاحتياطي والاستعادة بدونها';
 }
