@@ -8,6 +8,19 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 
 ## [Unreleased]
 
+### Added
+- **On-device end-to-end tests** (2026-10-06, Ali's request): new
+  `integration_test/` suite driving the real app UI on a real device
+  (Windows desktop or Android) through a hermetic in-memory database —
+  never touches the real database. `flutter test integration_test` runs:
+  app smoke (launch → login → dashboard → POS opens) and the full POS sale
+  flow (search → add → qty 2 → cash pay → receipt → invoice persisted +
+  stock decreased). Shared scaffolding in `integration_test/e2e_helpers.dart`
+  (hermetic harness, UI login, rail/drawer-aware navigation to sales,
+  sellable-item seeding). `integration_test` added to dev_dependencies;
+  `flutter analyze` clean. Note: tests were compile-verified only — they
+  need a Windows host or Android device to execute.
+
 ### Fixed
 - **CI #132 fix — guardrail allowlist line drift** (2026-10-05): the previous
   commit's POS pay-sheet edit shifted the allowlisted packaging-structure

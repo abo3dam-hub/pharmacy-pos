@@ -41,6 +41,20 @@ flutter analyze
 flutter test
 ```
 
+### End-to-end tests (on-device)
+
+`integration_test/` drives the real app on a real device through the actual
+UI (login → dashboard → POS sale → receipt), using a hermetic in-memory
+database — it never touches the real database. Run on Windows or with an
+Android device/emulator connected:
+
+```sh
+flutter test integration_test
+```
+
+Current coverage: app smoke (launch → login → dashboard → POS) and the full
+POS sale flow (search → add → quantity → cash pay → receipt → DB assertions).
+
 ### Windows release build
 
 Requires a Windows host with the Visual Studio C++ toolchain:
