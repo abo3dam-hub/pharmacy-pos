@@ -1662,6 +1662,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get posSearchHint => 'ابحث عن دواء بالاسم أو الباركود...';
 
   @override
+  String get posIdleHint => 'امسح باركود أو ابحث بالاسم لعرض المنتجات';
+
+  @override
   String get posScanOrSearch => 'امسح الباركود أو ابحث عن منتج';
 
   @override

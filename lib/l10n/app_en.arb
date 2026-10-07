@@ -661,6 +661,7 @@
   "partialSalePartsInvalid": "Parts per box must be greater than 1",
   "partialSaleMarkupInvalid": "Markup must be between 0 and 100%",
   "posSearchHint": "Search by name or barcode...",
+  "posIdleHint": "Scan a barcode or search by name to show products",
   "posScanOrSearch": "Scan barcode or search products",
   "posCustomerTab": "Customer {tab}",
   "posReturnTab": "Returns",

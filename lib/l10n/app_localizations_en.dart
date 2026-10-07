@@ -1666,6 +1666,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get posSearchHint => 'Search by name or barcode...';
 
   @override
+  String get posIdleHint => 'Scan a barcode or search by name to show products';
+
+  @override
   String get posScanOrSearch => 'Scan barcode or search products';
 
   @override

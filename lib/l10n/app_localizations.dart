@@ -3307,6 +3307,12 @@ abstract class AppLocalizations {
   /// **'ابحث عن دواء بالاسم أو الباركود...'**
   String get posSearchHint;
 
+  /// No description provided for @posIdleHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح باركود أو ابحث بالاسم لعرض المنتجات'**
+  String get posIdleHint;
+
   /// No description provided for @posScanOrSearch.
   ///
   /// In ar, this message translates to:

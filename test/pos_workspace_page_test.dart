@@ -218,7 +218,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('السلة فارغة — أضف أصنافاً للبيع'), findsOneWidget);
-      expect(find.text('لا توجد نتائج مطابقة'), findsOneWidget);
+      expect(find.text('امسح باركود أو ابحث بالاسم لعرض المنتجات'), findsWidgets);
 
       await tester.enterText(find.byType(TextField).first, 'بانادول');
       await tester.pump(const Duration(milliseconds: 700));
@@ -434,7 +434,7 @@ void main() {
 
       expect(find.textContaining('1 علبة'), findsOneWidget,
           reason: 'the single result joined the cart directly');
-      expect(find.text('لا توجد نتائج مطابقة'), findsOneWidget,
+      expect(find.text('امسح باركود أو ابحث بالاسم لعرض المنتجات'), findsWidgets,
           reason: 'the field + results were cleared for the next item');
     });
 

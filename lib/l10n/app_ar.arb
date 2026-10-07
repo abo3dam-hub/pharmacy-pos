@@ -661,6 +661,7 @@
   "partialSalePartsInvalid": "عدد الأجزاء في العبوة يجب أن يكون أكبر من 1",
   "partialSaleMarkupInvalid": "نسبة الزيادة يجب أن تكون بين 0 و100",
   "posSearchHint": "ابحث عن دواء بالاسم أو الباركود...",
+  "posIdleHint": "امسح باركود أو ابحث بالاسم لعرض المنتجات",
   "posScanOrSearch": "امسح الباركود أو ابحث عن منتج",
   "posCustomerTab": "عميل {tab}",
   "posReturnTab": "مرتجعات",

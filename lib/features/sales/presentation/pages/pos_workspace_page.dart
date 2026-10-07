@@ -686,6 +686,12 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
                   ? const Center(child: CircularProgressIndicator())
                   : _ProductList(
                       items: state.searchResults?.items ?? const [],
+                      // Distinguish "no search yet" (show hint) from "searched
+                      // with no hits" (show no-results). After a successful
+                      // camera scan the field is cleared and searchResults is
+                      // null — showing "no results" there confused users
+                      // (2026-10-07, Ali).
+                      hasSearched: state.searchResults != null,
                       onAdd: (item) => ref
                           .read(
                             posWorkspaceControllerProvider(
@@ -755,6 +761,7 @@ class _ProductList extends StatelessWidget {
     this.canViewAlternatives = false,
     this.onAlternatives,
     this.onLostSale,
+    this.hasSearched = true,
   });
 
   final List<PosCatalogItem> items;
@@ -767,6 +774,10 @@ class _ProductList extends StatelessWidget {
   final ValueChanged<PosCatalogItem>? onAlternatives;
   final VoidCallback? onLostSale;
 
+  /// Whether a search was performed. When false (e.g. right after a successful
+  /// camera scan cleared the field), show an idle hint instead of "no results".
+  final bool hasSearched;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -775,9 +786,14 @@ class _ProductList extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.search_off, size: 48),
+            Icon(
+              hasSearched ? Icons.search_off : Icons.qr_code_scanner,
+              size: 48,
+            ),
             const SizedBox(height: AppSpacing.m),
-            Text(l10n.posNoResults),
+            Text(
+              hasSearched ? l10n.posNoResults : l10n.posIdleHint,
+            ),
             if (onLostSale != null) ...[
               const SizedBox(height: AppSpacing.m),
               OutlinedButton.icon(
