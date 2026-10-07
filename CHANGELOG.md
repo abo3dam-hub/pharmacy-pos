@@ -22,6 +22,11 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Camera scan "no results" confusion (2026-10-07, Ali's screenshot):** the
+  scan WAS adding the item to cart (pay button showed "300 · 1"), but the
+  search panel showed "لا توجد نتائج مطابقة" because the cleared field left
+  an empty results list. `_ProductList` now distinguishes "no search yet"
+  (shows an idle hint) from a real empty search result.
 - **Camera scan still failing + dashboard active-items (2026-10-07, Ali's
   retest):**
   * Camera scan in POS still showed no results even for stocked items:

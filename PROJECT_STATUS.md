@@ -47,6 +47,9 @@ Local dev env (this machine):
 
 ## 2. Recent changes (newest first; detail in CHANGELOG)
 
+- **2026-10-07 — Camera "no results" confusion (Ali's screenshot):** the scan
+  was adding to cart but the panel showed "no matching results"; the empty
+  panel now shows an idle hint instead.
 - **2026-10-07 — Camera scan retry + dashboard stocked-items (Ali's retest):**
   `byBarcode` falls back to LIKE match for barcodes with stray formatting;
   camera path shows search candidates on failure; dashboard "active items"
