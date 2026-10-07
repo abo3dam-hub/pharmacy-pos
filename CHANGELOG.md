@@ -22,6 +22,16 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Camera scan still failing + dashboard active-items (2026-10-07, Ali's
+  retest):**
+  * Camera scan in POS still showed no results even for stocked items:
+    `byBarcode` used exact `equals`, which misses barcodes with stray
+    whitespace/formatting that the inventory LIKE search finds. It now falls
+    back to a substring (LIKE) match when the exact lookup fails. The camera
+    path also runs the general search on failure so the results list shows
+    candidates instead of a dead field.
+  * Dashboard "active items" card counted everything active in the items
+    tree; it now counts only items actually in stock (`currentStockBase > 0`).
 - **Camera barcode scan in POS + smart price decimals** (2026-10-07, Ali):
   * Camera scan in the sales window found nothing for products that
     Inventory displayed: the camera path used the general catalog search

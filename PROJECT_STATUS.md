@@ -47,6 +47,10 @@ Local dev env (this machine):
 
 ## 2. Recent changes (newest first; detail in CHANGELOG)
 
+- **2026-10-07 — Camera scan retry + dashboard stocked-items (Ali's retest):**
+  `byBarcode` falls back to LIKE match for barcodes with stray formatting;
+  camera path shows search candidates on failure; dashboard "active items"
+  now counts only stocked items.
 - **2026-10-07 — Camera barcode scan in POS + smart price decimals (Ali):**
   camera scan now uses the exact barcode lookup (was: stock-filtered general
   search that hid zero-stock items and silently dropped ambiguous hits);

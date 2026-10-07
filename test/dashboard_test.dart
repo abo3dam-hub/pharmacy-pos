@@ -115,7 +115,11 @@ void main() {
   test('controller loads a real snapshot with today totals', () async {
     final now = DateTime.now().millisecondsSinceEpoch;
     await awaitCategory(db);
-    await insertItem(db, barcode: '6291041500213');
+    final itemId = await insertItem(db, barcode: '6291041500213');
+    // Active-items counts stocked items (2026-10-07): give it stock.
+    await (db.update(db.items)..where((i) => i.id.equals(itemId))).write(
+      const ItemsCompanion(currentStockBase: Value(10)),
+    );
     await insertSale(number: 'S-1', totalMicros: 50000, atMillis: now);
 
     final failure = await controller.load();

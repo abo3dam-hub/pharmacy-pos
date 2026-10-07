@@ -67,11 +67,17 @@ class DashboardDao {
     );
   }
 
+  /// Counts items actually present in stock (currentStockBase > 0), not merely
+  /// active in the items tree (2026-10-07, Ali: the dashboard card must show
+  /// stocked items).
   Future<int> _countActiveItems() async {
     final row =
         await (_db.selectOnly(_db.items)
               ..addColumns([_db.items.id.count()])
-              ..where(_db.items.isActive.equals(true)))
+              ..where(
+                _db.items.isActive.equals(true) &
+                    _db.items.currentStockBase.isBiggerThanValue(0),
+              ))
             .getSingle();
     return (row.read(_db.items.id.count()) ?? 0);
   }

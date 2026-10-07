@@ -119,6 +119,12 @@ class PosCatalogDao {
   }
 
   /// Indexed barcode lookup: primary barcode (unique) then secondary (unique).
+  ///
+  /// Falls back to a substring (LIKE) match when the exact match fails —
+  /// imported barcodes sometimes carry stray whitespace or formatting that
+  /// the exact `equals` misses while the inventory LIKE search finds
+  /// (2026-10-07, Ali: camera scan found nothing in POS for an item that
+  /// Inventory displayed and that had stock).
   Future<PosCatalogItem?> byBarcode(String barcode) async {
     final code = barcode.trim();
     if (code.isEmpty) return null;
@@ -126,17 +132,30 @@ class PosCatalogDao {
       _db.items,
     )..where((i) => i.primaryBarcode.equals(code))).getSingleOrNull();
     if (primary != null) {
-      return (await hydrate([primary])).isEmpty
-          ? null
-          : (await hydrate([primary])).first;
+      final hydrated = await hydrate([primary]);
+      if (hydrated.isNotEmpty) return hydrated.first;
     }
     final secondary = await (_db.select(
       _db.items,
     )..where((i) => i.secondaryBarcode.equals(code))).getSingleOrNull();
-    if (secondary == null) return null;
-    return (await hydrate([secondary])).isEmpty
-        ? null
-        : (await hydrate([secondary])).first;
+    if (secondary != null) {
+      final hydrated = await hydrate([secondary]);
+      if (hydrated.isNotEmpty) return hydrated.first;
+    }
+    // Fallback: substring match (same semantics as the inventory search).
+    // Prefer an exact trimmed match first to avoid ambiguity.
+    final like = '%${code.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
+    final candidates = await (_db.select(
+      _db.items,
+    )
+      ..where((i) =>
+          i.primaryBarcode.like(like) | i.secondaryBarcode.like(like))
+      ..limit(2)).get();
+    if (candidates.length == 1) {
+      final hydrated = await hydrate(candidates);
+      if (hydrated.isNotEmpty) return hydrated.first;
+    }
+    return null;
   }
 
   Future<PosCatalogItem?> byId(String id) async {

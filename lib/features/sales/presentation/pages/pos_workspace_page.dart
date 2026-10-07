@@ -622,6 +622,11 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
       _lastText = '';
       _query.clear();
       notifier.clearSearch();
+    } else {
+      // The barcode didn't resolve to a cart line: run the general search so
+      // the results list shows candidates instead of a dead "no results"
+      // field (2026-10-07, Ali).
+      await notifier.search(q);
     }
   }
 
