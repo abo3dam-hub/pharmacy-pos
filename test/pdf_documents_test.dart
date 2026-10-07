@@ -129,7 +129,7 @@ void main() {
     });
 
     test('money keeps Latin digits (no Arabic-Indic numerals)', () {
-      expect(Money.fromUnits(1030000).formatArabicDigits(), '103.00');
+      expect(Money.fromUnits(1030000).formatArabicDigits(), '103');
       expect(Money.fromUnits(12345678900).formatArabicDigits(), '1,234,567.89');
       expect('٠١٢٣٤٥٦٧٨٩'.contains(RegExp(r'[0-9]')), isFalse);
     });

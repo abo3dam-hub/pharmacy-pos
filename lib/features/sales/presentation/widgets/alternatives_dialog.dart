@@ -304,14 +304,21 @@ class _StockChip extends StatelessWidget {
             color: color,
           ),
           const SizedBox(width: 4),
-          Text(
-            inStock
-                ? l10n.posAlternativesInStock
-                : l10n.posAlternativesOutOfStock,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+          // Flexible so the badge never overflows its Wrap run when the
+          // dialog is narrow (e.g. phone 390px): the label ellipsizes
+          // instead of breaking layout (2026-10-07).
+          Flexible(
+            child: Text(
+              inStock
+                  ? l10n.posAlternativesInStock
+                  : l10n.posAlternativesOutOfStock,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
