@@ -600,36 +600,26 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
   /// A scanned code is an explicit product request: it must either add to
   /// cart or explain why not (2026-10-07, Ali: scan worked in Inventory
   /// but found nothing in POS).
+  /// Camera scan: the scanned product stays visible in the results list until
+  /// the next scan replaces it (Ali, 2026-10-08). Each new scan starts fresh —
+  /// the new barcode replaces the old one in the field.
   Future<void> _onCameraScanned(String code) async {
     _debounce?.cancel();
     widget.barcodeBuffer.reset();
     final q = code.trim();
     if (q.isEmpty) return;
     _lastText = q;
+    // New scan replaces any previous barcode (fresh start per scan).
     _query.text = q;
     final notifier = ref.read(
       posWorkspaceControllerProvider(widget.tabIndex).notifier,
     );
-    final before = notifier.currentState.cart.length;
     await notifier.handleScannedBarcode(q);
     if (!mounted) return;
-    // handleScannedBarcode either added the item (cart grew) or surfaced a
-    // not-found / insufficient-stock / lost-sale state. Clear the field only
-    // on success so a failure keeps the code visible for retry.
-    if (notifier.currentState.cart.length > before &&
-        notifier.currentState.errorMessage == null) {
-      widget.barcodeBuffer.reset();
-      _lastText = '';
-      _query.clear();
-      notifier.clearSearch();
-    } else {
-      // The barcode didn't resolve to a cart line: run the general search so
-      // the results list shows candidates instead of a dead "no results"
-      // field (2026-10-07, Ali).
-      await notifier.search(q);
-    }
+    // Show the scanned product (or candidates on failure) in the list.
+    // The product stays visible until the next scan replaces it.
+    await notifier.search(q);
   }
-
   /// Enter on a bare search (no scanner event): re-search the trimmed query and,
   /// when it resolves to exactly one product, add it to the cart and clear the
   /// field for the next item. Multi-result queries still show the list — they

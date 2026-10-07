@@ -47,6 +47,8 @@ Local dev env (this machine):
 
 ## 2. Recent changes (newest first; detail in CHANGELOG)
 
+- **2026-10-08 — Camera scan keeps product in list (Ali):** scanned product
+  stays visible until the next scan replaces it; each new scan starts fresh.
 - **2026-10-07 — Camera "no results" confusion (Ali's screenshot):** the scan
   was adding to cart but the panel showed "no matching results"; the empty
   panel now shows an idle hint instead.

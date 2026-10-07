@@ -22,6 +22,10 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Camera scan: product stays in list until next scan (2026-10-08, Ali):**
+  after a successful camera scan the product remains visible in the results
+  list (and its barcode in the field) until a new scan replaces it. Each new
+  scan starts fresh.
 - **Camera scan "no results" confusion (2026-10-07, Ali's screenshot):** the
   scan WAS adding the item to cart (pay button showed "300 · 1"), but the
   search panel showed "لا توجد نتائج مطابقة" because the cleared field left
