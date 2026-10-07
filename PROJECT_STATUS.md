@@ -47,6 +47,11 @@ Local dev env (this machine):
 
 ## 2. Recent changes (newest first; detail in CHANGELOG)
 
+- **2026-10-07 — Camera barcode scan in POS + smart price decimals (Ali):**
+  camera scan now uses the exact barcode lookup (was: stock-filtered general
+  search that hid zero-stock items and silently dropped ambiguous hits);
+  `Money.format()` strips trailing zeros (`300.00`→`"300"`, `300.50`→`"300.5"`)
+  across all display sites (UI, PDFs, Excel).
 - **2026-10-05 — Stale-UI comprehensive audit (Ali's request):** fixed the
   real void-icon bug (`_invoice` assigned without `setState` — AppBar never
   rebuilt) + regression test; sales-history expanded-row cache invalidation;

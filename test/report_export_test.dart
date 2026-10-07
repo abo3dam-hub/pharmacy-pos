@@ -21,9 +21,9 @@ void main() {
     test('formats money with Latin digits and thousands separators', () {
       // Money operates at scale 4 (1 unit = 10,000 micros).
       expect(const ReportCell.money(1234500).toText(), '123.45');
-      expect(const ReportCell.money(150000000).toText(), '15,000.00');
-      expect(const ReportCell.money(-500000).toText(), '-50.00');
-      expect(const ReportCell.money(0).toText(), '0.00');
+      expect(const ReportCell.money(150000000).toText(), '15,000');
+      expect(const ReportCell.money(-500000).toText(), '-50');
+      expect(const ReportCell.money(0).toText(), '0');
     });
 
     test('renders text, integers and booleans', () {

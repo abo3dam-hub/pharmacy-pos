@@ -594,17 +594,35 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
     _quickAdd(value, notifier);
   }
 
-  /// Camera scan result: fills the query and follows the same path as a
-  /// hardware scan — search the code, then quick-add on an unambiguous hit.
+  /// Camera scan result: fills the query and follows the exact-barcode path
+  /// (same as a hardware scanner) — NOT the general search, which hides
+  /// zero-stock items via inStockOnly and silently drops ambiguous hits.
+  /// A scanned code is an explicit product request: it must either add to
+  /// cart or explain why not (2026-10-07, Ali: scan worked in Inventory
+  /// but found nothing in POS).
   Future<void> _onCameraScanned(String code) async {
     _debounce?.cancel();
     widget.barcodeBuffer.reset();
-    _lastText = code;
-    _query.text = code;
+    final q = code.trim();
+    if (q.isEmpty) return;
+    _lastText = q;
+    _query.text = q;
     final notifier = ref.read(
       posWorkspaceControllerProvider(widget.tabIndex).notifier,
     );
-    await _quickAdd(code, notifier);
+    final before = notifier.currentState.cart.length;
+    await notifier.handleScannedBarcode(q);
+    if (!mounted) return;
+    // handleScannedBarcode either added the item (cart grew) or surfaced a
+    // not-found / insufficient-stock / lost-sale state. Clear the field only
+    // on success so a failure keeps the code visible for retry.
+    if (notifier.currentState.cart.length > before &&
+        notifier.currentState.errorMessage == null) {
+      widget.barcodeBuffer.reset();
+      _lastText = '';
+      _query.clear();
+      notifier.clearSearch();
+    }
   }
 
   /// Enter on a bare search (no scanner event): re-search the trimmed query and,

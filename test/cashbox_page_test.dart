@@ -90,7 +90,7 @@ void main() {
     // The session card now shows the open session + live reconciliation.
     expect(find.text('الجلسة مفتوحة'), findsOneWidget);
     expect(find.text('الرصيد المتوقع'), findsOneWidget);
-    expect(find.text('500.00'), findsWidgets,
+    expect(find.text('500'), findsWidgets,
         reason: 'running, expected, net-moves and ledger amounts render in '
             'Latin digits');
     // Opening row entered the ledger history.

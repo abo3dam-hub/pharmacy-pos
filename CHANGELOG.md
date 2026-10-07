@@ -22,6 +22,21 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Camera barcode scan in POS + smart price decimals** (2026-10-07, Ali):
+  * Camera scan in the sales window found nothing for products that
+    Inventory displayed: the camera path used the general catalog search
+    (`inStockOnly: true`), which hides zero-stock items — and silently
+    dropped non-unique hits. It now uses the exact barcode lookup (same as
+    the hardware scanner): the product is always identified; a zero-stock
+    scan reports insufficient stock honestly instead of "no results".
+    Regression test: zero-stock barcode resolves via `handleScannedBarcode`.
+    (Guardrail allowlist entry for `pos_workspace_page.dart` moved 795→813
+    by this edit.)
+  * Prices/amounts no longer show trailing zeros: `Money.format()` strips
+    insignificant fractional zeros — `300.00` → `"300"`, `300.50` →
+    `"300.5"`; the decimal point appears only with an actual fractional
+    digit. Single conversion point, so all display sites (UI, PDFs, Excel
+    exports) follow. Tests updated.
 - **CI #132 fix — guardrail allowlist line drift** (2026-10-05): the previous
   commit's POS pay-sheet edit shifted the allowlisted packaging-structure
   label in `pos_workspace_page.dart` from line 794 to 795; the allowlist entry

@@ -32,27 +32,27 @@ void main() {
     });
 
     test('amounts format with Latin digits and comma groups', () {
-      expect(Money.zero().formatArabicDigits(), '0.00');
-      expect(const Money.fromUnits(1).formatArabicDigits(), '0.00');
-      expect(Money.parse('1').formatArabicDigits(), '1.00');
-      expect(Money.parse('12345').formatArabicDigits(), '12,345.00');
-      expect(Money.parse('0.5').formatArabicDigits(), '0.50');
+      expect(Money.zero().formatArabicDigits(), '0');
+      expect(const Money.fromUnits(1).formatArabicDigits(), '0');
+      expect(Money.parse('1').formatArabicDigits(), '1');
+      expect(Money.parse('12345').formatArabicDigits(), '12,345');
+      expect(Money.parse('0.5').formatArabicDigits(), '0.5');
       expect(Money.parse('1234.5678').formatArabicDigits(4), '1,234.5678');
       expect(Money.parse('-10.25').formatArabicDigits(), '-10.25');
       expect(Money.fromUnits(-123456).formatArabicDigits(), '-12.35');
-      expect(Money.parse('15593859').formatArabicDigits(), '15,593,859.00');
+      expect(Money.parse('15593859').formatArabicDigits(), '15,593,859');
     });
 
     test('whole-number formatting as used for quantities and invoice numbers',
         () {
       expect(const Money.fromUnits(125000).formatArabicDigits(0), '13');
       expect(Money.parse('0').formatArabicDigits(0), '0');
-      expect(Money.parse('100').formatArabicDigits(4), '100.0000');
+      expect(Money.parse('100').formatArabicDigits(4), '100');
     });
 
     test('ASCII punctuation separators are used, never Arabic ones', () {
       final out = Money.parse('1234.50').formatArabicDigits();
-      expect(out, '1,234.50');
+      expect(out, '1,234.5');
       expect(out.contains(','), isTrue);
       expect(out.contains('.'), isTrue);
     });

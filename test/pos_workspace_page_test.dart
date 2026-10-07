@@ -229,13 +229,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('1 علبة'), findsOneWidget);
-      expect(find.text('1.00'), findsWidgets);
+      expect(find.text('1'), findsWidgets);
 
       await tester.tap(find.byIcon(Icons.add_circle_outline));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('2 علبة'), findsOneWidget);
-      expect(find.text('2.00'), findsWidgets);
+      expect(find.text('2'), findsWidgets);
 
       await tester.tap(find.text('دفع (F12)'));
       await tester.pumpAndSettle();
@@ -245,7 +245,7 @@ void main() {
         '5',
       );
       await tester.pumpAndSettle();
-      expect(find.text('الباقي: 3.00'), findsOneWidget);
+      expect(find.text('الباقي: 3'), findsOneWidget);
 
       await tester.tap(find.widgetWithText(FilledButton, 'دفع (F12)').last);
       await tester.pumpAndSettle();
@@ -265,7 +265,7 @@ void main() {
       await tester.tap(find.text('إغلاق'));
       await tester.pumpAndSettle();
       expect(find.text('السلة فارغة — أضف أصنافاً للبيع'), findsOneWidget);
-      expect(find.text('الباقي: 3.00'), findsNothing);
+      expect(find.text('الباقي: 3'), findsNothing);
     });
 
     testWidgets(

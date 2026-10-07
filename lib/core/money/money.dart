@@ -191,7 +191,11 @@ class Money implements Comparable<Money> {
   @override
   int get hashCode => _units.hashCode;
 
-  /// Formats with a fixed number of decimal places, e.g. `"1250.50"`.
+  /// Formats with up to [decimalPlaces] decimal places, e.g. `"1250.50"`.
+  ///
+  /// Trailing fractional zeros are stripped: `300.00` → `"300"`,
+  /// `300.50` → `"300.5"`. The decimal point appears only when there is an
+  /// actual fractional digit (Ali, 2026-10-07).
   String format([int decimalPlaces = 2]) {
     if (decimalPlaces < 0 || decimalPlaces > scale) {
       throw ArgumentError.value(decimalPlaces, 'decimalPlaces');
@@ -201,9 +205,13 @@ class Money implements Comparable<Money> {
     final factor = _tenPower(decimalPlaces);
     final magMajor = scaled.abs() ~/ factor;
     final magMinor = scaled.abs() % factor;
-    final minorText = decimalPlaces == 0
+    var minorText = decimalPlaces == 0
         ? ''
         : magMinor.toString().padLeft(decimalPlaces, '0');
+    // Strip insignificant trailing zeros ("300.00" -> "300").
+    while (minorText.endsWith('0')) {
+      minorText = minorText.substring(0, minorText.length - 1);
+    }
     final digits = magMajor.toString().replaceAllMapped(
         RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
     final isNegative = _units < 0;

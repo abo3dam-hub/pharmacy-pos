@@ -48,7 +48,7 @@ void main() {
     });
 
     test('format with grouping', () {
-      expect(Money.parse('1250.50').format(), '1,250.50');
+      expect(Money.parse('1250.50').format(), '1,250.5');
       expect(Money.parse('1250.50').format(0), '1,251');
     });
 
@@ -70,8 +70,18 @@ void main() {
     });
 
     test('formatArabicDigits renders Western/Latin glyphs per §23', () {
-      expect(Money.parse('1234.50').formatArabicDigits(), '1,234.50');
-      expect(Money.parse('1234.50').formatArabicDigits(4), '1,234.5000');
+      expect(Money.parse('1234.50').formatArabicDigits(), '1,234.5');
+      expect(Money.parse('1234.50').formatArabicDigits(4), '1,234.5');
+    });
+
+    test('format strips insignificant trailing zeros (Ali 2026-10-07)', () {
+      expect(Money.parse('300').format(), '300');
+      expect(Money.parse('300.00').format(), '300');
+      expect(Money.parse('300.50').format(), '300.5');
+      expect(Money.parse('300.05').format(), '300.05');
+      expect(Money.parse('10000').format(), '10,000');
+      expect(Money.parse('-50.00').format(), '-50');
+      expect(const Money.fromUnits(0).format(), '0');
     });
 
     test('roundTo / floorTo', () {

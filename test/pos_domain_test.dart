@@ -1009,6 +1009,44 @@ void main() {
       expect(ctrl.currentState.cart, isEmpty);
       expect(ctrl.currentState.searchQuery, '0000000000000');
     });
+
+    test(
+        'handleScannedBarcode finds zero-stock item by barcode '
+        '(camera scan must not use the stock-filtered search)', () async {
+      // Regression (2026-10-07, Ali): camera scans in POS found nothing for
+      // a product that Inventory displayed — the camera path used the
+      // general search (inStockOnly: true). The exact barcode lookup finds
+      // the product; addToCart then reports insufficient stock honestly
+      // instead of a silent "no results".
+      const zeroStock = PosCatalogItem(
+        id: 'item_zero',
+        tradeName: 'دواء بلا رصيد',
+        tradeNameEn: 'Zero Stock',
+        scientificName: '',
+        primaryBarcode: '2222222222222',
+        isControlledDrug: false,
+        requiresPrescription: false,
+        isActive: true,
+        sellingPriceMicros: 50000,
+        vatRateBasisPoints: 0,
+        currentStockBase: 0,
+        availableStockBase: 0,
+        baseUnitId: 'unit_base',
+        baseUnitName: 'قطعة',
+        largeUnitId: 'unit_box',
+        largeUnitName: 'علبة',
+        unitsPerLarge: 1,
+        partialSaleEnabled: false,
+      );
+      final fake = _FakeSalesRepository(items: {'item_zero': zeroStock});
+      final ctrl = _controller(fake);
+      await ctrl.handleScannedBarcode('2222222222222');
+      // Not "product not found": the barcode resolved; the failure is the
+      // honest insufficient-stock error from addToCart.
+      expect(ctrl.currentState.cart, isEmpty);
+      expect(ctrl.currentState.errorMessage, isNotNull);
+      expect(ctrl.currentState.errorMessage, isNot(contains('تعذر العثور')));
+    });
   });
 
   group('SmartAlternativesService', () {

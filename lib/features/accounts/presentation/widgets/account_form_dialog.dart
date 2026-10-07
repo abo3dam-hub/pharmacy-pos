@@ -70,7 +70,7 @@ class _AccountFormDialogState extends State<_AccountFormDialog> {
     _nameEnCtrl = TextEditingController(text: e?.nameEn ?? '');
     _openingBalCtrl = TextEditingController(
         text: e != null && e.openingBalanceMicros != 0
-            ? (e.openingBalanceMicros / 10000).toStringAsFixed(2)
+            ? Money.fromUnits(e.openingBalanceMicros).format()
             : '');
     _notesCtrl = TextEditingController(text: e?.notes ?? '');
   }
