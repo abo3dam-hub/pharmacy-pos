@@ -24,6 +24,8 @@ class UiPreferencesService {
   static const String _receiptNameKey = 'receipt.pharmacy_name';
   static const String _receiptPromoKey = 'receipt.promo_line';
   static const String _receiptFontSizeKey = 'receipt.font_size';
+  static const String _appTitleKey = 'app.custom_title';
+  static const String _appSloganKey = 'app.custom_slogan';
 
   Future<DisplayDensity> displayDensity() async =>
       DisplayDensity.fromString(await _dao.getString(_densityKey));
@@ -40,6 +42,15 @@ class UiPreferencesService {
 
   Future<void> setReceiptPromoLine(String value) =>
       _dao.setString(_receiptPromoKey, value);
+
+  /// Custom app title/slogan for the login screen (Ali, 2026-10-09).
+  /// Null/empty = use the built-in l10n defaults.
+  Future<String?> customAppTitle() => _dao.getString(_appTitleKey);
+  Future<void> setCustomAppTitle(String value) =>
+      _dao.setString(_appTitleKey, value);
+  Future<String?> customAppSlogan() => _dao.getString(_appSloganKey);
+  Future<void> setCustomAppSlogan(String value) =>
+      _dao.setString(_appSloganKey, value);
 
   Future<double> receiptFontSize() async {
     final raw = await _dao.getString(_receiptFontSizeKey);

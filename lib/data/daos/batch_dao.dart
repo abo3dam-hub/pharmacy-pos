@@ -28,6 +28,21 @@ class BatchDao {
     return rows.fold<int>(0, (sum, b) => sum + b.quantityBase);
   }
 
+  /// Next auto batch number for an item (Ali, 2026-10-09): max numeric
+  /// batchNumber + 1, or 1 when the item has no numeric batches yet.
+  /// Non-numeric batch numbers (manufacturer codes) are ignored.
+  Future<int> nextBatchNumber(String itemId) async {
+    final rows = await (_db.select(_db.batches)
+          ..where((b) => b.itemId.equals(itemId)))
+        .get();
+    var max = 0;
+    for (final b in rows) {
+      final n = int.tryParse(b.batchNumber.trim());
+      if (n != null && n > max) max = n;
+    }
+    return max + 1;
+  }
+
   Future<PageResult<BatchRow>> page(PageRequest page, String itemId) async {
     final totalExpr = _db.batches.id.count();
     final count = _db.selectOnly(_db.batches)

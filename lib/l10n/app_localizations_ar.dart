@@ -1891,6 +1891,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get posNoResults => 'لا توجد نتائج مطابقة';
 
   @override
+  String posNoResultsFor(Object query) {
+    return 'لم يتم العثور على \"$query\" — السلة أدناه';
+  }
+
+  @override
   String get posCustomerLabel => 'العميل';
 
   @override
@@ -3215,6 +3220,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settingsBusinessName => 'اسم النشاط التجاري';
+
+  @override
+  String get settingsAppTitle => 'اسم النظام (شاشة الدخول)';
+
+  @override
+  String get settingsAppTitleHint => 'اتركه فارغاً للاسم الافتراضي';
+
+  @override
+  String get settingsAppSlogan => 'وصف النظام (شاشة الدخول)';
+
+  @override
+  String get settingsAppSloganHint => 'اتركه فارغاً للوصف الافتراضي';
 
   @override
   String get settingsBusinessNameHint => 'يظهر في الفواتير والتقارير';

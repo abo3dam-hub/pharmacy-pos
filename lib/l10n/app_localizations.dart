@@ -3757,6 +3757,12 @@ abstract class AppLocalizations {
   /// **'لا توجد نتائج مطابقة'**
   String get posNoResults;
 
+  /// No description provided for @posNoResultsFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'لم يتم العثور على \"{query}\" — السلة أدناه'**
+  String posNoResultsFor(Object query);
+
   /// No description provided for @posCustomerLabel.
   ///
   /// In ar, this message translates to:
@@ -6372,6 +6378,30 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'اسم النشاط التجاري'**
   String get settingsBusinessName;
+
+  /// No description provided for @settingsAppTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم النظام (شاشة الدخول)'**
+  String get settingsAppTitle;
+
+  /// No description provided for @settingsAppTitleHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتركه فارغاً للاسم الافتراضي'**
+  String get settingsAppTitleHint;
+
+  /// No description provided for @settingsAppSlogan.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصف النظام (شاشة الدخول)'**
+  String get settingsAppSlogan;
+
+  /// No description provided for @settingsAppSloganHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتركه فارغاً للوصف الافتراضي'**
+  String get settingsAppSloganHint;
 
   /// No description provided for @settingsBusinessNameHint.
   ///

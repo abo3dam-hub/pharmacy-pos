@@ -31,12 +31,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   final _formKey = GlobalKey<FormState>();
   final _businessName = TextEditingController();
   final _taxController = TextEditingController();
+  final _appTitle = TextEditingController();
+  final _appSlogan = TextEditingController();
   String? _currencyCode;
 
   @override
   void initState() {
     super.initState();
     Future.microtask(_load);
+  }
+
+  @override
+  void dispose() {
+    _businessName.dispose();
+    _taxController.dispose();
+    _appTitle.dispose();
+    _appSlogan.dispose();
+    super.dispose();
   }
 
   bool get _canEdit =>
@@ -50,6 +61,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         );
     final settings = ref.read(settingsControllerProvider).settings;
     _apply(settings);
+    // Custom app title/slogan (Ali, 2026-10-09).
+    final uiPrefs = ref.read(uiPreferencesServiceProvider);
+    _appTitle.text = await uiPrefs.customAppTitle() ?? '';
+    _appSlogan.text = await uiPrefs.customAppSlogan() ?? '';
+    if (mounted) setState(() {});
   }
 
   void _apply(AppSettings? settings) {
@@ -92,6 +108,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           actingUserId: _actingUserId,
           actingRoleId: _actingRoleId,
         );
+    // Custom app title/slogan (Ali, 2026-10-09).
+    final uiPrefs = ref.read(uiPreferencesServiceProvider);
+    await uiPrefs.setCustomAppTitle(_appTitle.text.trim());
+    await uiPrefs.setCustomAppSlogan(_appSlogan.text.trim());
     if (!mounted) return;
     if (failure == null) {
       ScaffoldMessenger.of(context)
@@ -164,6 +184,29 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           (v == null || v.trim().isEmpty)
                               ? l10n.settingsBusinessNameRequired
                               : null,
+                    ),
+                    const SizedBox(height: AppSpacing.l),
+                    // Custom app title/slogan for login screen (Ali, 2026-10-09).
+                    TextFormField(
+                      controller: _appTitle,
+                      enabled: _canEdit,
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: l10n.settingsAppTitle,
+                        helperText: l10n.settingsAppTitleHint,
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.l),
+                    TextFormField(
+                      controller: _appSlogan,
+                      enabled: _canEdit,
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: l10n.settingsAppSlogan,
+                        helperText: l10n.settingsAppSloganHint,
+                        border: const OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.l),
                     TextFormField(

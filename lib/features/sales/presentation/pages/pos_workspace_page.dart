@@ -711,6 +711,21 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
     );
   }
 
+  /// Whether to show the product results list (vs the inline cart) on mobile.
+  ///
+  /// Desktop: always the product list (cart is side-by-side).
+  /// Mobile: product list only when the query is non-empty AND (search hasn't
+  /// completed yet OR it found hits). A completed search with zero hits shows
+  /// the cart + a "not found" banner instead of hiding the cart (Ali,
+  /// 2026-10-09: cart must never disappear on failed search).
+  bool _shouldShowResults(PosWorkspaceState state) {
+    if (!widget.isCompact) return true;
+    if (_query.text.isEmpty) return false;
+    final results = state.searchResults;
+    if (results == null) return true; // search in flight
+    return results.items.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -756,10 +771,13 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
             Expanded(
               child: state.loading
                   ? const Center(child: CircularProgressIndicator())
-                  // Option A (Ali 2026-10-08, mobile only): empty query ->
-                  // inline cart; typing -> search results. On desktop the
-                  // cart panel is already visible side-by-side.
-                  : _query.text.isNotEmpty || !widget.isCompact
+                  // Mobile (Ali 2026-10-09): the cart is the primary view.
+                  // - Empty query -> cart.
+                  // - Query with results -> product list.
+                  // - Query with NO results -> cart stays + "not found" banner
+                  //   (never hide the cart; items are not lost).
+                  // Desktop: product list as before (cart is side-by-side).
+                  : _shouldShowResults(state)
                       ? _ProductList(
                           items: state.searchResults?.items ?? const [],
                           // Distinguish "no search yet" (show hint) from "searched
@@ -813,7 +831,14 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
                                 )
                               : null,
                         )
-                      : _InlineCartList(tabIndex: widget.tabIndex),
+                      : _InlineCartList(
+                          tabIndex: widget.tabIndex,
+                          // Failed search on mobile: banner with the query,
+                          // cart stays visible (Ali, 2026-10-09).
+                          notFoundQuery: _query.text.isNotEmpty
+                              ? _query.text
+                              : null,
+                        ),
             ),
           ],
         ),
@@ -853,9 +878,17 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
 /// lines directly below the search field with quantity +/- , unit toggle
 /// (box/part), and remove — no need to open the separate cart sheet.
 class _InlineCartList extends ConsumerWidget {
-  const _InlineCartList({required this.tabIndex});
+  const _InlineCartList({
+    required this.tabIndex,
+    this.notFoundQuery,
+  });
 
   final int tabIndex;
+
+  /// When a search completed with zero hits, show this query in a
+  /// "not found" banner above the cart (Ali, 2026-10-09: the cart must never
+  /// disappear on failed search).
+  final String? notFoundQuery;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -863,19 +896,18 @@ class _InlineCartList extends ConsumerWidget {
     final notifier =
         ref.read(posWorkspaceControllerProvider(tabIndex).notifier);
     final state = ref.watch(posWorkspaceControllerProvider(tabIndex));
-    if (state.cart.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.remove_shopping_cart_outlined, size: 48),
-            const SizedBox(height: AppSpacing.m),
-            Text(l10n.posCartItemEmpty),
-          ],
-        ),
-      );
-    }
-    return ListView.separated(
+    final list = state.cart.isEmpty
+        ? Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.remove_shopping_cart_outlined, size: 48),
+                const SizedBox(height: AppSpacing.m),
+                Text(l10n.posCartItemEmpty),
+              ],
+            ),
+          )
+        : ListView.separated(
       itemCount: state.cart.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
@@ -985,6 +1017,33 @@ class _InlineCartList extends ConsumerWidget {
           ),
         );
       },
+    );
+    // "Not found" banner above the cart when a search completed with zero
+    // hits (Ali, 2026-10-09).
+    if (notFoundQuery == null) return list;
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: AppSpacing.s),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.m,
+            vertical: AppSpacing.s,
+          ),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.errorContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            l10n.posNoResultsFor(notFoundQuery!),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onErrorContainer,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        Expanded(child: list),
+      ],
     );
   }
 }
@@ -1832,7 +1891,11 @@ class _ReceiptDialog extends ConsumerWidget {
 
   Future<void> _print(BuildContext context, WidgetRef ref) async {
     final settingsDao = ref.read(settingsDaoProvider);
+    // Pharmacy name: 'receipt.pharmacy_name' is the current key (settings
+    // page); fall back to the legacy 'pharmacy_name' key (Ali, 2026-10-09:
+    // custom name was not applied).
     final pharmacy =
+        await settingsDao.getString('receipt.pharmacy_name') ??
         await settingsDao.getString(pharmacyNameSettingKey) ??
         pharmacyFallbackName();
     final promoLine = await settingsDao.getString('receipt.promo_line');

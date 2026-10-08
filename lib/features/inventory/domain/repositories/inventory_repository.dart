@@ -486,6 +486,10 @@ Future<Map<String, List<ItemIngredientRef>>> activeIngredientRefsForItems(
   Future<List<BatchRow>> batchesForItem(String itemId);
   Future<BatchRow?> findBatch(String id);
   Future<BatchRow> insertBatch(AddBatchInput input, String userId);
+
+  /// Next auto batch number for an item (Ali, 2026-10-09): max numeric
+  /// batchNumber + 1, or 1 when none exist.
+  Future<int> nextBatchNumber(String itemId);
   Future<List<StockMovementRow>> movementsForItem(String itemId, {int limit});
   Future<void> applyStockAdjustment(StockAdjustInput input, String userId);
   Future<void> voidBatch(String id, String userId);

@@ -110,6 +110,10 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
         ? ''
         : (await repo.unitById(units.largeUnitId))?.name ?? '';
     if (!mounted) return;
+    if (!mounted) return;
+    // Auto batch number (Ali, 2026-10-09): suggest max+1, editable.
+    final nextBatch = await repo.nextBatchNumber(widget.itemId);
+    if (!mounted) return;
     final result = await showBatchFormDialog(
       context,
       itemId: widget.itemId,
@@ -118,6 +122,7 @@ class _BatchesPageState extends ConsumerState<BatchesPage> {
       baseUnitName: baseName,
       largeUnitName: largeName,
       initialCostMicros: _item?.costMicros ?? 0,
+      initialBatchNumber: nextBatch.toString(),
     );
     if (result == null || !mounted) return;
     // Chained flow ("save and add invoice"): the batch is NOT posted here.

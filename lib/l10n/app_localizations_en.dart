@@ -1896,6 +1896,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get posNoResults => 'No matching results';
 
   @override
+  String posNoResultsFor(Object query) {
+    return 'No results for \"$query\" — cart below';
+  }
+
+  @override
   String get posCustomerLabel => 'Customer';
 
   @override
@@ -3225,6 +3230,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsBusinessName => 'Business name';
+
+  @override
+  String get settingsAppTitle => 'System name (login screen)';
+
+  @override
+  String get settingsAppTitleHint => 'Leave empty for the default name';
+
+  @override
+  String get settingsAppSlogan => 'System tagline (login screen)';
+
+  @override
+  String get settingsAppSloganHint => 'Leave empty for the default tagline';
 
   @override
   String get settingsBusinessNameHint =>

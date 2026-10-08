@@ -896,6 +896,9 @@ class InventoryRepositoryImpl implements InventoryRepository {
   Future<List<BatchRow>> batchesForItem(String itemId) => _batchDao.byItem(itemId);
 
   @override
+  Future<int> nextBatchNumber(String itemId) => _batchDao.nextBatchNumber(itemId);
+
+  @override
   Future<BatchRow?> findBatch(String id) => _batchDao.byId(id);
 
   @override

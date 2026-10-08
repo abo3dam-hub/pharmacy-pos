@@ -32,6 +32,7 @@ Future<BatchFormResult?> showBatchFormDialog(
   String baseUnitName = '',
   String largeUnitName = '',
   int initialCostMicros = 0,
+  String? initialBatchNumber,
 }) async {
   final result = await showDialog<BatchFormResult>(
     context: context,
@@ -42,6 +43,7 @@ Future<BatchFormResult?> showBatchFormDialog(
       baseUnitName: baseUnitName,
       largeUnitName: largeUnitName,
       initialCostMicros: initialCostMicros,
+      initialBatchNumber: initialBatchNumber,
     ),
   );
   return result;
@@ -55,6 +57,7 @@ class _BatchFormDialog extends StatefulWidget {
     this.baseUnitName = '',
     this.largeUnitName = '',
     this.initialCostMicros = 0,
+    this.initialBatchNumber,
   });
 
   final String itemId;
@@ -66,6 +69,9 @@ class _BatchFormDialog extends StatefulWidget {
   /// Item's current cost (per base unit) — pre-fills the cost field so the
   /// pharmacist doesn't re-enter a cost already set on the item.
   final int initialCostMicros;
+
+  /// Suggested batch number (auto: max+1). Editable by the user.
+  final String? initialBatchNumber;
 
   @override
   State<_BatchFormDialog> createState() => _BatchFormDialogState();
@@ -91,6 +97,11 @@ class _BatchFormDialogState extends State<_BatchFormDialog> {
   void initState() {
     super.initState();
     _inPackages = widget.unitsPerLarge > 1;
+    // Auto batch number (Ali, 2026-10-09): pre-fill with the suggested number
+    // (max+1). The field stays editable.
+    if (widget.initialBatchNumber != null) {
+      _batchNumber.text = widget.initialBatchNumber!;
+    }
     // Pre-fill cost from the item's current cost so the pharmacist doesn't
     // re-enter it. Displayed per package in package-entry mode, per base
     // unit otherwise — converted via the single conversion point.

@@ -22,6 +22,18 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Cart never hides on failed search (2026-10-09, Ali):** mobile now shows
+  the inline cart + a "not found" banner when a search yields zero hits,
+  instead of replacing the cart with an empty "no results" view.
+- **Auto batch number (2026-10-09, Ali):** `BatchDao.nextBatchNumber`
+  (max numeric + 1, else 1); the batch dialog pre-fills it (editable); used
+  in inventory batches and the purchase chained flow.
+- **Receipt pharmacy name / promo fix (2026-10-09, Ali):** the receipt
+  dialogs read `receipt.pharmacy_name` (the settings key) with fallback to
+  the legacy `pharmacy_name` key; promo line key already matched.
+- **Custom login branding (2026-10-09, Ali):** settings now include
+  "system name" and "system tagline" fields; the login screen shows them
+  when set, else the built-in defaults.
 - **Radical scan fix (2026-10-08, Ali's device test):**
   - Root cause: success was detected via `cart.length > before`, which
     misreported re-scanning the same product (quantity increments, no new

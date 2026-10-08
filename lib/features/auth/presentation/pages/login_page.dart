@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../settings/application/ui_preferences_service.dart';
 import '../../application/auth_controller.dart';
 
 /// Authentication entry point (§16 U1).
@@ -25,6 +26,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _username = TextEditingController();
   final _password = TextEditingController();
   bool _attempted = false;
+
+  /// Custom app title/slogan from settings (Ali, 2026-10-09). Null = use l10n.
+  String? _customTitle;
+  String? _customSlogan;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_loadCustomBranding);
+  }
+
+  Future<void> _loadCustomBranding() async {
+    final service = ref.read(uiPreferencesServiceProvider);
+    final title = await service.customAppTitle();
+    final slogan = await service.customAppSlogan();
+    if (!mounted) return;
+    setState(() {
+      _customTitle = title?.isNotEmpty == true ? title : null;
+      _customSlogan = slogan?.isNotEmpty == true ? slogan : null;
+    });
+  }
 
   @override
   void dispose() {
@@ -81,13 +103,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                     const SizedBox(height: AppSpacing.m),
                     Text(
-                      l10n.appTitle,
+                      _customTitle ?? l10n.appTitle,
                       textAlign: TextAlign.center,
                       style: typography.pageTitle,
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      l10n.loginWelcome,
+                      _customSlogan ?? l10n.loginWelcome,
                       textAlign: TextAlign.center,
                       style: typography.bodySecondary,
                     ),

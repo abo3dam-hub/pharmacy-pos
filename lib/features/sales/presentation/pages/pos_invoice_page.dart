@@ -57,8 +57,10 @@ class _PosInvoicePageState extends ConsumerState<PosInvoicePage> {
   Future<void> _printInvoice() async {
     final invoice = _invoice;
     if (invoice == null) return;
+    final dao = ref.read(settingsDaoProvider);
     final pharmacy =
-        await ref.read(settingsDaoProvider).getString(pharmacyNameSettingKey) ??
+        await dao.getString('receipt.pharmacy_name') ??
+        await dao.getString(pharmacyNameSettingKey) ??
         pharmacyFallbackName();
     try {
       await InvoicePdfService().print(invoice, pharmacy);

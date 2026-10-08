@@ -47,6 +47,10 @@ Local dev env (this machine):
 
 ## 2. Recent changes (newest first; detail in CHANGELOG)
 
+- **2026-10-09 — Cart on failed search + auto batch + receipt fix + login
+  branding (Ali):** cart stays visible with "not found" banner; batch
+  numbers auto-increment per product; receipt uses the configured pharmacy
+  name; login title/tagline customizable.
 - **2026-10-08 — Mobile scan feedback + inline cart (Ali):** real beeps,
   haptics, viewfinder flash; no keyboard in continuous mode; cart lines
   inline under search on mobile.
