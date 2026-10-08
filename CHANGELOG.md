@@ -22,6 +22,9 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **New app icon (2026-10-09, Ali):** modern capsule + medical cross design
+  (teal/emerald); installed as Android mipmap icons (48–192px) and Windows
+  ICO. Source at `assets/icons/app_icon.png`.
 - **Cart never hides on failed search (2026-10-09, Ali):** mobile now shows
   the inline cart + a "not found" banner when a search yields zero hits,
   instead of replacing the cart with an empty "no results" view.
