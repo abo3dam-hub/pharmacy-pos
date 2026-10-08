@@ -3519,6 +3519,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get scanBarcodeHint => 'وجّه الكاميرا نحو الباركود';
 
   @override
+  String get scanContinuousHint => 'مرّر الكاميرا فوق الباركود للمسح المستمر';
+
+  @override
+  String get scanTorch => 'الفلاش';
+
+  @override
+  String get scanError => 'تعذّر تشغيل الكاميرا';
+
+  @override
+  String get scanStartContinuous => 'مسح مستمر بالكاميرا';
+
+  @override
+  String get scanStopContinuous => 'إيقاف المسح المستمر';
+
+  @override
   String get cameraPermissionDenied =>
       'تم رفض إذن الكاميرا. فعّله من إعدادات التطبيق ثم حاول مجدداً.';
 

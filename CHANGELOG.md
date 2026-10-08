@@ -22,6 +22,13 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Continuous camera-scan mode for mobile POS (2026-10-08, Ali's proposal):**
+  the scan icon now toggles an embedded camera preview strip above the search
+  field (mobile only; Windows keeps the single-shot modal). Rapid consecutive
+  scans without reopening the camera: success beep + haptic per add, distinct
+  error haptic for unknown barcodes (scanning continues), 1.5s duplicate
+  cooldown per barcode, torch toggle, close button. Product list stays visible
+  below the preview.
 - **Camera scan: product stays in list until next scan (2026-10-08, Ali):**
   after a successful camera scan the product remains visible in the results
   list (and its barcode in the field) until a new scan replaces it. Each new

@@ -6913,6 +6913,36 @@ abstract class AppLocalizations {
   /// **'وجّه الكاميرا نحو الباركود'**
   String get scanBarcodeHint;
 
+  /// No description provided for @scanContinuousHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرّر الكاميرا فوق الباركود للمسح المستمر'**
+  String get scanContinuousHint;
+
+  /// No description provided for @scanTorch.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفلاش'**
+  String get scanTorch;
+
+  /// No description provided for @scanError.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّر تشغيل الكاميرا'**
+  String get scanError;
+
+  /// No description provided for @scanStartContinuous.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح مستمر بالكاميرا'**
+  String get scanStartContinuous;
+
+  /// No description provided for @scanStopContinuous.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيقاف المسح المستمر'**
+  String get scanStopContinuous;
+
   /// No description provided for @cameraPermissionDenied.
   ///
   /// In ar, this message translates to:

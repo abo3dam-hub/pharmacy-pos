@@ -3533,6 +3533,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanBarcodeHint => 'Point the camera at the barcode';
 
   @override
+  String get scanContinuousHint =>
+      'Pass the camera over barcodes for continuous scanning';
+
+  @override
+  String get scanTorch => 'Flash';
+
+  @override
+  String get scanError => 'Could not start the camera';
+
+  @override
+  String get scanStartContinuous => 'Continuous camera scan';
+
+  @override
+  String get scanStopContinuous => 'Stop continuous scan';
+
+  @override
   String get cameraPermissionDenied =>
       'Camera permission was denied. Enable it in the app settings and try again.';
 

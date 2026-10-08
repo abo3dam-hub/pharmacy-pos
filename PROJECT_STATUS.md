@@ -47,6 +47,9 @@ Local dev env (this machine):
 
 ## 2. Recent changes (newest first; detail in CHANGELOG)
 
+- **2026-10-08 — Continuous camera-scan mode (Ali's proposal):** scan icon
+  toggles an embedded camera strip on mobile for rapid consecutive scans
+  (beep + haptic, duplicate cooldown, torch); Windows unchanged.
 - **2026-10-08 — Camera scan keeps product in list (Ali):** scanned product
   stays visible until the next scan replaces it; each new scan starts fresh.
 - **2026-10-07 — Camera "no results" confusion (Ali's screenshot):** the scan

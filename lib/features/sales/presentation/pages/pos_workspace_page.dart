@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,6 +15,8 @@ import '../../../../core/motion/app_motion.dart';
 import '../../../../core/pdf/pdf_arabic.dart';
 import '../../../../core/pdf/pdf_documents.dart';
 import '../../../../core/scanning/scan_barcode_button.dart';
+import '../../../../core/scanning/continuous_scanner.dart';
+import '../../../../core/scanning/barcode_scan_service.dart';
 import '../../../../core/shortcuts/barcode_buffer.dart';
 import '../../../../core/shortcuts/pos_shortcuts.dart';
 import '../../../../core/shortcuts/shortcut_manager.dart';
@@ -548,6 +551,10 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
   String _lastText = '';
   Timer? _debounce;
 
+  /// Continuous camera-scan mode (mobile only, Ali 2026-10-08): the camera
+  /// preview stays open above the search field for rapid consecutive scans.
+  bool _continuousScan = false;
+
   @override
   void dispose() {
     _debounce?.cancel();
@@ -603,6 +610,10 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
   /// Camera scan: the scanned product stays visible in the results list until
   /// the next scan replaces it (Ali, 2026-10-08). Each new scan starts fresh —
   /// the new barcode replaces the old one in the field.
+  ///
+  /// In continuous-scan mode, plays a success beep + haptic on add, or a
+  /// distinct error haptic when the barcode doesn't resolve — scanning never
+  /// stops (Ali, 2026-10-08).
   Future<void> _onCameraScanned(String code) async {
     _debounce?.cancel();
     widget.barcodeBuffer.reset();
@@ -614,8 +625,19 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
     final notifier = ref.read(
       posWorkspaceControllerProvider(widget.tabIndex).notifier,
     );
+    final before = notifier.currentState.cart.length;
     await notifier.handleScannedBarcode(q);
     if (!mounted) return;
+    final added = notifier.currentState.cart.length > before;
+    if (_continuousScan) {
+      // Audible + haptic feedback per scan; the session continues.
+      if (added) {
+        SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.lightImpact();
+      } else {
+        HapticFeedback.vibrate();
+      }
+    }
     // Show the scanned product (or candidates on failure) in the list.
     // The product stays visible until the next scan replaces it.
     await notifier.search(q);
@@ -643,6 +665,24 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
     notifier.clearSearch();
   }
 
+  /// Scan button: on mobile it toggles the continuous-scan strip (Ali
+  /// 2026-10-08); on desktop it keeps the single-shot modal (Windows doesn't
+  /// need continuous mode).
+  Widget _buildScanButton(AppLocalizations l10n) {
+    if (!BarcodeScanService.isCameraScanSupported()) {
+      return ScanBarcodeButton(onScanned: _onCameraScanned);
+    }
+    return IconButton(
+      icon: Icon(
+        _continuousScan ? Icons.videocam_off : Icons.qr_code_scanner,
+        color: _continuousScan ? Theme.of(context).colorScheme.primary : null,
+      ),
+      tooltip:
+          _continuousScan ? l10n.scanStopContinuous : l10n.scanStartContinuous,
+      onPressed: () => setState(() => _continuousScan = !_continuousScan),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -655,6 +695,15 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Continuous camera-scan strip (mobile only, Ali 2026-10-08):
+            // stays open above the search field for rapid consecutive scans.
+            if (_continuousScan) ...[
+              ContinuousScanner(
+                onScanned: _onCameraScanned,
+                onClose: () => setState(() => _continuousScan = false),
+              ),
+              const SizedBox(height: AppSpacing.m),
+            ],
             TextField(
               controller: _query,
               focusNode: widget.searchFocusNode,
@@ -662,7 +711,7 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
               decoration: InputDecoration(
                 hintText: l10n.posSearchHint,
                 prefixIcon: const Icon(Icons.search),
-                suffixIcon: ScanBarcodeButton(onScanned: _onCameraScanned),
+                suffixIcon: _buildScanButton(l10n),
                 border: const OutlineInputBorder(),
                 isDense: true,
               ),
