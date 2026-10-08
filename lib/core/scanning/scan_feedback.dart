@@ -28,6 +28,10 @@ class ScanFeedback {
   static Future<void> success() async {
     await _ensureInitialized();
     HapticFeedback.lightImpact();
+    // Seek to start: after the first playback the position stays at the end
+    // and resume() alone would play nothing (2026-10-08, Ali: beep worked
+    // only once).
+    await _successPlayer.seek(Duration.zero);
     await _successPlayer.resume();
   }
 
@@ -35,6 +39,7 @@ class ScanFeedback {
   static Future<void> error() async {
     await _ensureInitialized();
     HapticFeedback.vibrate();
+    await _errorPlayer.seek(Duration.zero);
     await _errorPlayer.resume();
   }
 }

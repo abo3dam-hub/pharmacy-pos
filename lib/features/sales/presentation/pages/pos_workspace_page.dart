@@ -618,9 +618,9 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
   /// A scanned code is an explicit product request: it must either add to
   /// cart or explain why not (2026-10-07, Ali: scan worked in Inventory
   /// but found nothing in POS).
-  /// Camera scan: the scanned product stays visible in the results list until
-  /// the next scan replaces it (Ali, 2026-10-08). Each new scan starts fresh —
-  /// the new barcode replaces the old one in the field.
+  /// Camera scan: on mobile the scanned line appears in the inline cart
+  /// (Ali, 2026-10-08); on desktop the scanned product stays visible in the
+  /// results list until the next scan replaces it.
   ///
   /// In continuous-scan mode: real beep + haptic + viewfinder flash per scan
   /// (green on success, red on failure); scanning never stops (Ali, 2026-10-08).
@@ -648,9 +648,17 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
       }
       _scannerKey.currentState?.flash(added);
     }
-    // Show the scanned product (or candidates on failure) in the list.
-    // The product stays visible until the next scan replaces it.
-    await notifier.search(q);
+    if (added && widget.isCompact) {
+      // Mobile: clear the field so the inline cart appears with the new line
+      // and its quantity/part/remove controls (Ali, 2026-10-08).
+      _lastText = '';
+      _query.clear();
+      notifier.clearSearch();
+    } else {
+      // Desktop, or failure: show the scanned product (or candidates) in the
+      // results list.
+      await notifier.search(q);
+    }
   }
   /// Enter on a bare search (no scanner event): re-search the trimmed query and,
   /// when it resolves to exactly one product, add it to the cart and clear the
@@ -754,23 +762,37 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
                           // null — showing "no results" there confused users
                           // (2026-10-07, Ali).
                           hasSearched: state.searchResults != null,
-                          onAdd: (item) => ref
-                              .read(
-                                posWorkspaceControllerProvider(
-                                  widget.tabIndex,
-                                ).notifier,
-                              )
-                              .addToCart(item),
-                          onAddAsPart: (item) => ref
-                              .read(
-                                posWorkspaceControllerProvider(
-                                  widget.tabIndex,
-                                ).notifier,
-                              )
-                              .addToCart(
-                                item,
-                                unitMode: PosLineUnitMode.sellablePart,
-                              ),
+                          onAdd: (item) async {
+                            await ref
+                                .read(
+                                  posWorkspaceControllerProvider(
+                                    widget.tabIndex,
+                                  ).notifier,
+                                )
+                                .addToCart(item);
+                            // Mobile: clear the field so the inline cart
+                            // appears (Ali, 2026-10-08).
+                            if (widget.isCompact && mounted) {
+                              _lastText = '';
+                              _query.clear();
+                            }
+                          },
+                          onAddAsPart: (item) async {
+                            await ref
+                                .read(
+                                  posWorkspaceControllerProvider(
+                                    widget.tabIndex,
+                                  ).notifier,
+                                )
+                                .addToCart(
+                                  item,
+                                  unitMode: PosLineUnitMode.sellablePart,
+                                );
+                            if (widget.isCompact && mounted) {
+                              _lastText = '';
+                              _query.clear();
+                            }
+                          },
                           canViewAlternatives: ref
                               .read(authControllerProvider)
                               .permissions

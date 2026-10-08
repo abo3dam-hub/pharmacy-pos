@@ -22,6 +22,13 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Mobile POS scan fixes (2026-10-08, Ali's device test):**
+  - Beep now replays on every scan (was: only first) — seek to start before
+    each playback.
+  - Inline cart actually appears: after a successful scan/add on mobile the
+    field is cleared so the cart lines (with qty +/-, box/part toggle,
+    remove) show directly under the search field. Desktop keeps the
+    product-list behavior.
 - **Mobile POS scan feedback + inline cart (2026-10-08, Ali):**
   - Real beep sounds (bundled WAV via audioplayers, works in silent mode):
     high beep on success, low double-beep on failure.
