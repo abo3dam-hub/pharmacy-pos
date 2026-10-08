@@ -29,10 +29,10 @@ class ContinuousScanner extends StatefulWidget {
   final VoidCallback? onClose;
 
   @override
-  State<ContinuousScanner> createState() => _ContinuousScannerState();
+  State<ContinuousScanner> createState() => ContinuousScannerState();
 }
 
-class _ContinuousScannerState extends State<ContinuousScanner> {
+class ContinuousScannerState extends State<ContinuousScanner> {
   late final MobileScannerController _controller;
   String? _lastCode;
   DateTime? _lastTime;
@@ -69,6 +69,19 @@ class _ContinuousScannerState extends State<ContinuousScanner> {
     widget.onScanned(code);
   }
 
+  /// Flashes the viewfinder frame green (success) or red (failure).
+  /// Called by the parent via [flashKey] after handling the scan.
+  void flash(bool success) {
+    if (!mounted) return;
+    setState(() => _flashColor =
+        (success ? Colors.green : Colors.red).withValues(alpha: 0.7));
+    Future.delayed(const Duration(milliseconds: 350), () {
+      if (mounted) setState(() => _flashColor = null);
+    });
+  }
+
+  Color? _flashColor;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -102,17 +115,19 @@ class _ContinuousScannerState extends State<ContinuousScanner> {
                 );
               },
             ),
-            // Viewfinder frame.
+            // Viewfinder frame (flashes green/red on scan).
             Center(
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
                 width: 220,
                 height: 90,
                 decoration: BoxDecoration(
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    width: 2,
+                    color: _flashColor ?? Colors.white.withValues(alpha: 0.85),
+                    width: _flashColor != null ? 4 : 2,
                   ),
                   borderRadius: BorderRadius.circular(8),
+                  color: _flashColor?.withValues(alpha: 0.15),
                 ),
               ),
             ),

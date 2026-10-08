@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,6 +16,7 @@ import '../../../../core/pdf/pdf_documents.dart';
 import '../../../../core/scanning/scan_barcode_button.dart';
 import '../../../../core/scanning/continuous_scanner.dart';
 import '../../../../core/scanning/barcode_scan_service.dart';
+import '../../../../core/scanning/scan_feedback.dart';
 import '../../../../core/shortcuts/barcode_buffer.dart';
 import '../../../../core/shortcuts/pos_shortcuts.dart';
 import '../../../../core/shortcuts/shortcut_manager.dart';
@@ -483,6 +483,7 @@ class _CompactLayout extends ConsumerWidget {
             searchFocusNode: searchFocusNode,
             barcodeBuffer: barcodeBuffer,
             onAlternatives: onAlternatives,
+            isCompact: true,
           ),
         ),
         Positioned(
@@ -535,12 +536,18 @@ class _SearchPanel extends ConsumerStatefulWidget {
     required this.searchFocusNode,
     required this.barcodeBuffer,
     required this.onAlternatives,
+    this.isCompact = false,
   });
 
   final int tabIndex;
   final FocusNode searchFocusNode;
   final BarcodeBuffer barcodeBuffer;
   final ValueChanged<PosCatalogItem> onAlternatives;
+
+  /// True on mobile (compact layout): the inline cart is shown under the
+  /// search field when the query is empty (Ali, 2026-10-08). On desktop the
+  /// cart panel is already visible side-by-side.
+  final bool isCompact;
 
   @override
   ConsumerState<_SearchPanel> createState() => _SearchPanelState();
@@ -554,6 +561,10 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
   /// Continuous camera-scan mode (mobile only, Ali 2026-10-08): the camera
   /// preview stays open above the search field for rapid consecutive scans.
   bool _continuousScan = false;
+
+  /// Key to trigger the viewfinder flash on the continuous scanner.
+  final GlobalKey<ContinuousScannerState> _scannerKey =
+      GlobalKey<ContinuousScannerState>();
 
   @override
   void dispose() {
@@ -611,9 +622,8 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
   /// the next scan replaces it (Ali, 2026-10-08). Each new scan starts fresh —
   /// the new barcode replaces the old one in the field.
   ///
-  /// In continuous-scan mode, plays a success beep + haptic on add, or a
-  /// distinct error haptic when the barcode doesn't resolve — scanning never
-  /// stops (Ali, 2026-10-08).
+  /// In continuous-scan mode: real beep + haptic + viewfinder flash per scan
+  /// (green on success, red on failure); scanning never stops (Ali, 2026-10-08).
   Future<void> _onCameraScanned(String code) async {
     _debounce?.cancel();
     widget.barcodeBuffer.reset();
@@ -630,13 +640,13 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
     if (!mounted) return;
     final added = notifier.currentState.cart.length > before;
     if (_continuousScan) {
-      // Audible + haptic feedback per scan; the session continues.
+      // Audible + haptic + visual feedback per scan; the session continues.
       if (added) {
-        SystemSound.play(SystemSoundType.alert);
-        HapticFeedback.lightImpact();
+        await ScanFeedback.success();
       } else {
-        HapticFeedback.vibrate();
+        await ScanFeedback.error();
       }
+      _scannerKey.currentState?.flash(added);
     }
     // Show the scanned product (or candidates on failure) in the list.
     // The product stays visible until the next scan replaces it.
@@ -679,7 +689,11 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
       ),
       tooltip:
           _continuousScan ? l10n.scanStopContinuous : l10n.scanStartContinuous,
-      onPressed: () => setState(() => _continuousScan = !_continuousScan),
+      onPressed: () {
+        // Dismiss the keyboard when entering continuous mode (Ali 2026-10-08).
+        if (!_continuousScan) widget.searchFocusNode.unfocus();
+        setState(() => _continuousScan = !_continuousScan);
+      },
     );
   }
 
@@ -699,6 +713,7 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
             // stays open above the search field for rapid consecutive scans.
             if (_continuousScan) ...[
               ContinuousScanner(
+                key: _scannerKey,
                 onScanned: _onCameraScanned,
                 onClose: () => setState(() => _continuousScan = false),
               ),
@@ -707,7 +722,11 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
             TextField(
               controller: _query,
               focusNode: widget.searchFocusNode,
-              autofocus: true,
+              // No keyboard during continuous scan (Ali 2026-10-08): the field
+              // is display-only; barcodes arrive from the camera.
+              autofocus: !_continuousScan,
+              readOnly: _continuousScan,
+              canRequestFocus: !_continuousScan,
               decoration: InputDecoration(
                 hintText: l10n.posSearchHint,
                 prefixIcon: const Icon(Icons.search),
@@ -723,42 +742,50 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
             Expanded(
               child: state.loading
                   ? const Center(child: CircularProgressIndicator())
-                  : _ProductList(
-                      items: state.searchResults?.items ?? const [],
-                      // Distinguish "no search yet" (show hint) from "searched
-                      // with no hits" (show no-results). After a successful
-                      // camera scan the field is cleared and searchResults is
-                      // null — showing "no results" there confused users
-                      // (2026-10-07, Ali).
-                      hasSearched: state.searchResults != null,
-                      onAdd: (item) => ref
-                          .read(
-                            posWorkspaceControllerProvider(
-                              widget.tabIndex,
-                            ).notifier,
-                          )
-                          .addToCart(item),
-                      onAddAsPart: (item) => ref
-                          .read(
-                            posWorkspaceControllerProvider(
-                              widget.tabIndex,
-                            ).notifier,
-                          )
-                          .addToCart(
-                            item,
-                            unitMode: PosLineUnitMode.sellablePart,
-                          ),
-                      canViewAlternatives: ref
-                          .read(authControllerProvider)
-                          .permissions
-                          .contains(Perm.viewAlternatives),
-                      onAlternatives: widget.onAlternatives,
-                      onLostSale:
-                          state.searchQuery.isNotEmpty &&
-                              (state.searchResults?.items.isEmpty ?? true)
-                          ? () => _showLostSaleDialog(l10n, state.searchQuery)
-                          : null,
-                    ),
+                  // Option A (Ali 2026-10-08, mobile only): empty query ->
+                  // inline cart; typing -> search results. On desktop the
+                  // cart panel is already visible side-by-side.
+                  : _query.text.isNotEmpty || !widget.isCompact
+                      ? _ProductList(
+                          items: state.searchResults?.items ?? const [],
+                          // Distinguish "no search yet" (show hint) from "searched
+                          // with no hits" (show no-results). After a successful
+                          // camera scan the field is cleared and searchResults is
+                          // null — showing "no results" there confused users
+                          // (2026-10-07, Ali).
+                          hasSearched: state.searchResults != null,
+                          onAdd: (item) => ref
+                              .read(
+                                posWorkspaceControllerProvider(
+                                  widget.tabIndex,
+                                ).notifier,
+                              )
+                              .addToCart(item),
+                          onAddAsPart: (item) => ref
+                              .read(
+                                posWorkspaceControllerProvider(
+                                  widget.tabIndex,
+                                ).notifier,
+                              )
+                              .addToCart(
+                                item,
+                                unitMode: PosLineUnitMode.sellablePart,
+                              ),
+                          canViewAlternatives: ref
+                              .read(authControllerProvider)
+                              .permissions
+                              .contains(Perm.viewAlternatives),
+                          onAlternatives: widget.onAlternatives,
+                          onLostSale:
+                              state.searchQuery.isNotEmpty &&
+                                  (state.searchResults?.items.isEmpty ?? true)
+                              ? () => _showLostSaleDialog(
+                                  l10n,
+                                  state.searchQuery,
+                                )
+                              : null,
+                        )
+                      : _InlineCartList(tabIndex: widget.tabIndex),
             ),
           ],
         ),
@@ -789,6 +816,148 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(l10n.posLostSaleSaved)));
     }
+  }
+}
+
+/// Inline cart items list for mobile POS (Ali, 2026-10-08).
+///
+/// Shown in the search panel when the query is empty: the cashier sees cart
+/// lines directly below the search field with quantity +/- , unit toggle
+/// (box/part), and remove — no need to open the separate cart sheet.
+class _InlineCartList extends ConsumerWidget {
+  const _InlineCartList({required this.tabIndex});
+
+  final int tabIndex;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final notifier =
+        ref.read(posWorkspaceControllerProvider(tabIndex).notifier);
+    final state = ref.watch(posWorkspaceControllerProvider(tabIndex));
+    if (state.cart.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.remove_shopping_cart_outlined, size: 48),
+            const SizedBox(height: AppSpacing.m),
+            Text(l10n.posCartItemEmpty),
+          ],
+        ),
+      );
+    }
+    return ListView.separated(
+      itemCount: state.cart.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final line = state.cart[index];
+        final unitLabel = switch (line.unitMode) {
+          PosLineUnitMode.largeUnit => line.item.largeUnitName.isNotEmpty
+              ? line.item.largeUnitName
+              : l10n.posUnitBox,
+          PosLineUnitMode.sellablePart =>
+            (line.item.sellablePartUnitName?.isNotEmpty ?? false)
+                ? line.item.sellablePartUnitName!
+                : l10n.posUnitStrip,
+        };
+        final priced = const PosLinePricer().priceLine(line);
+        final unitPrice = priced.lines.isEmpty
+            ? 0
+            : priced.lines.first.unitPriceMicros;
+        return ListTile(
+          dense: true,
+          title: Text(
+            line.item.displayName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${line.quantity} $unitLabel · '
+                  '${Money.fromUnits(unitPrice).formatArabicDigits()}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (line.item.partialSaleConfigured)
+                InkWell(
+                  onTap: () => notifier.toggleUnitMode(index),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.swap_horiz, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          switch (line.unitMode) {
+                            PosLineUnitMode.largeUnit =>
+                              (line.item.sellablePartUnitName?.isNotEmpty ??
+                                      false)
+                                  ? line.item.sellablePartUnitName!
+                                  : l10n.posUnitStrip,
+                            PosLineUnitMode.sellablePart =>
+                              line.item.largeUnitName.isNotEmpty
+                                  ? line.item.largeUnitName
+                                  : l10n.posUnitBox,
+                          },
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline),
+                tooltip: l10n.posQtyDecrease,
+                visualDensity: VisualDensity.compact,
+                onPressed: () =>
+                    notifier.updateQuantity(index, line.quantity - 1),
+              ),
+              SizedBox(
+                width: 36,
+                child: Text(
+                  '${line.quantity}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline),
+                tooltip: l10n.posQtyIncrease,
+                visualDensity: VisualDensity.compact,
+                onPressed: () =>
+                    notifier.updateQuantity(index, line.quantity + 1),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: l10n.posRemoveLine,
+                visualDensity: VisualDensity.compact,
+                onPressed: () => notifier.removeLine(index),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

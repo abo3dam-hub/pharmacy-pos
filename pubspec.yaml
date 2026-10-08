@@ -40,6 +40,7 @@ dependencies:
   printing: ^5.14.3
   arabic_reshaper: ^0.0.1
   mobile_scanner: ^7.4.2
+  audioplayers: ^6.1.0
   # OS storage permission for backup/restore/export on Android.
   permission_handler: ^12.0.1
   device_info_plus: ^13.3.0
@@ -57,6 +58,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    - assets/sounds/beep_success.wav
+    - assets/sounds/beep_error.wav
   fonts:
     - family: Cairo
       fonts:

@@ -22,6 +22,18 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Mobile POS scan feedback + inline cart (2026-10-08, Ali):**
+  - Real beep sounds (bundled WAV via audioplayers, works in silent mode):
+    high beep on success, low double-beep on failure.
+  - Haptic: light on success, strong vibration on failure.
+  - Viewfinder flashes green (success) / red (failure) on the continuous
+    scanner.
+  - No keyboard during continuous scan: search field is read-only while the
+    scanner strip is active.
+  - Inline cart on mobile (compact layout only): empty search shows cart
+    lines directly under the search field with quantity +/-, box/part toggle,
+    and remove — no separate cart sheet needed. Typing shows search results.
+    Desktop/Windows unchanged (cart panel already side-by-side).
 - **Continuous camera-scan mode for mobile POS (2026-10-08, Ali's proposal):**
   the scan icon now toggles an embedded camera preview strip above the search
   field (mobile only; Windows keeps the single-shot modal). Rapid consecutive

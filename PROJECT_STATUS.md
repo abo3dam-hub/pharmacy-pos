@@ -47,6 +47,9 @@ Local dev env (this machine):
 
 ## 2. Recent changes (newest first; detail in CHANGELOG)
 
+- **2026-10-08 — Mobile scan feedback + inline cart (Ali):** real beeps,
+  haptics, viewfinder flash; no keyboard in continuous mode; cart lines
+  inline under search on mobile.
 - **2026-10-08 — Continuous camera-scan mode (Ali's proposal):** scan icon
   toggles an embedded camera strip on mobile for rapid consecutive scans
   (beep + haptic, duplicate cooldown, torch); Windows unchanged.
