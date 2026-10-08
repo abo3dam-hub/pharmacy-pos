@@ -30,7 +30,7 @@ const Map<String, String> _allowlisted = {
       'bonus quantity input field (editor, not display)',
   // POS search row: part-sale CONFIGURATION label ("شريط 10×3 = 30").
   // Describes the item's packaging structure, not a transacted quantity.
-  'lib/features/sales/presentation/pages/pos_workspace_page.dart:1064':
+  'lib/features/sales/presentation/pages/pos_workspace_page.dart:1070':
       'packaging-structure label, not a quantity',
 };
 

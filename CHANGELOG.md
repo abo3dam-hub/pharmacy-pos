@@ -22,6 +22,18 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Radical scan fix (2026-10-08, Ali's device test):**
+  - Root cause: success was detected via `cart.length > before`, which
+    misreported re-scanning the same product (quantity increments, no new
+    line) as failure → no beep, "cannot find product", cart hidden. Now
+    success = `errorMessage == null` after `handleScannedBarcode`.
+  - `ScanFeedback` simplified to stateless (fresh player per beep, fallback
+    to system sound) — no stuck state.
+  - Feedback (beep + haptic + flash) now plays on EVERY scan, single and
+    continuous modes.
+  - After successful barcode scan, never run a text `search(q)` — the exact
+    lookup already resolved it. Text search only on failure (candidates).
+  - New regression test: re-scan increments quantity with no error.
 - **Mobile POS scan fixes (2026-10-08, Ali's device test):**
   - Beep now replays on every scan (was: only first) — seek to start before
     each playback.

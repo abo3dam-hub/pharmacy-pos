@@ -1011,6 +1011,26 @@ void main() {
     });
 
     test(
+        'handleScannedBarcode re-scan same item → quantity increments, '
+        'no error (2026-10-08, Ali: second scan misreported as failure)', () async {
+      final fake = _FakeSalesRepository(items: {
+        'item_otc': _makeOtcItem(),
+      });
+      final ctrl = _controller(fake);
+      await ctrl.handleScannedBarcode('1111111111111');
+      expect(ctrl.currentState.cart, hasLength(1));
+      expect(ctrl.currentState.cart.first.quantity, 1);
+      expect(ctrl.currentState.errorMessage, isNull);
+
+      // Second scan of the SAME barcode: quantity grows, still no error.
+      // The UI must treat this as success (beep + cart), not failure.
+      await ctrl.handleScannedBarcode('1111111111111');
+      expect(ctrl.currentState.cart, hasLength(1));
+      expect(ctrl.currentState.cart.first.quantity, 2);
+      expect(ctrl.currentState.errorMessage, isNull);
+    });
+
+    test(
         'handleScannedBarcode finds zero-stock item by barcode '
         '(camera scan must not use the stock-filtered search)', () async {
       // Regression (2026-10-07, Ali): camera scans in POS found nothing for

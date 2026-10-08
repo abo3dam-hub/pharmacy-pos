@@ -3,43 +3,30 @@ import 'package:flutter/services.dart';
 
 /// Sound + haptic feedback for POS scanning (Ali, 2026-10-08).
 ///
-/// Uses bundled WAV beeps via `audioplayers` (reliable on Android, works
-/// regardless of silent mode) instead of `SystemSound`, which is quiet and
-/// unreliable on many devices.
+/// Radical simplification (2026-10-08): stateless — a fresh player per beep,
+/// no preloading, no seek, no static state to get stuck. Falls back to the
+/// system sound if audioplayers fails.
 class ScanFeedback {
   ScanFeedback._();
 
-  static final AudioPlayer _successPlayer = AudioPlayer();
-  static final AudioPlayer _errorPlayer = AudioPlayer();
-  static bool _initialized = false;
-
-  static Future<void> _ensureInitialized() async {
-    if (_initialized) return;
-    _initialized = true;
-    // Preload both sounds for instant playback during rapid scans.
-    await _successPlayer.setSource(AssetSource('sounds/beep_success.wav'));
-    await _errorPlayer.setSource(AssetSource('sounds/beep_error.wav'));
-    // Low-latency mode for immediate beep on scan.
-    await _successPlayer.setPlayerMode(PlayerMode.lowLatency);
-    await _errorPlayer.setPlayerMode(PlayerMode.lowLatency);
-  }
-
   /// Successful scan: high beep + light haptic.
   static Future<void> success() async {
-    await _ensureInitialized();
     HapticFeedback.lightImpact();
-    // Seek to start: after the first playback the position stays at the end
-    // and resume() alone would play nothing (2026-10-08, Ali: beep worked
-    // only once).
-    await _successPlayer.seek(Duration.zero);
-    await _successPlayer.resume();
+    await _play('sounds/beep_success.wav', SystemSoundType.alert);
   }
 
   /// Failed scan (unknown barcode / no stock): low double-beep + strong haptic.
   static Future<void> error() async {
-    await _ensureInitialized();
     HapticFeedback.vibrate();
-    await _errorPlayer.seek(Duration.zero);
-    await _errorPlayer.resume();
+    await _play('sounds/beep_error.wav', SystemSoundType.alert);
+  }
+
+  static Future<void> _play(String asset, SystemSoundType fallback) async {
+    try {
+      await AudioPlayer().play(AssetSource(asset));
+    } catch (_) {
+      // Last resort: system sound (quiet but better than silence).
+      SystemSound.play(fallback);
+    }
   }
 }

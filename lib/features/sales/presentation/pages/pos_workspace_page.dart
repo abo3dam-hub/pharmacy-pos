@@ -622,8 +622,8 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
   /// (Ali, 2026-10-08); on desktop the scanned product stays visible in the
   /// results list until the next scan replaces it.
   ///
-  /// In continuous-scan mode: real beep + haptic + viewfinder flash per scan
-  /// (green on success, red on failure); scanning never stops (Ali, 2026-10-08).
+  /// Feedback (beep + haptic + viewfinder flash) plays on EVERY scan, in both
+  /// single and continuous modes (Ali, 2026-10-08).
   Future<void> _onCameraScanned(String code) async {
     _debounce?.cancel();
     widget.barcodeBuffer.reset();
@@ -635,30 +635,36 @@ class _SearchPanelState extends ConsumerState<_SearchPanel> {
     final notifier = ref.read(
       posWorkspaceControllerProvider(widget.tabIndex).notifier,
     );
-    final before = notifier.currentState.cart.length;
     await notifier.handleScannedBarcode(q);
     if (!mounted) return;
-    final added = notifier.currentState.cart.length > before;
-    if (_continuousScan) {
-      // Audible + haptic + visual feedback per scan; the session continues.
-      if (added) {
-        await ScanFeedback.success();
-      } else {
-        await ScanFeedback.error();
-      }
-      _scannerKey.currentState?.flash(added);
+    // Success = no error. Do NOT use cart.length growth: re-scanning the same
+    // product increments quantity without adding a line, which the old check
+    // misreported as failure (2026-10-08, Ali: no beep, "cannot find",
+    // cart hidden on second scan of the same item).
+    final success = notifier.currentState.errorMessage == null;
+    // Audible + haptic + visual feedback per scan, every mode.
+    if (success) {
+      await ScanFeedback.success();
+    } else {
+      await ScanFeedback.error();
     }
-    if (added && widget.isCompact) {
-      // Mobile: clear the field so the inline cart appears with the new line
+    if (_continuousScan) {
+      _scannerKey.currentState?.flash(success);
+    }
+    if (success && widget.isCompact) {
+      // Mobile: clear the field so the inline cart appears with the line
       // and its quantity/part/remove controls (Ali, 2026-10-08).
       _lastText = '';
       _query.clear();
       notifier.clearSearch();
-    } else {
-      // Desktop, or failure: show the scanned product (or candidates) in the
-      // results list.
+    } else if (!success) {
+      // Failure: show candidates in the results list so the cashier can pick
+      // manually. Never run a text search after a SUCCESSFUL barcode scan —
+      // the exact lookup already resolved it.
       await notifier.search(q);
     }
+    // Desktop success: leave the barcode in the field; the product list keeps
+    // showing the scanned item until the next scan (e622b8b behavior).
   }
   /// Enter on a bare search (no scanner event): re-search the trimmed query and,
   /// when it resolves to exactly one product, add it to the cart and clear the
