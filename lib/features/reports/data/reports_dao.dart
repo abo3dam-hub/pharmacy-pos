@@ -570,9 +570,10 @@ name: bilingualName(row.read<String>('name'),
       ) b ON b.item_id = i.id
       LEFT JOIN item_units u ON u.item_id = i.id
       WHERE i.is_active = 1
-      -- Source of truth for quantity is the stock_movements ledger (Ali,
-      -- 2026-10-09: batches do not reflect real stock; items.current_stock_base
-      -- is never synced). Cost comes from batches (fallback to item cost).
+        AND COALESCE(s.qty, 0) > 0
+      -- Only items actually in stock (Ali, 2026-10-09): the product tree
+      -- (22k catalog) is not inventory. Source of truth for quantity is the
+      -- stock_movements ledger.
       ORDER BY i.trade_name
       ''',
     ).get();
