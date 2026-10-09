@@ -22,6 +22,15 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Reports bugs verified & fixed (2026-10-09, Ali):**
+  - Inventory report empty (root cause): was using batch quantities; now uses
+    `items.current_stock_base` (the ledger-synced source of truth). Shows all
+    active items.
+  - (إ) as symbol (root cause): Cairo/Tajawal lack Arabic Presentation Forms
+    (U+FE87 etc.) that the reshaper emits. Switched PDF font to Amiri which
+    includes them. Verified: Amiri has FE87/FE8D/FE83; Cairo/Tajawal do not.
+  - PDF crash: font loader now falls back to Helvetica if the asset is
+    missing (never throws). `printReportPdf` catches all exceptions.
 - **Reports bugs (2026-10-09, Ali):**
   - Inventory report was empty: HAVING clause now includes items with
     `current_stock_base > 0` (not just batch quantities).

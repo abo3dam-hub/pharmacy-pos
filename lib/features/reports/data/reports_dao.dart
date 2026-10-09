@@ -551,39 +551,31 @@ name: bilingualName(row.read<String>('name'),
         i.primary_barcode AS barcode,
         i.trade_name AS name,
         i.trade_name_en AS name_en,
-        i.current_stock_base AS current_stock,
-        i.minimum_stock_base AS minimum_stock,
-        i.maximum_stock_base AS maximum_stock,
-        COALESCE(SUM(b.quantity_base), 0) AS qty_sum,
-        COALESCE(SUM(b.quantity_base * b.unit_cost_micros), 0) AS value_sum,
+        COALESCE(i.current_stock_base, 0) AS current_stock,
+        COALESCE(i.minimum_stock_base, 0) AS minimum_stock,
+        COALESCE(i.maximum_stock_base, 0) AS maximum_stock,
         i.cost_micros AS item_cost,
         COALESCE(u.units_per_large, 1) AS units_per_large
       FROM items i
-      LEFT JOIN batches b ON b.item_id = i.id AND b.is_voided = 0
       LEFT JOIN item_units u ON u.item_id = i.id
       WHERE i.is_active = 1
-      GROUP BY i.id
-      -- Items with stock: either batch quantity > 0 OR the item's
-      -- current_stock_base > 0 (Ali, 2026-10-09: report was empty despite
-      -- having stock — batches may not reflect the item-level stock).
-      HAVING COALESCE(SUM(b.quantity_base), 0) > 0
-         OR MAX(i.current_stock_base) > 0
+      -- Show all active items (Ali, 2026-10-09: report was empty because it
+      -- required batch quantities; the source of truth is
+      -- items.current_stock_base synced from the stock_movements ledger).
       ORDER BY i.trade_name
       ''',
     ).get();
 
     final items = itemRows.map((row) {
-      final qty = row.read<int>('qty_sum');
-      final value = row.read<int>('value_sum');
+      final qty = row.read<int>('current_stock');
       final unitsPerLarge = row.read<int>('units_per_large');
-      // §cost-display: batches store per-base-unit cost; the report shows the
-      // full-package cost via the single conversion point.
-      final baseCost = qty > 0 ? value ~/ qty : row.read<int>('item_cost');
+      final baseCost = row.read<int>('item_cost');
+      final value = qty * baseCost;
       return InventoryReportItemRow(
         itemId: row.read<String>('item_id'),
         barcode: row.read<String? >('barcode'),
         name: row.read<String>('name'),
-        currentStockBase: row.read<int>('current_stock'),
+        currentStockBase: qty,
         minimumStockBase: row.read<int>('minimum_stock'),
         maximumStockBase: row.read<int>('maximum_stock'),
         unitCostMicros: baseUnitCostToPackageCost(baseCost, unitsPerLarge),
