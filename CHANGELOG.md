@@ -22,6 +22,12 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Reports bugs (2026-10-09, Ali):**
+  - Inventory report was empty: HAVING clause now includes items with
+    `current_stock_base > 0` (not just batch quantities).
+  - Arabic tables in PDF: wrapped in RTL Directionality (was reversed).
+  - PDF export crash: `printReportPdf` now catches exceptions and shows an
+    error snackbar instead of crashing (the "logout" was a crash).
 - **New app icon (2026-10-09, Ali):** modern capsule + medical cross design
   (teal/emerald); installed as Android mipmap icons (48–192px) and Windows
   ICO. Source at `assets/icons/app_icon.png`.

@@ -38,8 +38,25 @@ Future<void> printReportPdf(
   ReportExportService service,
   ReportExportRequest request,
 ) async {
-  final bytes = await service.buildPdf(request);
-  await Printing.layoutPdf(onLayout: (_) async => bytes);
+  try {
+    final bytes = await service.buildPdf(request);
+    if (bytes.isEmpty) {
+      throw StateError('PDF generation returned empty bytes');
+    }
+    await Printing.layoutPdf(onLayout: (_) async => bytes);
+  } catch (e) {
+    // Never crash/logout on PDF failure (Ali, 2026-10-09) — show an error.
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            '${AppLocalizations.of(context).posPrintFailed}: $e',
+          ),
+        ),
+      );
+  }
 }
 
 /// Compact print + download buttons reused across report pages.

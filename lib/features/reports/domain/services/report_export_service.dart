@@ -129,21 +129,25 @@ class ReportExportService {
       crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
         if (request.columns.isNotEmpty && request.rows.isNotEmpty)
-          pw.TableHelper.fromTextArray(
-            headers: [
-              for (final c in request.columns) PdfArabic.shape(c),
-            ],
-            data: [
-              for (final row in request.rows)
-                [for (final cell in row) PdfArabic.shape(cell.toText())],
-            ],
-            cellStyle: docs.style(font, size: 8),
-            headerStyle:
-                docs.style(font, size: 8, weight: pw.FontWeight.bold),
-            headerDecoration: const pw.BoxDecoration(
-                color: PdfColor.fromInt(0xFFE3E8F0)),
-            headerAlignments: const {0: pw.Alignment.centerRight},
-            border: pw.TableBorder.all(color: const PdfColor.fromInt(0xFFB0BEC5)),
+          // RTL wrapper for Arabic tables (Ali, 2026-10-09: text was reversed).
+          pw.Directionality(
+            textDirection: pw.TextDirection.rtl,
+            child: pw.TableHelper.fromTextArray(
+              headers: [
+                for (final c in request.columns) PdfArabic.shape(c),
+              ],
+              data: [
+                for (final row in request.rows)
+                  [for (final cell in row) PdfArabic.shape(cell.toText())],
+              ],
+              cellStyle: docs.style(font, size: 8),
+              headerStyle:
+                  docs.style(font, size: 8, weight: pw.FontWeight.bold),
+              headerDecoration: const pw.BoxDecoration(
+                  color: PdfColor.fromInt(0xFFE3E8F0)),
+              headerAlignments: const {0: pw.Alignment.centerRight},
+              border: pw.TableBorder.all(color: const PdfColor.fromInt(0xFFB0BEC5)),
+            ),
           ),
         if (request.rows.isEmpty) docs.text(font, 'لا توجد بيانات', size: 9),
         pw.SizedBox(height: 10),
