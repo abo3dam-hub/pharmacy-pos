@@ -2,8 +2,8 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:printing/printing.dart';
 
+import '../../../../core/pdf/pdf_documents.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/services/report_export_service.dart';
 
@@ -40,10 +40,9 @@ Future<void> printReportPdf(
 ) async {
   try {
     final bytes = await service.buildPdf(request);
-    if (bytes.isEmpty) {
-      throw StateError('PDF generation returned empty bytes');
-    }
-    await Printing.layoutPdf(onLayout: (_) async => bytes);
+    // Unified protected print (Ali, 2026-10-09): try/catch inside printBytes
+    // plus the outer catch here for buildPdf failures.
+    await PdfDocuments().printBytes(bytes);
   } catch (e) {
     // Never crash/logout on PDF failure (Ali, 2026-10-09) — show an error.
     if (!context.mounted) return;

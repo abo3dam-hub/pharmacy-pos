@@ -121,6 +121,20 @@ Local dev env (this machine):
   (now entered per package). Each view carries `unitsPerLarge` and renders
   via `formatBaseQuantity` / `baseUnitCostToPackageCost`; storage stays per
   base unit (COGS basis). `flutter analyze` clean, 751/751 tests pass.
+- **2026-10-09 — invoice PDF root-cause fix (Ali's device screenshot):**
+  the earlier RTL/crash fixes were scoped to reports only; the invoice PDF
+  (`pdf_documents.dart`) had the same three diseases: (1) `invoiceLinesTable`
+  and `totalsTable` rendered Arabic reversed — new shared
+  `PdfDocuments.rtlTable()` wraps every PDF table; (2) all three `print`
+  methods called `Printing.layoutPdf` unprotected — new unified
+  `PdfDocuments.printBytes()` with try/catch + empty-bytes guard, throwing
+  `PdfPrintException` so callers show a snackbar instead of the app dying
+  (the "logout" was a native/platform crash bypassing Dart try/catch);
+  (3) invoice line quantity showed raw base units when not a whole sell unit
+  — now `formatMixedQuantity`. New CI guardrail
+  `test/pdf_print_guardrail_test.dart` (2 tests) fails the build on any
+  future unprotected `layoutPdf` or non-RTL PDF table.
+  `flutter analyze` clean, PDF tests pass.
 - **2026-10-09 — whole-package rule, 7th parts report (root-cause fix):**
   inventory report showed `145` instead of `48/1`. Root cause:
   `formatBaseQuantity` falls back to raw base units when the quantity isn't a

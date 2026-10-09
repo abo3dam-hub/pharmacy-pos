@@ -22,6 +22,22 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Invoice PDF: RTL + crash + parts leak (2026-10-09, Ali — device screenshot):**
+  root-cause analysis showed three problems in `pdf_documents.dart`, all
+  stemming from fixes previously scoped too narrowly to reports:
+  1. Arabic tables reversed: `invoiceLinesTable` and `totalsTable` had no RTL
+     Directionality. Added shared `PdfDocuments.rtlTable()` helper; all PDF
+     tables (invoice, receipt, Z-report, reports) now go through it.
+  2. Crash on save ("logout"): three `print` methods called
+     `Printing.layoutPdf` with no protection. Added unified
+     `PdfDocuments.printBytes()` (try/catch, empty-bytes guard, throws
+     `PdfPrintException`); all print paths (receipt, invoice, Z-report,
+     reports) use it. Callers already show a snackbar on failure.
+  3. Parts leak: invoice line quantity fell back to raw `quantityBaseSigned`
+     (e.g. 6 instead of 2) when not a whole sell unit — now uses
+     `formatMixedQuantity` (48/1). New CI guardrail
+     `test/pdf_print_guardrail_test.dart`: fails the build on any direct
+     `Printing.layoutPdf` outside `printBytes` or any PDF table without RTL.
 - **Whole-package rule, 7th parts report (2026-10-09, Ali):** inventory report
   showed `145` instead of `48/1`. Root cause: `formatBaseQuantity` falls back
   to raw base units on remainders; stock quantities must use

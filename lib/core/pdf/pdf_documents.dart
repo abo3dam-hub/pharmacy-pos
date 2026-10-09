@@ -8,6 +8,7 @@ import '../../features/sales/domain/entities/pos_invoice.dart';
 import '../../features/sales/domain/entities/z_report.dart';
 import '../../shared/models/enums.dart';
 import '../money/money.dart';
+import '../units/package_cost.dart';
 import 'pdf_arabic.dart';
 import 'pdf_fonts.dart';
 
@@ -27,6 +28,30 @@ class PdfDocuments {
   pw.Document document() => pw.Document(deflate: _deflate);
 
   Future<pw.Font> font() => _fonts.font();
+
+  /// Sends pre-built PDF [bytes] to the platform print dialog.
+  ///
+  /// Unified protected entry point (Ali, 2026-10-09): every print path goes
+  /// through here. Catches all exceptions (including async platform-channel
+  /// failures) and rethrows as [PdfPrintException] with a user-safe message,
+  /// so callers can show a snackbar instead of the app dying.
+  Future<void> printBytes(Uint8List bytes) async {
+    if (bytes.isEmpty) {
+      throw const PdfPrintException('PDF generation returned empty bytes');
+    }
+    try {
+      await Printing.layoutPdf(onLayout: (_) async => bytes);
+    } catch (e) {
+      throw PdfPrintException('Print failed: $e');
+    }
+  }
+
+  /// Wraps a table in RTL directionality (Ali, 2026-10-09): without this,
+  /// Arabic table headers/cells render reversed in the `pdf` package.
+  pw.Widget rtlTable(pw.Widget table) => pw.Directionality(
+        textDirection: pw.TextDirection.rtl,
+        child: table,
+      );
 
   pw.TextStyle style(pw.Font font,
           {double size = 10,
@@ -138,14 +163,16 @@ class PdfDocuments {
   }) {
     final headers = ['المنتج', 'الكمية', 'سعر الوحدة', 'الإجمالي'];
     const right = pw.Alignment.centerRight;
-    return pw.TableHelper.fromTextArray(
+    // RTL wrapper (Ali, 2026-10-09): Arabic table headers/cells rendered
+    // reversed without it.
+    return rtlTable(pw.TableHelper.fromTextArray(
       headers: [for (final h in headers) PdfArabic.shape(h)],
       data: [
         for (final line in lines)
           [
             PdfArabic.shape(
                 '${line.itemName}${line.batchNumber.isNotEmpty ? ' (${line.batchNumber})' : ''}'),
-            '${line.sellUnitQuantity != null ? '${line.sellUnitQuantity}' : '${line.quantityBaseSigned}'} ${PdfArabic.shape(line.unitTypeName)}',
+            '${line.sellUnitQuantity != null ? '${line.sellUnitQuantity}' : formatMixedQuantity(line.quantityBaseSigned, line.unitsPerLarge)} ${PdfArabic.shape(line.unitTypeName)}',
             money(line.unitPriceMicros),
             money(line.lineTotalMicros),
           ],
@@ -155,7 +182,7 @@ class PdfDocuments {
       headerDecoration: const pw.BoxDecoration(color: PdfColor.fromInt(0xFFE3E8F0)),
       cellAlignments: {0: right, 1: right, 2: right, 3: right},
       headerAlignments: {0: right, 1: right, 2: right, 3: right},
-    );
+    ));
   }
 
   pw.Widget totalsTable(
@@ -178,7 +205,7 @@ class PdfDocuments {
       if (paidMicros != null) ('المدفوع', money(paidMicros)),
       if (changeMicros != null) ('الباقي', money(changeMicros)),
     ];
-    return pw.TableHelper.fromTextArray(
+    return rtlTable(pw.TableHelper.fromTextArray(
       data: [
         for (final (label, value) in rows)
           [PdfArabic.shape(label), PdfArabic.shape(value)],
@@ -187,7 +214,7 @@ class PdfDocuments {
       cellAlignments: {0: pw.Alignment.centerRight, 1: pw.Alignment.centerLeft},
       columnWidths: {0: const pw.FlexColumnWidth(3), 1: const pw.FlexColumnWidth(1)},
       border: pw.TableBorder.all(color: const PdfColor.fromInt(0xFFB0BEC5)),
-    );
+    ));
   }
 
   static pw.Widget spacer8() => pw.SizedBox(height: 8);
@@ -272,7 +299,7 @@ class ReceiptPdfService {
   }) async {
     final bytes = await buildBytes(invoice,
         pharmacyName: pharmacyName, promoLine: promoLine, fontSize: fontSize);
-    await Printing.layoutPdf(onLayout: (_) async => bytes);
+    await _docs.printBytes(bytes);
   }
 }
 
@@ -329,7 +356,7 @@ class InvoicePdfService {
 
   Future<void> print(PosInvoiceView invoice, String pharmacyName) async {
     final bytes = await buildBytes(invoice, pharmacyName: pharmacyName);
-    await Printing.layoutPdf(onLayout: (_) async => bytes);
+    await _docs.printBytes(bytes);
   }
 }
 
@@ -419,6 +446,18 @@ class ZReportPdfService {
 
   Future<void> print(ZReport report, String pharmacyName) async {
     final bytes = await buildBytes(report, pharmacyName: pharmacyName);
-    await Printing.layoutPdf(onLayout: (_) async => bytes);
+    await _docs.printBytes(bytes);
   }
+}
+
+/// User-safe exception for PDF print failures.
+///
+/// Thrown by [PdfDocuments.printBytes] instead of letting platform-channel
+/// or generation exceptions propagate uncaught (which killed the app on
+/// Ali's device, 2026-10-09 — appearing as a "logout").
+class PdfPrintException implements Exception {
+  const PdfPrintException(this.message);
+  final String message;
+  @override
+  String toString() => 'PdfPrintException: $message';
 }
