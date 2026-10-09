@@ -22,6 +22,17 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
   need a Windows host or Android device to execute.
 
 ### Fixed
+- **Whole-package rule, 7th parts report (2026-10-09, Ali):** inventory report
+  showed `145` instead of `48/1`. Root cause: `formatBaseQuantity` falls back
+  to raw base units on remainders; stock quantities must use
+  `formatMixedQuantity`. Audited EVERY `formatBaseQuantity` usage repo-wide:
+  fixed 12 stock displays (inventory report UI + PDF/Excel export, dashboard,
+  expiry alerts, reorder suggestions, POS available-stock, product detail,
+  alternatives dialog, item min/max settings). Transaction line quantities
+  (purchase/sale/prescription/return lines) correctly remain on
+  `formatBaseQuantity` (always whole packages). New guardrail test:
+  `stock quantities use formatMixedQuantity, never formatBaseQuantity` fails
+  CI on any future regression.
 - **Reports bugs verified & fixed (2026-10-09, Ali):**
   - Inventory report empty (root cause): quantity now from `stock_movements`
     ledger (the true source; batches don't reflect stock,

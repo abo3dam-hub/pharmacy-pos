@@ -83,4 +83,47 @@ void main() {
           '(whole-package rule):\n${violations.join('\n')}',
     );
   });
+
+  test('stock quantities use formatMixedQuantity, never formatBaseQuantity',
+      () {
+    // Root cause of Ali's 7th parts report (2026-10-09): formatBaseQuantity
+    // falls back to the RAW base-unit number when the quantity isn't a whole
+    // number of packages (145 instead of 48/1). Stock balances (current,
+    // min/max, available) can carry remainders from part-sales, so they MUST
+    // use formatMixedQuantity which renders packages+remainder (48/1). This
+    // test fails CI if any presentation file displays a stock quantity via
+    // formatBaseQuantity. Transaction line quantities (line.quantityBase)
+    // are always whole packages and are covered by the first test.
+    final stockQty = RegExp(
+      r'formatBaseQuantity\([^)]*(currentStockBase|availableStockBase|minimumStockBase|maximumStockBase)',
+    );
+    final libDir = Directory('lib');
+    final violations = <String>[];
+    final files = libDir
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.dart'))
+        .where((f) =>
+            f.path.contains('/presentation/') ||
+            f.path.contains('lib/core/widgets/'))
+        .toList()
+      ..sort((a, b) => a.path.compareTo(b.path));
+
+    for (final file in files) {
+      final lines = file.readAsLinesSync();
+      for (var i = 0; i < lines.length; i++) {
+        if (stockQty.hasMatch(lines[i])) {
+          violations.add('${file.path}:${i + 1}\n    ${lines[i].trim()}');
+        }
+      }
+    }
+
+    expect(
+      violations,
+      isEmpty,
+      reason: 'Stock quantities must use formatMixedQuantity() (shows 48/1), '
+          'not formatBaseQuantity() (falls back to raw 145):\n'
+          '${violations.join('\n')}',
+    );
+  });
 }

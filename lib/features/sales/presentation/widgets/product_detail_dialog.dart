@@ -70,7 +70,7 @@ class ProductDetailDialog extends ConsumerWidget {
                   ),
                   _row(
                     l10n.productDetailStock,
-                    formatBaseQuantity(
+                    formatMixedQuantity(
                         item.currentStockBase, unitsPerLarge),
                   ),
                 ],

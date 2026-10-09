@@ -256,9 +256,9 @@ class _ItemFormDialogState extends State<_ItemFormDialog> {
     seed('vat', _pct(_initial.vatRateBasisPoints));
     final seedUnitsPerLarge = _initial.units?.unitsPerLarge ?? 1;
     seed('minStock',
-        formatBaseQuantity(_initial.minimumStockBase, seedUnitsPerLarge));
+        formatMixedQuantity(_initial.minimumStockBase, seedUnitsPerLarge));
     seed('maxStock',
-        formatBaseQuantity(_initial.maximumStockBase, seedUnitsPerLarge));
+        formatMixedQuantity(_initial.maximumStockBase, seedUnitsPerLarge));
     seed(
       'partialSaleMarkupBasisPoints',
       _initial.partialSaleMarkupBasisPoints != null

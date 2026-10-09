@@ -1178,7 +1178,7 @@ class _ProductList extends StatelessWidget {
                     isOut
                         ? l10n.posOutOfStock
                         : '${l10n.posAvailableStock}: '
-                            '${formatBaseQuantity(available, item.unitsPerLarge)}',
+                            '${formatMixedQuantity(available, item.unitsPerLarge)}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: isOut ? Theme.of(context).colorScheme.error : null,
                     ),

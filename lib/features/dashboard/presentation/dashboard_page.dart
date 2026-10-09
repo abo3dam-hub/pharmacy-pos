@@ -256,8 +256,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                       _AlertRow(
                                         primary: row.name,
                                         secondary:
-                                            '${formatBaseQuantity(row.currentStockBase, row.unitsPerLarge)} / '
-                                            '${formatBaseQuantity(row.minimumStockBase, row.unitsPerLarge)}',
+                                            '${formatMixedQuantity(row.currentStockBase, row.unitsPerLarge)} / '
+                                            '${formatMixedQuantity(row.minimumStockBase, row.unitsPerLarge)}',
                                         icon: Icons.arrow_downward,
                                         iconColor: Theme.of(
                                           context,
@@ -287,7 +287,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                       _AlertRow(
                                         primary: b.itemName,
                                         secondary:
-                                            '${_date(b.expiryDate)} · ${formatBaseQuantity(b.quantityBase, b.unitsPerLarge)}',
+                                            '${_date(b.expiryDate)} · ${formatMixedQuantity(b.quantityBase, b.unitsPerLarge)}',
                                         icon: Icons.event,
                                         iconColor: Theme.of(
                                           context,

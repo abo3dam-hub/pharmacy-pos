@@ -171,7 +171,7 @@ class AlternativesDialog extends ConsumerWidget {
                             _StockChip(inStock: alt.inStock),
                             Text(
                               '${l10n.posAvailableStock}: '
-                              '${formatBaseQuantity(alt.item.availableStockBase, alt.item.unitsPerLarge)}',
+                              '${formatMixedQuantity(alt.item.availableStockBase, alt.item.unitsPerLarge)}',
                               style: Theme.of(context).textTheme.labelSmall,
                             ),
                           ],

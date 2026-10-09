@@ -167,7 +167,7 @@ class _AlertCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${l10n.currentStock}: ${formatBaseQuantity(alert.quantityBase, alert.unitsPerLarge)}',
+                  '${l10n.currentStock}: ${formatMixedQuantity(alert.quantityBase, alert.unitsPerLarge)}',
                   style: theme.textTheme.bodySmall,
                 ),
                 Text(

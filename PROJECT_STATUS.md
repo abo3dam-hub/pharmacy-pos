@@ -121,6 +121,20 @@ Local dev env (this machine):
   (now entered per package). Each view carries `unitsPerLarge` and renders
   via `formatBaseQuantity` / `baseUnitCostToPackageCost`; storage stays per
   base unit (COGS basis). `flutter analyze` clean, 751/751 tests pass.
+- **2026-10-09 — whole-package rule, 7th parts report (root-cause fix):**
+  inventory report showed `145` instead of `48/1`. Root cause:
+  `formatBaseQuantity` falls back to raw base units when the quantity isn't a
+  whole number of packages; stock balances (which can carry remainders from
+  part-sales) must use `formatMixedQuantity`. Audited every
+  `formatBaseQuantity` usage repo-wide and fixed 12 stock displays:
+  inventory report UI + PDF/Excel export, dashboard cards, expiry alerts,
+  reorder suggestions, POS available-stock, product detail dialog,
+  alternatives dialog, item min/max settings. Transaction line quantities
+  (purchase/sale/prescription/return lines — always whole packages) correctly
+  stay on `formatBaseQuantity`. Added a second CI guardrail test
+  (`stock quantities use formatMixedQuantity, never formatBaseQuantity`)
+  that fails the build if any stock quantity ever uses the wrong formatter
+  again. `flutter analyze` clean.
 - **2026-10-05 — Ali's device-feedback round**: (1) chained batch→purchase
   flow no longer double-posts stock — the purchase receive is the single
   posting event and reuses the user's batch number/expiry

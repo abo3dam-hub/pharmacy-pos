@@ -90,11 +90,11 @@ class _InventoryReportTabState extends ConsumerState<InventoryReportTab> {
             ReportCell.text(i.barcode ?? ''),
             ReportCell.text(i.name),
             ReportCell.text(
-                formatBaseQuantity(i.currentStockBase, i.unitsPerLarge)),
+                formatMixedQuantity(i.currentStockBase, i.unitsPerLarge)),
             ReportCell.text(
-                formatBaseQuantity(i.minimumStockBase, i.unitsPerLarge)),
+                formatMixedQuantity(i.minimumStockBase, i.unitsPerLarge)),
             ReportCell.text(
-                formatBaseQuantity(i.maximumStockBase, i.unitsPerLarge)),
+                formatMixedQuantity(i.maximumStockBase, i.unitsPerLarge)),
             ReportCell.money(i.unitCostMicros),
             ReportCell.money(i.stockValueMicros),
           ],
@@ -316,11 +316,11 @@ class _InventoryReportTableState extends State<_InventoryReportTable> {
             DataCell(Text(i.barcode ?? '')),
             DataCell(Text(i.name)),
             DataCell(Text(
-                formatBaseQuantity(i.currentStockBase, i.unitsPerLarge))),
+                formatMixedQuantity(i.currentStockBase, i.unitsPerLarge))),
             DataCell(Text(
-                formatBaseQuantity(i.minimumStockBase, i.unitsPerLarge))),
+                formatMixedQuantity(i.minimumStockBase, i.unitsPerLarge))),
             DataCell(Text(
-                formatBaseQuantity(i.maximumStockBase, i.unitsPerLarge))),
+                formatMixedQuantity(i.maximumStockBase, i.unitsPerLarge))),
             DataCell(
                 Text(Money.fromUnits(i.unitCostMicros).format())),
             DataCell(Text(

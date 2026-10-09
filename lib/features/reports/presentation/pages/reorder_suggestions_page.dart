@@ -163,7 +163,7 @@ class _SuggestionCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '${l10n.currentStock}: ${formatBaseQuantity(suggestion.currentStockBase, suggestion.unitsPerLarge)}',
+                  '${l10n.currentStock}: ${formatMixedQuantity(suggestion.currentStockBase, suggestion.unitsPerLarge)}',
                   style: theme.textTheme.bodySmall,
                 ),
                 Text(
@@ -182,7 +182,7 @@ class _SuggestionCard extends StatelessWidget {
                   style: theme.textTheme.bodySmall,
                 ),
                 Text(
-                  '${l10n.suggestedQty}: ${formatBaseQuantity(suggestion.suggestedQtyBase, suggestion.unitsPerLarge)}',
+                  '${l10n.suggestedQty}: ${formatMixedQuantity(suggestion.suggestedQtyBase, suggestion.unitsPerLarge)}',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: color,
