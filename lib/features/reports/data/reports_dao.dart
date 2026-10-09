@@ -551,17 +551,28 @@ name: bilingualName(row.read<String>('name'),
         i.primary_barcode AS barcode,
         i.trade_name AS name,
         i.trade_name_en AS name_en,
-        COALESCE(i.current_stock_base, 0) AS current_stock,
+        COALESCE(s.qty, 0) AS current_stock,
         COALESCE(i.minimum_stock_base, 0) AS minimum_stock,
         COALESCE(i.maximum_stock_base, 0) AS maximum_stock,
-        i.cost_micros AS item_cost,
+        COALESCE(b.avg_cost, i.cost_micros, 0) AS item_cost,
         COALESCE(u.units_per_large, 1) AS units_per_large
       FROM items i
+      LEFT JOIN (
+        SELECT item_id, SUM(quantity_base_signed) AS qty
+        FROM stock_movements
+        GROUP BY item_id
+      ) s ON s.item_id = i.id
+      LEFT JOIN (
+        SELECT item_id, AVG(unit_cost_micros) AS avg_cost
+        FROM batches
+        WHERE is_voided = 0
+        GROUP BY item_id
+      ) b ON b.item_id = i.id
       LEFT JOIN item_units u ON u.item_id = i.id
       WHERE i.is_active = 1
-      -- Show all active items (Ali, 2026-10-09: report was empty because it
-      -- required batch quantities; the source of truth is
-      -- items.current_stock_base synced from the stock_movements ledger).
+      -- Source of truth for quantity is the stock_movements ledger (Ali,
+      -- 2026-10-09: batches do not reflect real stock; items.current_stock_base
+      -- is never synced). Cost comes from batches (fallback to item cost).
       ORDER BY i.trade_name
       ''',
     ).get();

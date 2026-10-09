@@ -23,9 +23,9 @@ Version format follows SemVer (`MAJOR.MINOR.PATCH+build`).
 
 ### Fixed
 - **Reports bugs verified & fixed (2026-10-09, Ali):**
-  - Inventory report empty (root cause): was using batch quantities; now uses
-    `items.current_stock_base` (the ledger-synced source of truth). Shows all
-    active items.
+  - Inventory report empty (root cause): quantity now from `stock_movements`
+    ledger (the true source; batches don't reflect stock,
+    `current_stock_base` is never synced). Cost from batches avg.
   - (إ) as symbol (root cause): Cairo/Tajawal lack Arabic Presentation Forms
     (U+FE87 etc.) that the reshaper emits. Switched PDF font to Amiri which
     includes them. Verified: Amiri has FE87/FE8D/FE83; Cairo/Tajawal do not.
