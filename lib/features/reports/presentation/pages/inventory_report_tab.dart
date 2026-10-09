@@ -9,7 +9,6 @@ import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/units/package_cost.dart';
 import '../../../../core/widgets/app_data_table.dart';
-import '../../../../core/widgets/horizontal_scroll.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../../shared/models/enums.dart';
 import '../../application/reports_controller.dart';
@@ -209,8 +208,10 @@ class _InventoryReportTabState extends ConsumerState<InventoryReportTab> {
                         child: Text(l10n.reportInventoryItemName,
                             style: typography.label),
                       ),
-                      // Paginated: building 20k+ DataRows eagerly froze
-                      // the UI (the whole catalog lands in this report).
+                      // The report only includes in-stock items (small list),
+                      // so a simple DataTable suffices. A PaginatedDataTable
+                      // rendered blank inside the horizontal scroller
+                      // (Ali, 2026-10-09).
                       _InventoryReportTable(report: report),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(AppSpacing.xxl,
@@ -274,8 +275,6 @@ class _InventoryReportTable extends StatefulWidget {
 }
 
 class _InventoryReportTableState extends State<_InventoryReportTable> {
-  static const _rowsPerPage = 25;
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -289,8 +288,11 @@ class _InventoryReportTableState extends State<_InventoryReportTable> {
         ),
       );
     }
-    return HorizontalScroll(
-      child: PaginatedDataTable(
+    // Simple DataTable (not paginated): the report now only includes in-stock
+    // items (small list), and PaginatedDataTable rendered blank inside the
+    // horizontal scroller (Ali, 2026-10-09). AppDataTable is already used for
+    // the movements table below and renders reliably.
+    return AppDataTable(
       columns: [
         DataColumn(label: Text(l10n.reportInventoryItemCode)),
         DataColumn(label: Text(l10n.reportInventoryItemName)),
@@ -308,44 +310,26 @@ class _InventoryReportTableState extends State<_InventoryReportTable> {
             numeric: true,
             label: Text(l10n.reportInventoryValue)),
       ],
-      source: _InventoryReportDataSource(widget.report, typography),
-      rowsPerPage: _rowsPerPage,
-      showFirstLastButtons: true,
-      ),
+      rows: [
+        for (final i in widget.report.items)
+          DataRow(cells: [
+            DataCell(Text(i.barcode ?? '')),
+            DataCell(Text(i.name)),
+            DataCell(Text(
+                formatBaseQuantity(i.currentStockBase, i.unitsPerLarge))),
+            DataCell(Text(
+                formatBaseQuantity(i.minimumStockBase, i.unitsPerLarge))),
+            DataCell(Text(
+                formatBaseQuantity(i.maximumStockBase, i.unitsPerLarge))),
+            DataCell(
+                Text(Money.fromUnits(i.unitCostMicros).format())),
+            DataCell(Text(
+              Money.fromUnits(i.stockValueMicros).format(),
+              style: typography.numericStrong,
+            )),
+          ]),
+      ],
+      emptyMessage: l10n.reportNoData,
     );
   }
-}
-
-class _InventoryReportDataSource extends DataTableSource {
-  _InventoryReportDataSource(this.report, this.typography);
-
-  final InventoryReport report;
-  final AppTypography typography;
-
-  @override
-  DataRow? getRow(int index) {
-    if (index >= report.items.length) return null;
-    final i = report.items[index];
-    return DataRow(cells: [
-      DataCell(Text(i.barcode ?? '')),
-      DataCell(Text(i.name)),
-      DataCell(Text(formatBaseQuantity(i.currentStockBase, i.unitsPerLarge))),
-      DataCell(Text(formatBaseQuantity(i.minimumStockBase, i.unitsPerLarge))),
-      DataCell(Text(formatBaseQuantity(i.maximumStockBase, i.unitsPerLarge))),
-      DataCell(Text(Money.fromUnits(i.unitCostMicros).format())),
-      DataCell(Text(
-        Money.fromUnits(i.stockValueMicros).format(),
-        style: typography.numericStrong,
-      )),
-    ]);
-  }
-
-  @override
-  bool get isRowCountApproximate => false;
-
-  @override
-  int get rowCount => report.items.length;
-
-  @override
-  int get selectedRowCount => 0;
 }
